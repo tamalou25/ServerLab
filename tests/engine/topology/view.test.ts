@@ -3,10 +3,12 @@
  * d'adresses, résumé du canvas) ; une modification du réseau les refait, en réutilisant les
  * entrées des nœuds qui n'ont pas changé.
  */
+import { produce } from 'immer'
 import { describe, expect, it } from 'vitest'
 import {
   canvasStatus,
   ipConflicts,
+  linkOnInterface,
   moveDevice,
   renameDevice,
   restartComputer,
@@ -16,7 +18,7 @@ import {
   type LabState
 } from '@engine/index'
 import { buildLargeLab } from '../../support/large-lab'
-import { build, cable, setIp } from '../helpers'
+import { add, build, cable, setIp } from '../helpers'
 
 function smallLab() {
   const { state, ids } = build([
@@ -68,6 +70,48 @@ describe('conflits d’adresses', () => {
     expect(ipConflicts(move(conflict, ids.PC1!, 300))).toBe(set)
     // Conflit résolu : nouveau calcul
     expect(ipConflicts(setIp(conflict, ids.PC2!, 0, '192.168.1.12/24')).size).toBe(0)
+  })
+})
+
+describe('conflits d’adresses : cas limites (audit P-01)', () => {
+  it('même adresse dans deux domaines de diffusion distincts : aucun conflit', () => {
+    const { s, ids } = smallLab()
+    // PC9 isolé (sans câble vers SW1) avec l'adresse de PC1
+    const { state: merged, id: pc9 } = add(s, 'client')
+    expect(ipConflicts(setIp(merged, pc9, 0, '192.168.1.10/24')).size).toBe(0)
+    // Une troisième carte du même segment avec cette adresse : seules les deux voisines sont en conflit
+    const triple = setIp(setIp(merged, pc9, 0, '192.168.1.10/24'), ids.PC2!, 0, '192.168.1.10/24')
+    expect([...ipConflicts(triple)].map((k) => k.split('/')[0]).sort()).toEqual([ids.PC1, ids.PC2].sort())
+  })
+
+  it('un équipement éteint ne crée ni ne subit de conflit', () => {
+    const { s, ids } = smallLab()
+    const conflict = setIp(s, ids.PC2!, 0, '192.168.1.10/24')
+    expect(ipConflicts(unwrap(setPower(conflict, ids.PC2!, false)).state).size).toBe(0)
+  })
+})
+
+describe('câble d’un port (index)', () => {
+  it('à jour dans un brouillon immer après un nouveau câble', () => {
+    const { s, ids } = smallLab()
+    const pc1Nic = s.devices[ids.PC1!]!.interfaces[0]!.id
+    expect(linkOnInterface(s, ids.PC1!, pc1Nic)).toBeDefined()
+    const { state: merged, id: pc9 } = add(s, 'client')
+    const nic = merged.devices[pc9]!.interfaces[0]!.id
+    const sw = merged.devices[ids.SW1!]!.interfaces[5]!.id
+    expect(linkOnInterface(merged, pc9, nic)).toBeUndefined()
+    const after = produce(merged, (draft) => {
+      // Index lu dans le brouillon avant l'ajout, puis câble ajouté sous la même référence
+      expect(linkOnInterface(draft, pc9, nic)).toBeUndefined()
+      draft.links['lx'] = {
+        id: 'lx',
+        a: { deviceId: pc9, ifaceId: nic },
+        b: { deviceId: ids.SW1!, ifaceId: sw },
+        virtual: false
+      }
+      expect(linkOnInterface(draft, pc9, nic)?.id).toBe('lx')
+    })
+    expect(linkOnInterface(after, pc9, nic)?.id).toBe('lx')
   })
 })
 

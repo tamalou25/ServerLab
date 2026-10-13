@@ -15,11 +15,19 @@ export const ipConflicts: (state: LabState) => Set<string> = memoByNetwork(compu
 
 function computeConflicts(state: LabState): Set<string> {
   const conflicts = new Set<string>()
+  // Seule une adresse portée par au moins deux cartes peut être en conflit : le parcours du domaine
+  // de diffusion (coûteux) n'est fait que pour elles, et non pour chaque carte (audit P-01)
+  const holders = new Map<string, number>()
+  for (const device of Object.values(state.devices))
+    for (const iface of device.interfaces) {
+      const address = effectiveIpv4(iface)?.address
+      if (address) holders.set(address, (holders.get(address) ?? 0) + 1)
+    }
   for (const device of Object.values(state.devices)) {
     if (!device.powered) continue
     for (const iface of device.interfaces) {
       const eff = effectiveIpv4(iface)
-      if (!eff || isApipa(eff.address)) continue
+      if (!eff || isApipa(eff.address) || (holders.get(eff.address) ?? 0) < 2) continue
       const origin: PortRef = { deviceId: device.id, ifaceId: iface.id }
       for (const member of l2Segment(state, origin)) {
         if (member.port.deviceId === device.id && member.port.ifaceId === iface.id) continue
