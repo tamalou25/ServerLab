@@ -88,6 +88,12 @@ export function formatDefault(values: PsValue[]): string[] {
         group.push(next)
         j++
       }
+      const render = item.view?.render
+      if (render) {
+        lines.push(...render(group))
+        i = j
+        continue
+      }
       const kind = item.view?.kind ?? (defaultProps(item).length <= 4 ? 'table' : 'list')
       lines.push(...(kind === 'table' ? formatTable(group) : formatList(group)))
       i = j
