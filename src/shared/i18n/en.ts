@@ -562,6 +562,8 @@ export const en: Record<MessageKey, string> = {
   'win.portsDacces': 'Access ports',
   'win.port': 'Port',
   'win.mode': 'Mode',
+  'win.allVlans': 'all',
+  'win.apipaNoDhcp': 'APIPA — no DHCP server',
   'win.vlanAutorisesTrunk': 'Allowed VLANs (trunk)',
   'lab.fermerLeResultat': 'Close the result',
   'lab.examenEnCours': 'Exam in progress',

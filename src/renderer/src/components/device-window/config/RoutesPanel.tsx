@@ -73,18 +73,21 @@ export function RoutesPanel({ device }: { device: RouterDevice }) {
             placeholder={t('win.reseau1921682')}
             value={network}
             onChange={(e) => setNetwork(e.target.value)}
+            aria-label={t('win.reseau')}
           />
           <input
             className={inputClass}
             placeholder={t('win.masque255255255')}
             value={mask}
             onChange={(e) => setMask(e.target.value)}
+            aria-label={t('win.masque')}
           />
           <input
             className={inputClass}
             placeholder={t('win.prochainSaut')}
             value={nextHop}
             onChange={(e) => setNextHop(e.target.value)}
+            aria-label={t('win.prochainSaut')}
           />
           <Button variant="primary" onClick={add}>
             Ajouter

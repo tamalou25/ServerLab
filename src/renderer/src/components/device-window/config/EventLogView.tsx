@@ -64,6 +64,14 @@ export function EventLogView({ device }: { device: HostDevice }) {
                 <tr
                   key={e.id}
                   onClick={() => setSelected(e.id)}
+                  tabIndex={0}
+                  aria-selected={e.id === selected}
+                  onKeyDown={(ev) => {
+                    if (ev.key === 'Enter' || ev.key === ' ') {
+                      ev.preventDefault()
+                      setSelected(e.id)
+                    }
+                  }}
                   className={`cursor-pointer border-t border-line ${e.id === selected ? 'bg-accent-soft' : 'hover:bg-surface-2'}`}
                 >
                   <td className="px-2 py-1">

@@ -222,7 +222,7 @@ export function Terminal({ deviceId, kind, autoFocus }: TerminalProps) {
             type={secure ? 'password' : 'text'}
             spellCheck={false}
             autoComplete="off"
-            className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[13px] text-inherit caret-current outline-none"
+            className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[13px] text-inherit caret-current outline-none focus-visible:ring-1 focus-visible:ring-accent"
             data-testid="terminal-input"
           />
         </div>

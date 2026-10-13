@@ -34,6 +34,7 @@ function PortRow({ device, port }: { device: SwitchDevice; port: NetInterface })
         <select
           className={inputClass}
           value={config.mode}
+          aria-label={t('win.mode')}
           data-testid="vlan-mode"
           onChange={(e) => set({ mode: e.target.value as 'access' | 'trunk' })}
         >
@@ -46,6 +47,7 @@ function PortRow({ device, port }: { device: SwitchDevice; port: NetInterface })
           <select
             className={inputClass}
             value={config.accessVlan}
+            aria-label={t('win.vlan10')}
             data-testid="vlan-access"
             onChange={(e) => set({ mode: 'access', accessVlan: Number(e.target.value) })}
           >
@@ -60,6 +62,7 @@ function PortRow({ device, port }: { device: SwitchDevice; port: NetInterface })
             className={inputClass}
             value={config.nativeVlan}
             title={t('win.vlanNatifNonEtiquete')}
+            aria-label={t('win.vlanNatifNonEtiquete')}
             onChange={(e) => set({ mode: 'trunk', nativeVlan: Number(e.target.value) })}
           >
             {device.vlans.map((v) => (
@@ -74,9 +77,10 @@ function PortRow({ device, port }: { device: SwitchDevice; port: NetInterface })
         {config.mode === 'trunk' && (
           <input
             className={inputClass}
-            placeholder="tous"
+            placeholder={t('win.allVlans')}
             value={allowed}
             title={t('win.vlanAutorises110')}
+            aria-label={t('win.vlanAutorisesTrunk')}
             onChange={(e) => setAllowed(e.target.value)}
             onBlur={() => {
               const list = parseVlanList(allowed)
@@ -161,6 +165,7 @@ export function VlanPanel({ device }: { device: SwitchDevice }) {
             className={inputClass}
             placeholder={t('win.numero10')}
             value={id}
+            aria-label={t('win.numero10')}
             data-testid="vlan-new-id"
             onChange={(e) => setId(e.target.value)}
           />
@@ -168,6 +173,7 @@ export function VlanPanel({ device }: { device: SwitchDevice }) {
             className={inputClass}
             placeholder={t('win.nomCompta')}
             value={name}
+            aria-label={t('win.nomCompta')}
             data-testid="vlan-new-name"
             onChange={(e) => setName(e.target.value)}
           />

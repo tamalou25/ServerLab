@@ -124,6 +124,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
                 disabled={!staticIp}
                 value={form.address}
                 onChange={(e) => set('address', e.target.value)}
+                aria-label={t('win.adresseIp')}
                 placeholder="192.168.1.10"
                 data-testid="ip-address"
               />
@@ -133,6 +134,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
                 disabled={!staticIp}
                 value={form.mask}
                 onChange={(e) => set('mask', e.target.value)}
+                aria-label={t('win.masqueDeSousReseau')}
                 placeholder={suggestedMask || '255.255.255.0'}
                 data-testid="ip-mask"
               />
@@ -142,6 +144,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
                 disabled={!staticIp}
                 value={form.gateway}
                 onChange={(e) => set('gateway', e.target.value)}
+                aria-label={t('win.passerelleParDefaut')}
                 data-testid="ip-gateway"
               />
             </div>
@@ -167,6 +170,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
                 disabled={!dnsStatic}
                 value={form.dns1}
                 onChange={(e) => set('dns1', e.target.value)}
+                aria-label={t('win.serveurDnsPrefere')}
                 data-testid="ip-dns1"
               />
               <span className="text-xs text-fg-muted">{t('win.serveurDnsAuxiliaire')}</span>
@@ -175,6 +179,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
                 disabled={!dnsStatic}
                 value={form.dns2}
                 onChange={(e) => set('dns2', e.target.value)}
+                aria-label={t('win.serveurDnsAuxiliaire')}
               />
             </div>
           </fieldset>
@@ -207,7 +212,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
           <dt className="text-fg-muted">{t('win.adresseIpv4')}</dt>
           <dd className="font-mono" data-testid="ip-effective">
             {eff
-              ? `${eff.address}${eff.source === 'apipa' ? ' (APIPA — aucun serveur DHCP)' : eff.source === 'dhcp' ? ' (DHCP)' : ''}`
+              ? `${eff.address}${eff.source === 'apipa' ? ` (${t('win.apipaNoDhcp')})` : eff.source === 'dhcp' ? ' (DHCP)' : ''}`
               : '—'}
           </dd>
           <dt className="text-fg-muted">{t('win.masqueDeSousReseau')}</dt>
