@@ -15,6 +15,21 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error'
     }
   },
+  // Règles avec information de type (sources TypeScript de l'application) : promesses non attendues
+  // ou passées là où un résultat synchrone est attendu, switch non exhaustif (audit Q-01)
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/switch-exhaustiveness-check': [
+        'error',
+        { considerDefaultExhaustiveForUnions: true, allowDefaultCaseForExhaustiveSwitch: true }
+      ]
+    }
+  },
   // Process principal, preload, scripts et configs : environnement Node
   {
     files: ['src/main/**', 'src/preload/**', 'scripts/**', '*.config.*', 'tests/**'],

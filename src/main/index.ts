@@ -292,33 +292,41 @@ app.on('second-instance', (_event, argv) => {
 
 app.setName('ServerLab')
 
-app.whenReady().then(async () => {
-  applyGlobalSecurity()
-  settings = loadSettings()
-  applyLanguage(settings.language)
-  nativeTheme.themeSource = settings.theme
-  // Mode Système : l'application suit le thème de l'OS sans redémarrer
-  nativeTheme.on('updated', () => {
-    if (settings.theme === 'system') pushTheme()
-  })
-  await files.init()
-  registerIpc()
+app
+  .whenReady()
+  .then(async () => {
+    applyGlobalSecurity()
+    settings = loadSettings()
+    applyLanguage(settings.language)
+    nativeTheme.themeSource = settings.theme
+    // Mode Système : l'application suit le thème de l'OS sans redémarrer
+    nativeTheme.on('updated', () => {
+      if (settings.theme === 'system') pushTheme()
+    })
+    await files.init()
+    registerIpc()
 
-  // Fichier passé au lancement (association de l'extension .slab)
-  const initial = findSlabArg(process.argv)
-  if (initial) {
-    const res = await files.openExternal(initial)
-    if (res.ok) files.setPending(res.value)
-  }
+    // Fichier passé au lancement (association de l'extension .slab)
+    const initial = findSlabArg(process.argv)
+    if (initial) {
+      const res = await files.openExternal(initial)
+      if (res.ok) files.setPending(res.value)
+    }
 
-  mainWindow = createWindow()
-  mainWindow.on('closed', () => {
-    mainWindow = null
+    mainWindow = createWindow()
+    mainWindow.on('closed', () => {
+      mainWindow = null
+    })
+    refreshMenu()
+    // Mises à jour : vérification au démarrage de l'application installée
+    initUpdater({ window: () => mainWindow, restartToInstall })
   })
-  refreshMenu()
-  // Mises à jour : vérification au démarrage de l'application installée
-  initUpdater({ window: () => mainWindow, restartToInstall })
-})
+  .catch((error: unknown) => {
+    // Échec du démarrage (paramètres, fenêtre) : journalisé, l'application se ferme au lieu de
+    // rester sans fenêtre (audit Q-01)
+    console.error('Échec du démarrage de ServerLab :', error)
+    app.quit()
+  })
 
 app.on('window-all-closed', () => {
   // Mise à jour acceptée : installation silencieuse puis relance de la nouvelle version
