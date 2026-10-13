@@ -376,6 +376,9 @@ function runTraceroute(ctx: IosRunContext, target: string): void {
       ctx.print(`${n}  *  *  *`)
     }
   })
+  // Aucun saut : on affiche les sauts muets jusqu'à la limite existante de 4 (fidélité I13)
+  if (result.value.hops.length === 0)
+    for (let i = 1; i <= 4; i++) ctx.print(`${String(i).padStart(3)}  *  *  *`)
 }
 
 // ---------------------------------------------------------------------------

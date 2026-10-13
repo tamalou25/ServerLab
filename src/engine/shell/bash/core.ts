@@ -47,13 +47,15 @@ const LOOPBACK = [
   '    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00'
 ]
 
-function addressLines(ctx: ExecContext): string[] {
-  const lines = [
-    ...LOOPBACK,
-    '    inet 127.0.0.1/8 scope host lo',
-    '       valid_lft forever preferred_lft forever'
-  ]
+function addressLines(ctx: ExecContext, only?: string): string[] {
+  if (only !== undefined && only !== 'lo' && !ctx.host.interfaces.some((i) => i.name === only))
+    throw new CommandFailure(`Device "${only}" does not exist.`, 'NotFound')
+  const lines =
+    only && only !== 'lo'
+      ? []
+      : [...LOOPBACK, '    inet 127.0.0.1/8 scope host lo', '       valid_lft forever preferred_lft forever']
   ctx.host.interfaces.forEach((iface, i) => {
+    if (only !== undefined && iface.name !== only) return
     lines.push(...linkLines(ctx, iface, i + 2))
     const eff = effectiveIpv4(iface)
     const carrier = iface.enabled && carrierUp(ctx.state, { deviceId: ctx.host.id, ifaceId: iface.id })
@@ -119,7 +121,10 @@ const ipTool: ToolDef = {
     const [object = '', action = 'show', ...rest] = args.filter((a) => a !== '-4')
     const is = (value: string, ...names: string[]) => names.some((n) => n.startsWith(value) && value !== '')
     if (is(object, 'address', 'addr')) {
-      if (action === 'show' || action === 'list' || action === 'ls') return ctx.writeLines(addressLines(ctx))
+      if (action === 'show' || action === 'list' || action === 'ls') {
+        const names = rest.filter((a) => a !== 'dev' && a !== 'up' && !a.startsWith('-'))
+        return ctx.writeLines(addressLines(ctx, names[0]))
+      }
       if (action === 'add' || action === 'del' || action === 'flush') {
         requireRoot(ctx, 'RTNETLINK answers: Operation not permitted')
         const dev = rest[rest.indexOf('dev') + 1]

@@ -12,6 +12,13 @@ import { flatten, psObject, psToString, type PsValue } from '../../shell/ps/valu
 import { hasFeature } from '../../shell/ps/cmdlets/helpers'
 import { dnsServerOf } from './state'
 
+/** TTL en secondes → hh:mm:ss (1 h par défaut si absent). */
+function formatTtl(ttl: number | undefined): string {
+  const t = Math.max(0, Math.floor(ttl ?? 3600))
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${p(Math.floor(t / 3600))}:${p(Math.floor((t % 3600) / 60))}:${p(t % 60)}`
+}
+
 const available = (ctx: CmdContext) => hasFeature(ctx, 'RSAT-DNS-Server')
 const str = (v: PsValue | undefined): string => psToString(v)
 
@@ -235,7 +242,7 @@ export const dnsCmdlets: CmdletDef[] = [
               RecordType: r.type,
               Type: { A: 1, NS: 2, CNAME: 5, SOA: 6, PTR: 12, SRV: 33 }[r.type],
               Timestamp: r.dynamic ? '05/01/2026 08:00:00' : '0',
-              TimeToLive: '01:00:00',
+              TimeToLive: formatTtl(r.ttl),
               RecordData: r.data
             },
             {
