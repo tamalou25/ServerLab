@@ -3,6 +3,7 @@
  * score uniquement : les scénarios et les contre-mesures sont ceux du moteur.
  */
 import { useEffect, useState } from 'react'
+import { useDialog } from '../../hooks/useDialog'
 import { ArrowDown, ArrowUp, Swords, X } from 'lucide-react'
 import {
   COUNTERMEASURES,
@@ -34,6 +35,7 @@ export function RedBlueGame() {
   const lab = useLabStore((s) => s.lab)
   const { t } = useT()
   const timed = seconds !== null
+  const { ref, titleId } = useDialog(open, closeDialog)
 
   // Minuteur de la partie (une seconde par tick)
   useEffect(() => {
@@ -45,9 +47,12 @@ export function RedBlueGame() {
   if (!open) return null
   return (
     <div
-      className="fixed inset-0 z-[350] flex items-center justify-center bg-scrim"
+      ref={ref}
+      tabIndex={-1}
+      className="fixed inset-0 z-[350] flex items-center justify-center bg-scrim outline-none"
       role="dialog"
       aria-modal="true"
+      aria-labelledby={titleId}
     >
       <div
         className="flex max-h-[88vh] w-[760px] max-w-[96vw] flex-col rounded-md border border-line bg-overlay shadow-lg"
@@ -55,7 +60,9 @@ export function RedBlueGame() {
       >
         <header className="flex items-center gap-2 border-b border-line px-5 py-3">
           <Swords size={16} className="text-accent" />
-          <h2 className="flex-1 text-base font-semibold text-fg">{t('game.title')}</h2>
+          <h2 id={titleId} className="flex-1 text-base font-semibold text-fg">
+            {t('game.title')}
+          </h2>
           {game && (
             <span className="text-xs text-fg-muted" data-testid="game-side">
               {t('game.you', { side: t(`game.side.${game.side}`) })}

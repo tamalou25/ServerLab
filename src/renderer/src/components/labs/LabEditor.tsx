@@ -4,6 +4,7 @@
  * testés immédiatement sur le lab courant ; export / import JSON et essai du lab.
  */
 import { useMemo, useState } from 'react'
+import { useDialog } from '../../hooks/useDialog'
 import {
   CircleCheck,
   CircleDashed,
@@ -45,14 +46,18 @@ export function LabEditor() {
   const references = useMemo(() => labReferences(lab), [lab])
   const [preview, setPreview] = useState(false)
   const [newType, setNewType] = useState('featureInstalled')
+  const { ref, titleId } = useDialog(open, () => useLabEditorStore.getState().setOpen(false))
   if (!open) return null
   const update = useLabEditorStore.getState().update
   const startCount = start ? Object.keys(start.devices).length : 0
   return (
     <div
-      className="fixed inset-0 z-[300] flex items-center justify-center bg-scrim"
+      ref={ref}
+      tabIndex={-1}
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-scrim outline-none"
       role="dialog"
       aria-modal="true"
+      aria-labelledby={titleId}
     >
       <div
         className="flex h-[90vh] w-[1040px] max-w-[96vw] flex-col rounded-md border border-line bg-overlay shadow-lg"
@@ -60,7 +65,9 @@ export function LabEditor() {
       >
         <div className="flex items-center gap-2 border-b border-line px-5 py-3">
           <FlaskConical size={18} className="text-accent" />
-          <h2 className="text-base font-semibold text-fg">{t('lab.editeurDeLabs')}</h2>
+          <h2 id={titleId} className="text-base font-semibold text-fg">
+            {t('lab.editeurDeLabs')}
+          </h2>
           <button
             type="button"
             onClick={() => useLabEditorStore.getState().setOpen(false)}
