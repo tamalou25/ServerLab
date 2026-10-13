@@ -159,8 +159,9 @@ Un rôle ne touche pas au cœur du moteur : tout est déclaré dans son module.
 
 ### Publier une version
 
-1. `git tag vX.Y.Z && git push origin vX.Y.Z` → workflow `release.yml` : brouillon, installeurs
-   Windows (NSIS) et Linux (AppImage) envoyés par electron-builder, puis publication.
+1. `git tag vX.Y.Z && git push origin vX.Y.Z` → workflow `release.yml` : vérifications, brouillon,
+   installeurs Windows (NSIS) et Linux (AppImage) construits sans jeton d'écriture, puis envoyés
+   et publiés par un job sans dépendances npm (droits minimaux, `npm ci --ignore-scripts`).
 2. La version de l'application est celle du tag (alignée dans le workflow). Mises à jour :
    `src/main/updater.ts` (electron-updater, releases GitHub publiques, aucun jeton embarqué).
 
