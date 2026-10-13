@@ -1,0 +1,86 @@
+{
+  "formatVersion": 1,
+  "id": "lab-36-fidelite-consoles",
+  "title": "Fidélité des consoles : scripts et équipements",
+  "difficulty": "Intermédiaire",
+  "duration": "30 min",
+  "summary": "Enchaînez des commandes en pipeline sur le serveur, puis durcissez la console et une ACL du routeur.",
+  "statement": "## Contexte\n\nLe serveur SRV1 est le contrôleur du domaine lab.local. Le routeur R1 relie le site. Les consoles se comportent comme sur les vrais équipements : variables `%VAR%` en invite de commandes, liaison par pipeline en PowerShell, syntaxe IOS complète.\n\n## Travail demandé\n\n1. Sur SRV1 (PowerShell), listez les rôles installés en filtrant avec `Where`, puis installez le rôle DHCP.\n2. Toujours en PowerShell, retrouvez le compte inactif de l'ancien employé et désactivez-le en enchaînant les cmdlets par pipeline. Contrôlez ses groupes avec `Get-ADUser -Properties MemberOf`.\n3. Dans une invite de commandes, affichez le nom de la machine avec `echo %COMPUTERNAME%`.\n4. Sur R1, créez une liste d'accès étendue nommée BLOQUE qui refuse tout le trafic IP et **journalise** les paquets refusés.\n5. Sur R1, évitez que les messages du système n'écrasent ce que vous tapez en console.\n\nÀ rendre : les commandes saisies et leur sortie.",
+  "start": {
+    "devices": [
+      {
+        "kind": "server",
+        "name": "SRV1",
+        "x": 200,
+        "y": 150,
+        "ip": "192.168.10.1/24",
+        "dns": ["127.0.0.1"]
+      },
+      {
+        "kind": "router",
+        "name": "R1",
+        "x": 400,
+        "y": 150,
+        "model": "c1921",
+        "ios": [
+          "enable",
+          "configure terminal",
+          "interface Gi0/0",
+          "ip address 192.168.10.254 255.255.255.0",
+          "no shutdown",
+          "end"
+        ]
+      }
+    ],
+    "links": [["SRV1:Ethernet0", "R1:Gi0/0"]],
+    "domain": {
+      "name": "lab.local",
+      "netbios": "LAB",
+      "dc": "SRV1",
+      "ous": ["Personnel"],
+      "users": [
+        {
+          "name": "Jean Dupont",
+          "sam": "jdupont",
+          "ou": "Personnel",
+          "password": "Azerty123!",
+          "lastLogonDaysAgo": 1
+        },
+        {
+          "name": "Ancien employé",
+          "sam": "ancien.employe",
+          "ou": "Personnel",
+          "password": "Azerty123!",
+          "createdDaysAgo": 400,
+          "lastLogonDaysAgo": 200
+        }
+      ]
+    }
+  },
+  "criteria": [
+    {
+      "id": "dhcp",
+      "label": "Le rôle DHCP est installé sur SRV1",
+      "hint": "Une cmdlet du Gestionnaire de serveur ajoute un rôle ; la liste des rôles se filtre avec un pipeline.",
+      "check": { "type": "featureInstalled", "device": "SRV1", "feature": "DHCP" }
+    },
+    {
+      "id": "compte",
+      "label": "Le compte de l'ancien employé est désactivé",
+      "hint": "Une cmdlet de recherche peut transmettre le compte à une cmdlet d'arrêt par le pipeline.",
+      "check": { "type": "adObject", "kind": "user", "name": "ancien.employe", "enabled": false }
+    },
+    {
+      "id": "acl",
+      "label": "L'ACL de R1 refuse tout et journalise",
+      "hint": "Un mot-clé final de l'entrée de refus demande l'enregistrement des paquets concernés.",
+      "check": { "type": "iosRunning", "device": "R1", "line": "deny ip any any log" }
+    },
+    {
+      "id": "sync",
+      "label": "La console de R1 n'est plus polluée par les messages",
+      "hint": "Un réglage du mode de configuration de la ligne console synchronise l'affichage des messages.",
+      "check": { "type": "iosRunning", "device": "R1", "line": "logging synchronous" }
+    }
+  ]
+}
