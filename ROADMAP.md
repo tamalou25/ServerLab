@@ -147,8 +147,8 @@ attaques web (OWASP), reverse engineering, forensic disque, EDR, SIEM réel (pis
 
 ## Points d'attention (audit v1.0)
 
-- Le dépôt est privé : mises à jour automatiques et bibliothèque communautaire exigent des
-  releases ou un dépôt publics.
+- Le dépôt est désormais public : les mises à jour automatiques fonctionnent. La bibliothèque
+  communautaire attend la publication du dépôt `serverlab-labs` (index encore absent, audit v2.6.2).
 - Hyper-V (équipements imbriqués), VLAN (refonte du L2) et client Linux (nouveau type d'équipement
   et nouveau shell) sont les plus gros changements de modèle.
 - Le bundle de l'interface tient en un seul bloc de 1,9 Mo ; les chaînes sont en français codé en dur.

@@ -257,8 +257,14 @@ Première release publique (installeur Windows NSIS et AppImage Linux).
 - Thèmes sombre et clair, interface compacte.
 - Mises à jour automatiques (electron-updater) et workflow de release sur tag.
 
-[Non publié]: https://github.com/tamalou25/packetracer-windows/compare/v2.1.0...HEAD
-[2.1.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.0.1...v2.1.0
+[Non publié]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.1...HEAD
+[2.6.1]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.0...v2.6.1
+[2.6.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.5.0...v2.6.0
+[2.5.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.4.0...v2.5.0
+[2.4.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.3.0...v2.4.0
+[2.3.0]: https://github.com/tamalou25/packetracer-windows/compare/cbfd1a9...v2.3.0
+[2.2.0]: https://github.com/tamalou25/packetracer-windows/compare/0111fcc...cbfd1a9
+[2.1.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.0.1...0111fcc
 [2.0.1]: https://github.com/tamalou25/packetracer-windows/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/tamalou25/packetracer-windows/compare/dc9b76c...v2.0.0
 [1.0.0]: https://github.com/tamalou25/packetracer-windows/compare/v0.1.1...dc9b76c

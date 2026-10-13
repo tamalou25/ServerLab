@@ -161,7 +161,7 @@ niveaux. Le lab s'exporte en JSON et se partage ; **Importer un lab…** l'ouvre
 
 L'onglet **Bibliothèque** du sélecteur liste les labs partagés par la communauté (dépôt public, voir
 [`docs/bibliotheque.md`](docs/bibliotheque.md)) : chaque lab est vérifié (empreinte SHA-256, format) avant
-ouverture.
+ouverture. Le dépôt de labs communautaire n'est pas encore publié : l'onglet reste vide d'ici là.
 
 Le **mode examen** (onglet Lab › Examen) reproduit les conditions d'épreuve : chronomètre, aucun indice,
 une seule vérification finale, note sur 20 détaillée par critère et exportable ; toute sortie de
