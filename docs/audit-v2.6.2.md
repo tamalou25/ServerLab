@@ -27,36 +27,36 @@ fichier:ligne ; un constat non reproduit est marqué « à confirmer ».
 Environnement : conteneur Linux 4 vCPU, 16 Go, Node 22.22, Electron 44.5.1 sous xvfb. Durées
 indicatives (machine partagée avec les audits).
 
-| Mesure                                                        | Avant (v2.6.1, `87ac3fe`)                                     | Après (v2.6.2) |
-| ------------------------------------------------------------- | ------------------------------------------------------------- | -------------- |
-| `npm run lint` (ESLint + Prettier)                            | ✅ local (34 s) — ❌ sur `main` distant `b049919` (D-01)      |                |
-| `npm run typecheck` (4 projets)                               | ✅ 0 erreur (10 s)                                            |                |
-| `npm test` (Vitest)                                           | ✅ 803 réussis, 3 ignorés (outils), 85 fichiers (≈ 33 s)      |                |
-| Stabilité Vitest (5 passages)                                 | 5 × 803/803, **0 test instable**                              |                |
-| `npm run test:e2e` (Playwright)                               | ✅ 82/82, 0 instable, 255 s                                   |                |
-| `npm run build`                                               | ✅ 23 s ; renderer **3,2 Mo** en un seul fichier, non minifié |                |
-| Couverture moteur — lignes / branches / fonctions             | **91,9 %** / 75,4 % / 92,7 % (instructions 88,4 %)            |                |
-| Couverture — dossiers les plus faibles (lignes)               | shell 87,3 · dns 88,5 · core 88,9 · adds 89,2 · rras 89,6     |                |
-| Couverture — fichiers < 70 %                                  | `adds/site-cmdlets.ts` 57 % · `shell/ps/values.ts` 65 %       |                |
-| Couverture hors moteur (main, preload, shared, renderer)      | non mesurée (E2E uniquement)                                  |                |
-| `npm audit`                                                   | 8 modérées, toutes dans la chaîne electron-builder (build)    |                |
-| `npm outdated` (correctifs dans la plage)                     | 9 : electron 44.7.0, zod 4.6.7, vitest 5.0.4, vite 7.3.7…     |                |
-| Installeur Windows (NSIS, release v2.6.1)                     | 103,8 Mo (99,0 Mio), non signé                                |                |
-| AppImage (release v2.6.1)                                     | 123,9 Mo (118,2 Mio)                                          |                |
-| Démarrage (lancement → canvas affiché, 3 essais)              | 849 / 952 / 995 ms                                            |                |
-| Mémoire au repos (somme des processus, 5 s après)             | 513 Mo (navigateur 161, GPU 140, utilitaire 74, page 138)     |                |
-| Mémoire, topologie de 50 nœuds ouverte                        | 537 Mo (page 156) ; ouverture 151 ms                          |                |
-| Perf E2E 100 nœuds (ouverture · glisser · p95)                | 386 ms · 50 ms/mvt · 33,3 ms ; 0 rendu parasite               |                |
-| `canvasStatus` après une modification réseau, 100/310/610 éq. | **24 / 172 / 793 ms** (≈ n²)                                  |                |
-| Cycles d'import (madge) — tous / à l'exécution                | 35 / 17 (11 dans `ios/`, 6 `sim/forward` ↔ rôles)             |                |
-| Fichiers > 400 lignes · fonctions > 80 lignes                 | 42 (dont 3 de données) · 108                                  |                |
-| Exports morts vérifiés (knip + grep)                          | 21                                                            |                |
-| Duplication (jscpd)                                           | 0,21 % des lignes                                             |                |
-| `any` · `as unknown as` · `@ts-ignore` · `!` injustifiés      | 1 (justifié) · 7 · 0 · 0                                      |                |
-| Clés i18n FR / EN                                             | 688 / 688, 0 manquante                                        |                |
-| Fichiers de référence `.slab` · tests de migration            | 14/14 (v1 → v14) · 13/13                                      |                |
-| Branches distantes fusionnées / total                         | 75 / 76                                                       |                |
-| Issues ouvertes (dont obsolètes)                              | 6 (5)                                                         |                |
+| Mesure                                                        | Avant (v2.6.1, `87ac3fe`)                                     | Après (v2.6.2)                                              |
+| ------------------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
+| `npm run lint` (ESLint + Prettier)                            | ✅ local (34 s) — ❌ sur `main` distant `b049919` (D-01)      | ✅ 0 erreur (règles typées ajoutées, Q-01)                  |
+| `npm run typecheck` (4 projets)                               | ✅ 0 erreur (10 s)                                            | ✅ 0 erreur                                                 |
+| `npm test` (Vitest)                                           | ✅ 803 réussis, 3 ignorés (outils), 85 fichiers (≈ 33 s)      | ✅ **883** réussis, 3 ignorés, 89 fichiers (≈ 34 s)         |
+| Stabilité Vitest (5 passages)                                 | 5 × 803/803, **0 test instable**                              | CI verte sur les 24 PR, aucun test instable observé         |
+| `npm run test:e2e` (Playwright)                               | ✅ 82/82, 0 instable, 255 s                                   | ✅ **85/85**, 0 instable, 186 s                             |
+| `npm run build`                                               | ✅ 23 s ; renderer **3,2 Mo** en un seul fichier, non minifié | ✅ 18 s ; renderer **1,87 Mo** minifié (P-02)               |
+| Couverture moteur — lignes / branches / fonctions             | **91,9 %** / 75,4 % / 92,7 % (instructions 88,4 %)            | **92,0 %** / 75,6 % / 92,8 % (instructions 88,5 %)          |
+| Couverture — dossiers les plus faibles (lignes)               | shell 87,3 · dns 88,5 · core 88,9 · adds 89,2 · rras 89,6     | non remesuré                                                |
+| Couverture — fichiers < 70 %                                  | `adds/site-cmdlets.ts` 57 % · `shell/ps/values.ts` 65 %       | non remesuré (#166)                                         |
+| Couverture hors moteur (main, preload, shared, renderer)      | non mesurée (E2E uniquement)                                  | non mesurée (E2E uniquement)                                |
+| `npm audit`                                                   | 8 modérées, toutes dans la chaîne electron-builder (build)    | 8 modérées, inchangé (chaîne electron-builder, #171)        |
+| `npm outdated` (correctifs dans la plage)                     | 9 : electron 44.7.0, zod 4.6.7, vitest 5.0.4, vite 7.3.7…     | 8 (mises à jour laissées hors stabilisation, #171)          |
+| Installeur Windows (NSIS, release v2.6.1)                     | 103,8 Mo (99,0 Mio), non signé                                | mesuré à la release v2.6.2                                  |
+| AppImage (release v2.6.1)                                     | 123,9 Mo (118,2 Mio)                                          | mesuré à la release v2.6.2                                  |
+| Démarrage (lancement → canvas affiché, 3 essais)              | 849 / 952 / 995 ms                                            | **646 / 638 / 694 ms**                                      |
+| Mémoire au repos (somme des processus, 5 s après)             | 513 Mo (navigateur 161, GPU 140, utilitaire 74, page 138)     | 570 Mo (navigateur 177, GPU 154, utilitaire 87, page 153)   |
+| Mémoire, topologie de 50 nœuds ouverte                        | 537 Mo (page 156) ; ouverture 151 ms                          | 593 Mo (page 169) ; ouverture **105 ms**                    |
+| Perf E2E 100 nœuds (ouverture · glisser · p95)                | 386 ms · 50 ms/mvt · 33,3 ms ; 0 rendu parasite               | ✅ seuils E2E respectés (`perf.spec.ts`)                    |
+| `canvasStatus` après une modification réseau, 100/310/610 éq. | **24 / 172 / 793 ms** (≈ n²)                                  | **1,8 ms** à 100 éq. (17,6 ms avant, `docs/performance.md`) |
+| Cycles d'import (madge) — tous / à l'exécution                | 35 / 17 (11 dans `ios/`, 6 `sim/forward` ↔ rôles)             | non traité (A-05, #165)                                     |
+| Fichiers > 400 lignes · fonctions > 80 lignes                 | 42 (dont 3 de données) · 108                                  | non traité (#165)                                           |
+| Exports morts vérifiés (knip + grep)                          | 21                                                            | non traité (#165)                                           |
+| Duplication (jscpd)                                           | 0,21 % des lignes                                             | inchangé                                                    |
+| `any` · `as unknown as` · `@ts-ignore` · `!` injustifiés      | 1 (justifié) · 7 · 0 · 0                                      | inchangé                                                    |
+| Clés i18n FR / EN                                             | 688 / 688, 0 manquante                                        | FR / EN cohérentes (test i18n vert)                         |
+| Fichiers de référence `.slab` · tests de migration            | 14/14 (v1 → v14) · 13/13                                      | 14/14 · 13/13 (format inchangé)                             |
+| Branches distantes fusionnées / total                         | 75 / 76                                                       | branches des PR fusionnées à supprimer (Gary)               |
+| Issues ouvertes (dont obsolètes)                              | 6 (5)                                                         | issues `audit-v2.6.2` restantes : voir §7                   |
 
 ## 3. Constats
 
@@ -235,4 +235,17 @@ que de 1 s par évènement journalisé (`core/eventlog.ts:13,44`) ; les échéan
 
 ## 7. Constats non traités
 
-À compléter en fin de version (constat, raison, issue ouverte).
+Les constats ci-dessous restent ouverts dans leur issue (label `audit-v2.6.2`).
+
+| Constat(s)                                                                                                    | Raison                                                                      | Issue     |
+| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | --------- |
+| S-03 signature du code                                                                                        | décision et certificat à la charge de Gary ; risque accepté documenté       | #149, #38 |
+| D-02 milestones à renommer ou supprimer                                                                       | action manuelle de Gary sur GitHub                                          | #163      |
+| Lab 12 : critère `restored` déjà vrai au départ                                                               | correction du contenu pédagogique à valider par Gary                        | #185      |
+| 🟡 architecture (A-02 à A-10 : tâches de fond hors `dispatch`, horloge, cycles, gros fichiers, exports morts) | refactorisations liées à la v2.7 (§5), trop risquées en stabilisation       | #165      |
+| 🟡 TypeScript et tests (tests de caractérisation du temps, fichiers < 70 %)                                   | à faire avant la v2.7 avec la nouvelle horloge                              | #166      |
+| 🟡 sécurité S-05 à S-08 (hors S-09, S-10 corrigés)                                                            | changement de comportement (mises à jour, bibliothèque) ou décision de Gary | #167      |
+| 🟡 fidélité F-02, F-06, F-07                                                                                  | nouvelles commandes = fonctionnalités (§6)                                  | #168      |
+| 🟡 performances (hors P-01, P-02)                                                                             | gains marginaux, mesurés sans urgence                                       | #169      |
+| 🟡 interface U-07, U-08                                                                                       | refonte visuelle, hors stabilisation                                        | #170      |
+| 🟡 dépendances D-09, M-01 (`npm audit`, `npm outdated`), licence et statut de la bibliothèque                 | montée de versions à valider séparément ; décisions de Gary                 | #171      |
