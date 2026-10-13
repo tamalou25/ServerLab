@@ -7,6 +7,7 @@ import {
   connect,
   createShellSession,
   disconnect,
+  evaluateCheck,
   executeLine,
   ping,
   runBackgroundTasks,
@@ -201,6 +202,34 @@ describe('port-security', () => {
     expect(out).toContain('Violation Mode             : Restrict')
     expect(out).toContain('Security Violation Count   : 1')
     expect(c.run('show interfaces fa0/1')[0]).not.toContain('err-disabled')
+  })
+
+  it('critère de lab iosPortSecurity : port sécurisé, violation constatée ou non (audit T-02)', () => {
+    const { lab, c, pc2, sw } = switchLab()
+    const name = lab.state.devices[sw]!.name
+    const check = (violated?: boolean, iface = 'Fa0/1') =>
+      evaluateCheck(lab.state, {
+        type: 'iosPortSecurity',
+        device: name,
+        interface: iface,
+        ...(violated === undefined ? {} : { violated })
+      })
+    // Port-security absente : le critère échoue dans les deux sens
+    expect(check(true)).toBe(false)
+    expect(check(false)).toBe(false)
+
+    configure(c, 'switchport port-security mac-address sticky')
+    expect(check(false)).toBe(true)
+    expect(check(true)).toBe(false)
+    // Port voisin sans port-security, interface inconnue
+    expect(check(false, 'Fa0/2')).toBe(false)
+    expect(check(false, 'Fa0/99')).toBe(false)
+
+    swap(lab, sw, pc2)
+    expect(check(true)).toBe(true)
+    // violated vaut true par défaut
+    expect(check()).toBe(true)
+    expect(check(false)).toBe(false)
   })
 
   it('maximum 2 : deux adresses acceptées', () => {
