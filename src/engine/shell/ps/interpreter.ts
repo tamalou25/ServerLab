@@ -455,12 +455,37 @@ function commandNotFound(name: string, span: { start: number; end: number }): Ps
   return err
 }
 
+/**
+ * Valeur liée depuis le pipeline : un objet AD (ADUser, ADGroup…) se désigne par son
+ * nom unique, comme le fait l'identité d'un objet Active Directory reçu par valeur.
+ */
+function pipelineIdentity(item: PsValue): PsValue {
+  if (isPsObject(item)) {
+    const dn = item.props['DistinguishedName']
+    if (dn !== undefined && dn !== null) return dn
+  }
+  return item
+}
+
 function runCommand(ctx: CmdContext, el: Extract<Element, { kind: 'command' }>, input: PsValue[]): PsValue[] {
   const def = findCmdlet(ctx.catalog, el.name)
   if (def && (def.available?.(ctx) ?? true)) {
     ctx.commandName = def.name
     const args = bind(ctx, def, el, input.length > 0)
     ctx.skipConfirm = args['Confirm'] === false || args['Force'] === true
+    // Liaison ByValue (« Value from pipeline: True ») d'un paramètre typé non lié :
+    // la cmdlet s'exécute une fois par objet reçu, le paramètre valant cet objet.
+    // Les paramètres de type 'any' reçoivent toujours l'entrée via `input`.
+    const byValue = def.params.find((p) => p.pipeline && p.type !== 'any' && !(p.name in args))
+    if (byValue && input.length > 0) {
+      const out: PsValue[] = []
+      for (const item of input) {
+        const bound = { ...args, [byValue.name]: convert(ctx, byValue, pipelineIdentity(item), el) }
+        const result = def.run(ctx, bound, [])
+        if (result) out.push(...flatten(result))
+      }
+      return out
+    }
     const result = def.run(ctx, args, input)
     return result ? flatten(result) : []
   }

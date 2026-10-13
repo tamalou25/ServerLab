@@ -137,6 +137,31 @@ describe('AD DS : objets', () => {
     )
   })
 
+  it('Get-ADUser -Properties MemberOf : appartenance aux groupes, insensible à la casse (non-régression #70)', () => {
+    // Source : https://learn.microsoft.com/en-us/powershell/module/activedirectory/get-aduser (-Properties : ajoutées au jeu par défaut)
+    const { s: base, ids } = forest()
+    let r = ps(base, ids.SRV1!, 'New-ADOrganizationalUnit -Name Compta -Path "DC=lab,DC=local"')
+    r = ps(
+      r.state,
+      ids.SRV1!,
+      'New-ADUser -Name "Jean Dupont" -SamAccountName jdupont -Path "OU=Compta,DC=lab,DC=local" -AccountPassword (ConvertTo-SecureString "Azerty123!" -AsPlainText -Force) -Enabled $true'
+    )
+    r = ps(
+      r.state,
+      ids.SRV1!,
+      'New-ADGroup -Name GG_Compta -GroupScope Global -Path "OU=Compta,DC=lab,DC=local"'
+    )
+    r = ps(r.state, ids.SRV1!, 'Add-ADGroupMember -Identity GG_Compta -Members jdupont')
+    expect(r.errors).toBe('')
+    for (const prop of ['MemberOf', 'memberof']) {
+      const out = ps(r.state, ids.SRV1!, `Get-ADUser jdupont -Properties ${prop}`)
+      expect(out.errors).toBe('')
+      expect(out.text).toMatch(/SamAccountName\s+: jdupont/)
+      expect(out.text).toContain('CN=GG_Compta,OU=Compta,DC=lab,DC=local')
+    }
+    expect(ps(r.state, ids.SRV1!, 'Get-ADUser jdupont').text).not.toContain('MemberOf')
+  })
+
   it('mot de passe non conforme : compte créé mais désactivé', () => {
     const { s, ids } = forest()
     const r = ps(
