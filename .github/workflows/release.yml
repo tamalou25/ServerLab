@@ -1,14 +1,17 @@
 # Publication d'une version : sur un tag vX.Y.Z, construit l'installeur Windows (NSIS) et l'AppImage
 # Linux puis les publie dans la release GitHub du tag, avec latest.yml et latest-linux.yml pour les
 # mises à jour automatiques. Seul le jeton GITHUB_TOKEN du workflow est utilisé (aucun secret ajouté).
+#
+# Chaîne d'approvisionnement (audit S-04) : les jobs qui installent les dépendances (npm ci, sans
+# scripts d'installation) n'ont qu'un jeton en lecture, non conservé par checkout ; les jobs qui
+# écrivent dans la release (draft, publish) n'installent ni n'exécutent aucune dépendance.
 name: Release
 
 on:
   push:
     tags: ['v*']
 
-permissions:
-  contents: write
+permissions: {}
 
 concurrency:
   group: release-${{ github.ref }}
@@ -20,12 +23,16 @@ defaults:
     shell: bash
 
 jobs:
-  draft:
-    name: Vérifications et brouillon de release
+  verify:
+    name: Vérifications
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v5
         with:
@@ -41,11 +48,19 @@ jobs:
           fi
 
       - name: Installation des dépendances
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Lint, types et tests du moteur
         run: npm run lint && npm run typecheck && npm test
 
+  draft:
+    name: Brouillon de release
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
       - name: Brouillon de release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -73,6 +88,8 @@ jobs:
     needs: draft
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -80,19 +97,24 @@ jobs:
           - os: windows-latest
             label: Windows (NSIS)
             target: --win nsis
+            artifact: windows
           - os: ubuntu-latest
             label: Linux (AppImage)
             target: --linux AppImage
+            artifact: linux
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
 
+      # Aucun script d'installation : rien ne s'exécute à l'installation des dépendances
       - name: Installation des dépendances
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       # La version de l'application (À propos, mises à jour) est celle du tag
       - name: Version alignée sur le tag
@@ -101,17 +123,38 @@ jobs:
       - name: Build electron-vite
         run: npm run build
 
-      - name: Empaquetage et envoi dans la release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder ${{ matrix.target }} --publish always
+      # Sans jeton : les fichiers (installeur, blockmap, latest*.yml) sont transmis au job publish
+      - name: Empaquetage
+        run: npx electron-builder ${{ matrix.target }} --publish never
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: ${{ matrix.artifact }}
+          if-no-files-found: error
+          path: |
+            dist/*.exe
+            dist/*.blockmap
+            dist/*.AppImage
+            dist/latest*.yml
 
   publish:
     name: Publication de la release
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
+    permissions:
+      contents: write
     steps:
+      - uses: actions/download-artifact@v5
+        with:
+          path: assets
+          merge-multiple: true
+
+      - name: Envoi des installeurs dans la release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" assets/* --repo "$GITHUB_REPOSITORY" --clobber
+
       - name: Brouillon → release publiée
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

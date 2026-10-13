@@ -36,8 +36,27 @@ describe('chaîne de mise à jour automatique', () => {
     // Un tag hors format (V2, v2) fait échouer le workflow au lieu de publier une release incomplète
     expect(release).toContain('^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$')
     expect(release).toContain('npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version')
-    expect(release).toContain('--publish always')
+    // Installeurs et latest*.yml construits sans jeton puis envoyés par le job publish
+    expect(release).toContain('--publish never')
+    expect(release).toContain('dist/latest*.yml')
+    expect(release).toContain('gh release upload "$GITHUB_REF_NAME" assets/*')
     expect(release).toMatch(/kind=--latest/)
+  })
+
+  it('release.yml : droits minimaux, aucun script npm avec un jeton en écriture (audit S-04)', () => {
+    expect(release).toMatch(/\npermissions: \{\}\n/)
+    expect(release).not.toMatch(/run: npm ci(?! --ignore-scripts)/)
+    // Chaque job déclare ses droits ; ceux qui écrivent n'installent aucune dépendance
+    const jobs = release
+      .slice(release.indexOf('\njobs:'))
+      .split(/\n {2}(?=[a-z]+:\n)/)
+      .slice(1)
+    expect(jobs.length).toBe(4)
+    for (const job of jobs) {
+      expect(job).toMatch(/permissions:\n\s+contents: (read|write)/)
+      if (job.includes('contents: write')) expect(job).not.toContain('npm ')
+      if (job.includes('actions/checkout')) expect(job).toContain('persist-credentials: false')
+    }
   })
 })
 
