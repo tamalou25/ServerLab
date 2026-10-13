@@ -87,3 +87,21 @@ Les durées dépendent de la machine (glisser mesuré de 22 à 46 ms par mouveme
 pilotage Playwright en représente l'essentiel) : elles servent de garde-fou. Le contrôle précis est
 le nombre de rendus : sans la réutilisation des objets nœuds du canvas, le test relève 3 075 rendus
 des autres nœuds et échoue.
+
+## Modification réseau (audit v2.6.2, P-01)
+
+Une modification du réseau (adresse IP, câble, alimentation) recalcule `canvasStatus`. Deux coûts
+quadratiques la dominaient : `computeConflicts` parcourait le domaine de diffusion de **chaque**
+carte adressée, et `linkOnInterface` parcourait tous les câbles pour chaque port.
+
+| Mesure (`npm run perf:measure`, 100 équipements)      | Avant    | Après    |
+| ----------------------------------------------------- | -------- | -------- |
+| Modification réseau : IP d'un poste (tâches + canvas) | 18,85 ms | 3,27 ms  |
+| — dont calcul du canvas                               | 17,56 ms | 1,83 ms  |
+| Ouverture (lecture + tâches de fond + canvas)         | 36,58 ms | 15,02 ms |
+
+- `src/engine/net/conflicts.ts` : seules les adresses portées par au moins deux cartes déclenchent
+  le parcours du domaine de diffusion (résultat identique).
+- `src/engine/topology/queries.ts` : `linkOnInterface` lit l'index `portIndex` sur un état figé ;
+  dans un brouillon immer, les câbles changent sous la même référence et le parcours direct reste
+  utilisé (test « à jour dans un brouillon immer »).

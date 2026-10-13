@@ -1,7 +1,9 @@
 /**
  * Requêtes en lecture seule sur la topologie.
  */
+import { isDraft } from 'immer'
 import type { Device, HostDevice, LabState, Link, LinkEnd, NetInterface } from '../model/schema'
+import { linkAt } from '../net/segment'
 
 type ReadState = Pick<LabState, 'devices' | 'links'>
 
@@ -19,6 +21,9 @@ export function isHostDevice(device: Device): device is HostDevice {
 
 /** Câble branché sur un port, s'il existe. */
 export function linkOnInterface(state: ReadState, deviceId: string, ifaceId: string): Link | undefined {
+  // État figé : index « équipement/port » mis en cache par version des câbles (audit P-01). Brouillon
+  // immer : les câbles peuvent changer sous la même référence, l'index en cache serait périmé
+  if (!isDraft(state.links)) return linkAt(state, { deviceId, ifaceId })
   return Object.values(state.links).find(
     (l) =>
       (l.a.deviceId === deviceId && l.a.ifaceId === ifaceId) ||

@@ -84,6 +84,32 @@ describe.runIf(import.meta.env.MODE === 'perf')('mesures — topologie de 100 é
     rows.push(['  dont tâches de fond', median(background)])
     rows.push(['  dont calcul du canvas (100 nœuds, câbles)', median(frames)])
 
+    // Modification réseau (adresse IP d'un poste statique) : le canvas est recalculé (audit P-01)
+    const host = ids['PC8'] ?? ''
+    const nicId = lab.devices[host]?.interfaces[0]?.id ?? ''
+    const edits: number[] = []
+    const editFrames: number[] = []
+    for (let i = 1; i <= 10; i++) {
+      const changed = dispatch(
+        lab,
+        command('net.setInterfaceIpv4', host, nicId, {
+          addressing: 'static',
+          address: `10.0.0.${100 + i}`,
+          mask: '22',
+          gateway: '10.0.0.254',
+          dnsServers: ['10.0.0.1']
+        })
+      )
+      if (!changed.ok) throw new Error(changed.error.message)
+      const bg = time(() => settle(changed.state))
+      const frame = time(() => canvasFrame(bg.value))
+      lab = bg.value
+      edits.push(bg.ms + frame.ms)
+      editFrames.push(frame.ms)
+    }
+    rows.push(['Modification réseau : IP d’un poste (tâches + canvas)', median(edits)])
+    rows.push(['  dont calcul du canvas', median(editFrames)])
+
     console.log(
       `\n${'Mesure'.padEnd(52)} médiane (ms)\n${rows.map(([k, v]) => `${k.padEnd(52)} ${v.toFixed(2)}`).join('\n')}\n`
     )
