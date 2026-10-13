@@ -39,6 +39,7 @@
   --color-accent-soft: var(--sl-accent-soft);
   --color-accent-text: var(--sl-accent-text);
   --color-on-accent: var(--sl-on-accent);
+  --color-on-danger: var(--sl-on-danger);
 
   /* États */
   --color-ok: var(--sl-ok);
@@ -83,12 +84,13 @@
   --sl-line-strong: #3a3f49;
   --sl-fg: #dfe3ea;
   --sl-fg-muted: #9ca4b0;
-  --sl-fg-subtle: #6c7480;
-  --sl-accent: #3d84f7;
-  --sl-accent-hover: #5a97f9;
+  --sl-fg-subtle: #8a919c;
+  --sl-accent: #2f6fdb;
+  --sl-accent-hover: #2a62c4;
   --sl-accent-soft: rgb(61 132 247 / 0.16);
   --sl-accent-text: #7fb0ff;
   --sl-on-accent: #ffffff;
+  --sl-on-danger: #14161a;
   --sl-ok: #3fb950;
   --sl-ok-soft: rgb(63 185 80 / 0.14);
   --sl-warn: #e3a52f;
@@ -124,12 +126,13 @@
   --sl-line-strong: #cbd0d8;
   --sl-fg: #1d2329;
   --sl-fg-muted: #57606b;
-  --sl-fg-subtle: #8b939e;
+  --sl-fg-subtle: #626a75;
   --sl-accent: #2563eb;
   --sl-accent-hover: #1d4fd0;
   --sl-accent-soft: rgb(37 99 235 / 0.1);
   --sl-accent-text: #1d4fd0;
   --sl-on-accent: #ffffff;
+  --sl-on-danger: #ffffff;
   --sl-ok: #1a7f37;
   --sl-ok-soft: rgb(26 127 55 / 0.1);
   --sl-warn: #9a6400;

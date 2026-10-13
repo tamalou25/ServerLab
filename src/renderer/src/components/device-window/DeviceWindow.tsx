@@ -123,7 +123,7 @@ export function DeviceWindow({ win }: { win: DeviceWindowState }) {
         </button>
         <button
           type="button"
-          className="rounded p-1 text-fg-muted hover:bg-danger hover:text-white"
+          className="rounded p-1 text-fg-muted hover:bg-danger hover:text-on-danger"
           onClick={() => closeWindow(win.deviceId)}
           title={t('win.fermer')}
           data-testid="close-device-window"

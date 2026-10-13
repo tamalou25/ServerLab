@@ -20,7 +20,7 @@ import { Button } from '../common/ui'
 import { t } from '../../lib/i18n'
 
 const SEVERITY_CLASS: Record<AuditSeverity, string> = {
-  critique: 'bg-danger text-on-accent',
+  critique: 'bg-danger text-on-danger',
   élevée: 'bg-danger-soft text-danger',
   moyenne: 'bg-warn-soft text-warn',
   faible: 'bg-info-soft text-info'

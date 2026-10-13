@@ -48,7 +48,7 @@ export function CanvasToolbar() {
               className={`flex h-7 w-7 items-center justify-center rounded transition-colors ${
                 tool === id
                   ? id === 'delete'
-                    ? 'bg-danger text-white'
+                    ? 'bg-danger text-on-danger'
                     : 'bg-accent text-on-accent'
                   : 'text-fg-muted hover:bg-surface-2 hover:text-fg'
               }`}
