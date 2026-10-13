@@ -56,7 +56,6 @@ npm run dist:dir  # application décompressée dans dist/ (test rapide, sans ins
 
 Sous Linux sans écran (CI, conteneur) : `xvfb-run -a npm run test:e2e`.
 
-
 Le workflow **Release** ([`.github/workflows/release.yml`](.github/workflows/release.yml)) :
 
 1. vérifie le dépôt (lint, types, tests du moteur) puis crée la release **en brouillon** ;
