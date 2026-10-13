@@ -139,6 +139,22 @@ ont été trouvées par recherche (TechNet / Learn, pages archivées).
 | F104 | `id compte@domaine` : uid / gid déterministes simulés                                                             | correspondance SID → uid de sssd (tranches calculées par hachage)              | `sssd-ad(5)` (ldap_id_mapping)                                                            |
 | F105 | `ip addr add` remplace l’adresse de la carte                                                                      | ajoute une adresse secondaire                                                  | `ip-address(8)`                                                                           |
 
+## Commandes réelles non simulées
+
+Une commande qui existe sur un vrai système mais que ServerLab ne reproduit pas affiche
+« commande réelle non simulée » au lieu de « commande introuvable », pour que l'élève ne croie pas
+s'être trompé de commande (`src/engine/shell/unsimulated.ts`, audit v2.6.2 F-01).
+
+| Shell        | Commandes                                                                                                                                                                                      |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| cmd          | `netstat`, `arp`, `route`, `systeminfo`, `tasklist`, `taskkill`, `sc`, `wmic`, `getmac`                                                                                                        |
+| PowerShell   | `Get-Service`, `Start-/Stop-/Restart-/Set-Service`, `Get-Process`, `Stop-Process`, `Get-NetTCPConnection`, `Get-NetNeighbor`, `Get-NetRoute`, `Get-HotFix`, `Get-WmiObject`, `Get-CimInstance` |
+| bash (Linux) | `ss`, `netstat`, `systemctl`, `service`, `journalctl`, `uname`, `nslookup`, `arp`, `route`, `ps`, `top`, `apt`, `apt-get`, `ufw`, `iptables`, `nmcli`, `traceroute`                            |
+
+Autres limites connues, non simulées : codes de sortie et variables (`$?`, `$LASTEXITCODE`,
+`%ERRORLEVEL%`, `%COMPUTERNAME%`, `echo $?`), filtres IOS `| include/begin/section` et
+`show mac address-table`.
+
 ## Équipements Cisco IOS (v2.5)
 
 Écarts connus avec le vrai IOS (IOS 15.x sur 1921 / 2811 / 2960, IOS-XE 17 sur 9200). Même règle : on

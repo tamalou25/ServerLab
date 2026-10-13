@@ -41,6 +41,11 @@ describe('Invite de commandes : commandes internes', () => {
     expect(help).toMatch(/^IPCONFIG\s+Affiche la configuration IP/m)
     expect(help).toMatch(/^POWERSHELL\s+Démarre PowerShell\./m)
     expect(cmd.run('foo').errors).toContain("'foo' n’est pas reconnu en tant que commande interne")
+    // Outil Windows réel non simulé (audit F-01)
+    expect(cmd.run('netstat -an').errors).toBe(
+      '« netstat » est une commande réelle qui n’est pas simulée dans ServerLab.'
+    )
+    expect(cmd.run('ARP.EXE -a').errors).toContain('« ARP.EXE » est une commande réelle')
     // cls efface l'écran ; exit au niveau le plus haut ferme la console
     const session = createShellSession(cmd.state, id(cmd.state, 'SRV1'), 'cmd')
     expect(executeLine(cmd.state, session, 'cls', []).clear).toBe(true)

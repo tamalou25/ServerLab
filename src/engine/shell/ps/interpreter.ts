@@ -11,6 +11,7 @@ import { evaluateExpression } from './expression'
 import { formatDefault } from './format'
 import { PsSyntaxError } from './lexer'
 import { parse, type Arg, type Element, type Expr, type Pipeline, type Statement } from './parser'
+import { isUnsimulated, unsimulatedMessage } from '../unsimulated'
 import { COMMON_PARAMS, type BoundArgs, type CmdletDef, type ParamDef } from './registry'
 import {
   psObject,
@@ -474,6 +475,8 @@ function runCommand(ctx: CmdContext, el: Extract<Element, { kind: 'command' }>, 
     tool.run(ctx, args)
     return []
   }
+  if (isUnsimulated('ps', el.name))
+    throw psError(unsimulatedMessage('ps', el.name), 'NotImplemented', 'CommandNotSimulated', el.name)
   throw commandNotFound(el.name, { start: el.start, end: el.start + el.name.length })
 }
 

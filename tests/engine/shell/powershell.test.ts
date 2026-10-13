@@ -15,6 +15,16 @@ function lab() {
 }
 
 describe('PowerShell : erreurs réalistes', () => {
+  it('applet de commande réelle non simulée : signalée comme telle (audit F-01)', () => {
+    const { s, ids } = lab()
+    const r = run(s, ids.SRV1!, 'Get-Service DNS')
+    expect(r.errors).toContain(
+      '« Get-Service » est une commande réelle qui n’est pas simulée dans ServerLab.'
+    )
+    expect(r.errors).toContain('CommandNotSimulated')
+    expect(r.errors).not.toContain("n'est pas reconnu")
+  })
+
   it('commande inconnue', () => {
     const { s, ids } = lab()
     const r = run(s, ids.SRV1!, 'Get-Truc')
