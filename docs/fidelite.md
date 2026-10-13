@@ -155,6 +155,19 @@ Autres limites connues, non simulées : codes de sortie et variables (`$?`, `$LA
 `%ERRORLEVEL%`, `%COMPUTERNAME%`, `echo $?`), filtres IOS `| include/begin/section` et
 `show mac address-table`.
 
+## v2.7 — Fidélité des consoles au caractère près
+
+Objectif : sorties identiques à Windows Server 2022 FR et IOS 15.x (1921, 2960). Chaque commande a
+une sortie de référence sourcée dans `docs/captures/<console>/<commande>.txt` (en-têtes
+`# Source:` et `# Commande:`), comparée ligne par ligne par un test « golden »
+(`tests/engine/golden/golden.ts`). Seules les valeurs dynamiques déclarées (`{date}`, `{guid}`,
+`{mac}`, `{sid}`) sont normalisées. Sans source : pas de code, ligne « à vérifier » ci-dessous.
+
+| ID  | Commande                                                                           | Statut     | Source / PR                                                                  |
+| --- | ---------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------- |
+| B4  | `whoami /groups` : colonnes Nom du groupe / Type / SID / Attributs                 | à vérifier | sortie exacte absente de Microsoft Learn ; capture WS2022 FR attendue (Gary) |
+| B5  | `ipconfig` : en-tête « Configuration IP de Windows », ligne IPv6 de liaison locale | à vérifier | sortie exacte absente de Microsoft Learn ; capture WS2022 FR attendue (Gary) |
+
 ## Équipements Cisco IOS (v2.5)
 
 Écarts connus avec le vrai IOS (IOS 15.x sur 1921 / 2811 / 2960, IOS-XE 17 sur 9200). Même règle : on
