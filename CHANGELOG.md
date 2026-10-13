@@ -6,6 +6,38 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+## [2.6.2] — 2026-10-13
+
+Version de stabilisation issue de l'audit complet du code (`docs/audit-v2.6.2.md`, label `audit-v2.6.2`).
+Aucune nouvelle fonctionnalité ; format `.slab` inchangé (14).
+
+### Sécurité
+
+- Navigation limitée à la page de l'application : un fichier glissé ne remplace plus l'interface (#147).
+- Fuses Electron : `RunAsNode` et `NODE_OPTIONS` désactivés, asar seul et vérifié, cookies chiffrés (#148).
+- `release.yml` à droits minimaux : aucun script npm exécuté avec un jeton en écriture (#150).
+- Risque accepté des mises à jour non signées documenté (#149) ; correctifs mineurs (#167).
+
+### Corrigé
+
+- Boucle de routage : TTL expiré au lieu d'un délai dépassé (#155).
+- Raccourcis du canvas inactifs derrière un dialogue modal (#159) ; dialogues accessibles : titre relié,
+  focus confiné, Échap (#160) ; contrastes AA des tokens (#161) ; accessibilité clavier et chaînes traduites (#170).
+- Commandes réelles non simulées signalées comme telles (#162) ; fidélité : TTL DNS, `ip addr show`,
+  `traceroute` IOS (#168).
+
+### Performances
+
+- `canvasStatus` linéaire après une modification réseau (793 ms → quelques ms à 610 équipements) (#157).
+- Bundle du renderer minifié : 3,2 Mo → 1,86 Mo (#158).
+
+### Tests et qualité
+
+- Tests : critère `iosPortSecurity` (#154), listes d'accès IOS (#156), critères des labs faux au départ (#153),
+  garde-fou cyber (#168).
+- Règles ESLint avec information de type (#152) ; usages réels entre rôles déclarés et vérifiés (#151).
+- Documentation : README, CHANGELOG, journal des milestones, CLAUDE.md (#145, #164, #171).
+
 ## [2.6.1] — 2026-10-08
 
 Milestone « v2.6.1 — Cybersécurité, volet attaque » de la roadmap. Format `.slab` 14 (les labs 2.6 s'ouvrent ;
@@ -257,7 +289,8 @@ Première release publique (installeur Windows NSIS et AppImage Linux).
 - Thèmes sombre et clair, interface compacte.
 - Mises à jour automatiques (electron-updater) et workflow de release sur tag.
 
-[Non publié]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.1...HEAD
+[Non publié]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.2...HEAD
+[2.6.2]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.1...v2.6.2
 [2.6.1]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.4.0...v2.5.0
