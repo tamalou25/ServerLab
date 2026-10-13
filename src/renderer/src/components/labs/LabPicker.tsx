@@ -2,7 +2,8 @@
  * Sélecteur de labs (Fichier > Ouvrir un lab…) : labs fournis (titre, difficulté, durée, résumé)
  * et bibliothèque communautaire.
  */
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useDialog } from '../../hooks/useDialog'
 import { FlaskConical, GraduationCap, Upload, X } from 'lucide-react'
 import { LABS } from '../../lib/labCatalog'
 import { importAndOpenLab, openLabEditor } from '../../lib/labEditor'
@@ -17,18 +18,16 @@ export function LabPicker() {
   const open = useLabsStore((s) => s.pickerOpen)
   const [tab, setTab] = useState<'builtin' | 'library'>('builtin')
   const close = () => useLabsStore.getState().setPickerOpen(false)
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close()
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open])
+  const { ref, titleId } = useDialog(open, close)
   if (!open) return null
   return (
     <div
-      className="fixed inset-0 z-[300] flex items-center justify-center bg-scrim"
+      ref={ref}
+      tabIndex={-1}
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-scrim outline-none"
       role="dialog"
       aria-modal="true"
+      aria-labelledby={titleId}
     >
       <div
         className="flex max-h-[85vh] w-[640px] flex-col rounded-md border border-line bg-overlay shadow-lg"
@@ -36,7 +35,9 @@ export function LabPicker() {
       >
         <div className="flex items-center gap-2 border-b border-line px-5 py-3">
           <GraduationCap size={18} className="text-accent" />
-          <h2 className="text-base font-semibold text-fg">{t('lab.ouvrirUnLab')}</h2>
+          <h2 id={titleId} className="text-base font-semibold text-fg">
+            {t('lab.ouvrirUnLab')}
+          </h2>
           <button
             type="button"
             onClick={close}

@@ -33,3 +33,34 @@ test('les raccourcis du canvas sont inactifs derrière un dialogue modal', async
     await close()
   }
 })
+
+/** Dialogues accessibles (audit U-02) : titre relié, focus confiné, Échap pour fermer. */
+test('dialogues : titre, focus confiné à la boîte, Échap', async () => {
+  const { app, close, page, consoleErrors } = await launchApp()
+  try {
+    const inDialog = () =>
+      page.evaluate(() => !!document.activeElement?.closest('[role="dialog"][aria-modal="true"]'))
+
+    await clickMenu(app, ['Fichier', 'Ouvrir un lab…'])
+    const picker = page.getByRole('dialog', { name: 'Ouvrir un lab' })
+    await expect(picker).toBeVisible()
+    expect(await inDialog()).toBe(true)
+    // Tab et Maj+Tab ne sortent jamais de la boîte
+    for (let i = 0; i < 40; i++) {
+      await page.keyboard.press(i % 2 ? 'Shift+Tab' : 'Tab')
+      expect(await inDialog()).toBe(true)
+    }
+    await page.keyboard.press('Escape')
+    await expect(picker).toHaveCount(0)
+
+    await clickMenu(app, ['Aide', 'Raccourcis clavier'])
+    const help = page.getByRole('dialog', { name: 'Raccourcis clavier' })
+    await expect(help).toBeVisible()
+    expect(await inDialog()).toBe(true)
+    await page.keyboard.press('Escape')
+    await expect(help).toHaveCount(0)
+    expect(consoleErrors).toEqual([])
+  } finally {
+    await close()
+  }
+})
