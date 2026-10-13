@@ -25,6 +25,8 @@ export function useKeyboardShortcuts(): void {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (isEditableTarget(e.target)) return
+      // Dialogue modal ouvert : aucun raccourci n'agit sur le lab derrière lui (Suppr, Ctrl+Z…)
+      if (document.querySelector('[aria-modal="true"]')) return
       // Écran d'accueil affiché : le canvas, masqué, ne reçoit aucun raccourci
       if (useUiStore.getState().home) return
       const ctrl = e.ctrlKey || e.metaKey
