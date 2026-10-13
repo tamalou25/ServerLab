@@ -58,6 +58,7 @@ export function RouterInterfaceForm({ device, iface }: { device: Device; iface: 
             className={inputClass}
             value={address}
             onChange={(e) => setAddress(e.target.value)}
+            aria-label={t('win.adresseIpv4')}
             data-testid="if-address"
           />
           <span className="text-xs text-fg-muted">{t('win.masqueDeSousReseau')}</span>
@@ -65,6 +66,7 @@ export function RouterInterfaceForm({ device, iface }: { device: Device; iface: 
             className={inputClass}
             value={mask}
             onChange={(e) => setMask(e.target.value)}
+            aria-label={t('win.masqueDeSousReseau')}
             data-testid="if-mask"
           />
           <span className="text-xs text-fg-muted">{t('win.adresseMac')}</span>
@@ -102,6 +104,7 @@ function HelperAddresses({ device, iface }: { device: Device; iface: NetInterfac
           placeholder={t('win.adresseDuServeurDhcp')}
           value={text}
           onChange={(e) => setText(e.target.value)}
+          aria-label={t('win.adresseDuServeurDhcp')}
           data-testid="if-helper"
         />
         <Button onClick={save} data-testid="if-helper-apply">

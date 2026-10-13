@@ -60,7 +60,12 @@ export function SubinterfacesPanel({ device }: { device: RouterDevice }) {
         </tbody>
       </table>
       <div className="grid max-w-xl grid-cols-[1fr_140px_auto] items-end gap-2">
-        <select className={inputClass} value={parent} onChange={(e) => setParent(e.target.value)}>
+        <select
+          className={inputClass}
+          value={parent}
+          aria-label={t('win.interface')}
+          onChange={(e) => setParent(e.target.value)}
+        >
           {physical.map((i) => (
             <option key={i.id} value={i.id}>
               {i.name}
@@ -73,6 +78,7 @@ export function SubinterfacesPanel({ device }: { device: RouterDevice }) {
           value={vlan}
           data-testid="subif-vlan"
           onChange={(e) => setVlan(e.target.value)}
+          aria-label={t('win.vlan10')}
         />
         <Button variant="primary" onClick={add} data-testid="subif-add">
           Créer

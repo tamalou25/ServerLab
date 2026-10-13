@@ -568,6 +568,8 @@ export const fr = {
   'win.portsDacces': 'Ports d’accès',
   'win.port': 'Port',
   'win.mode': 'Mode',
+  'win.allVlans': 'tous',
+  'win.apipaNoDhcp': 'APIPA — aucun serveur DHCP',
   'win.vlanAutorisesTrunk': 'VLAN autorisés (trunk)',
   'lab.fermerLeResultat': 'Fermer le résultat',
   'lab.examenEnCours': 'Examen en cours',

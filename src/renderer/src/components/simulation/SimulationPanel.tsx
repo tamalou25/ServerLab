@@ -103,6 +103,14 @@ export function SimulationPanel() {
               <tr
                 key={e.key}
                 onClick={() => sim().select(e.key)}
+                tabIndex={0}
+                aria-selected={e.key === selectedKey}
+                onKeyDown={(ev) => {
+                  if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault()
+                    sim().select(e.key)
+                  }
+                }}
                 className={`cursor-pointer border-t border-line ${e.key === selectedKey ? 'bg-accent-soft' : 'hover:bg-surface-2'}`}
               >
                 <td className="px-2 py-1 text-fg-subtle">{e.index}</td>
