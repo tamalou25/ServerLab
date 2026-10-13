@@ -165,8 +165,6 @@ une sortie de référence sourcée dans `docs/captures/<console>/<commande>.txt`
 
 | ID  | Commande                                                                           | Statut     | Source / PR                                                                  |
 | --- | ---------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------- |
-| ID  | Commande                                                                           | Statut     | Source / PR                                                                  |
-| --- | ---------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------- |
 | B4  | `whoami /groups` : colonnes Nom du groupe / Type / SID / Attributs                 | à vérifier | sortie exacte absente de Microsoft Learn ; capture WS2022 FR attendue (Gary) |
 | B5  | `ipconfig` : en-tête « Configuration IP de Windows », ligne IPv6 de liaison locale | à vérifier | sortie exacte absente de Microsoft Learn ; capture WS2022 FR attendue (Gary) |
 
