@@ -197,6 +197,10 @@ export function buildReferenceLab(): LabState {
     'access-list 10 permit 192.168.30.0 0.0.0.255',
     // v15 : entrée journalisée (mot-clé « log »)
     'access-list 110 deny ip any any log',
+    // v16 : logging synchronous sur la console
+    'line con 0',
+    'logging synchronous',
+    'exit',
     'interface Gi0/0',
     'no shutdown',
     'interface Gi0/0.30',

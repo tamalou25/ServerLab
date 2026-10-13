@@ -360,6 +360,23 @@ describe('migration 9 → 10 (cybersécurité défensive de la v2.6)', () => {
   })
 })
 
+describe('migration 15 → 16 (logging synchronous de la v2.7)', () => {
+  const lines = (lab: ReturnType<typeof open>['lab']) =>
+    Object.values(lab.devices)
+      .filter((d) => d.name === 'CR1')
+      .flatMap((d) => (d as { ios?: { lines: { loggingSync: boolean }[] } }).ios?.lines ?? [])
+
+  it('change seulement la version ; logging synchronous désactivé par défaut', () => {
+    const doc = JSON.parse(readFixture(15)) as Record<string, unknown>
+    expect(migrations[15]!(doc)).toEqual({ ...doc, schemaVersion: 16 })
+    expect(lines(open(15).lab).every((l) => !l.loggingSync)).toBe(true)
+  })
+
+  it('v16.slab : s’ouvre sans migration et garde logging synchronous', () => {
+    expect(lines(open(16).lab).some((l) => l.loggingSync)).toBe(true)
+  })
+})
+
 describe('migration 14 → 15 (journalisation des ACL IOS de la v2.7)', () => {
   const entries = (lab: ReturnType<typeof open>['lab']) =>
     Object.values(lab.devices)

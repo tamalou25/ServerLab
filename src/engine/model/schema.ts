@@ -638,6 +638,8 @@ export const IosLineSchema = z.object({
   password: z.string().nullable().default(null),
   /** none : pas d'authentification ; line : mot de passe de la ligne ; local : comptes locaux. */
   login: z.enum(['none', 'line', 'local']).default('none'),
+  /** logging synchronous : messages de la console resynchronisés avec la saisie (v16). */
+  loggingSync: z.boolean().default(false),
   /** Protocoles autorisés (transport input) ; null : valeur d'usine. */
   transport: z
     .array(z.enum(['ssh', 'telnet']))

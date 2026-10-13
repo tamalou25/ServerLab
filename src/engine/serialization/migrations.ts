@@ -5,7 +5,7 @@
  */
 import { DEFAULT_DC_POLICY_ID, DEFAULT_DOMAIN_POLICY_ID, defaultDomainGpos } from '../roles/gpo/defaults'
 
-export const CURRENT_SCHEMA_VERSION = 15
+export const CURRENT_SCHEMA_VERSION = 16
 
 type RawDocument = Record<string, unknown>
 
@@ -166,6 +166,14 @@ function addV27AclLog(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 15 }
 }
 
+/**
+ * Version 16 : `logging synchronous` sur les lignes IOS (champ `loggingSync`). La valeur par défaut
+ * du schéma (désactivé) suffit : seul le numéro de version change.
+ */
+function addV27LoggingSync(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 16 }
+}
+
 /** migrations[n] migre un document de la version n vers n + 1. */
 export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   1: addDefaultGpos,
@@ -181,7 +189,8 @@ export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   11: addV261Network,
   12: addV261Game,
   13: addV261Labs,
-  14: addV27AclLog
+  14: addV27AclLog,
+  15: addV27LoggingSync
 }
 
 export type MigrationResult = { ok: true; doc: RawDocument } | { ok: false; message: string }

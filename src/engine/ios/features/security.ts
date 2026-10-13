@@ -267,6 +267,7 @@ function updateLine(ctx: IosRunContext, change: (line: Draft<IosState['lines'][n
         last: ref.last,
         password: null,
         login: 'none',
+        loggingSync: false,
         transport: null
       }
       lines.push(line)
@@ -529,6 +530,16 @@ const commands: CliCommand[] = [
     no: { min: 1, run: (ctx) => updateLine(ctx, (l) => (l.password = null)) }
   },
   {
+    // Console et vty ; « no logging synchronous » rétablit la valeur d'usine
+    modes: ['config-line'],
+    syntax: [
+      kw('logging', 'Modify message logging facilities'),
+      kw('synchronous', 'Synchronized message output')
+    ],
+    run: (ctx) => updateLine(ctx, (l) => (l.loggingSync = true)),
+    no: { run: (ctx) => updateLine(ctx, (l) => (l.loggingSync = false)) }
+  },
+  {
     modes: ['config-line'],
     syntax: [kw('login', 'Enable password checking')],
     run: (ctx) => updateLine(ctx, (l) => (l.login = 'line')),
@@ -594,6 +605,8 @@ function lineBlocks(device: IosDevice): string[] {
     )
     if (line?.password)
       out.push(encrypt ? ` password 7 ${type7(line.password)}` : ` password ${line.password}`)
+    // Ordre relatif à password / login à vérifier (exemples Cisco sans mot de passe)
+    if (line?.loggingSync) out.push(' logging synchronous')
     const login = line ? line.login : ref.type === 'vty' ? 'line' : 'none'
     if (login === 'line') out.push(' login')
     if (login === 'local') out.push(' login local')
