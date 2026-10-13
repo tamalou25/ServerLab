@@ -303,3 +303,15 @@ describe('Poste Linux : format .slab 8', () => {
     ])
   })
 })
+
+describe('fidélité ip addr show <interface> (F-04)', () => {
+  it('filtre sur l’interface demandée, erreur iproute2 si inconnue', () => {
+    const sh = new Bash(withLinux())
+    const eth0 = sh.run('ip addr show eth0').text
+    expect(eth0).toContain('2: eth0:')
+    expect(eth0).not.toContain('1: lo:')
+    expect(sh.run('ip addr show dev eth0').text).toBe(eth0)
+    expect(sh.run('ip addr show lo').text).toContain('inet 127.0.0.1/8')
+    expect(sh.run('ip addr show xyz').errors).toBe('Device "xyz" does not exist.')
+  })
+})

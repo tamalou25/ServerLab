@@ -256,6 +256,14 @@ describe('ping, traceroute, show version', () => {
     ])
   })
 
+  it('traceroute sans aucun saut : lignes * jusqu’à 30 sauts (F-05)', () => {
+    const { r1 } = twoRouters()
+    const out = r1.run('traceroute 10.9.9.9')
+    expect(out).toContain('  1  *  *  *')
+    expect(out).toContain(' 30  *  *  *')
+    expect(out.filter((l) => /^ +\d+ {2}\* {2}\* {2}\*$/.test(l))).toHaveLength(30)
+  })
+
   it('show version selon le modèle', () => {
     const c = router('c2811')
     expect(c.run('show version')[0]).toContain('2800 Software (C2800NM-ADVIPSERVICESK9-M)')

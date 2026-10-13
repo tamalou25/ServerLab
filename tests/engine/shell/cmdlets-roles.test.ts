@@ -252,3 +252,18 @@ describe('cmdlets GPO', () => {
     expect(ps.run('Invoke-GPUpdate -Computer PC1 -Force').errors).toContain('n’est pas simulée')
   })
 })
+
+describe('fidélité Get-DnsServerResourceRecord (F-03)', () => {
+  it('affiche le TTL réel de l’enregistrement au format hh:mm:ss', () => {
+    const ps = new Console(buildReferenceLab(), 'SRV1')
+    const zone = dnsServerOf(server(ps.state))?.zones.find((z) => z.name === 'lab.local')
+    const rec = zone?.records.find((r) => r.name === 'intranet')
+    expect(rec).toBeDefined()
+    const ttl = rec!.ttl
+    const hms = [Math.floor(ttl / 3600), Math.floor((ttl % 3600) / 60), ttl % 60]
+      .map((n) => String(n).padStart(2, '0'))
+      .join(':')
+    const out = ps.run('Get-DnsServerResourceRecord -ZoneName lab.local -Name intranet -RRType CNAME').text
+    expect(out).toContain(hms)
+  })
+})
