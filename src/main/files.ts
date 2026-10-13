@@ -17,6 +17,7 @@ import {
 } from '../shared/ipc'
 import { parseRecentFiles } from '../shared/persisted'
 import { forgetRecent, rememberRecent } from '../shared/recent'
+import { writeAtomic } from './atomic'
 import { t } from './i18n'
 
 /** Filtre des dialogues (libellé dans la langue de l'interface). */
@@ -38,13 +39,6 @@ export function findSlabArg(argv: string[]): string | null {
     if (!arg.startsWith('-') && isSlabPath(arg) && existsSync(arg)) return resolve(arg)
   }
   return null
-}
-
-/** Écriture atomique : fichier temporaire puis renommage (évite un fichier tronqué en cas de crash). */
-async function writeAtomic(path: string, content: string): Promise<void> {
-  const tmp = join(dirname(path), `.${basename(path)}.${process.pid}.tmp`)
-  await fs.writeFile(tmp, content, 'utf8')
-  await fs.rename(tmp, path)
 }
 
 function errorMessage(e: unknown): string {
@@ -119,7 +113,7 @@ export class FileService {
   private async persistRecent(): Promise<void> {
     try {
       await fs.mkdir(dirname(this.recentPath), { recursive: true })
-      await fs.writeFile(this.recentPath, JSON.stringify(this.recent, null, 2), 'utf8')
+      await writeAtomic(this.recentPath, JSON.stringify(this.recent, null, 2))
     } catch {
       // Non bloquant : la liste des récents est un confort
     }
