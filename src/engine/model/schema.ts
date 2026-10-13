@@ -685,6 +685,8 @@ export const AclEntrySchema = z.object({
   dstWildcard: z.string().default('255.255.255.255'),
   /** Port de destination (eq) d'une entrée TCP/UDP. */
   dstPort: z.number().int().min(0).max(65535).nullable().default(null),
+  /** Journalisation des correspondances (mot-clé final « log » ou « log-input », v15). */
+  log: z.enum(['log', 'log-input']).nullable().default(null),
   /** Numéro de séquence (10, 20…). */
   seq: z.number().int().positive()
 })

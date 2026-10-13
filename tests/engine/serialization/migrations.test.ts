@@ -360,6 +360,26 @@ describe('migration 9 → 10 (cybersécurité défensive de la v2.6)', () => {
   })
 })
 
+describe('migration 14 → 15 (journalisation des ACL IOS de la v2.7)', () => {
+  const entries = (lab: ReturnType<typeof open>['lab']) =>
+    Object.values(lab.devices)
+      .filter((d) => d.name === 'CR1')
+      .flatMap((d) => (d as { ios?: { acls: { entries: { log: string | null }[] }[] } }).ios?.acls ?? [])
+      .flatMap((a) => a.entries)
+
+  it('change seulement la version ; les entrées existantes ne sont pas journalisées', () => {
+    const doc = JSON.parse(readFixture(14)) as Record<string, unknown>
+    expect(migrations[14]!(doc)).toEqual({ ...doc, schemaVersion: 15 })
+    const old = entries(open(14).lab)
+    expect(old.length).toBeGreaterThan(0)
+    expect(old.every((e) => e.log === null)).toBe(true)
+  })
+
+  it('v15.slab : s’ouvre sans migration et garde « log »', () => {
+    expect(entries(open(15).lab).some((e) => e.log === 'log')).toBe(true)
+  })
+})
+
 describe('migration 13 → 14 (labs de cybersécurité de la v2.6.1)', () => {
   it('change seulement la version ; scénarios, durcissement et camp de l’IA prennent leurs valeurs par défaut', () => {
     const doc = JSON.parse(readFixture(13)) as Record<string, unknown>
