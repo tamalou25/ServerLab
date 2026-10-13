@@ -88,8 +88,30 @@ interface EntryForm {
 
 const ANY: [string, string] = ['0.0.0.0', '255.255.255.255']
 
-/** Formes d'une entrée après l'action (permit / deny). */
+/**
+ * Mot-clé final de journalisation : `log` (standard et étendue), `log-input` (étendue seulement).
+ * Syntaxe : Security Configuration Guide: Access Control Lists, IOS 15M&T, « Creating an IP Access
+ * List and Applying It to an Interface » (`deny … [log]`, `deny protocol … [log | log-input]`).
+ */
+const LOG_OPTIONS = {
+  log: kw('log', 'Log matches against this entry'),
+  'log-input': kw('log-input', 'Log matches against this entry, including input interface')
+} as const
+
+/** Formes d'une entrée après l'action (permit / deny), avec ou sans journalisation finale. */
 function entryForms(type: 'standard' | 'extended'): EntryForm[] {
+  const logs = type === 'standard' ? (['log'] as const) : (['log', 'log-input'] as const)
+  return baseEntryForms(type).flatMap((form) => [
+    form,
+    ...logs.map((log): EntryForm => ({
+      syntax: [...form.syntax, LOG_OPTIONS[log]],
+      build: (a) => ({ ...form.build(a), log })
+    }))
+  ])
+}
+
+/** Formes d'une entrée sans journalisation. */
+function baseEntryForms(type: 'standard' | 'extended'): EntryForm[] {
   if (type === 'standard') {
     const standard = (syntax: SyntaxToken[], read: (a: CommandArgs) => [string, string]): EntryForm => ({
       syntax,
@@ -102,7 +124,8 @@ function entryForms(type: 'standard' | 'extended'): EntryForm[] {
           srcWildcard: w,
           dst: ANY[0],
           dstWildcard: ANY[1],
-          dstPort: null
+          dstPort: null,
+          log: null
         }
       }
     })
@@ -145,7 +168,8 @@ function entryForms(type: 'standard' | 'extended'): EntryForm[] {
                 srcWildcard: sw,
                 dst: d,
                 dstWildcard: dw,
-                dstPort: withPort ? Number(a.port) : null
+                dstPort: withPort ? Number(a.port) : null,
+                log: null
               }
             }
           })
@@ -214,6 +238,8 @@ function setAccessGroup(ctx: IosRunContext, direction: 'in' | 'out', acl: string
 
 /** Entrée telle que dans la running-config (standard : « host » omis). */
 function entryText(acl: IosAcl, e: IosAclEntry, forShow: boolean): string {
+  // Mot-clé de journalisation en fin d'entrée (« 70 permit ip host 10.3.3.3 any log »)
+  const log = e.log ? ` ${e.log}` : ''
   if (acl.type === 'standard') {
     const src =
       e.srcWildcard === '255.255.255.255'
@@ -223,10 +249,10 @@ function entryText(acl: IosAcl, e: IosAclEntry, forShow: boolean): string {
           : forShow
             ? `${e.src}, wildcard bits ${e.srcWildcard}`
             : `${e.src} ${e.srcWildcard}`
-    return `${e.action} ${src}`
+    return `${e.action} ${src}${log}`
   }
   const port = e.dstPort !== null ? ` eq ${portName(e.dstPort)}` : ''
-  return `${e.action} ${e.protocol} ${formatSpec(e.src, e.srcWildcard)} ${formatSpec(e.dst, e.dstWildcard)}${port}`
+  return `${e.action} ${e.protocol} ${formatSpec(e.src, e.srcWildcard)} ${formatSpec(e.dst, e.dstWildcard)}${port}${log}`
 }
 
 function showAccessLists(ctx: IosRunContext, only?: string): void {

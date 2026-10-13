@@ -1,0 +1,2725 @@
+{
+  "schemaVersion": 15,
+  "app": "ServerLab",
+  "appVersion": "2.6.2",
+  "savedAt": "2026-10-05T12:00:00.000Z",
+  "meta": {
+    "title": "",
+    "description": "",
+    "labId": ""
+  },
+  "lab": {
+    "devices": {
+      "d1": {
+        "id": "d1",
+        "name": "SRV1",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "powered": true,
+        "interfaces": [
+          {
+            "id": "if2",
+            "name": "Ethernet0",
+            "mac": "02-53-4C-00-00-02",
+            "enabled": true,
+            "l3": true,
+            "addressing": "static",
+            "address": "192.168.10.1",
+            "prefixLength": 24,
+            "gateway": "192.168.10.254",
+            "dnsMode": "static",
+            "dnsServers": [
+              "127.0.0.1"
+            ],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          }
+        ],
+        "hostedBy": null,
+        "kind": "server",
+        "host": {
+          "os": "windows",
+          "workgroup": "LAB",
+          "domain": "lab.local",
+          "features": [
+            "FS-FileServer",
+            "PowerShell",
+            "AD-Domain-Services",
+            "DHCP",
+            "DNS",
+            "GPMC",
+            "RSAT-AD-PowerShell",
+            "RSAT-AD-Tools",
+            "RSAT-ADDS",
+            "RSAT-DHCP",
+            "RSAT-DNS-Server"
+          ],
+          "pendingReboot": false,
+          "adminTargets": [],
+          "controlled": false,
+          "pendingName": null,
+          "pendingDomain": null,
+          "localAdminPassword": "P@ssw0rd",
+          "session": {
+            "user": "Administrateur",
+            "domain": "LAB",
+            "logonServer": "SRV1"
+          },
+          "bootedAt": 4000,
+          "policy": {
+            "computer": null,
+            "user": null,
+            "attempt": null
+          },
+          "drives": [],
+          "certificates": [],
+          "remoteDesktop": {
+            "enabled": false,
+            "users": []
+          },
+          "remoteSessions": [],
+          "firewall": {
+            "profiles": {
+              "Domain": {
+                "enabled": true,
+                "defaultInbound": "Block",
+                "defaultOutbound": "Allow"
+              },
+              "Private": {
+                "enabled": true,
+                "defaultInbound": "Block",
+                "defaultOutbound": "Allow"
+              },
+              "Public": {
+                "enabled": true,
+                "defaultInbound": "Block",
+                "defaultOutbound": "Allow"
+              }
+            },
+            "networkCategory": "Public",
+            "predefined": {},
+            "rules": []
+          },
+          "vpnConnections": [],
+          "smb1": false,
+          "eventLog": [
+            {
+              "log": "Application",
+              "level": "information",
+              "source": "Gestionnaire de serveur",
+              "eventId": 1610,
+              "message": "Installation réussie : Services AD DS, Serveur DHCP, Serveur DNS, Gestion des stratégies de groupe, Module Active Directory pour PowerShell, Outils AD DS et AD LDS, Outils AD DS, Outils du serveur DHCP, Outils du serveur DNS.",
+              "id": 34,
+              "time": 1000
+            },
+            {
+              "log": "Service d’annuaire",
+              "level": "information",
+              "source": "ActiveDirectory_DomainService",
+              "eventId": 1000,
+              "message": "Le démarrage des services de domaine Active Directory est terminé. Ce serveur est contrôleur du domaine lab.local (LAB).",
+              "id": 54,
+              "time": 2000
+            },
+            {
+              "log": "Système",
+              "level": "information",
+              "source": "User32",
+              "eventId": 1074,
+              "message": "Le processus a déclenché le redémarrage de l’ordinateur SRV1 pour le compte LAB\\Administrateur.",
+              "id": 55,
+              "time": 3000
+            },
+            {
+              "log": "Système",
+              "level": "information",
+              "source": "EventLog",
+              "eventId": 6006,
+              "message": "Le service Journal des événements a été arrêté.",
+              "id": 56,
+              "time": 4000
+            },
+            {
+              "log": "Système",
+              "level": "information",
+              "source": "EventLog",
+              "eventId": 6005,
+              "message": "Le service Journal des événements a été démarré.",
+              "id": 57,
+              "time": 5000
+            },
+            {
+              "log": "Sécurité",
+              "level": "information",
+              "source": "Security-Auditing",
+              "eventId": 4720,
+              "message": "Un compte d’utilisateur a été créé. Nouveau compte : LAB\\jdupont.",
+              "id": 60,
+              "time": 6000
+            },
+            {
+              "log": "Sécurité",
+              "level": "information",
+              "source": "Security-Auditing",
+              "eventId": 4728,
+              "message": "Un membre a été ajouté àun groupe global de sécurité. Membre : LAB\\jdupont. Groupe : LAB\\GG_Compta.",
+              "id": 62,
+              "time": 7000
+            },
+            {
+              "log": "Système",
+              "level": "information",
+              "source": "DhcpServer",
+              "eventId": 1044,
+              "message": "Le service Serveur DHCP de l’ordinateur local a déterminé qu’il est autorisé à démarrer dans le domaine lab.local. Il sert des clients.",
+              "id": 63,
+              "time": 8000
+            },
+            {
+              "log": "Sécurité",
+              "level": "information",
+              "source": "Security-Auditing",
+              "eventId": 4741,
+              "message": "Un compte d’ordinateur a été créé : LAB\\PC1$ (par LAB\\Administrateur).",
+              "id": 65,
+              "time": 9000
+            }
+          ],
+          "mounts": []
+        },
+        "roles": {
+          "dhcp": {
+            "authorized": true,
+            "configured": false,
+            "scopes": [
+              {
+                "scopeId": "192.168.10.0",
+                "name": "LAN",
+                "description": "",
+                "start": "192.168.10.100",
+                "end": "192.168.10.200",
+                "prefixLength": 24,
+                "state": "Active",
+                "leaseDurationSec": 691200,
+                "exclusions": [],
+                "reservations": [],
+                "leases": [
+                  {
+                    "ip": "192.168.10.100",
+                    "mac": "02-53-4C-00-00-15",
+                    "hostName": "PC1.lab.local",
+                    "expiresAt": 691212000,
+                    "state": "Active"
+                  }
+                ],
+                "options": {
+                  "router": [
+                    "192.168.10.254"
+                  ],
+                  "dnsServers": [
+                    "192.168.10.1"
+                  ],
+                  "dnsDomain": "lab.local"
+                }
+              }
+            ],
+            "serverOptions": {
+              "router": [],
+              "dnsServers": [],
+              "dnsDomain": null
+            }
+          },
+          "dns": {
+            "zones": [
+              {
+                "name": "lab.local",
+                "reverse": false,
+                "adIntegrated": true,
+                "dynamicUpdate": "Secure",
+                "records": [
+                  {
+                    "name": "@",
+                    "type": "SOA",
+                    "data": "srv1.lab.local. hostmaster.lab.local. 1 900 600 86400 3600",
+                    "ttl": 3600,
+                    "dynamic": false
+                  },
+                  {
+                    "name": "@",
+                    "type": "NS",
+                    "data": "srv1.lab.local.",
+                    "ttl": 3600,
+                    "dynamic": false
+                  },
+                  {
+                    "name": "@",
+                    "type": "A",
+                    "data": "192.168.10.1",
+                    "ttl": 600,
+                    "dynamic": true
+                  },
+                  {
+                    "name": "_ldap._tcp",
+                    "type": "SRV",
+                    "data": "0 100 389 srv1.lab.local.",
+                    "ttl": 600,
+                    "dynamic": true
+                  },
+                  {
+                    "name": "_kerberos._tcp",
+                    "type": "SRV",
+                    "data": "0 100 88 srv1.lab.local.",
+                    "ttl": 600,
+                    "dynamic": true
+                  },
+                  {
+                    "name": "_ldap._tcp.dc._msdcs",
+                    "type": "SRV",
+                    "data": "0 100 389 srv1.lab.local.",
+                    "ttl": 600,
+                    "dynamic": true
+                  },
+                  {
+                    "name": "_kerberos._tcp.dc._msdcs",
+                    "type": "SRV",
+                    "data": "0 100 88 srv1.lab.local.",
+                    "ttl": 600,
+                    "dynamic": true
+                  },
+                  {
+                    "name": "_gc._tcp",
+                    "type": "SRV",
+                    "data": "0 100 3268 srv1.lab.local.",
+                    "ttl": 600,
+                    "dynamic": true
+                  },
+                  {
+                    "name": "_ldap._tcp.Default-First-Site-Name._sites",
+                    "type": "SRV",
+                    "data": "0 100 389 srv1.lab.local.",
+                    "ttl": 600,
+                    "dynamic": true
+                  },
+                  {
+                    "name": "_kerberos._tcp.Default-First-Site-Name._sites",
+                    "type": "SRV",
+                    "data": "0 100 88 srv1.lab.local.",
+                    "ttl": 600,
+                    "dynamic": true
+                  },
+                  {
+                    "name": "_ldap._tcp.Default-First-Site-Name._sites.dc._msdcs",
+                    "type": "SRV",
+                    "data": "0 100 389 srv1.lab.local.",
+                    "ttl": 600,
+                    "dynamic": true
+                  },
+                  {
+                    "name": "_kerberos._tcp.Default-First-Site-Name._sites.dc._msdcs",
+                    "type": "SRV",
+                    "data": "0 100 88 srv1.lab.local.",
+                    "ttl": 600,
+                    "dynamic": true
+                  },
+                  {
+                    "name": "_gc._tcp.Default-First-Site-Name._sites",
+                    "type": "SRV",
+                    "data": "0 100 3268 srv1.lab.local.",
+                    "ttl": 600,
+                    "dynamic": true
+                  },
+                  {
+                    "name": "srv1",
+                    "type": "A",
+                    "data": "192.168.10.1",
+                    "ttl": 1200,
+                    "dynamic": true
+                  },
+                  {
+                    "name": "intranet",
+                    "type": "CNAME",
+                    "data": "srv1.lab.local.",
+                    "ttl": 3600,
+                    "dynamic": false
+                  },
+                  {
+                    "name": "pc1",
+                    "type": "A",
+                    "data": "192.168.10.100",
+                    "ttl": 1200,
+                    "dynamic": true
+                  }
+                ]
+              }
+            ],
+            "forwarders": [],
+            "useRootHints": true
+          }
+        },
+        "storage": {
+          "rootAcl": [
+            {
+              "principal": "S-1-5-32-544",
+              "type": "Allow",
+              "rights": "FullControl"
+            },
+            {
+              "principal": "S-1-5-18",
+              "type": "Allow",
+              "rights": "FullControl"
+            },
+            {
+              "principal": "S-1-5-32-545",
+              "type": "Allow",
+              "rights": "ReadAndExecute"
+            }
+          ],
+          "nodes": [
+            {
+              "id": "fs-perflogs",
+              "name": "PerfLogs",
+              "parentId": null,
+              "kind": "folder",
+              "size": 0,
+              "acl": [],
+              "inherits": true,
+              "owner": "S-1-5-32-544",
+              "modifiedAt": 0,
+              "system": true
+            },
+            {
+              "id": "fs-programfiles",
+              "name": "Program Files",
+              "parentId": null,
+              "kind": "folder",
+              "size": 0,
+              "acl": [],
+              "inherits": true,
+              "owner": "S-1-5-32-544",
+              "modifiedAt": 0,
+              "system": true
+            },
+            {
+              "id": "fs-users",
+              "name": "Users",
+              "parentId": null,
+              "kind": "folder",
+              "size": 0,
+              "acl": [],
+              "inherits": true,
+              "owner": "S-1-5-32-544",
+              "modifiedAt": 0,
+              "system": true
+            },
+            {
+              "id": "fs-users-admin",
+              "name": "Administrateur",
+              "parentId": "fs-users",
+              "kind": "folder",
+              "size": 0,
+              "acl": [],
+              "inherits": true,
+              "owner": "S-1-5-32-544",
+              "modifiedAt": 0,
+              "system": true
+            },
+            {
+              "id": "fs-users-public",
+              "name": "Public",
+              "parentId": "fs-users",
+              "kind": "folder",
+              "size": 0,
+              "acl": [],
+              "inherits": true,
+              "owner": "S-1-5-32-544",
+              "modifiedAt": 0,
+              "system": true
+            },
+            {
+              "id": "fs-windows",
+              "name": "Windows",
+              "parentId": null,
+              "kind": "folder",
+              "size": 0,
+              "acl": [],
+              "inherits": true,
+              "owner": "S-1-5-32-544",
+              "modifiedAt": 0,
+              "system": true
+            }
+          ],
+          "shares": []
+        }
+      },
+      "d3": {
+        "id": "d3",
+        "name": "SW1",
+        "position": {
+          "x": 200,
+          "y": 0
+        },
+        "powered": true,
+        "interfaces": [
+          {
+            "id": "if4",
+            "name": "Fa0/1",
+            "mac": "02-53-4C-00-00-04",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if5",
+            "name": "Fa0/2",
+            "mac": "02-53-4C-00-00-05",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if6",
+            "name": "Fa0/3",
+            "mac": "02-53-4C-00-00-06",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if7",
+            "name": "Fa0/4",
+            "mac": "02-53-4C-00-00-07",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null,
+            "switchport": {
+              "mode": "trunk",
+              "accessVlan": 1,
+              "nativeVlan": 1,
+              "allowedVlans": null,
+              "hoppedVlan": null
+            }
+          },
+          {
+            "id": "if8",
+            "name": "Fa0/5",
+            "mac": "02-53-4C-00-00-08",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null,
+            "switchport": {
+              "mode": "access",
+              "accessVlan": 20,
+              "nativeVlan": 1,
+              "allowedVlans": null,
+              "hoppedVlan": null
+            }
+          },
+          {
+            "id": "if9",
+            "name": "Fa0/6",
+            "mac": "02-53-4C-00-00-09",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if10",
+            "name": "Fa0/7",
+            "mac": "02-53-4C-00-00-0A",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if11",
+            "name": "Fa0/8",
+            "mac": "02-53-4C-00-00-0B",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if12",
+            "name": "Fa0/9",
+            "mac": "02-53-4C-00-00-0C",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if13",
+            "name": "Fa0/10",
+            "mac": "02-53-4C-00-00-0D",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if14",
+            "name": "Fa0/11",
+            "mac": "02-53-4C-00-00-0E",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if15",
+            "name": "Fa0/12",
+            "mac": "02-53-4C-00-00-0F",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if16",
+            "name": "Fa0/13",
+            "mac": "02-53-4C-00-00-10",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if17",
+            "name": "Fa0/14",
+            "mac": "02-53-4C-00-00-11",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if18",
+            "name": "Fa0/15",
+            "mac": "02-53-4C-00-00-12",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if19",
+            "name": "Fa0/16",
+            "mac": "02-53-4C-00-00-13",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          }
+        ],
+        "hostedBy": null,
+        "kind": "switch",
+        "vlans": [
+          {
+            "id": 1,
+            "name": "default"
+          },
+          {
+            "id": 20,
+            "name": "Compta"
+          }
+        ]
+      },
+      "d20": {
+        "id": "d20",
+        "name": "PC1",
+        "position": {
+          "x": 400,
+          "y": -80
+        },
+        "powered": true,
+        "interfaces": [
+          {
+            "id": "if21",
+            "name": "Ethernet0",
+            "mac": "02-53-4C-00-00-15",
+            "enabled": true,
+            "l3": true,
+            "addressing": "dhcp",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "dhcp",
+            "dnsServers": [],
+            "dhcpLease": {
+              "address": "192.168.10.100",
+              "prefixLength": 24,
+              "gateway": "192.168.10.254",
+              "dnsServers": [
+                "192.168.10.1"
+              ],
+              "dnsSuffix": "lab.local",
+              "serverId": "192.168.10.1",
+              "serverDeviceId": "d1",
+              "obtainedAt": 12000,
+              "expiresAt": 691212000
+            },
+            "dhcpReleased": false,
+            "bridge": null
+          }
+        ],
+        "hostedBy": null,
+        "kind": "client",
+        "host": {
+          "os": "windows",
+          "workgroup": "LAB",
+          "domain": "lab.local",
+          "features": [
+            "PowerShell"
+          ],
+          "pendingReboot": false,
+          "adminTargets": [],
+          "controlled": false,
+          "pendingName": null,
+          "pendingDomain": null,
+          "localAdminPassword": "P@ssw0rd",
+          "session": null,
+          "bootedAt": 11000,
+          "policy": {
+            "computer": null,
+            "user": null,
+            "attempt": null
+          },
+          "drives": [],
+          "certificates": [],
+          "remoteDesktop": {
+            "enabled": false,
+            "users": []
+          },
+          "remoteSessions": [],
+          "firewall": {
+            "profiles": {
+              "Domain": {
+                "enabled": true,
+                "defaultInbound": "Block",
+                "defaultOutbound": "Allow"
+              },
+              "Private": {
+                "enabled": true,
+                "defaultInbound": "Block",
+                "defaultOutbound": "Allow"
+              },
+              "Public": {
+                "enabled": true,
+                "defaultInbound": "Block",
+                "defaultOutbound": "Allow"
+              }
+            },
+            "networkCategory": "Public",
+            "predefined": {},
+            "rules": []
+          },
+          "vpnConnections": [],
+          "smb1": false,
+          "eventLog": [
+            {
+              "log": "Système",
+              "level": "information",
+              "source": "User32",
+              "eventId": 1074,
+              "message": "Le processus a déclenché le redémarrage de l’ordinateur PC1 pour le compte PC1\\Utilisateur.",
+              "id": 66,
+              "time": 10000
+            },
+            {
+              "log": "Système",
+              "level": "information",
+              "source": "EventLog",
+              "eventId": 6006,
+              "message": "Le service Journal des événements a été arrêté.",
+              "id": 67,
+              "time": 11000
+            },
+            {
+              "log": "Système",
+              "level": "information",
+              "source": "EventLog",
+              "eventId": 6005,
+              "message": "Le service Journal des événements a été démarré.",
+              "id": 68,
+              "time": 12000
+            }
+          ],
+          "mounts": []
+        }
+      },
+      "d22": {
+        "id": "d22",
+        "name": "PC2",
+        "position": {
+          "x": 400,
+          "y": 80
+        },
+        "powered": true,
+        "interfaces": [
+          {
+            "id": "if23",
+            "name": "Ethernet0",
+            "mac": "02-53-4C-00-00-17",
+            "enabled": true,
+            "l3": true,
+            "addressing": "static",
+            "address": "192.168.10.20",
+            "prefixLength": 24,
+            "gateway": "192.168.10.254",
+            "dnsMode": "static",
+            "dnsServers": [
+              "192.168.10.1"
+            ],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          }
+        ],
+        "hostedBy": null,
+        "kind": "client",
+        "host": {
+          "os": "windows",
+          "workgroup": "WORKGROUP",
+          "domain": null,
+          "features": [
+            "PowerShell"
+          ],
+          "pendingReboot": false,
+          "adminTargets": [],
+          "controlled": false,
+          "pendingName": null,
+          "pendingDomain": null,
+          "localAdminPassword": "P@ssw0rd",
+          "session": {
+            "user": "Utilisateur",
+            "domain": null
+          },
+          "bootedAt": 0,
+          "policy": {
+            "computer": null,
+            "user": null,
+            "attempt": null
+          },
+          "drives": [],
+          "certificates": [],
+          "remoteDesktop": {
+            "enabled": false,
+            "users": []
+          },
+          "remoteSessions": [],
+          "firewall": {
+            "profiles": {
+              "Domain": {
+                "enabled": true,
+                "defaultInbound": "Block",
+                "defaultOutbound": "Allow"
+              },
+              "Private": {
+                "enabled": true,
+                "defaultInbound": "Block",
+                "defaultOutbound": "Allow"
+              },
+              "Public": {
+                "enabled": true,
+                "defaultInbound": "Block",
+                "defaultOutbound": "Allow"
+              }
+            },
+            "networkCategory": "Public",
+            "predefined": {},
+            "rules": []
+          },
+          "vpnConnections": [],
+          "smb1": false,
+          "eventLog": [],
+          "mounts": []
+        }
+      },
+      "d24": {
+        "id": "d24",
+        "name": "R1",
+        "position": {
+          "x": 200,
+          "y": 200
+        },
+        "powered": true,
+        "interfaces": [
+          {
+            "id": "if25",
+            "name": "Gi0/0",
+            "mac": "02-53-4C-00-00-19",
+            "enabled": true,
+            "l3": true,
+            "addressing": "static",
+            "address": "192.168.10.254",
+            "prefixLength": 24,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if33",
+            "name": "Gi0/0.20",
+            "mac": "02-53-4C-00-00-19",
+            "enabled": true,
+            "l3": true,
+            "addressing": "static",
+            "address": "192.168.20.254",
+            "prefixLength": 24,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null,
+            "subinterface": {
+              "parent": "if25",
+              "vlan": 20
+            }
+          },
+          {
+            "id": "if26",
+            "name": "Gi0/1",
+            "mac": "02-53-4C-00-00-1A",
+            "enabled": true,
+            "l3": true,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if27",
+            "name": "Gi0/2",
+            "mac": "02-53-4C-00-00-1B",
+            "enabled": true,
+            "l3": true,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if28",
+            "name": "Gi0/3",
+            "mac": "02-53-4C-00-00-1C",
+            "enabled": true,
+            "l3": true,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          }
+        ],
+        "hostedBy": null,
+        "kind": "router",
+        "routes": []
+      },
+      "d69": {
+        "id": "d69",
+        "name": "CR1",
+        "position": {
+          "x": 0,
+          "y": 400
+        },
+        "powered": true,
+        "interfaces": [
+          {
+            "id": "if70",
+            "name": "Gi0/0",
+            "mac": "02-53-4C-00-00-46",
+            "enabled": true,
+            "l3": true,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if100",
+            "name": "Gi0/0.30",
+            "mac": "02-53-4C-00-00-46",
+            "enabled": true,
+            "l3": true,
+            "addressing": "static",
+            "address": "192.168.30.1",
+            "prefixLength": 24,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null,
+            "subinterface": {
+              "parent": "if70",
+              "vlan": 30
+            }
+          },
+          {
+            "id": "if71",
+            "name": "Gi0/1",
+            "mac": "02-53-4C-00-00-47",
+            "enabled": false,
+            "l3": true,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          }
+        ],
+        "hostedBy": null,
+        "kind": "router",
+        "routes": [],
+        "model": "c1921",
+        "ios": {
+          "enableSecret": "Cisco123",
+          "bannerMotd": null,
+          "domainLookup": true,
+          "ipRouting": false,
+          "ospf": [
+            {
+              "process": 1,
+              "routerId": null,
+              "networks": [
+                {
+                  "network": "192.168.30.0",
+                  "wildcard": "0.0.0.255",
+                  "area": 0
+                }
+              ],
+              "passive": [],
+              "passiveDefault": false,
+              "active": []
+            }
+          ],
+          "dhcpServer": {
+            "authorized": true,
+            "configured": true,
+            "scopes": [
+              {
+                "scopeId": "192.168.30.0",
+                "name": "CISCO",
+                "description": "",
+                "start": "192.168.30.1",
+                "end": "192.168.30.254",
+                "prefixLength": 24,
+                "state": "Active",
+                "leaseDurationSec": 86400,
+                "exclusions": [],
+                "reservations": [],
+                "leases": [],
+                "options": {
+                  "router": [
+                    "192.168.30.1"
+                  ],
+                  "dnsServers": [],
+                  "dnsDomain": null
+                }
+              }
+            ],
+            "serverOptions": {
+              "router": [],
+              "dnsServers": [],
+              "dnsDomain": null
+            }
+          },
+          "dhcpExcluded": [],
+          "acls": [
+            {
+              "name": "10",
+              "type": "standard",
+              "entries": [
+                {
+                  "action": "permit",
+                  "protocol": "ip",
+                  "src": "192.168.30.0",
+                  "srcWildcard": "0.0.0.255",
+                  "dst": "0.0.0.0",
+                  "dstWildcard": "255.255.255.255",
+                  "dstPort": null,
+                  "log": null,
+                  "seq": 10
+                }
+              ]
+            },
+            {
+              "name": "110",
+              "type": "extended",
+              "entries": [
+                {
+                  "action": "deny",
+                  "protocol": "ip",
+                  "src": "0.0.0.0",
+                  "srcWildcard": "255.255.255.255",
+                  "dst": "0.0.0.0",
+                  "dstWildcard": "255.255.255.255",
+                  "dstPort": null,
+                  "log": "log",
+                  "seq": 10
+                }
+              ]
+            }
+          ],
+          "natRules": [],
+          "interfaces": {
+            "Gi0/0.30": {
+              "description": null,
+              "nat": null,
+              "hsrp": [
+                {
+                  "group": 1,
+                  "ip": "192.168.30.254",
+                  "priority": 100,
+                  "preempt": false
+                }
+              ],
+              "aclIn": null,
+              "aclOut": null,
+              "portSecurity": null,
+              "errDisabled": false,
+              "dhcpSnoopingTrust": false,
+              "arpInspectionTrust": false,
+              "nonegotiate": false
+            }
+          },
+          "startup": {
+            "hostname": "CR1",
+            "config": {
+              "enableSecret": "Cisco123",
+              "bannerMotd": null,
+              "domainLookup": true,
+              "ipRouting": false,
+              "ospf": [
+                {
+                  "process": 1,
+                  "routerId": null,
+                  "networks": [
+                    {
+                      "network": "192.168.30.0",
+                      "wildcard": "0.0.0.255",
+                      "area": 0
+                    }
+                  ],
+                  "passive": [],
+                  "passiveDefault": false,
+                  "active": []
+                }
+              ],
+              "dhcpServer": {
+                "authorized": true,
+                "configured": true,
+                "scopes": [
+                  {
+                    "scopeId": "192.168.30.0",
+                    "name": "CISCO",
+                    "description": "",
+                    "start": "192.168.30.1",
+                    "end": "192.168.30.254",
+                    "prefixLength": 24,
+                    "state": "Active",
+                    "leaseDurationSec": 86400,
+                    "exclusions": [],
+                    "reservations": [],
+                    "leases": [],
+                    "options": {
+                      "router": [
+                        "192.168.30.1"
+                      ],
+                      "dnsServers": [],
+                      "dnsDomain": null
+                    }
+                  }
+                ],
+                "serverOptions": {
+                  "router": [],
+                  "dnsServers": [],
+                  "dnsDomain": null
+                }
+              },
+              "dhcpExcluded": [],
+              "acls": [
+                {
+                  "name": "10",
+                  "type": "standard",
+                  "entries": [
+                    {
+                      "action": "permit",
+                      "protocol": "ip",
+                      "src": "192.168.30.0",
+                      "srcWildcard": "0.0.0.255",
+                      "dst": "0.0.0.0",
+                      "dstWildcard": "255.255.255.255",
+                      "dstPort": null,
+                      "log": null,
+                      "seq": 10
+                    }
+                  ]
+                },
+                {
+                  "name": "110",
+                  "type": "extended",
+                  "entries": [
+                    {
+                      "action": "deny",
+                      "protocol": "ip",
+                      "src": "0.0.0.0",
+                      "srcWildcard": "255.255.255.255",
+                      "dst": "0.0.0.0",
+                      "dstWildcard": "255.255.255.255",
+                      "dstPort": null,
+                      "log": "log",
+                      "seq": 10
+                    }
+                  ]
+                }
+              ],
+              "natRules": [],
+              "interfaces": {
+                "Gi0/0.30": {
+                  "description": null,
+                  "nat": null,
+                  "hsrp": [
+                    {
+                      "group": 1,
+                      "ip": "192.168.30.254",
+                      "priority": 100,
+                      "preempt": false
+                    }
+                  ],
+                  "aclIn": null,
+                  "aclOut": null,
+                  "portSecurity": null,
+                  "errDisabled": false,
+                  "dhcpSnoopingTrust": false,
+                  "arpInspectionTrust": false,
+                  "nonegotiate": false
+                }
+              },
+              "domainName": null,
+              "rsaBits": null,
+              "sshVersion": null,
+              "users": [],
+              "lines": [],
+              "passwordEncryption": false,
+              "dhcpSnooping": false,
+              "dhcpSnoopingVlans": [],
+              "arpInspectionVlans": []
+            },
+            "interfaces": [
+              {
+                "name": "Gi0/0",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Gi0/0.30",
+                "enabled": true,
+                "address": "192.168.30.1",
+                "prefixLength": 24,
+                "subinterface": {
+                  "parent": "Gi0/0",
+                  "vlan": 30
+                }
+              },
+              {
+                "name": "Gi0/1",
+                "enabled": false,
+                "address": null,
+                "prefixLength": null
+              }
+            ],
+            "routes": []
+          },
+          "natTranslations": [],
+          "aclCounters": {},
+          "hsrpStates": {
+            "Gi0/0.30|1": "Active"
+          },
+          "domainName": null,
+          "rsaBits": null,
+          "sshVersion": null,
+          "users": [],
+          "lines": [],
+          "passwordEncryption": false,
+          "dhcpSnooping": false,
+          "dhcpSnoopingVlans": [],
+          "arpInspectionVlans": [],
+          "syslog": []
+        }
+      },
+      "d72": {
+        "id": "d72",
+        "name": "CSW1",
+        "position": {
+          "x": 200,
+          "y": 400
+        },
+        "powered": true,
+        "interfaces": [
+          {
+            "id": "if73",
+            "name": "Fa0/1",
+            "mac": "02-53-4C-00-00-49",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if74",
+            "name": "Fa0/2",
+            "mac": "02-53-4C-00-00-4A",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null,
+            "switchport": {
+              "mode": "access",
+              "accessVlan": 30,
+              "nativeVlan": 1,
+              "allowedVlans": null,
+              "hoppedVlan": null
+            }
+          },
+          {
+            "id": "if75",
+            "name": "Fa0/3",
+            "mac": "02-53-4C-00-00-4B",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if76",
+            "name": "Fa0/4",
+            "mac": "02-53-4C-00-00-4C",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if77",
+            "name": "Fa0/5",
+            "mac": "02-53-4C-00-00-4D",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if78",
+            "name": "Fa0/6",
+            "mac": "02-53-4C-00-00-4E",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if79",
+            "name": "Fa0/7",
+            "mac": "02-53-4C-00-00-4F",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if80",
+            "name": "Fa0/8",
+            "mac": "02-53-4C-00-00-50",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if81",
+            "name": "Fa0/9",
+            "mac": "02-53-4C-00-00-51",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if82",
+            "name": "Fa0/10",
+            "mac": "02-53-4C-00-00-52",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if83",
+            "name": "Fa0/11",
+            "mac": "02-53-4C-00-00-53",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if84",
+            "name": "Fa0/12",
+            "mac": "02-53-4C-00-00-54",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if85",
+            "name": "Fa0/13",
+            "mac": "02-53-4C-00-00-55",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if86",
+            "name": "Fa0/14",
+            "mac": "02-53-4C-00-00-56",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if87",
+            "name": "Fa0/15",
+            "mac": "02-53-4C-00-00-57",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if88",
+            "name": "Fa0/16",
+            "mac": "02-53-4C-00-00-58",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if89",
+            "name": "Fa0/17",
+            "mac": "02-53-4C-00-00-59",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if90",
+            "name": "Fa0/18",
+            "mac": "02-53-4C-00-00-5A",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if91",
+            "name": "Fa0/19",
+            "mac": "02-53-4C-00-00-5B",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if92",
+            "name": "Fa0/20",
+            "mac": "02-53-4C-00-00-5C",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if93",
+            "name": "Fa0/21",
+            "mac": "02-53-4C-00-00-5D",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if94",
+            "name": "Fa0/22",
+            "mac": "02-53-4C-00-00-5E",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if95",
+            "name": "Fa0/23",
+            "mac": "02-53-4C-00-00-5F",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if96",
+            "name": "Fa0/24",
+            "mac": "02-53-4C-00-00-60",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          },
+          {
+            "id": "if97",
+            "name": "Gi0/1",
+            "mac": "02-53-4C-00-00-61",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null,
+            "switchport": {
+              "mode": "trunk",
+              "accessVlan": 1,
+              "nativeVlan": 1,
+              "allowedVlans": null,
+              "hoppedVlan": null
+            }
+          },
+          {
+            "id": "if98",
+            "name": "Gi0/2",
+            "mac": "02-53-4C-00-00-62",
+            "enabled": true,
+            "l3": false,
+            "addressing": "static",
+            "address": null,
+            "prefixLength": null,
+            "gateway": null,
+            "dnsMode": "static",
+            "dnsServers": [],
+            "dhcpLease": null,
+            "dhcpReleased": false,
+            "bridge": null
+          }
+        ],
+        "hostedBy": null,
+        "kind": "switch",
+        "vlans": [
+          {
+            "id": 1,
+            "name": "default"
+          },
+          {
+            "id": 30,
+            "name": "CISCO"
+          }
+        ],
+        "model": "c2960",
+        "ios": {
+          "enableSecret": null,
+          "bannerMotd": null,
+          "domainLookup": true,
+          "ipRouting": false,
+          "ospf": [],
+          "dhcpServer": null,
+          "dhcpExcluded": [],
+          "acls": [],
+          "natRules": [],
+          "interfaces": {
+            "Fa0/2": {
+              "description": null,
+              "nat": null,
+              "hsrp": [],
+              "aclIn": null,
+              "aclOut": null,
+              "portSecurity": {
+                "enabled": true,
+                "maximum": 1,
+                "violation": "shutdown",
+                "sticky": false,
+                "staticMacs": [],
+                "stickyMacs": [],
+                "dynamicMacs": [],
+                "violations": 0,
+                "lastViolation": null
+              },
+              "errDisabled": false,
+              "dhcpSnoopingTrust": false,
+              "arpInspectionTrust": false,
+              "nonegotiate": false
+            },
+            "Gi0/1": {
+              "description": null,
+              "nat": null,
+              "hsrp": [],
+              "aclIn": null,
+              "aclOut": null,
+              "portSecurity": null,
+              "errDisabled": false,
+              "dhcpSnoopingTrust": true,
+              "arpInspectionTrust": true,
+              "nonegotiate": true
+            }
+          },
+          "startup": {
+            "hostname": "CSW1",
+            "config": {
+              "enableSecret": null,
+              "bannerMotd": null,
+              "domainLookup": true,
+              "ipRouting": false,
+              "ospf": [],
+              "dhcpServer": null,
+              "dhcpExcluded": [],
+              "acls": [],
+              "natRules": [],
+              "interfaces": {
+                "Fa0/2": {
+                  "description": null,
+                  "nat": null,
+                  "hsrp": [],
+                  "aclIn": null,
+                  "aclOut": null,
+                  "portSecurity": {
+                    "enabled": true,
+                    "maximum": 1,
+                    "violation": "shutdown",
+                    "sticky": false,
+                    "staticMacs": [],
+                    "stickyMacs": [],
+                    "dynamicMacs": [],
+                    "violations": 0,
+                    "lastViolation": null
+                  },
+                  "errDisabled": false,
+                  "dhcpSnoopingTrust": false,
+                  "arpInspectionTrust": false,
+                  "nonegotiate": false
+                },
+                "Gi0/1": {
+                  "description": null,
+                  "nat": null,
+                  "hsrp": [],
+                  "aclIn": null,
+                  "aclOut": null,
+                  "portSecurity": null,
+                  "errDisabled": false,
+                  "dhcpSnoopingTrust": true,
+                  "arpInspectionTrust": true,
+                  "nonegotiate": true
+                }
+              },
+              "domainName": null,
+              "rsaBits": null,
+              "sshVersion": null,
+              "users": [],
+              "lines": [],
+              "passwordEncryption": false,
+              "dhcpSnooping": true,
+              "dhcpSnoopingVlans": [
+                30
+              ],
+              "arpInspectionVlans": [
+                30
+              ]
+            },
+            "interfaces": [
+              {
+                "name": "Fa0/1",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/2",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null,
+                "switchport": {
+                  "mode": "access",
+                  "accessVlan": 30,
+                  "nativeVlan": 1,
+                  "allowedVlans": null,
+                  "hoppedVlan": null
+                }
+              },
+              {
+                "name": "Fa0/3",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/4",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/5",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/6",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/7",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/8",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/9",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/10",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/11",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/12",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/13",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/14",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/15",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/16",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/17",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/18",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/19",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/20",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/21",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/22",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/23",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Fa0/24",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              },
+              {
+                "name": "Gi0/1",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null,
+                "switchport": {
+                  "mode": "trunk",
+                  "accessVlan": 1,
+                  "nativeVlan": 1,
+                  "allowedVlans": null,
+                  "hoppedVlan": null
+                }
+              },
+              {
+                "name": "Gi0/2",
+                "enabled": true,
+                "address": null,
+                "prefixLength": null
+              }
+            ]
+          },
+          "natTranslations": [],
+          "aclCounters": {},
+          "hsrpStates": {},
+          "domainName": null,
+          "rsaBits": null,
+          "sshVersion": null,
+          "users": [],
+          "lines": [],
+          "passwordEncryption": false,
+          "dhcpSnooping": true,
+          "dhcpSnoopingVlans": [
+            30
+          ],
+          "arpInspectionVlans": [
+            30
+          ],
+          "syslog": []
+        }
+      }
+    },
+    "links": {
+      "l29": {
+        "id": "l29",
+        "a": {
+          "deviceId": "d1",
+          "ifaceId": "if2"
+        },
+        "b": {
+          "deviceId": "d3",
+          "ifaceId": "if4"
+        },
+        "virtual": false
+      },
+      "l30": {
+        "id": "l30",
+        "a": {
+          "deviceId": "d20",
+          "ifaceId": "if21"
+        },
+        "b": {
+          "deviceId": "d3",
+          "ifaceId": "if5"
+        },
+        "virtual": false
+      },
+      "l31": {
+        "id": "l31",
+        "a": {
+          "deviceId": "d22",
+          "ifaceId": "if23"
+        },
+        "b": {
+          "deviceId": "d3",
+          "ifaceId": "if6"
+        },
+        "virtual": false
+      },
+      "l32": {
+        "id": "l32",
+        "a": {
+          "deviceId": "d24",
+          "ifaceId": "if25"
+        },
+        "b": {
+          "deviceId": "d3",
+          "ifaceId": "if7"
+        },
+        "virtual": false
+      },
+      "l99": {
+        "id": "l99",
+        "a": {
+          "deviceId": "d69",
+          "ifaceId": "if70"
+        },
+        "b": {
+          "deviceId": "d72",
+          "ifaceId": "if97"
+        },
+        "virtual": false
+      }
+    },
+    "seq": 100,
+    "clock": 12000,
+    "domains": {
+      "lab.local": {
+        "name": "lab.local",
+        "netbios": "LAB",
+        "controllers": [
+          "d1"
+        ],
+        "containers": [
+          {
+            "id": "ad35",
+            "name": "Builtin",
+            "parentId": null,
+            "kind": "container",
+            "description": "Conteneur des groupes intégrés",
+            "protected": false,
+            "builtin": true,
+            "gpLinks": [],
+            "blockInheritance": false
+          },
+          {
+            "id": "ad36",
+            "name": "Computers",
+            "parentId": null,
+            "kind": "container",
+            "description": "Conteneur par défaut des comptes d’ordinateurs",
+            "protected": false,
+            "builtin": true,
+            "gpLinks": [],
+            "blockInheritance": false
+          },
+          {
+            "id": "ad38",
+            "name": "Domain Controllers",
+            "parentId": null,
+            "kind": "ou",
+            "description": "Unité d’organisation par défaut des contrôleurs de domaine",
+            "protected": true,
+            "builtin": true,
+            "gpLinks": [
+              {
+                "gpoId": "{6AC1786C-016F-11D2-945F-00C04FB984F9}",
+                "enabled": true,
+                "enforced": false
+              }
+            ],
+            "blockInheritance": false
+          },
+          {
+            "id": "ad37",
+            "name": "Users",
+            "parentId": null,
+            "kind": "container",
+            "description": "Conteneur par défaut des comptes d’utilisateurs",
+            "protected": false,
+            "builtin": true,
+            "gpLinks": [],
+            "blockInheritance": false
+          },
+          {
+            "id": "ad58",
+            "name": "Compta",
+            "parentId": null,
+            "kind": "ou",
+            "description": "",
+            "protected": true,
+            "builtin": false,
+            "gpLinks": [],
+            "blockInheritance": false
+          }
+        ],
+        "users": [
+          {
+            "id": "ad39",
+            "sam": "Administrateur",
+            "name": "Administrateur",
+            "givenName": "",
+            "surname": "",
+            "upn": "",
+            "parentId": "ad37",
+            "password": "P@ssw0rd",
+            "enabled": true,
+            "mustChangePassword": false,
+            "description": "Compte d’utilisateur d’administration du domaine",
+            "builtin": true,
+            "passwordNeverExpires": false,
+            "whenCreated": 1000,
+            "spns": [],
+            "passwordLastSet": 1000,
+            "compromised": false,
+            "lastLogon": null,
+            "badPwdCount": 0,
+            "lastBadPassword": null,
+            "lockoutTime": null
+          },
+          {
+            "id": "ad40",
+            "sam": "Invité",
+            "name": "Invité",
+            "givenName": "",
+            "surname": "",
+            "upn": "",
+            "parentId": "ad37",
+            "password": "",
+            "enabled": false,
+            "mustChangePassword": false,
+            "description": "Compte d’utilisateur invité",
+            "builtin": true,
+            "passwordNeverExpires": false,
+            "whenCreated": 1000,
+            "spns": [],
+            "passwordLastSet": 1000,
+            "compromised": false,
+            "lastLogon": null,
+            "badPwdCount": 0,
+            "lastBadPassword": null,
+            "lockoutTime": null
+          },
+          {
+            "id": "ad41",
+            "sam": "krbtgt",
+            "name": "krbtgt",
+            "givenName": "",
+            "surname": "",
+            "upn": "",
+            "parentId": "ad37",
+            "password": "",
+            "enabled": false,
+            "mustChangePassword": false,
+            "description": "Compte de service du centre de distribution de clés",
+            "builtin": true,
+            "passwordNeverExpires": false,
+            "whenCreated": 1000,
+            "spns": [],
+            "passwordLastSet": 1000,
+            "compromised": false,
+            "lastLogon": null,
+            "badPwdCount": 0,
+            "lastBadPassword": null,
+            "lockoutTime": null
+          },
+          {
+            "id": "ad59",
+            "sam": "jdupont",
+            "name": "Jean Dupont",
+            "givenName": "",
+            "surname": "",
+            "upn": "jdupont@lab.local",
+            "parentId": "ad58",
+            "password": "Azerty123!",
+            "enabled": true,
+            "mustChangePassword": false,
+            "description": "",
+            "builtin": false,
+            "passwordNeverExpires": false,
+            "whenCreated": 5000,
+            "lastLogon": null,
+            "badPwdCount": 0,
+            "lastBadPassword": null,
+            "lockoutTime": null,
+            "spns": [],
+            "passwordLastSet": 5000,
+            "compromised": false
+          }
+        ],
+        "groups": [
+          {
+            "id": "ad42",
+            "sam": "Admins du domaine",
+            "name": "Admins du domaine",
+            "parentId": "ad37",
+            "scope": "Global",
+            "category": "Security",
+            "members": [
+              "ad39"
+            ],
+            "description": "Administrateurs désignés du domaine",
+            "builtin": true
+          },
+          {
+            "id": "ad43",
+            "sam": "Utilisateurs du domaine",
+            "name": "Utilisateurs du domaine",
+            "parentId": "ad37",
+            "scope": "Global",
+            "category": "Security",
+            "members": [
+              "ad39",
+              "ad41",
+              "ad59"
+            ],
+            "description": "Tous les utilisateurs du domaine",
+            "builtin": true
+          },
+          {
+            "id": "ad44",
+            "sam": "Ordinateurs du domaine",
+            "name": "Ordinateurs du domaine",
+            "parentId": "ad37",
+            "scope": "Global",
+            "category": "Security",
+            "members": [
+              "ad64"
+            ],
+            "description": "Toutes les stations de travail et tous les serveurs joints au domaine",
+            "builtin": true
+          },
+          {
+            "id": "ad46",
+            "sam": "Contrôleurs de domaine",
+            "name": "Contrôleurs de domaine",
+            "parentId": "ad37",
+            "scope": "Global",
+            "category": "Security",
+            "members": [
+              "ad45"
+            ],
+            "description": "Tous les contrôleurs de domaine du domaine",
+            "builtin": true
+          },
+          {
+            "id": "ad47",
+            "sam": "Administrateurs de l’entreprise",
+            "name": "Administrateurs de l’entreprise",
+            "parentId": "ad37",
+            "scope": "Universal",
+            "category": "Security",
+            "members": [
+              "ad39"
+            ],
+            "description": "Administrateurs désignés de l’entreprise",
+            "builtin": true
+          },
+          {
+            "id": "ad48",
+            "sam": "Admins du schéma",
+            "name": "Admins du schéma",
+            "parentId": "ad37",
+            "scope": "Universal",
+            "category": "Security",
+            "members": [
+              "ad39"
+            ],
+            "description": "Administrateurs désignés du schéma",
+            "builtin": true
+          },
+          {
+            "id": "ad49",
+            "sam": "Propriétaires créateurs de la stratégie de groupe",
+            "name": "Propriétaires créateurs de la stratégie de groupe",
+            "parentId": "ad37",
+            "scope": "Global",
+            "category": "Security",
+            "members": [
+              "ad39"
+            ],
+            "description": "Les membres de ce groupe peuvent modifier la stratégie de groupe du domaine",
+            "builtin": true
+          },
+          {
+            "id": "ad50",
+            "sam": "Invités du domaine",
+            "name": "Invités du domaine",
+            "parentId": "ad37",
+            "scope": "Global",
+            "category": "Security",
+            "members": [
+              "ad40"
+            ],
+            "description": "Tous les invités du domaine",
+            "builtin": true
+          },
+          {
+            "id": "ad51",
+            "sam": "Administrateurs",
+            "name": "Administrateurs",
+            "parentId": "ad35",
+            "scope": "DomainLocal",
+            "category": "Security",
+            "members": [
+              "ad39",
+              "ad42",
+              "ad47"
+            ],
+            "description": "Les administrateurs ont un accès complet et non restreint à l’ordinateur/au domaine",
+            "builtin": true
+          },
+          {
+            "id": "ad52",
+            "sam": "Utilisateurs",
+            "name": "Utilisateurs",
+            "parentId": "ad35",
+            "scope": "DomainLocal",
+            "category": "Security",
+            "members": [
+              "ad43"
+            ],
+            "description": "Les utilisateurs ne peuvent pas effectuer de modifications accidentelles ou intentionnelles à l’échelle du système",
+            "builtin": true
+          },
+          {
+            "id": "ad53",
+            "sam": "Invités",
+            "name": "Invités",
+            "parentId": "ad35",
+            "scope": "DomainLocal",
+            "category": "Security",
+            "members": [
+              "ad40",
+              "ad50"
+            ],
+            "description": "Les invités ont un accès limité",
+            "builtin": true
+          },
+          {
+            "id": "ad61",
+            "sam": "GG_Compta",
+            "name": "GG_Compta",
+            "parentId": "ad58",
+            "scope": "Global",
+            "category": "Security",
+            "members": [
+              "ad59"
+            ],
+            "description": "",
+            "builtin": false
+          }
+        ],
+        "computers": [
+          {
+            "id": "ad45",
+            "name": "SRV1",
+            "parentId": "ad38",
+            "deviceId": "d1",
+            "enabled": true,
+            "dnsHostName": "srv1.lab.local"
+          },
+          {
+            "id": "ad64",
+            "name": "PC1",
+            "parentId": "ad36",
+            "deviceId": "d20",
+            "enabled": true,
+            "dnsHostName": "pc1.lab.local"
+          }
+        ],
+        "gpos": [
+          {
+            "id": "{31B2F340-016D-11D2-945F-00C04FB984F9}",
+            "name": "Default Domain Policy",
+            "comment": "",
+            "status": "AllSettingsEnabled",
+            "securityFilter": [
+              "S-1-5-11"
+            ],
+            "createdAt": 1000,
+            "modifiedAt": 1000,
+            "userVersion": 0,
+            "computerVersion": 3,
+            "computer": {
+              "minPasswordLength": 7,
+              "passwordComplexity": true,
+              "logonMessageTitle": null,
+              "logonMessageText": null,
+              "wuServer": {
+                "state": "NotConfigured",
+                "url": ""
+              },
+              "wuTargetGroup": {
+                "state": "NotConfigured",
+                "group": ""
+              },
+              "autoEnrollment": "NotConfigured",
+              "firewallDomain": "NotConfigured",
+              "firewallStandard": "NotConfigured",
+              "firewallRules": [],
+              "lockoutThreshold": null,
+              "lockoutDuration": null,
+              "lockoutReset": null,
+              "auditLogon": null,
+              "auditAccountManagement": null
+            },
+            "user": {
+              "wallpaper": {
+                "state": "NotConfigured",
+                "path": "",
+                "style": "Fill"
+              },
+              "noControlPanel": "NotConfigured",
+              "noRun": "NotConfigured",
+              "noCmd": "NotConfigured",
+              "driveMaps": []
+            }
+          },
+          {
+            "id": "{6AC1786C-016F-11D2-945F-00C04FB984F9}",
+            "name": "Default Domain Controllers Policy",
+            "comment": "",
+            "status": "AllSettingsEnabled",
+            "securityFilter": [
+              "S-1-5-11"
+            ],
+            "createdAt": 1000,
+            "modifiedAt": 1000,
+            "userVersion": 0,
+            "computerVersion": 1,
+            "computer": {
+              "minPasswordLength": null,
+              "passwordComplexity": null,
+              "logonMessageTitle": null,
+              "logonMessageText": null,
+              "wuServer": {
+                "state": "NotConfigured",
+                "url": ""
+              },
+              "wuTargetGroup": {
+                "state": "NotConfigured",
+                "group": ""
+              },
+              "autoEnrollment": "NotConfigured",
+              "firewallDomain": "NotConfigured",
+              "firewallStandard": "NotConfigured",
+              "firewallRules": [],
+              "lockoutThreshold": null,
+              "lockoutDuration": null,
+              "lockoutReset": null,
+              "auditLogon": null,
+              "auditAccountManagement": null
+            },
+            "user": {
+              "wallpaper": {
+                "state": "NotConfigured",
+                "path": "",
+                "style": "Fill"
+              },
+              "noControlPanel": "NotConfigured",
+              "noRun": "NotConfigured",
+              "noCmd": "NotConfigured",
+              "driveMaps": []
+            }
+          }
+        ],
+        "gpLinks": [
+          {
+            "gpoId": "{31B2F340-016D-11D2-945F-00C04FB984F9}",
+            "enabled": true,
+            "enforced": false
+          }
+        ],
+        "recycleBin": false,
+        "deletedObjects": [],
+        "sites": [
+          {
+            "name": "Default-First-Site-Name",
+            "description": ""
+          }
+        ],
+        "subnets": [],
+        "siteLinks": [
+          {
+            "name": "DEFAULTIPSITELINK",
+            "sites": [
+              "Default-First-Site-Name"
+            ],
+            "cost": 100,
+            "interval": 180
+          }
+        ],
+        "dcSites": {
+          "d1": "Default-First-Site-Name"
+        },
+        "fsmo": {},
+        "replication": {
+          "status": [],
+          "dnsBase": {},
+          "syncedAt": {}
+        }
+      }
+    },
+    "cyber": {
+      "targetAccount": null,
+      "attempts": 5,
+      "serviceMaxAgeDays": 90,
+      "arpSpoof": null,
+      "vlanHop": null,
+      "scenarios": null,
+      "hardening": {
+        "lockoutThreshold": 3,
+        "lockoutMinutes": 30
+      },
+      "game": {
+        "maxTurns": 8,
+        "timerSeconds": null,
+        "blueBudget": 3,
+        "aiSide": null
+      },
+      "intercepts": []
+    }
+  },
+  "ui": {
+    "viewport": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

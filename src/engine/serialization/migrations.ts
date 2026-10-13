@@ -5,7 +5,7 @@
  */
 import { DEFAULT_DC_POLICY_ID, DEFAULT_DOMAIN_POLICY_ID, defaultDomainGpos } from '../roles/gpo/defaults'
 
-export const CURRENT_SCHEMA_VERSION = 14
+export const CURRENT_SCHEMA_VERSION = 15
 
 type RawDocument = Record<string, unknown>
 
@@ -158,6 +158,14 @@ function addV261Labs(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 14 }
 }
 
+/**
+ * Version 15 : journalisation des entrées d'ACL IOS (`log`, `log-input`, champ `log` des entrées).
+ * La valeur par défaut du schéma (aucune journalisation) suffit : seul le numéro de version change.
+ */
+function addV27AclLog(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 15 }
+}
+
 /** migrations[n] migre un document de la version n vers n + 1. */
 export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   1: addDefaultGpos,
@@ -172,7 +180,8 @@ export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   10: addV261Scenarios,
   11: addV261Network,
   12: addV261Game,
-  13: addV261Labs
+  13: addV261Labs,
+  14: addV27AclLog
 }
 
 export type MigrationResult = { ok: true; doc: RawDocument } | { ok: false; message: string }

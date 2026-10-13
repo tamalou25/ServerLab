@@ -20,6 +20,7 @@ function entry(seq: number, action: 'permit' | 'deny', partial: Partial<IosAclEn
     dst: ANY[0],
     dstWildcard: ANY[1],
     dstPort: null,
+    log: null,
     seq,
     ...partial
   }
