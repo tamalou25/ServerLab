@@ -22,11 +22,17 @@ src/main/      process principal : fenêtre, menu natif, IPC, fichiers .slab, mi
 src/preload/   pont contextBridge → window.serverlab (API minimale)
 src/shared/    types partagés main/preload/renderer (contrat IPC)
 src/renderer/  application React (index.html + src/)
-src/engine/    moteur de simulation pur :
-               model/ (schémas zod) · net/ (IPv4, routage, ARP) · sim/ (traces de paquets)
-               roles/ (registre + un module par rôle : dhcp/, dns/, adds/ Active Directory,
-               gpo/ stratégies, files/ NTFS et SMB) · services/ (système de base)
-               commands/ (commandes nommées, dispatch, patches) · shell/ (PowerShell, cmd)
+src/engine/    moteur de simulation pur (15 dossiers) :
+               audit/ (audit de configuration) · commands/ (commandes nommées, dispatch, patches)
+               core/ (horloge, journal d'évènements, GUID, EngineResult) · cyber/ (scénarios de
+               cybersécurité, contre-mesures, détection ; scope `cyber`, attaques abstraites uniquement)
+               ios/ (équipements Cisco IOS : CLI, switchs, routeurs ; scope `ios`)
+               labs/ (chargement et critères des labs) · model/ (schémas zod) · net/ (IPv4, routage, ARP)
+               roles/ (registre + 14 modules : dns, dhcp, adds Active Directory, gpo, files NTFS et SMB,
+               wsus, iis, rds, hyperv, adcs, dfs, backup, nps, rras)
+               serialization/ (fichiers .slab, migrations) · services/ (système de base)
+               shell/ (PowerShell, cmd) · sim/ (traces de paquets) · topology/ (équipements et liens)
+               tutorial/ (didacticiel guidé)
 src/renderer/src/components/desktop/  Bureau simulé : DesktopShell (verrouillage, fenêtres, barre des
                tâches, menu Démarrer), apps.ts (registre des applications, vues des rôles incluses),
                roleViews.ts (apparence des vues de rôles), apps/ (Gestionnaire de serveur, assistants,
@@ -43,9 +49,13 @@ scripts/       scripts utilitaires (génération d'icône…)
 ```bash
 npm ci               # installation
 npm run dev          # lancement en développement (HMR)
-npm run lint         # ESLint
+npm run lint         # ESLint + Prettier
+npm run format       # Prettier (écrit les fichiers)
 npm run typecheck    # tsc sur main/preload, renderer, moteur, tests
 npm test             # Vitest (moteur)
+npm run test:coverage # Vitest avec couverture
+npm run perf:measure # mesures de performance du moteur
+npm run fixture:slab # écrit le fichier .slab de référence de la version de schéma
 npm run build        # build electron-vite → out/
 npm run test:e2e     # build + Playwright (sous Linux sans écran : xvfb-run -a npm run test:e2e)
 npm run dist         # installeur local via electron-builder → dist/
