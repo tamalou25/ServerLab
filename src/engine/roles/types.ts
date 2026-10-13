@@ -109,6 +109,12 @@ export interface RoleModule<C extends CommandDefs = CommandDefs> {
   feature: string
   /** Rôles dont celui-ci a besoin (identifiants), déclarés avant lui dans le registre. */
   dependencies: string[]
+  /**
+   * Autres rôles dont le code est appelé à l'exécution, sans être un prérequis d'installation
+   * (ex. RRAS authentifie par AD DS ou NPS quand ils sont présents). Vérifié par un test : tout
+   * import d'un autre rôle est déclaré dans `dependencies` ou ici.
+   */
+  uses?: string[]
   /** Rôles et fonctionnalités installables apportés par le module. */
   features: FeatureInfo[]
   /** Données stockées sur le serveur (absent si le rôle n'a pas d'état propre au serveur). */

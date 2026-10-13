@@ -20,6 +20,7 @@ export const addsRole = defineRole({
   feature: 'AD-Domain-Services',
   // Un contrôleur de domaine héberge la zone DNS du domaine
   dependencies: ['dns'],
+  uses: ['files', 'gpo'],
   features: [
     {
       name: 'AD-Domain-Services',

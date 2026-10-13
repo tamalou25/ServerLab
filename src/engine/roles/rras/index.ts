@@ -14,6 +14,7 @@ export const rrasRole = defineRole({
   displayName: 'Accès à distance',
   feature: 'RemoteAccess',
   dependencies: [],
+  uses: ['adds', 'dns', 'nps'],
   features: [
     {
       name: 'RemoteAccess',

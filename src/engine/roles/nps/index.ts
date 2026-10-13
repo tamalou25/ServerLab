@@ -13,6 +13,7 @@ export const npsRole = defineRole({
   displayName: 'NPS',
   feature: 'NPAS',
   dependencies: ['adds'],
+  uses: ['dns', 'files'],
   features: [
     {
       name: 'NPAS',
