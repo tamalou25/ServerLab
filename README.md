@@ -142,12 +142,12 @@ et se relance par **Aide > Tutoriel interactif**.
 
 ## Labs pédagogiques
 
-L'accueil et **Fichier > Ouvrir un lab…** (`Ctrl+L`) proposent vingt-huit labs prêts à l'emploi, du plus simple au
+L'accueil et **Fichier > Ouvrir un lab…** (`Ctrl+L`) proposent trente-cinq labs prêts à l'emploi, du plus simple au
 plus complet : adressage et routage, DHCP, DNS, Active Directory + GPO, partages et NTFS, puis un lab par rôle de la
 2.1 (WSUS, IIS, Bureau à distance, Hyper-V, AD CS, DFS, sauvegarde et Corbeille AD), par fonctionnalité réseau
 de la 2.2 (VLAN, relais DHCP, pare-feu, NAT et VPN, NPS/RADIUS, multi-sites AD) et trois labs de durcissement
 de la 2.3 (Active Directory, partages, pare-feu) et sept labs Cisco de la 2.5 (base, VLAN, OSPF, DHCP / NAT, HSRP, sécurité,
-sujet E6 complet à deux sites). Chaque lab
+sujet E6 complet à deux sites). Les labs 29 à 35 relèvent de la cybersécurité (durcissement, compromission et défense d'Active Directory et du réseau, attaque de niveau 2, exercice red/blue), avec des attaques simulées de façon abstraite. Chaque lab
 construit sa topologie de départ ; l'onglet **Lab** affiche l'énoncé et les objectifs, et
 **Vérifier** valide chaque critère (✅ / ❌) avec un indice qui oriente sans donner la solution.
 Le lab en cours est conservé dans le fichier `.slab` enregistré.
@@ -187,7 +187,7 @@ Pris en charge : VLAN et trunk 802.1Q, router-on-a-stick et SVI, routes statique
 DHCP et serveur DHCP IOS, NAT / PAT, HSRP, ACL standard et étendues, port-security, SSH, chiffrement des mots de
 passe, DHCP snooping, inspection ARP dynamique, `switchport nonegotiate`. Hors périmètre : STP, EtherChannel,
 EIGRP, BGP, IPv6, QoS, VTP. Les écarts connus avec le vrai IOS sont listés dans
-[`docs/fidelite.md`](docs/fidelite.md) (I1 à I41).
+[`docs/fidelite.md`](docs/fidelite.md) (I1 à I42).
 
 ## Langue
 
