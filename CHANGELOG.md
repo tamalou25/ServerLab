@@ -6,6 +6,23 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+Lot 0 de la v2.7 (fidélité des consoles).
+
+### Corrigé
+
+- B1 : `Get-WindowsFeature | Where Installed` filtre sur la propriété `Installed` (#199).
+- B2 : liaison par pipeline de `-Identity` sur les cmdlets Active Directory (#198).
+- B3 : `Get-ADUser -Properties MemberOf` renvoie la propriété demandée (#200).
+- B6 : expansion des variables `%VAR%` en invite de commandes (#197).
+- B7 : mot-clé `log` dans les ACL IOS (#201).
+- B8 : `logging synchronous` sur `line con` et `line vty` (#202).
+
+### Ajouté
+
+- Infrastructure de tests « golden » : sorties de référence comparées ligne par ligne (#196).
+- Lab 36 « Fidélité des consoles : scripts et équipements ».
+- Format `.slab` 15 (ACL avec `log`) et 16 (`logging synchronous`).
+
 ## [2.6.2] — 2026-10-13
 
 Version de stabilisation issue de l'audit complet du code (`docs/audit-v2.6.2.md`, label `audit-v2.6.2`).
