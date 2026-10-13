@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os'
 import { extname, join } from 'node:path'
 import { auditReportFileName, parseAuditReport, renderAuditReportHtml } from '../shared/auditReport'
 import type { FileResult } from '../shared/ipc'
+import { writeAtomic } from './atomic'
 import { t } from './i18n'
 
 /** Filtre du dialogue (libellé dans la langue de l'interface). */
@@ -44,7 +45,7 @@ export async function exportAuditPdf(win: BrowserWindow, report: unknown): Promi
   if (res.canceled || !res.filePath) return { ok: false, canceled: true }
   const path = extname(res.filePath).toLowerCase() === '.pdf' ? res.filePath : `${res.filePath}.pdf`
   try {
-    await fs.writeFile(path, await printHtml(renderAuditReportHtml(data)))
+    await writeAtomic(path, await printHtml(renderAuditReportHtml(data)))
     return { ok: true, value: path }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }

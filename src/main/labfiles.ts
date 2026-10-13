@@ -6,6 +6,7 @@ import { app, dialog, type BrowserWindow } from 'electron'
 import { promises as fs } from 'node:fs'
 import { extname, join } from 'node:path'
 import { MAX_LAB_BYTES, type FileResult } from '../shared/ipc'
+import { writeAtomic } from './atomic'
 import { t } from './i18n'
 
 /** Filtre des dialogues (libellé dans la langue de l'interface). */
@@ -46,7 +47,7 @@ export async function exportLabFile(
   if (res.canceled || !res.filePath) return { ok: false, canceled: true }
   const path = extname(res.filePath).toLowerCase() === '.json' ? res.filePath : `${res.filePath}.json`
   try {
-    await fs.writeFile(path, content, 'utf8')
+    await writeAtomic(path, content)
     return { ok: true, value: path }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
@@ -73,7 +74,7 @@ export async function exportExamResult(
   if (res.canceled || !res.filePath) return { ok: false, canceled: true }
   const path = extname(res.filePath).toLowerCase() === '.txt' ? res.filePath : `${res.filePath}.txt`
   try {
-    await fs.writeFile(path, content, 'utf8')
+    await writeAtomic(path, content)
     return { ok: true, value: path }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }

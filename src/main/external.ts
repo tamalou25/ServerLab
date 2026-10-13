@@ -10,7 +10,8 @@ import { bugReportUrl, isAllowedExternalUrl, osName } from '../shared/bugReport'
 /** Ouvre l'adresse si elle figure dans la liste blanche ; renvoie faux sinon. */
 export async function openAllowedExternal(url: string): Promise<boolean> {
   if (!isAllowedExternalUrl(url)) return false
-  await shell.openExternal(url)
+  // URL normalisée (celle qui a été validée), jamais la chaîne brute
+  await shell.openExternal(new URL(url).href)
   return true
 }
 
