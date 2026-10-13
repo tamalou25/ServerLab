@@ -7,6 +7,7 @@
 import { LINUX_USER } from '../../model/factory'
 import { CommandFailure, type ExecContext } from '../context'
 import type { ToolDef } from '../tools/types'
+import { isUnsimulated, unsimulatedMessage } from '../unsimulated'
 
 /** Découpe une commande façon bash ; null si un guillemet n'est pas refermé. */
 export function splitBashArgs(line: string): string[] | null {
@@ -144,7 +145,10 @@ function runCommand(ctx: ExecContext, args: string[], tools: ToolDef[]): void {
   }
   const tool = tools.find((t) => t.name === name)
   if (!tool || !(tool.available?.(ctx) ?? true)) {
-    ctx.write(`${name}: command not found`, 'error')
+    ctx.write(
+      isUnsimulated('bash', name) ? unsimulatedMessage('bash', name) : `${name}: command not found`,
+      'error'
+    )
     return
   }
   tool.run(ctx, rest)

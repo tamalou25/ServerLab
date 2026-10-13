@@ -4,6 +4,7 @@
 import { CommandFailure, type ExecContext } from '../context'
 import { changeDirectory } from '../../roles/files/tools'
 import type { ToolDef } from '../tools/types'
+import { isUnsimulated, unsimulatedMessage } from '../unsimulated'
 
 /** Découpe une ligne façon cmd (guillemets doubles). */
 export function splitCmdArgs(line: string): string[] {
@@ -103,6 +104,10 @@ export function executeCmd(ctx: ExecContext, line: string, tools: ToolDef[]): vo
       if (e instanceof CommandFailure) ctx.write(e.message, 'error')
       else throw e
     }
+    return
+  }
+  if (isUnsimulated('cmd', name)) {
+    ctx.write(unsimulatedMessage('cmd', args[0] ?? name), 'error')
     return
   }
   ctx.writeLines(
