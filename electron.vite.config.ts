@@ -61,7 +61,11 @@ export default defineConfig({
   renderer: {
     resolve: { alias },
     plugins: [react(), tailwindcss(), cspPlugin()],
-    // Aucune ressource inlinée en data: (polices comprises) : la CSP n'autorise que 'self'
-    build: { assetsInlineLimit: 0 }
+    build: {
+      // Aucune ressource inlinée en data: (polices comprises) : la CSP n'autorise que 'self'
+      assetsInlineLimit: 0,
+      // Bundle minifié : moins de code à analyser au démarrage (audit P-02)
+      minify: 'esbuild'
+    }
   }
 })
