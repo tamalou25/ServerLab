@@ -8,7 +8,7 @@ import { setPower } from '../../../topology/actions'
 import { psError } from '../errors'
 import type { CmdContext } from '../interpreter'
 import type { CmdletDef } from '../registry'
-import { flatten, psObject, psToString, wildcardToRegExp } from '../values'
+import { flatten, psObject, type PsObject, psToString, wildcardToRegExp } from '../values'
 import { onServer } from './helpers'
 
 const featureNames = () => allFeatures().map((f) => f.name)
@@ -32,6 +32,26 @@ function restartNow(ctx: CmdContext): void {
   ctx.exit = true
 }
 
+/** Affichage tableau de Get-WindowsFeature : « [X] Nom affiché », Name, Install State. */
+function renderFeatures(objects: PsObject[]): string[] {
+  const label = (o: PsObject) => {
+    const indent = o.props['Depth'] === 1 ? '    ' : ''
+    return `${indent}${o.props['Installed'] === true ? '[X]' : '[ ]'} ${psToString(o.props['DisplayName'] ?? '')}`
+  }
+  const width = Math.max(...objects.map((o) => label(o).length - 4)) + 6
+  const lines = [
+    '',
+    `${'Display Name'.padEnd(width)}${'Name'.padEnd(28)}Install State`,
+    `${'------------'.padEnd(width)}${'----'.padEnd(28)}-------------`
+  ]
+  for (const o of objects)
+    lines.push(
+      `${label(o).padEnd(width)}${psToString(o.props['Name'] ?? '').padEnd(28)}${psToString(o.props['InstallState'] ?? '')}`
+    )
+  lines.push('')
+  return lines
+}
+
 export const systemCmdlets: CmdletDef[] = [
   {
     name: 'Get-WindowsFeature',
@@ -45,22 +65,20 @@ export const systemCmdlets: CmdletDef[] = [
         : null
       const installed = ctx.host.host.features
       const rows = allFeatures().filter((f) => !patterns || patterns.some((p) => p.test(f.name)))
-      if (rows.length === 0) return []
-      const width = Math.max(...rows.map((f) => f.displayName.length + (f.parent ? 4 : 0))) + 6
-      const lines = [
-        '',
-        `${'Display Name'.padEnd(width)}${'Name'.padEnd(28)}Install State`,
-        `${'------------'.padEnd(width)}${'----'.padEnd(28)}-------------`
-      ]
-      for (const f of rows) {
-        const mark = installed.includes(f.name) ? '[X]' : '[ ]'
-        const indent = f.parent ? '    ' : ''
-        lines.push(
-          `${`${indent}${mark} ${f.displayName}`.padEnd(width)}${f.name.padEnd(28)}${installed.includes(f.name) ? 'Installed' : 'Available'}`
+      return rows.map((f) => {
+        const isInstalled = installed.includes(f.name)
+        return psObject(
+          'Feature',
+          {
+            Name: f.name,
+            DisplayName: f.displayName,
+            Installed: isInstalled,
+            InstallState: isInstalled ? 'Installed' : 'Available',
+            Depth: f.parent ? 1 : 0
+          },
+          { kind: 'table', props: ['DisplayName', 'Name', 'InstallState'], render: renderFeatures }
         )
-      }
-      lines.push('')
-      return lines
+      })
     }
   },
   {

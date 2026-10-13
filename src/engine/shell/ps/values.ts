@@ -10,6 +10,8 @@ export interface PsSecureString {
 export interface PsView {
   kind: 'table' | 'list'
   props: string[]
+  /** Rendu personnalisé de l'affichage par défaut (ex. Get-WindowsFeature), sinon table ou liste. */
+  render?: (objects: PsObject[]) => string[]
 }
 
 /** Objet PowerShell (propriétés ordonnées, vue d'affichage par défaut). */

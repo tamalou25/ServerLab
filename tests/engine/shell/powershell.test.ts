@@ -200,6 +200,37 @@ describe('Rôles et fonctionnalités', () => {
   })
 })
 
+describe('Get-WindowsFeature émet des objets', () => {
+  // Source : https://learn.microsoft.com/en-us/powershell/module/servermanager/get-windowsfeature (exemple 4 : `| Where Installed`)
+  it('Where Installed et Where-Object {$_.Installed -eq $true} listent seulement les rôles installés', () => {
+    const { s, ids } = lab()
+    const r = run(s, ids.SRV1!, 'Install-WindowsFeature DHCP')
+    const names = (line: string) =>
+      run(r.state, ids.SRV1!, line)
+        .text.split('\n')
+        .filter((l) => /^\s*\[[ X]\]/.test(l))
+    for (const line of [
+      'Get-WindowsFeature | Where Installed',
+      'Get-WindowsFeature | Where-Object Installed',
+      'Get-WindowsFeature | Where-Object {$_.Installed -eq $true}'
+    ]) {
+      const rows = names(line)
+      expect(rows.length).toBeGreaterThan(0)
+      expect(rows.every((l) => l.includes('[X]') && l.includes('Installed'))).toBe(true)
+      expect(rows.some((l) => /\bDHCP\b/.test(l))).toBe(true)
+    }
+    expect(names('Get-WindowsFeature').some((l) => l.includes('[ ]'))).toBe(true)
+    expect(run(r.state, ids.SRV1!, '(Get-WindowsFeature DHCP).InstallState').text.trim()).toBe('Installed')
+  })
+
+  it('sortie par défaut inchangée (colonnes Display Name, Name, Install State)', () => {
+    const { s, ids } = lab()
+    const out = run(s, ids.SRV1!, 'Get-WindowsFeature DHCP').text
+    expect(out).toMatch(/Display Name\s+Name\s+Install State/)
+    expect(out).toMatch(/\[ \] .*DHCP\s+Available/)
+  })
+})
+
 describe('Complétion Tab', () => {
   it('complète commandes, paramètres et valeurs', () => {
     const { s, ids } = lab()
