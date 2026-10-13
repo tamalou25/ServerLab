@@ -4,6 +4,7 @@
 import { CommandFailure, type ExecContext } from '../context'
 import { changeDirectory } from '../../roles/files/tools'
 import type { ToolDef } from '../tools/types'
+import { expandCmdVariables } from './env'
 import { isUnsimulated, unsimulatedMessage } from '../unsimulated'
 
 /** Découpe une ligne façon cmd (guillemets doubles). */
@@ -42,7 +43,8 @@ export const CMD_BUILTINS = [
 ] as const
 
 export function executeCmd(ctx: ExecContext, line: string, tools: ToolDef[]): void {
-  const trimmed = line.trim()
+  // Expansion des %variables% avant le découpage (comme cmd.exe)
+  const trimmed = expandCmdVariables(ctx, line.trim())
   if (trimmed === '') return
   const args = splitCmdArgs(trimmed)
   const name = (args[0] ?? '').toLowerCase().replace(/\.exe$/, '')
