@@ -376,10 +376,9 @@ function runTraceroute(ctx: IosRunContext, target: string): void {
       ctx.print(`${n}  *  *  *`)
     }
   })
-  // Sans réponse finale, IOS continue de sonder jusqu'à la limite de 30 sauts (fidélité I13)
-  const last = result.value.hops[result.value.hops.length - 1]
-  if (!last || last.kind === 'timeout')
-    for (let i = result.value.hops.length + 1; i <= 30; i++) ctx.print(`${String(i).padStart(3)}  *  *  *`)
+  // Aucun saut : on affiche les sauts muets jusqu'à la limite existante de 4 (fidélité I13)
+  if (result.value.hops.length === 0)
+    for (let i = 1; i <= 4; i++) ctx.print(`${String(i).padStart(3)}  *  *  *`)
 }
 
 // ---------------------------------------------------------------------------
