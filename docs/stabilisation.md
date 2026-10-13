@@ -1,5 +1,7 @@
 # Journal de stabilisation 2.0.x
 
+> **Archivé (journal 2.0.x)** — ne pas reprendre ces actions ; voir [`docs/audit-v2.6.2.md`](audit-v2.6.2.md).
+
 Mission : stabiliser la 2.0.0 (aucune nouvelle fonctionnalité). Milestones suivants et issue #38 gelés.
 Une nouvelle session reprend **uniquement** à partir de ce fichier (lire aussi CLAUDE.md).
 
