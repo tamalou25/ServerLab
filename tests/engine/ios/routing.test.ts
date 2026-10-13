@@ -59,7 +59,7 @@ describe('routes statiques', () => {
     c1.lines('en', 'conf t', 'int g0/0', 'ip address 10.0.12.1 255.255.255.252', 'no shut', 'end')
     c2.lines('en', 'conf t', 'int g0/0', 'ip address 10.0.12.2 255.255.255.252', 'no shut')
     c2.lines('int g0/1', 'ip address 192.168.2.1 255.255.255.0', 'no shut', 'end')
-    return { lab, c1, r1: r1.id }
+    return { lab, c1, c2, r1: r1.id, pc: pc.id }
   }
 
   it('ip route : S dans la table, ping du réseau distant', () => {
@@ -72,6 +72,33 @@ describe('routes statiques', () => {
     // Réseau de classe C entier : affiché sans ligne de regroupement
     expect(out).toContain('S     192.168.2.0/24 [1/0] via 10.0.12.2')
     expect(c1.run('show running-config')).toContain('ip route 192.168.2.0 255.255.255.0 10.0.12.2')
+  })
+
+  it('boucle de routage : le TTL expire en transit, sans boucle infinie (audit T-03)', () => {
+    const { lab, c1, c2, pc } = twoSites()
+    // R1 renvoie 172.16.0.0/16 vers R2, qui le renvoie vers R1 ; R1 connaît le retour vers le poste
+    // (TTL 128 du poste : il expire sur R1, qui doit pouvoir émettre l'ICMP « temps dépassé »)
+    c1.lines(
+      'conf t',
+      'ip route 172.16.0.0 255.255.0.0 10.0.12.2',
+      'ip route 192.168.2.0 255.255.255.0 10.0.12.2',
+      'end'
+    )
+    c2.lines('conf t', 'ip route 172.16.0.0 255.255.0.0 10.0.12.1', 'end')
+    const r = ping(lab.state, pc, '172.16.5.5')
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.value.success).toBe(false)
+    expect(r.value.outcomes).toHaveLength(4)
+    for (const outcome of r.value.outcomes) {
+      expect(outcome.kind).toBe('ttl-expired')
+      // ICMP « temps dépassé » émis par l'un des deux routeurs de la boucle
+      if (outcome.kind === 'ttl-expired')
+        expect(['10.0.12.1', '10.0.12.2', '192.168.2.1']).toContain(outcome.from)
+    }
+    expect(
+      r.value.lines.filter((l) => l.endsWith(': Durée de vie TTL expirée lors du transit.'))
+    ).toHaveLength(4)
   })
 
   it('route par défaut : S* et passerelle de dernier recours', () => {

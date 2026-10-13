@@ -432,6 +432,14 @@ function transitHooks(): TransitHooks[] {
  * Achemine un paquet IP depuis `fromDeviceId` jusqu'à sa destination (ou son échec).
  * Les décisions de chaque équipement sont expliquées dans la trace.
  */
+/**
+ * Garde-fou du parcours : un équipement par tour. Le TTL (255 au plus) arrête une boucle de routage
+ * avant cette limite, même avec des switchs entre les routeurs ; elle ne sert qu'aux boucles de
+ * niveau 2 (pas de TTL). Une limite plus basse coupait une boucle de routage avant l'expiration du
+ * TTL : le ping affichait « Délai d'attente dépassé » au lieu de « TTL expirée » (audit T-03).
+ */
+const MAX_TRANSIT_STEPS = 1024
+
 export function sendIp(ctx: SimContext, fromDeviceId: string, original: IpPacket): Delivery {
   let packet = original
   let current = fromDeviceId
@@ -444,7 +452,7 @@ export function sendIp(ctx: SimContext, fromDeviceId: string, original: IpPacket
   /** Explication à placer avant la décision de routage (retraduction NAT, sortie de tunnel). */
   let arrival = ''
 
-  for (let guard = 0; guard < 64; guard++) {
+  for (let guard = 0; guard < MAX_TRANSIT_STEPS; guard++) {
     const device = ctx.state.devices[current]
     if (!device || !device.powered) return { kind: 'dropped', deviceId: current, latency }
 
