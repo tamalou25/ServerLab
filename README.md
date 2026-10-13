@@ -29,8 +29,13 @@ L'application installée vérifie les mises à jour au démarrage et via **Aide 
 tâches), puis ServerLab propose de **redémarrer** — la question « Enregistrer les modifications ? »
 est posée avant — ou l'installe à la fermeture. Les fichiers `.slab` et les préférences sont conservés.
 
-> Les mises à jour lisent les releases **publiques** du dépôt, sans aucun jeton embarqué : tant que
-> le dépôt GitHub est privé, la vérification répond « Aucune version publiée n'est accessible ».
+> Les mises à jour lisent les releases **publiques** du dépôt, sans aucun jeton embarqué.
+>
+> **Risque accepté (installeur non signé)** : sans signature de code, Windows ne peut pas vérifier
+> l'éditeur d'une mise à jour. Seule l'empreinte SHA-512 publiée avec la release (`latest.yml`) est
+> contrôlée : l'authenticité repose donc sur le compte GitHub du projet et sur le workflow de
+> publication, réduit au strict nécessaire (droits minimaux, aucun script npm exécuté avec un jeton
+> en écriture). La signature de code est suivie dans l'issue #38.
 
 ### Signaler un bug
 
