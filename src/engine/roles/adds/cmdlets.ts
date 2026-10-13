@@ -84,7 +84,11 @@ function userObject(domain: Domain, u: AdUser, clock: number): PsObject {
       LockedOut: isLockedOut(domain, u, clock),
       BadLogonCount: u.badPwdCount,
       AccountLockoutTime: u.lockoutTime === null ? null : formatShortDate(u.lockoutTime),
-      whenCreated: formatShortDate(u.whenCreated)
+      whenCreated: formatShortDate(u.whenCreated),
+      // Appartenance directe aux groupes (attribut memberOf), visible via -Properties MemberOf
+      MemberOf: domain.groups
+        .filter((g) => g.members.includes(u.id))
+        .map((g) => objectDn(domain, { kind: 'group', obj: g }))
     },
     {
       kind: 'list',
