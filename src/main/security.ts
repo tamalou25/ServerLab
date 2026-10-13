@@ -2,13 +2,18 @@
  * Durcissement de sécurité global d'Electron.
  * Bloque la navigation, les nouvelles fenêtres, les webviews et toutes les permissions.
  */
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { app, session, type WebContents } from 'electron'
+import { isAppNavigation } from '../shared/navigation'
 
-/** Vrai si l'URL correspond à la page de l'application (fichier local ou serveur de dev). */
+/** Adresse exacte de la page de l'application empaquetée. */
+const APP_PAGE_URL = pathToFileURL(join(__dirname, '../renderer/index.html')).href
+
+/** Vrai si l'URL correspond à la page de l'application (fichier exact ou serveur de dev). */
 function isAppUrl(url: string): boolean {
-  const devUrl = process.env['ELECTRON_RENDERER_URL']
-  if (devUrl && url.startsWith(devUrl)) return true
-  return url.startsWith('file://')
+  const devUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL']
+  return isAppNavigation(url, APP_PAGE_URL, devUrl)
 }
 
 export function hardenWebContents(contents: WebContents): void {
