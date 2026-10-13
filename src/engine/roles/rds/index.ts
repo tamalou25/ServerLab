@@ -13,6 +13,7 @@ export const rdsRole = defineRole({
   displayName: 'Services Bureau à distance',
   feature: 'RDS-RD-Server',
   dependencies: ['adds'],
+  uses: ['dns', 'files', 'gpo'],
   features: [
     {
       name: 'Remote-Desktop-Services',

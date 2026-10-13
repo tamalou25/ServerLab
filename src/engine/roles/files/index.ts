@@ -15,6 +15,7 @@ export const filesRole = defineRole({
   displayName: 'Services de fichiers et de stockage',
   feature: 'FileAndStorage-Services',
   dependencies: [],
+  uses: ['adds', 'dns'],
   features: [
     { name: 'FileAndStorage-Services', displayName: 'Services de fichiers et de stockage', role: true },
     {

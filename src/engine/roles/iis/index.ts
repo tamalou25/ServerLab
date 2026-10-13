@@ -13,6 +13,7 @@ export const iisRole = defineRole({
   displayName: 'IIS',
   feature: 'Web-Server',
   dependencies: ['files'],
+  uses: ['adcs', 'adds', 'dns'],
   features: [
     {
       name: 'Web-Server',

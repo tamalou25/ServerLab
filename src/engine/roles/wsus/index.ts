@@ -12,6 +12,7 @@ export const wsusRole = defineRole({
   displayName: 'WSUS',
   feature: 'UpdateServices',
   dependencies: ['gpo'],
+  uses: ['adds', 'dns'],
   features: [
     {
       name: 'UpdateServices',

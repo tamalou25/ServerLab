@@ -2,6 +2,8 @@
  * Registre des modules de rôles : cohérence des déclarations et dérivations (fonctionnalités,
  * cmdlets, commandes, critères, tâches de fond, vues).
  */
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, join, relative, resolve, sep } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import {
   addScope,
@@ -234,5 +236,41 @@ describe('registre des rôles', () => {
       expect(Object.keys(defs()).length).toBe(Object.keys(commandDefinitions()).length)
     }
     expect(createLab().devices).toEqual({})
+  })
+})
+
+describe('dépendances réelles entre rôles (audit A-01)', () => {
+  const base = join(__dirname, '../../../src/engine/roles')
+  const files = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() ? files(join(dir, e.name)) : e.name.endsWith('.ts') ? [join(dir, e.name)] : []
+    )
+
+  /** Rôles dont le code d'un rôle importe un module (chemins relatifs vers un autre dossier de rôle). */
+  function importedRoles(id: string, ids: string[]): string[] {
+    const found = new Set<string>()
+    for (const file of files(join(base, id))) {
+      for (const m of readFileSync(file, 'utf8').matchAll(/from '(\.{1,2}\/[^']+)'/g)) {
+        const target = relative(base, resolve(dirname(file), m[1]!)).split(sep)[0]!
+        if (target !== id && ids.includes(target)) found.add(target)
+      }
+    }
+    return [...found].sort()
+  }
+
+  it('tout import d’un autre rôle est déclaré (dependencies ou uses), sans déclaration superflue', () => {
+    const ids = roleModules().map((m) => m.id)
+    for (const m of roleModules()) {
+      const imported = importedRoles(m.id, ids)
+      const declared = new Set([...m.dependencies, ...(m.uses ?? [])])
+      expect(
+        imported.filter((r) => !declared.has(r)),
+        `${m.id} : imports non déclarés`
+      ).toEqual([])
+      expect(
+        (m.uses ?? []).filter((r) => !imported.includes(r)),
+        `${m.id} : uses sans import`
+      ).toEqual([])
+    }
   })
 })

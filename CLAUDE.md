@@ -146,7 +146,8 @@ Un rôle ne touche pas au cœur du moteur : tout est déclaré dans son module.
 
 1. Créer `src/engine/roles/<rôle>/` : actions pures, `commands.ts`, `cmdlets.ts` (et `tools.ts`),
    `criteria.ts`, et `index.ts` qui exporte `defineRole({ … })` (contrat : `roles/types.ts`) :
-   id, nom, fonctionnalité principale, dépendances, fonctionnalités installables, état sur le
+   id, nom, fonctionnalité principale, dépendances (prérequis) et `uses` (autres rôles appelés à
+   l'exécution, vérifié par `registry.test.ts`), fonctionnalités installables, état sur le
    serveur (`RoleStateDef` : clé, schéma zod, état initial, accesseur typé dans `state.ts`),
    commandes, cmdlets, outils, vues, critères, tâches de fond, sources d'évènements, services.
 2. L'ajouter dans `load()` de `src/engine/roles/registry.ts`, après les rôles dont il dépend.

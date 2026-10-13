@@ -14,6 +14,7 @@ export const dhcpRole = defineRole({
   displayName: 'DHCP',
   feature: 'DHCP',
   dependencies: [],
+  uses: ['adds'],
   features: [
     { name: 'DHCP', displayName: 'Serveur DHCP', role: true, managementTools: ['RSAT-DHCP'] },
     { name: 'RSAT-DHCP', displayName: 'Outils du serveur DHCP', role: false }
