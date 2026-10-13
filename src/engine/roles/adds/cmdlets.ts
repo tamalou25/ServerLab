@@ -541,7 +541,7 @@ export const adCmdlets: CmdletDef[] = [
     synopsis: 'Modifie une unité d’organisation.',
     available: adAvailable,
     params: [
-      { ...identityParam, mandatory: true },
+      { ...identityParam, mandatory: true, pipeline: true },
       { name: 'ProtectedFromAccidentalDeletion', type: 'bool' },
       { name: 'Description', type: 'string' }
     ],
@@ -561,7 +561,7 @@ export const adCmdlets: CmdletDef[] = [
     synopsis: 'Supprime une unité d’organisation.',
     available: adAvailable,
     params: [
-      { ...identityParam, mandatory: true },
+      { ...identityParam, mandatory: true, pipeline: true },
       { name: 'Recursive', type: 'switch' }
     ],
     run(ctx, args) {
@@ -651,7 +651,7 @@ export const adCmdlets: CmdletDef[] = [
     synopsis: 'Modifie un compte d’utilisateur.',
     available: adAvailable,
     params: [
-      { ...identityParam, mandatory: true },
+      { ...identityParam, mandatory: true, pipeline: true },
       { name: 'Description', type: 'string' },
       { name: 'GivenName', type: 'string' },
       { name: 'Surname', type: 'string' },
@@ -687,7 +687,7 @@ export const adCmdlets: CmdletDef[] = [
     module: 'ActiveDirectory',
     synopsis: 'Déverrouille un compte verrouillé.',
     available: adAvailable,
-    params: [{ ...identityParam, mandatory: true }],
+    params: [{ ...identityParam, mandatory: true, pipeline: true }],
     run(ctx, args) {
       const domain = adDomain(ctx, true)
       ctx.apply(unlockAccount(ctx.state, domain.name, str(args['Identity'])))
@@ -726,7 +726,7 @@ export const adCmdlets: CmdletDef[] = [
     module: 'ActiveDirectory',
     synopsis: verb === 'Enable' ? 'Active un compte.' : 'Désactive un compte.',
     available: adAvailable,
-    params: [{ ...identityParam, mandatory: true }],
+    params: [{ ...identityParam, mandatory: true, pipeline: true }],
     run(ctx, args) {
       const domain = adDomain(ctx, true)
       ctx.apply(setAccountEnabled(ctx.state, domain.name, str(args['Identity']), verb === 'Enable'))
@@ -739,7 +739,7 @@ export const adCmdlets: CmdletDef[] = [
     synopsis: 'Réinitialise le mot de passe d’un compte.',
     available: adAvailable,
     params: [
-      { ...identityParam, mandatory: true },
+      { ...identityParam, mandatory: true, pipeline: true },
       { name: 'NewPassword', type: 'secure', mandatory: true },
       { name: 'Reset', type: 'switch' },
       { name: 'OldPassword', type: 'secure' }
@@ -757,7 +757,7 @@ export const adCmdlets: CmdletDef[] = [
     module: 'ActiveDirectory',
     synopsis: 'Supprime un compte d’utilisateur.',
     available: adAvailable,
-    params: [{ ...identityParam, mandatory: true }],
+    params: [{ ...identityParam, mandatory: true, pipeline: true }],
     run(ctx, args) {
       const domain = adDomain(ctx, true)
       const [u] = select(ctx, domain, args, 'user')
@@ -816,7 +816,7 @@ export const adCmdlets: CmdletDef[] = [
     module: 'ActiveDirectory',
     synopsis: 'Supprime un groupe.',
     available: adAvailable,
-    params: [{ ...identityParam, mandatory: true }],
+    params: [{ ...identityParam, mandatory: true, pipeline: true }],
     run(ctx, args) {
       const domain = adDomain(ctx, true)
       const [g] = select(ctx, domain, args, 'group')
@@ -831,7 +831,7 @@ export const adCmdlets: CmdletDef[] = [
     synopsis: 'Ajoute des membres à un groupe.',
     available: adAvailable,
     params: [
-      { ...identityParam, mandatory: true },
+      { ...identityParam, mandatory: true, pipeline: true },
       { name: 'Members', type: 'string[]', mandatory: true, position: 1, aliases: ['Member'] }
     ],
     run(ctx, args) {
@@ -853,7 +853,7 @@ export const adCmdlets: CmdletDef[] = [
     synopsis: 'Retire des membres d’un groupe.',
     available: adAvailable,
     params: [
-      { ...identityParam, mandatory: true },
+      { ...identityParam, mandatory: true, pipeline: true },
       { name: 'Members', type: 'string[]', mandatory: true, position: 1, aliases: ['Member'] }
     ],
     run(ctx, args) {
@@ -945,7 +945,7 @@ export const adCmdlets: CmdletDef[] = [
     synopsis: 'Déplace un objet vers une autre unité d’organisation.',
     available: adAvailable,
     params: [
-      { ...identityParam, mandatory: true },
+      { ...identityParam, mandatory: true, pipeline: true },
       { name: 'TargetPath', type: 'string', mandatory: true, position: 1 }
     ],
     run(ctx, args) {
