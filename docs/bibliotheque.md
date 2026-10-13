@@ -1,11 +1,15 @@
 # Bibliothèque communautaire de labs
 
-L'application liste et télécharge des labs depuis un **dépôt GitHub public séparé** (le dépôt de
-l'application est privé). Adresse lue par l'application (`src/shared/library.ts`) :
+L'application liste et télécharge des labs depuis un **dépôt GitHub public séparé**. Adresse lue par
+l'application (`src/shared/library.ts`) :
 
 ```
 https://raw.githubusercontent.com/tamalou25/serverlab-labs/main/
 ```
+
+> **État (audit v2.6.2)** : le dépôt `serverlab-labs` n'est pas encore publié (l'index répond 404) ;
+> l'onglet Bibliothèque affiche donc une erreur de connexion tant que la mise en place ci-dessous
+> n'est pas faite.
 
 ## Mise en place (à faire par le propriétaire du dépôt)
 

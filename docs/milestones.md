@@ -414,9 +414,9 @@ Correction en cours de route : #114 (formulaire d'interface de routeur, PR #116)
 | Issue | Sujet                                    | Branche                     | PR   | État     |
 | ----- | ---------------------------------------- | --------------------------- | ---- | -------- |
 | #128  | Détection dans les journaux              | `feat/128-cyber-detection`  | #135 | fusionné |
-| #129  | Contre-mesures L2 Cisco                  | `feat/129-cyber-l2`         | #136 | en cours |
-| #130  | Audit adossé aux référentiels ANSSI, CIS | `feat/130-cyber-audit-refs` | #137 | en cours |
-| #132  | Labs, format `.slab` 10, documentation   | `feat/132-cyber-labs`       |      | en cours |
+| #129  | Contre-mesures L2 Cisco                  | `feat/129-cyber-l2`         | #136 | fusionné |
+| #130  | Audit adossé aux référentiels ANSSI, CIS | `feat/130-cyber-audit-refs` | #137 | fusionné |
+| #132  | Labs, format `.slab` 10, documentation   | `feat/132-cyber-labs`       | #138 | fusionné |
 
 Volet attaque (#126, #127, #131, #133, #134) et lab de détection reportés au milestone v2.6.1. Correction en cours de route :
 README reformaté (Prettier), dans #135.
@@ -425,11 +425,11 @@ README reformaté (Prettier), dans #135.
 
 | Issue | Sujet                                  | Branche                     | PR   | État     |
 | ----- | -------------------------------------- | --------------------------- | ---- | -------- |
-| 1/5   | Moteur de scénarios                    | `feat/1-moteur-scenarios`   | #139 | fusionné |
-| 2/5   | Scénarios annuaire                     | `feat/2-scenarios-annuaire` | #140 | fusionné |
-| 3/5   | Scénarios réseau                       | `feat/3-scenarios-reseau`   | #141 | fusionné |
-| 4/5   | Mode Red / Blue                        | `feat/4-mode-red-blue`      | #142 | fusionné |
-| 5/5   | Labs, format `.slab` 14, documentation | `feat/5-labs-cyber-docs`    | #143 | fusionné |
+| #126  | Moteur de scénarios                    | `feat/1-moteur-scenarios`   | #139 | fusionné |
+| #127  | Scénarios annuaire                     | `feat/2-scenarios-annuaire` | #140 | fusionné |
+| #133  | Scénarios réseau                       | `feat/3-scenarios-reseau`   | #141 | fusionné |
+| #131  | Mode Red / Blue                        | `feat/4-mode-red-blue`      | #142 | fusionné |
+| #134  | Labs, format `.slab` 14, documentation | `feat/5-labs-cyber-docs`    | #143 | fusionné |
 
 Le guide des formats : 11 (SPN, compromission, accès administrateur, paramètres `cyber`), 12 (saut de
 VLAN, flux interceptés, tampon syslog IOS), 13 (réglages de partie Red / Blue), 14 (scénarios activés par
