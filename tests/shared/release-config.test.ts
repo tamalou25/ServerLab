@@ -40,3 +40,13 @@ describe('chaîne de mise à jour automatique', () => {
     expect(release).toMatch(/kind=--latest/)
   })
 })
+
+describe('fuses Electron de l’application empaquetée (audit S-02)', () => {
+  it('pas d’interpréteur Node ni de NODE_OPTIONS, asar seul et vérifié', () => {
+    const fuses = builder.slice(builder.indexOf('\nelectronFuses:'))
+    expect(fuses).toMatch(/\n {2}runAsNode: false/)
+    expect(fuses).toMatch(/\n {2}enableNodeOptionsEnvironmentVariable: false/)
+    expect(fuses).toMatch(/\n {2}enableEmbeddedAsarIntegrityValidation: true/)
+    expect(fuses).toMatch(/\n {2}onlyLoadAppFromAsar: true/)
+  })
+})

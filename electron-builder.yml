@@ -14,6 +14,18 @@ directories:
 files:
   - out/**/*
 
+# Fuses Electron (figés dans l'exécutable, audit S-02) : l'application installée ne peut pas servir
+# d'interpréteur Node (ELECTRON_RUN_AS_NODE, NODE_OPTIONS) et ne charge que son app.asar, dont
+# l'intégrité est vérifiée (Windows). --inspect reste permis : les tests Playwright de l'application
+# empaquetée (CI) s'y connectent ; il exige un accès local au poste.
+electronFuses:
+  runAsNode: false
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: true
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  enableCookieEncryption: true
+
 # Aucun module natif : inutile de recompiler les dépendances
 npmRebuild: false
 # Langues de Chromium conservées (le reste allège le paquet)
