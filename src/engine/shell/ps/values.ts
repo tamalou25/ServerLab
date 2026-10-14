@@ -72,7 +72,8 @@ export function flatten(values: PsValue[]): PsValue[] {
 export function psToString(v: PsValue | undefined): string {
   if (v === null || v === undefined) return ''
   if (typeof v === 'string') return v
-  if (typeof v === 'number') return String(v)
+  // Réels : 15 chiffres significatifs, comme System.Double (« 1 / 1.9 » → 0.526315789473684)
+  if (typeof v === 'number') return Number.isInteger(v) ? String(v) : String(Number(v.toPrecision(15)))
   if (typeof v === 'boolean') return v ? 'True' : 'False'
   if (Array.isArray(v)) return `{${v.map(psToString).join(', ')}}`
   switch (v.kind) {

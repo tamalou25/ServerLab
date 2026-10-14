@@ -97,6 +97,11 @@ export function formatDefault(values: PsValue[]): string[] {
       const kind = item.view?.kind ?? (defaultProps(item).length <= 4 ? 'table' : 'list')
       lines.push(...(kind === 'table' ? formatTable(group) : formatList(group)))
       i = j
+    } else if (typeof item === 'number' && !Number.isInteger(item)) {
+      // Affichage console : ToString() dans la culture courante fr-FR, virgule décimale
+      // (about_Quoting_Rules, « Culture settings affect string interpretation »)
+      lines.push(psToString(item).replace('.', ','))
+      i++
     } else {
       lines.push(...psToString(item).split('\n'))
       i++

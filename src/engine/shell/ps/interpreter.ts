@@ -7,16 +7,26 @@ import { CommandFailure, ExecContext } from '../context'
 import type { ToolDef } from '../tools/types'
 import { NeedInput, type ShellSession } from '../types'
 import { formatPsError, PsError, psError, type PsErrorInfo } from './errors'
+import {
+  arithmetic,
+  comparison,
+  formatOperator,
+  indexValue,
+  interpolate,
+  memberValue,
+  negate,
+  range,
+  toNumber
+} from './operators'
 import { evaluateExpression } from './expression'
 import { formatDefault } from './format'
-import { PsSyntaxError } from './lexer'
+import { ESCAPED_DOLLAR, PsSyntaxError } from './lexer'
 import { parse, type Arg, type Element, type Expr, type Pipeline, type Statement } from './parser'
 import { isUnsimulated, unsimulatedMessage } from '../unsimulated'
 import { COMMON_PARAMS, type BoundArgs, type CmdletDef, type ParamDef } from './registry'
 import {
   psObject,
   flatten,
-  getProp,
   isCredential,
   isPsObject,
   isScript,
@@ -94,6 +104,13 @@ export class CmdContext extends ExecContext {
     return key === undefined ? null : (this.session.variables[key] ?? null)
   }
 
+  /** Affecte une variable de session (nom insensible à la casse : la clé existante est réutilisée). */
+  setVariable(name: string, value: PsValue): void {
+    const lower = name.toLowerCase()
+    const key = Object.keys(this.session.variables).find((k) => k.toLowerCase() === lower) ?? name
+    this.session = { ...this.session, variables: { ...this.session.variables, [key]: value } }
+  }
+
   private envVariable(name: string): PsValue {
     const host = this.host
     const user = this.user
@@ -154,19 +171,103 @@ export function findTool(catalog: CommandCatalog, name: string): ToolDef | undef
 // Évaluation des expressions
 // ---------------------------------------------------------------------------
 
+/**
+ * Développe une chaîne entre guillemets doubles (about_Quoting_Rules) : `$nom`, `${nom}`,
+ * `$env:NOM` et `$( … )` sont remplacés ; « $obj.Prop » ne développe que `$obj` (un accès
+ * membre demande une sous-expression) ; une collection est rendue éléments séparés d'un espace.
+ */
 function expandString(ctx: CmdContext, text: string): string {
-  // $(sous-expression), $env:NOM, $nom
-  return text
-    .replace(/\$\(([^)]*)\)/g, (_m, inner: string) => {
-      const values = runStatements(ctx, parse(inner), inner, false)
-      return flatten(values).map(psToString).join(' ')
-    })
-    .replace(/\$(env:[A-Za-z_]+|[A-Za-z_][A-Za-z0-9_]*)/g, (_m, name: string) =>
-      psToString(ctx.variable(name))
-    )
+  let out = ''
+  let i = 0
+  while (i < text.length) {
+    const c = text[i] as string
+    if (c !== '$') {
+      out += c
+      i++
+      continue
+    }
+    if (text[i + 1] === '(') {
+      let depth = 1
+      let j = i + 2
+      let quote: string | null = null
+      while (j < text.length && depth > 0) {
+        const d = text[j]
+        if (quote) {
+          if (d === quote) quote = null
+        } else if (d === '"' || d === "'") quote = d
+        else if (d === '(') depth++
+        else if (d === ')') depth--
+        j++
+      }
+      const inner = text.slice(i + 2, j - 1)
+      out += interpolate(flatten(runStatements(ctx, parse(inner), inner, false)))
+      i = j
+      continue
+    }
+    if (text[i + 1] === '{') {
+      const close = text.indexOf('}', i + 2)
+      if (close > 0) {
+        out += interpolate(ctx.variable(text.slice(i + 2, close)))
+        i = close + 1
+        continue
+      }
+    }
+    const m = /^(env:[A-Za-z0-9_]+|[A-Za-z_][A-Za-z0-9_]*)/.exec(text.slice(i + 1))
+    if (m) {
+      out += interpolate(ctx.variable(m[0]))
+      i += 1 + m[0].length
+      continue
+    }
+    out += '$'
+    i++
+  }
+  return out.split(ESCAPED_DOLLAR).join('$')
 }
 
-function evalExpr(ctx: CmdContext, expr: Expr): PsValue {
+/** Erreur « construction non simulée » (message honnête, comme les commandes non simulées). */
+function notSimulated(what: string, span: { start: number; end: number }): PsError {
+  const err = psError(`${what} n’est pas simulé dans ServerLab.`, 'NotImplemented', 'NotSimulated')
+  err.span = span
+  return err
+}
+
+/** Exécute `f` ; une erreur PowerShell sans portion soulignée reçoit celle de l'expression. */
+function withSpan<T>(span: { start: number; end: number }, f: () => T): T {
+  try {
+    return f()
+  } catch (e) {
+    if (e instanceof PsError && !e.span) e.span = { start: span.start, end: span.end }
+    throw e
+  }
+}
+
+function evalBinary(ctx: CmdContext, expr: Extract<Expr, { kind: 'binary' }>): PsValue {
+  // -and / -or : évaluation court-circuitée (about_Logical_Operators)
+  if (expr.op === 'and') return psToBool(evalExpr(ctx, expr.left)) && psToBool(evalExpr(ctx, expr.right))
+  if (expr.op === 'or') return psToBool(evalExpr(ctx, expr.left)) || psToBool(evalExpr(ctx, expr.right))
+  const left = evalExpr(ctx, expr.left)
+  const right = evalExpr(ctx, expr.right)
+  return withSpan(expr, () => {
+    switch (expr.op) {
+      case 'xor':
+        return psToBool(left) !== psToBool(right)
+      case '..':
+        return range(left, right)
+      case 'f':
+        return formatOperator(left, right)
+      case '+':
+      case '-':
+      case '*':
+      case '/':
+      case '%':
+        return arithmetic(expr.op, left, right)
+      default:
+        return comparison(expr.op, left, right)
+    }
+  })
+}
+
+export function evalExpr(ctx: CmdContext, expr: Expr): PsValue {
   switch (expr.kind) {
     case 'number':
       return expr.value
@@ -174,7 +275,7 @@ function evalExpr(ctx: CmdContext, expr: Expr): PsValue {
       return expr.expandable ? expandString(ctx, expr.value) : expr.value
     case 'variable': {
       let v = ctx.variable(expr.name)
-      for (const m of expr.members) v = getProp(v, m)
+      for (const m of expr.members) v = memberValue(v, m)
       return v
     }
     case 'array':
@@ -187,11 +288,41 @@ function evalExpr(ctx: CmdContext, expr: Expr): PsValue {
         Object.fromEntries(expr.entries.map((e) => [e.key, evalExpr(ctx, e.value)]))
       )
     case 'sub': {
+      const only = expr.statements.length === 1 ? expr.statements[0] : undefined
+      const inner =
+        only && !only.assign && only.pipeline.elements.length === 1 ? only.pipeline.elements[0] : undefined
+      if (expr.paren && inner?.kind === 'expr' && inner.expr.kind === 'incr') {
+        let v = evalExpr(ctx, inner.expr)
+        for (const m of expr.members) v = memberValue(v, m)
+        return v
+      }
       const values = flatten(runStatements(ctx, expr.statements, ctx.source, false))
-      let v: PsValue = values.length === 1 ? (values[0] as PsValue) : values
-      for (const m of expr.members) v = Array.isArray(v) ? v.map((x) => getProp(x, m)) : getProp(v, m)
+      let v: PsValue = expr.array || values.length !== 1 ? values : (values[0] as PsValue)
+      for (const m of expr.members) v = memberValue(v, m)
       return v
     }
+    case 'binary':
+      return evalBinary(ctx, expr)
+    case 'unary': {
+      const v = evalExpr(ctx, expr.operand)
+      const op = expr.op
+      return op === 'not' ? !psToBool(v) : withSpan(expr, () => negate(op, v))
+    }
+    case 'index': {
+      const target = evalExpr(ctx, expr.target)
+      const index = evalExpr(ctx, expr.index)
+      return withSpan(expr, () => indexValue(target, index))
+    }
+    case 'member':
+      return memberValue(evalExpr(ctx, expr.target), expr.name)
+    case 'incr': {
+      const before = ctx.variable(expr.name)
+      const after = withSpan(expr, () => toNumber(before) + expr.delta)
+      ctx.setVariable(expr.name, after)
+      return expr.prefix ? after : (before ?? 0)
+    }
+    case 'unsupported':
+      throw notSimulated(expr.what, expr)
   }
 }
 
@@ -538,11 +669,31 @@ function runStatements(
   for (const st of statements) {
     if (display) ctx.commandName = ''
     try {
-      const values = runPipeline(ctx, st.pipeline)
+      const single = st.pipeline.elements.length === 1 ? st.pipeline.elements[0] : undefined
       if (st.assign) {
-        const value: PsValue = values.length === 1 ? (values[0] as PsValue) : values
-        ctx.session = { ...ctx.session, variables: { ...ctx.session.variables, [st.assign]: value } }
-      } else if (display) {
+        // Une expression seule est affectée telle quelle (@(5) reste un tableau) ;
+        // un pipeline renvoie un objet ou un tableau d'objets
+        let value: PsValue
+        if (single?.kind === 'expr') value = evalExpr(ctx, single.expr)
+        else {
+          const values = runPipeline(ctx, st.pipeline)
+          value = values.length === 1 ? (values[0] as PsValue) : values
+        }
+        if (st.assignOp) {
+          const op = st.assignOp.slice(0, 1)
+          const current = ctx.variable(st.assign)
+          value = withSpan(st.pipeline, () => arithmetic(op, current, value))
+        }
+        ctx.setVariable(st.assign, value)
+        continue
+      }
+      // « $i++ » seul est une instruction sans sortie (about_Assignment_Operators)
+      if (single?.kind === 'expr' && single.expr.kind === 'incr') {
+        evalExpr(ctx, single.expr)
+        continue
+      }
+      const values = runPipeline(ctx, st.pipeline)
+      if (display) {
         ctx.writeLines(formatDefault(values))
       } else {
         collected.push(...values)
