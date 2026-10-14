@@ -237,6 +237,7 @@ function icaclsSummary(ctx: ExecContext, ok: number, failed: number): void {
 
 export const icaclsTool: ToolDef = {
   name: 'icacls',
+  handlesHelp: true,
   synopsis: 'Affiche ou modifie les listes de contrôle d’accès (ACL) des fichiers et dossiers.',
   switches: [
     '/grant',
