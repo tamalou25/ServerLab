@@ -29,6 +29,10 @@ Lot 1 de la v2.7 :
   évaluateur d'expressions PowerShell (#207) ; filtres de sortie IOS `| include`, `exclude`, `begin`, `section`, `count` (#206).
 - Lab 37 « Création d'utilisateurs par CSV » (fichiers de départ déclarables dans les labs via `files`).
 
+Lot 2 de la v2.7 :
+
+- Lab 41 « Services et comptes locaux en PowerShell » : critères `serviceState` et `localAccount`, état initial des services déclarable dans les labs via `services`.
+
 Lot 3 de la v2.7 :
 
 - Administration en ligne de commande CMD : `net user` / `localgroup` / `group`, `&&`, redirection `>`, `copy`, `dcdiag`, `dsadd`… (#211).

@@ -1,0 +1,74 @@
+{
+  "formatVersion": 1,
+  "id": "lab-41-services-comptes",
+  "title": "Services et comptes locaux en PowerShell",
+  "difficulty": "Intermédiaire",
+  "duration": "30 min",
+  "summary": "Diagnostiquez une résolution de noms en panne, remettez le service DNS en route durablement, puis créez un compte local administrateur sur un serveur membre.",
+  "statement": "## Contexte\n\nLe domaine **lab.local** est hébergé par **SRV1** (contrôleur de domaine et serveur DNS, 192.168.10.1). **SRV2** est un serveur membre (192.168.10.2) configuré pour utiliser SRV1 comme DNS. Depuis le dernier redémarrage, plus aucun nom ne se résout : `nslookup srv1.lab.local` échoue depuis SRV2.\n\n## Travail demandé\n\n1. Sur SRV1, identifiez le service responsable avec `Get-Service`, puis remettez-le en route.\n2. Faites en sorte qu'il redémarre seul après un redémarrage du serveur.\n3. Contrôlez l'état du service et testez de nouveau la résolution depuis SRV2.\n4. Sur SRV2, créez le compte local **adminlocal** (mot de passe de votre choix, respectant la complexité) et donnez-lui les droits d'administration de la machine.\n5. Vérifiez avec `Get-LocalGroupMember` ; contrôlez aussi les connexions en écoute (`Get-NetTCPConnection`) et le port 53 de SRV1 depuis SRV2 (`Test-NetConnection`).\n\nÀ rendre : les commandes saisies et leurs sorties.",
+  "start": {
+    "devices": [
+      {
+        "kind": "server",
+        "name": "SRV1",
+        "x": 150,
+        "y": 150,
+        "ip": "192.168.10.1/24",
+        "dns": ["127.0.0.1"],
+        "services": [{ "name": "DNS", "running": false, "startType": "Manual" }]
+      },
+      {
+        "kind": "server",
+        "name": "SRV2",
+        "x": 450,
+        "y": 150,
+        "ip": "192.168.10.2/24",
+        "dns": ["192.168.10.1"]
+      }
+    ],
+    "links": [["SRV1:Ethernet0", "SRV2:Ethernet0"]],
+    "domain": {
+      "name": "lab.local",
+      "netbios": "LAB",
+      "dc": "SRV1",
+      "join": ["SRV2"]
+    }
+  },
+  "criteria": [
+    {
+      "id": "dns-demarre",
+      "label": "Le service DNS de SRV1 est en cours d'exécution",
+      "hint": "Listez les services de SRV1 : l'un d'eux est à l'arrêt.",
+      "check": { "type": "serviceState", "device": "SRV1", "name": "DNS", "running": true }
+    },
+    {
+      "id": "dns-auto",
+      "label": "Le service DNS de SRV1 démarre automatiquement",
+      "hint": "Le type de démarrage actuel ne le relancerait pas après un redémarrage.",
+      "check": { "type": "serviceState", "device": "SRV1", "name": "DNS", "startType": "Automatic" }
+    },
+    {
+      "id": "resolution",
+      "label": "SRV2 résout srv1.lab.local en 192.168.10.1",
+      "hint": "Une fois le service remis en état, la résolution doit refonctionner depuis le serveur membre.",
+      "check": { "type": "nslookup", "client": "SRV2", "name": "srv1.lab.local", "address": "192.168.10.1" }
+    },
+    {
+      "id": "compte-local",
+      "label": "Le compte local adminlocal existe sur SRV2 et est activé",
+      "hint": "Les cmdlets du module des comptes locaux agissent sur la base de la machine, pas sur l'annuaire.",
+      "check": { "type": "localAccount", "device": "SRV2", "name": "adminlocal", "enabled": true }
+    },
+    {
+      "id": "compte-admin",
+      "label": "adminlocal est membre du groupe local Administrateurs de SRV2",
+      "hint": "Créer le compte ne suffit pas : son appartenance à un groupe local se gère séparément.",
+      "check": {
+        "type": "localAccount",
+        "device": "SRV2",
+        "name": "adminlocal",
+        "memberOf": "Administrateurs"
+      }
+    }
+  ]
+}

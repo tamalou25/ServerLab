@@ -128,7 +128,8 @@ const FIELD_LABELS: Record<string, string> = {
   systemState: 'État du système',
   access: 'Accès',
   user: 'Utilisateur',
-  granted: 'Accordé'
+  granted: 'Accordé',
+  startType: 'Type de démarrage'
 }
 
 /** Champs dont la valeur désigne un objet du lab : suggestions proposées. */
