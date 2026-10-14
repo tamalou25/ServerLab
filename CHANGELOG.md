@@ -34,6 +34,11 @@ Lot 3 de la v2.7 :
 - Administration en ligne de commande CMD : `net user` / `localgroup` / `group`, `&&`, redirection `>`, `copy`, `dcdiag`, `dsadd`… (#211).
 - Lab 39 « Administration en ligne de commande (CMD) » et critère de lab `fileExists` (fichier présent, contenu facultatif).
 
+Lot 4 de la v2.7 :
+
+- Routeur Cisco : configuration système, RIP / OSPF, services et diagnostic (`show ip protocols`, NTP, `clock`, `show standby`…) (#214) ; formats `.slab` 21 à 23.
+- Lab 40 « Routage dynamique RIPv2 et administration du routeur » (critères existants `iosRoute`, `iosRunning`, `iosStartup`, `ping`).
+
 Lot 5 de la v2.7 :
 
 - Switch Catalyst 2960 : bases, STP, EtherChannel, VTP, CDP (#210) et `interface range` (#209).
