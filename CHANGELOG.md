@@ -23,6 +23,12 @@ Lot 0 de la v2.7 (fidélité des consoles).
 - Lab 36 « Fidélité des consoles : scripts et équipements ».
 - Format `.slab` 15 (ACL avec `log`) et 16 (`logging synchronous`).
 
+Lot 1 de la v2.7 :
+
+- Contenu des fichiers simulés, format `.slab` 17 (#204) ; cmdlets de fichiers et `Import-Csv` / `Export-Csv` (#205) ;
+  évaluateur d'expressions PowerShell (#207) ; filtres de sortie IOS `| include`, `exclude`, `begin`, `section`, `count` (#206).
+- Lab 37 « Création d'utilisateurs par CSV » (fichiers de départ déclarables dans les labs via `files`).
+
 ## [2.6.2] — 2026-10-13
 
 Version de stabilisation issue de l'audit complet du code (`docs/audit-v2.6.2.md`, label `audit-v2.6.2`).
