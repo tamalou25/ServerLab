@@ -5,7 +5,7 @@
  */
 
 /** Commandes cmd.exe / outils Windows réels non simulés (noms en minuscules). */
-const CMD = ['netstat', 'arp', 'route', 'systeminfo', 'tasklist', 'taskkill', 'sc', 'wmic', 'getmac']
+const CMD = ['taskkill', 'wmic', 'getmac']
 
 /** Applets de commande PowerShell réelles non simulées (noms en minuscules). */
 const PS = [

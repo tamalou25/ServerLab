@@ -140,5 +140,9 @@ export function hostServices(features: readonly string[], domainController: bool
       )
       .map((s) => ({ display: s.display, name: s.name, role: m.feature }))
   )
-  return [...SYSTEM_SERVICES, ...fromRoles].sort((a, b) => a.display.localeCompare(b.display, 'fr'))
+  // Un même service peut être déclaré par deux rôles (DFSR : contrôleur de domaine et DFS)
+  const unique = [...SYSTEM_SERVICES, ...fromRoles].filter(
+    (s, i, all) => all.findIndex((o) => o.name === s.name) === i
+  )
+  return unique.sort((a, b) => a.display.localeCompare(b.display, 'fr'))
 }
