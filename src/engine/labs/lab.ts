@@ -66,7 +66,9 @@ export const LabDeviceSchema = z.object({
         read: z.array(z.string()).optional()
       })
     )
-    .optional()
+    .optional(),
+  /** Fichiers présents au départ (dossiers parents créés au besoin) : chemin local et contenu texte. */
+  files: z.array(z.object({ path: z.string(), content: z.string() })).optional()
 })
 
 export const LabDomainSchema = z.object({
@@ -302,6 +304,13 @@ function buildDeclarativeStart(start: LabDeclarativeStart): LabState {
           },
           localToken(d.name, 'Administrateur')
         )
+      )
+    for (const f of d.files ?? [])
+      apply(
+        command('files.createItem', id, f.path, 'file', localToken(d.name, 'Administrateur'), {
+          parents: true,
+          content: f.content
+        })
       )
     if (d.ios?.length) state = runIosScript(state, id, d.ios)
   }
