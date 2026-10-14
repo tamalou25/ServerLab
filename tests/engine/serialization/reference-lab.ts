@@ -8,6 +8,7 @@
  * (VLAN 30, trunk, sous-interface, OSPF, DHCP, ACL, HSRP, enregistrement).
  * Depuis la v17 : fichier C:\Scripts\users.csv de SRV1 avec son contenu texte.
  * Depuis la v18 : passerelle par défaut de CSW1 (ip default-gateway).
+ * Depuis la v20 : EtherChannel de CSW1 (Fa0/23-24 en LACP) et VTP (domaine SIO, transparent).
  * Depuis la v19 : spanning-tree de CSW1 (rapid-pvst, priorité du VLAN 30, BPDU Guard).
  * Le même scénario a servi à produire chaque fichier vN.slab avec le code de la version N.
  */
@@ -197,6 +198,13 @@ export function buildReferenceLab(): LabState {
     'spanning-tree vlan 30 priority 24576',
     'interface Fa0/2',
     'spanning-tree bpduguard enable',
+    // v20 : EtherChannel LACP et VTP
+    'exit',
+    'interface range Fa0/23 - 24',
+    'channel-group 1 mode active',
+    'exit',
+    'vtp domain SIO',
+    'vtp mode transparent',
     'end',
     'write memory'
   ])

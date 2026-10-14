@@ -688,7 +688,15 @@ export const IosInterfaceSchema = z.object({
   /** Port d'extrémité spanning-tree (spanning-tree portfast). */
   portfast: z.boolean().default(false),
   /** BPDU Guard du port (spanning-tree bpduguard enable) : err-disabled si un BPDU est reçu. */
-  bpduGuard: z.boolean().default(false)
+  bpduGuard: z.boolean().default(false),
+  /** Groupe EtherChannel du port (channel-group N mode …) ; null : aucun. */
+  channelGroup: z
+    .object({
+      group: z.number().int().min(1).max(6),
+      mode: z.enum(['active', 'passive', 'desirable', 'auto', 'on'])
+    })
+    .nullable()
+    .default(null)
 })
 
 /** Entrée d'une liste d'accès IOS (standard : source seule ; étendue : protocole, destination, port). */
@@ -793,6 +801,11 @@ export const IosConfigSchema = z.object({
   stpMode: z.enum(['pvst', 'rapid-pvst']).default('pvst'),
   /** Priorités de pont par VLAN (clé : numéro de VLAN ; absente : 32768). */
   stpPriorities: z.record(z.string(), z.number().int().min(0).max(61440)).default({}),
+  /** Interfaces Port-channel créées (numéros de groupe). */
+  portChannels: z.array(z.number().int().min(1).max(6)).default([]),
+  /** Mode VTP (vtp mode) et nom de domaine (vtp domain, vide par défaut). */
+  vtpMode: z.enum(['server', 'client', 'transparent']).default('server'),
+  vtpDomain: z.string().default(''),
   /** CDP actif globalement (cdp run, actif par défaut). */
   cdpRun: z.boolean().default(true),
   /** Données IOS par interface (clé : nom court Gi0/0). */

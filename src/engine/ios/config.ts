@@ -39,6 +39,9 @@ export function defaultIosState(): IosState {
     cdpRun: true,
     stpMode: 'pvst',
     stpPriorities: {},
+    portChannels: [],
+    vtpMode: 'server',
+    vtpDomain: '',
     macTable: []
   }
 }
@@ -232,6 +235,7 @@ export function draftIfaceEntry(ios: Draft<IosState>, name: string): Draft<IosSt
     arpInspectionTrust: false,
     nonegotiate: false,
     portfast: false,
-    bpduGuard: false
+    bpduGuard: false,
+    channelGroup: null
   })
 }

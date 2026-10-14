@@ -360,6 +360,29 @@ describe('migration 9 → 10 (cybersécurité défensive de la v2.6)', () => {
   })
 })
 
+describe('migration 19 → 20 (EtherChannel et VTP de la v2.7)', () => {
+  const ios = (lab: ReturnType<typeof open>['lab']) =>
+    (
+      Object.values(lab.devices).find((d) => d.name === 'CSW1') as {
+        ios?: { vtpMode: string; vtpDomain: string; portChannels: number[] }
+      }
+    ).ios
+
+  it('change seulement la version ; VTP serveur sans domaine, aucun canal', () => {
+    const doc = JSON.parse(readFixture(19)) as Record<string, unknown>
+    expect(migrations[19]!(doc)).toEqual({ ...doc, schemaVersion: 20 })
+    expect(ios(open(19).lab)).toMatchObject({ vtpMode: 'server', vtpDomain: '', portChannels: [] })
+  })
+
+  it('v20.slab : s’ouvre sans migration et garde EtherChannel et VTP', () => {
+    const lab = open(20).lab
+    expect(ios(lab)).toMatchObject({ vtpMode: 'transparent', vtpDomain: 'SIO', portChannels: [1] })
+    expect(
+      evaluateCheck(lab, { type: 'iosStartup', device: 'CSW1', line: 'channel-group 1 mode active' })
+    ).toBe(true)
+  })
+})
+
 describe('migration 18 → 19 (spanning-tree de la v2.7)', () => {
   const running = (lab: ReturnType<typeof open>['lab'], line: string) =>
     evaluateCheck(lab, { type: 'iosStartup', device: 'CSW1', line })

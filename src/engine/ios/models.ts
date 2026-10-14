@@ -89,7 +89,8 @@ export function isIosModel(value: unknown): value is IosModel {
 const LONG_PREFIX: Record<string, string> = {
   Gi: 'GigabitEthernet',
   Fa: 'FastEthernet',
-  Vl: 'Vlan'
+  Vl: 'Vlan',
+  Po: 'Port-channel'
 }
 
 /** Nom long IOS d'un port (Gi0/0 → GigabitEthernet0/0, Gi0/0.10 → GigabitEthernet0/0.10). */

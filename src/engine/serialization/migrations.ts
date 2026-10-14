@@ -5,7 +5,7 @@
  */
 import { DEFAULT_DC_POLICY_ID, DEFAULT_DOMAIN_POLICY_ID, defaultDomainGpos } from '../roles/gpo/defaults'
 
-export const CURRENT_SCHEMA_VERSION = 19
+export const CURRENT_SCHEMA_VERSION = 20
 
 type RawDocument = Record<string, unknown>
 
@@ -199,6 +199,14 @@ function addV27Stp(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 19 }
 }
 
+/**
+ * Version 20 : EtherChannel (channel-group, interfaces Port-channel) et VTP (mode, domaine) des
+ * switchs IOS. Valeurs par défaut (aucun groupe, serveur sans domaine) : seul le numéro change.
+ */
+function addV27EtherChannelVtp(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 20 }
+}
+
 /** migrations[n] migre un document de la version n vers n + 1. */
 export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   1: addDefaultGpos,
@@ -218,7 +226,8 @@ export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   15: addV27LoggingSync,
   16: addV27FileContent,
   17: addV27SwitchBasics,
-  18: addV27Stp
+  18: addV27Stp,
+  19: addV27EtherChannelVtp
 }
 
 export type MigrationResult = { ok: true; doc: RawDocument } | { ok: false; message: string }
