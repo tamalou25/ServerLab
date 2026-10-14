@@ -4,6 +4,7 @@
  */
 import type { FsNode, LabState, NtfsAce, ServerDevice, ShareRight, SmbShare } from '../../model/schema'
 import { SHARE_RIGHTS } from '../../model/schema'
+import type { EngineResult } from '../../core/result'
 import { accessPerms, canonicalAcl, effectiveAcl, principalName, sessionToken } from './acl'
 import {
   adminShares,
@@ -42,7 +43,7 @@ const list = (v: PsValue | undefined): string[] =>
         .map(psToString)
         .filter((x) => x.length > 0)
 
-function notFound(path: string) {
+export function notFound(path: string) {
   return psError(
     `Impossible de trouver le chemin d’accès « ${path} », car il n’existe pas.`,
     'ObjectNotFound',
@@ -53,7 +54,7 @@ function notFound(path: string) {
 }
 
 /** Traduit un chemin ou lève l'erreur correspondante. */
-function target(ctx: CmdContext, path: string): FsTarget {
+export function target(ctx: CmdContext, path: string): FsTarget {
   const r = translatePath(ctx, path)
   if (!r.ok)
     throw psError(
@@ -66,7 +67,7 @@ function target(ctx: CmdContext, path: string): FsTarget {
 }
 
 /** Lignes de Get-ChildItem pour un dossier. */
-function childLines(display: string, items: FsNode[]): string[] {
+export function childLines(display: string, items: FsNode[]): string[] {
   if (items.length === 0) return []
   return [
     '',
@@ -83,7 +84,7 @@ function childLines(display: string, items: FsNode[]): string[] {
   ]
 }
 
-function denied(path: string) {
+export function denied(path: string) {
   return psError(
     `L’accès au chemin d’accès « ${path} » est refusé.`,
     'PermissionDenied',
@@ -94,11 +95,7 @@ function denied(path: string) {
 }
 
 /** Exécute une action de fichiers en traduisant les erreurs du moteur. */
-function applyFs(
-  ctx: CmdContext,
-  path: string,
-  run: () => ReturnType<typeof createItem> | ReturnType<typeof removeItem>
-) {
+export function applyFs(ctx: CmdContext, path: string, run: () => EngineResult<unknown>) {
   const result = run()
   if (!result.ok) {
     if (result.error.code === 'AccessDenied') throw denied(path)
@@ -250,7 +247,8 @@ export const fileCmdlets: CmdletDef[] = [
       const raw =
         args['Name'] !== undefined ? `${str(args['Path'])}\\${str(args['Name'])}` : str(args['Path'])
       const kind = str(args['ItemType']).toLowerCase() === 'directory' ? 'folder' : 'file'
-      return createAndShow(ctx, raw, kind, str(args['Value']).length)
+      const value = args['Value'] !== undefined ? str(args['Value']) : undefined
+      return createAndShow(ctx, raw, kind, value?.length ?? 0, value)
     }
   },
   {
@@ -605,12 +603,18 @@ function mappingObject(local: string, remote: string): PsObject {
 }
 
 /** Droits effectifs à un emplacement traduit (au travers du partage le cas échéant). */
-function accessPermsAt(t: FsTarget, node: FsNode | null, token: ReturnType<typeof shellToken>) {
+export function accessPermsAt(t: FsTarget, node: FsNode | null, token: ReturnType<typeof shellToken>) {
   return accessPerms(t.server.storage, node?.id ?? null, token, t.share)
 }
 
 /** Création (New-Item, mkdir) avec la sortie « Répertoire : … ». */
-function createAndShow(ctx: CmdContext, raw: string, kind: 'folder' | 'file', size: number): PsValue[] {
+function createAndShow(
+  ctx: CmdContext,
+  raw: string,
+  kind: 'folder' | 'file',
+  size: number,
+  content?: string
+): PsValue[] {
   const t = target(ctx, raw)
   const existing = nodeAt(t)
   if (existing !== undefined)
@@ -625,6 +629,7 @@ function createAndShow(ctx: CmdContext, raw: string, kind: 'folder' | 'file', si
     createItem(ctx.state, t.server.id, t.localPath, kind, shellToken(ctx), {
       parents: kind === 'folder',
       size,
+      ...(content !== undefined ? { content } : {}),
       ...(t.share ? { share: t.share.name } : {})
     })
   )
