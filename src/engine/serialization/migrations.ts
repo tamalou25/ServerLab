@@ -5,7 +5,7 @@
  */
 import { DEFAULT_DC_POLICY_ID, DEFAULT_DOMAIN_POLICY_ID, defaultDomainGpos } from '../roles/gpo/defaults'
 
-export const CURRENT_SCHEMA_VERSION = 20
+export const CURRENT_SCHEMA_VERSION = 21
 
 type RawDocument = Record<string, unknown>
 
@@ -207,6 +207,15 @@ function addV27EtherChannelVtp(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 20 }
 }
 
+/**
+ * Version 21 : administration du système IOS (v2.7, lot 4a) — clock timezone, ntp server,
+ * exec-timeout des lignes et horloge réglée par clock set. Champs facultatifs (valeurs par défaut
+ * du schéma : UTC, aucun serveur, 10 0, horloge jamais réglée) : seule la version change.
+ */
+function addV27SystemAdmin(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 21 }
+}
+
 /** migrations[n] migre un document de la version n vers n + 1. */
 export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   1: addDefaultGpos,
@@ -227,7 +236,8 @@ export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   16: addV27FileContent,
   17: addV27SwitchBasics,
   18: addV27Stp,
-  19: addV27EtherChannelVtp
+  19: addV27EtherChannelVtp,
+  20: addV27SystemAdmin
 }
 
 export type MigrationResult = { ok: true; doc: RawDocument } | { ok: false; message: string }

@@ -42,7 +42,10 @@ export function defaultIosState(): IosState {
     portChannels: [],
     vtpMode: 'server',
     vtpDomain: '',
-    macTable: []
+    macTable: [],
+    clockTimezone: null,
+    ntpServers: [],
+    clockOffset: null
   }
 }
 
@@ -67,6 +70,7 @@ export function snapshotOf(device: IosDevice): IosSnapshot {
     aclCounters: _acl,
     syslog: _syslog,
     macTable: _mac,
+    clockOffset: _clock,
     ...running
   } = iosState(device)
   const config = clone(running)
@@ -139,7 +143,9 @@ export function applyStartup(device: Draft<IosDevice>, nextId: () => number): vo
     hsrpStates: {},
     aclCounters: {},
     syslog: [],
-    macTable: []
+    macTable: [],
+    // Calendrier matériel : l'heure réglée survit au redémarrage
+    clockOffset: device.ios?.clockOffset ?? null
   }
   if (!startup) return
   device.name = startup.hostname

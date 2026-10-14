@@ -651,6 +651,11 @@ export const IosLineSchema = z.object({
   login: z.enum(['none', 'line', 'local']).default('none'),
   /** logging synchronous : messages de la console resynchronisés avec la saisie (v16). */
   loggingSync: z.boolean().default(false),
+  /** Délai d'inactivité (exec-timeout minutes secondes, v21) ; null : valeur d'usine 10 0. */
+  execTimeout: z
+    .object({ minutes: z.number().int().min(0), seconds: z.number().int().min(0) })
+    .nullable()
+    .default(null),
   /** Protocoles autorisés (transport input) ; null : valeur d'usine. */
   transport: z
     .array(z.enum(['ssh', 'telnet']))
@@ -806,6 +811,17 @@ export const IosConfigSchema = z.object({
   /** Mode VTP (vtp mode) et nom de domaine (vtp domain, vide par défaut). */
   vtpMode: z.enum(['server', 'client', 'transparent']).default('server'),
   vtpDomain: z.string().default(''),
+  /** Fuseau horaire (clock timezone, v21) ; null : UTC. */
+  clockTimezone: z
+    .object({
+      zone: z.string(),
+      hours: z.number().int().min(-23).max(23),
+      minutes: z.number().int().min(0).max(59)
+    })
+    .nullable()
+    .default(null),
+  /** Serveurs NTP (ntp server, v21), synchronisation non simulée. */
+  ntpServers: z.array(z.string()).default([]),
   /** CDP actif globalement (cdp run, actif par défaut). */
   cdpRun: z.boolean().default(true),
   /** Données IOS par interface (clé : nom court Gi0/0). */
@@ -858,7 +874,12 @@ export const IosStateSchema = IosConfigSchema.extend({
   /** Tampon de journalisation (show logging), perdu au redémarrage. */
   syslog: z.array(z.string()).default([]),
   /** Table d'adresses MAC apprises par les trames simulées, perdue au redémarrage. */
-  macTable: z.array(MacEntrySchema).default([])
+  macTable: z.array(MacEntrySchema).default([]),
+  /**
+   * Horloge réglée par clock set (v21) : écart en ms avec l'horloge du lab ; null : jamais réglée
+   * (heure non fiable, « * » de show clock). Conservée au redémarrage (calendrier matériel).
+   */
+  clockOffset: z.number().int().nullable().default(null)
 })
 
 const deviceBase = {

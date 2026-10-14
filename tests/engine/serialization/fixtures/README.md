@@ -18,6 +18,7 @@ switch, routeur, poste en DHCP joint au domaine, poste statique, OU, utilisateur
 | `v12.slab` | 12     | ServerLab 2.6.1 : scénarios réseau (saut de VLAN, interception, syslog IOS)             |
 | `v11.slab` | 11     | ServerLab 2.6.1 : scénarios de cybersécurité (SPN, compromission, `cyber`)              |
 | `v17.slab` | 17     | ServerLab 2.7 : contenu texte des fichiers (`C:\Scripts\users.csv` de SRV1)             |
+| `v21.slab` | 21     | ServerLab 2.7 : horloge et NTP de CR1 (clock timezone, ntp server, exec-timeout)        |
 
 Ces fichiers ne doivent **jamais** être modifiés ni régénérés : ils représentent les fichiers que
 des utilisateurs ont réellement enregistrés. `../migrations.test.ts` vérifie que chacun s'ouvre,

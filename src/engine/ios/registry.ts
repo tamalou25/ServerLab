@@ -26,6 +26,7 @@ import { security } from './features/security'
 import { services } from './features/services'
 import { etherchannel } from './features/etherchannel'
 import { stp } from './features/stp'
+import { system } from './features/system'
 import { vtp } from './features/vtp'
 import { learnMacs, switching } from './features/switching'
 import { vlan } from './features/vlan'
@@ -46,7 +47,8 @@ export function iosFeatures(): readonly IosFeature[] {
     acl,
     security,
     l2sec,
-    logging
+    logging,
+    system
   ]
 }
 

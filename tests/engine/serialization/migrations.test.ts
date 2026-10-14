@@ -360,6 +360,25 @@ describe('migration 9 → 10 (cybersécurité défensive de la v2.6)', () => {
   })
 })
 
+describe('migration 20 → 21 (administration du système IOS de la v2.7)', () => {
+  const startup = (lab: ReturnType<typeof open>['lab'], line: string) =>
+    evaluateCheck(lab, { type: 'iosStartup', device: 'CR1', line })
+
+  it('change seulement la version ; UTC, aucun serveur NTP, exec-timeout d’usine', () => {
+    const doc = JSON.parse(readFixture(20)) as Record<string, unknown>
+    expect(migrations[20]!(doc)).toEqual({ ...doc, schemaVersion: 21 })
+    const lab = open(20).lab
+    expect(startup(lab, 'clock timezone CET 1')).toBe(false)
+    expect(startup(lab, 'exec-timeout 0 0')).toBe(false)
+  })
+
+  it('v21.slab : s’ouvre sans migration et garde fuseau, NTP et exec-timeout', () => {
+    const lab = open(21).lab
+    for (const line of ['clock timezone CET 1', 'ntp server 192.168.30.10', 'exec-timeout 0 0'])
+      expect(startup(lab, line)).toBe(true)
+  })
+})
+
 describe('migration 19 → 20 (EtherChannel et VTP de la v2.7)', () => {
   const ios = (lab: ReturnType<typeof open>['lab']) =>
     (

@@ -155,6 +155,7 @@ describe('aide ? et complétion Tab', () => {
       '  exit        Exit from the EXEC',
       '  ping        Send echo messages',
       '  show        Show running system information',
+      '  terminal    Set terminal line parameters',
       '  traceroute  Trace route to destination'
     ])
     c.run('en')
