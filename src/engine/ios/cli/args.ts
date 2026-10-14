@@ -152,3 +152,92 @@ export function formatVlanList(ids: readonly number[]): string {
   }
   return parts.join(',')
 }
+
+// ---------------------------------------------------------------------------
+// Plages d'interfaces (interface range)
+// ---------------------------------------------------------------------------
+
+/** Nombre maximal de plages d'une commande interface range (guide 2960, IOS 15.0(2)SE). */
+export const MAX_IFACE_RANGES = 5
+
+/** Résultat de l'analyse d'une plage : ports désignés, jeton fautif ou élément non simulé. */
+export type IfaceRangeParse =
+  | { kind: 'ok'; names: string[] }
+  | { kind: 'invalid'; index: number }
+  | { kind: 'unsimulated'; name: string }
+
+/**
+ * Analyse `fa0/1 - 5 , gi0/1 - 2` à partir de tokens[index] : jusqu'à cinq plages séparées par
+ * une virgule, espace obligatoire avant le tiret (`fa0/1-5` est refusé), ports existants de
+ * l'équipement. Plages de VLAN et de sous-interfaces : non simulées.
+ */
+export function parseIfaceRange(tokens: readonly string[], index: number, ctx: ArgContext): IfaceRangeParse {
+  const device = ctx.state.devices[ctx.deviceId]
+  const exists = (name: string): boolean =>
+    !!device?.interfaces.some((i) => i.name === name && !i.subinterface && !i.svi)
+  const names: string[] = []
+  let i = index
+  for (let group = 1; ; group++) {
+    if (group > MAX_IFACE_RANGES) return { kind: 'invalid', index: i }
+    const first = tokens[i]
+    if (first === undefined) return { kind: 'invalid', index: i }
+    // Type et numéro : « fa0/1 » ou « fa 0/1 »
+    const joined = /^([A-Za-z]+)(\d.*)$/.exec(first)
+    if (!joined && !/^[A-Za-z]+$/.test(first)) return { kind: 'invalid', index: i }
+    const prefix = joined ? (joined[1] as string) : first
+    const numIndex = joined ? i : i + 1
+    const type = resolveIfaceType(prefix, ctx, { vlans: true })
+    if (!type) return { kind: 'invalid', index: i }
+    if (type.short === 'Vl') return { kind: 'unsimulated', name: 'interface range vlan' }
+    let num = joined ? (joined[2] as string) : tokens[numIndex]
+    if (num === undefined) return { kind: 'invalid', index: numIndex }
+    // Virgule collée au numéro (« gi0/1 - 3, gi0/5 », exemple du guide 2960)
+    let comma = num.endsWith(',')
+    if (comma) num = num.slice(0, -1)
+    if (/^\d+(?:\/\d+)+\.\d+$/.test(num)) return { kind: 'unsimulated', name: 'interface range (sous-interfaces)' }
+    const m = /^((?:\d+\/)+)(\d+)$/.exec(num)
+    if (!m || !exists(`${type.short}${num}`)) return { kind: 'invalid', index: numIndex }
+    const base = `${type.short}${m[1]}`
+    const from = Number(m[2])
+    let to = from
+    i = numIndex + 1
+    if (!comma && tokens[i] === '-') {
+      const last = tokens[i + 1]
+      const lm = last === undefined ? null : /^(\d+)(,?)$/.exec(last)
+      if (!lm) return { kind: 'invalid', index: i + 1 }
+      to = Number(lm[1])
+      if (to < from) return { kind: 'invalid', index: i + 1 }
+      for (let p = from; p <= to; p++) if (!exists(`${base}${p}`)) return { kind: 'invalid', index: i + 1 }
+      comma = lm[2] === ','
+      i += 2
+    }
+    for (let p = from; p <= to; p++) if (!names.includes(`${base}${p}`)) names.push(`${base}${p}`)
+    if (comma) continue
+    if (tokens[i] === undefined) return { kind: 'ok', names }
+    if (tokens[i] !== ',') return { kind: 'invalid', index: i }
+    i++
+  }
+}
+
+/**
+ * Plage d'interfaces : consomme le reste de la ligne. Valeur : `ok:Fa0/1,Fa0/2` ou
+ * `unsimulated:<nom>` (message honnête affiché par la commande).
+ */
+export function ifaceRange(): ArgType {
+  const types = iface()
+  return {
+    label: 'interface',
+    match: (tokens, index, ctx) => {
+      const r = parseIfaceRange(tokens, index, ctx)
+      if (r.kind === 'invalid') return null
+      const value = r.kind === 'ok' ? `ok:${r.names.join(',')}` : `unsimulated:${r.name}`
+      return { consumed: tokens.length - index, value }
+    },
+    failure: (tokens, index, ctx) => {
+      const r = parseIfaceRange(tokens, index, ctx)
+      return r.kind === 'invalid' ? r.index : index
+    },
+    helpEntries: (ctx) => types.helpEntries?.(ctx) ?? [],
+    complete: (partial, ctx) => types.complete?.(partial, ctx) ?? []
+  }
+}

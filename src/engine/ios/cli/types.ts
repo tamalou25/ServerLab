@@ -10,6 +10,7 @@ export const IOS_MODES = [
   'exec',
   'config',
   'config-if',
+  'config-if-range',
   'config-subif',
   'config-line',
   'config-router',
@@ -23,6 +24,7 @@ export type IosMode = (typeof IOS_MODES)[number]
 /** Sous-modes de configuration : une commande inconnue y est cherchée en configuration globale. */
 export const CONFIG_SUBMODES: readonly IosMode[] = [
   'config-if',
+  'config-if-range',
   'config-subif',
   'config-line',
   'config-router',
@@ -47,7 +49,7 @@ export interface IosLineRef {
 /** État de la console IOS (persisté avec la session de console de l'interface). */
 export interface IosSession {
   mode: IosMode
-  /** Interfaces en cours de configuration (identifiants), en config-if / config-subif. */
+  /** Interfaces en cours de configuration (identifiants), en config-if, config-if-range, config-subif. */
   ifaces?: string[]
   /** Lignes en cours de configuration, en config-line. */
   line?: IosLineRef
@@ -88,6 +90,8 @@ export interface ArgType {
   label: string
   /** Reconnaît l'argument à partir de tokens[index] (null : invalide). */
   match(tokens: readonly string[], index: number, ctx: ArgContext): ArgMatch | null
+  /** Jeton fautif quand `match` échoue (marqueur ^ sous ce jeton plutôt que sous le premier). */
+  failure?(tokens: readonly string[], index: number, ctx: ArgContext): number
   /** Entrées d'aide propres (ex. types d'interface) ; par défaut une ligne label + aide. */
   helpEntries?(ctx: ArgContext): HelpEntry[]
   /** Complétion Tab d'un jeton partiel. */
