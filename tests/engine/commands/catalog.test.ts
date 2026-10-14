@@ -418,6 +418,7 @@ describe('catalogue des commandes', () => {
     )
     r.run(command('files.copyItem', srv, 'C:\\Partages\\lisezmoi.txt', 'C:\\Partages\\copie.txt', token, {}))
     r.run(command('files.renameItem', srv, 'C:\\Partages\\copie.txt', 'renomme.txt', token, {}))
+    r.run(command('files.moveItem', srv, 'C:\\Partages\\renomme.txt', 'C:\\Partages\\deplace.txt', token, {}))
     r.run(command('files.createShare', srv, { name: 'Partages', path: 'C:\\Partages' }, token))
     r.run(
       command(

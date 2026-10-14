@@ -24,6 +24,11 @@ export interface ShellSession {
   cwd: string
   /** Variables PowerShell ($x = …). */
   variables: Record<string, PsValue>
+  /**
+   * Invite de commandes : variables d'environnement définies par `set` pendant la session
+   * (nom tel que saisi → valeur ; null = variable effacée par `set nom=`).
+   */
+  cmdEnv?: Record<string, string | null>
   /** Console IOS : mode et contexte de configuration. */
   ios?: IosSession
 }

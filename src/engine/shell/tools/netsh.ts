@@ -16,6 +16,7 @@ import {
 } from '../../services/firewall'
 import { CommandFailure, type ExecContext } from '../context'
 import type { ToolDef } from './types'
+import { netshInterface } from './netsh-interface'
 
 const SEPARATOR = '-'.repeat(70)
 
@@ -209,14 +210,18 @@ function firewallContext(ctx: ExecContext, args: string[]): void {
 
 export const netshTool: ToolDef = {
   name: 'netsh',
-  synopsis: 'Configure le pare-feu (contexte advfirewall).',
-  switches: ['advfirewall'],
+  synopsis: 'Configure le pare-feu (advfirewall) et l’adressage IPv4 (interface ipv4).',
+  switches: ['advfirewall', 'interface', 'ipv4', 'ip'],
   run(ctx, args) {
     const [context = '', verb = '', target = '', ...rest] = args
+    if (context.toLowerCase() === 'interface' || context.toLowerCase() === 'int') {
+      netshInterface(ctx, args.slice(1))
+      return
+    }
     if (context.toLowerCase() !== 'advfirewall') {
       fail(
         ctx,
-        `La commande suivante est introuvable : ${args.join(' ')}.\nLe simulateur ne prend en charge que le contexte « netsh advfirewall ».`
+        `La commande suivante est introuvable : ${args.join(' ')}.\nLe simulateur ne prend en charge que les contextes « netsh advfirewall » et « netsh interface ipv4 ».`
       )
       return
     }

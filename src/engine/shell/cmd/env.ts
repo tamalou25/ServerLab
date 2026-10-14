@@ -48,7 +48,7 @@ export function expandCmdVariables(ctx: ExecContext, line: string): string {
     if (c === '%') {
       const end = line.indexOf('%', i + 1)
       if (end > i + 1) {
-        const value = cmdEnvValue(ctx, line.slice(i + 1, end))
+        const value = cmdVariable(ctx, line.slice(i + 1, end))
         if (value !== undefined) {
           out += value
           i = end + 1
@@ -60,4 +60,50 @@ export function expandCmdVariables(ctx: ExecContext, line: string): string {
     i++
   }
   return out
+}
+
+/** Noms des variables du lab, avec la casse affichée par `set`. */
+export const CMD_ENV_NAMES = [
+  'COMPUTERNAME',
+  'LOGONSERVER',
+  'SystemRoot',
+  'USERDOMAIN',
+  'USERNAME',
+  'USERPROFILE',
+  'windir'
+] as const
+
+/** Variable définie par `set` dans la session (clé d'origine), insensible à la casse. */
+function sessionKey(ctx: ExecContext, name: string): string | undefined {
+  const lower = name.toLowerCase()
+  return Object.keys(ctx.session.cmdEnv ?? {}).find((k) => k.toLowerCase() === lower)
+}
+
+/** Valeur courante : variable de session (set), sinon variable du lab ; undefined si absente. */
+export function cmdVariable(ctx: ExecContext, name: string): string | undefined {
+  const key = sessionKey(ctx, name)
+  if (key !== undefined) return ctx.session.cmdEnv?.[key] ?? undefined
+  return cmdEnvValue(ctx, name)
+}
+
+/** Définit (ou efface avec `null`) une variable pour la suite de la session. */
+export function setCmdVariable(ctx: ExecContext, name: string, value: string | null): void {
+  const env = { ...(ctx.session.cmdEnv ?? {}) }
+  const key = sessionKey(ctx, name)
+  if (key !== undefined) delete env[key]
+  // Le nom garde la casse de la première définition dans le lab (COMPUTERNAME), sinon celle saisie
+  const builtin = CMD_ENV_NAMES.find((n) => n.toLowerCase() === name.toLowerCase())
+  env[builtin ?? key ?? name] = value
+  ctx.session = { ...ctx.session, cmdEnv: env }
+}
+
+/** Toutes les variables définies (nom → valeur), triées sans tenir compte de la casse. */
+export function cmdVariables(ctx: ExecContext): [string, string][] {
+  const names = new Map<string, string>()
+  for (const n of CMD_ENV_NAMES) names.set(n.toLowerCase(), n)
+  for (const n of Object.keys(ctx.session.cmdEnv ?? {})) names.set(n.toLowerCase(), n)
+  return [...names.values()]
+    .map((n): [string, string | undefined] => [n, cmdVariable(ctx, n)])
+    .filter((e): e is [string, string] => e[1] !== undefined)
+    .sort((a, b) => a[0].toLowerCase().localeCompare(b[0].toLowerCase()))
 }
