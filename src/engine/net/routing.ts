@@ -7,7 +7,7 @@ import { inNetwork, networkAddress, parseIpv4, prefixToMaskInt } from './ipv4'
 import { l2Segment } from './segment'
 import { iosDynamicRoutes, iosInterfaceRoutes } from '../ios/registry'
 
-export type RouteSource = 'connected' | 'static' | 'default' | 'ospf'
+export type RouteSource = 'connected' | 'static' | 'default' | 'ospf' | 'rip'
 
 export interface Route {
   network: string
@@ -19,6 +19,8 @@ export interface Route {
   /** Distance administrative et métrique (routage dynamique : OSPF 110/coût). */
   distance?: number
   metric?: number
+  /** Route externe OSPF de type 2 (default-information originate : O*E2). */
+  external?: boolean
 }
 
 /** TTL initial selon le type d'équipement. */

@@ -28,6 +28,11 @@ export interface OspfRouter {
   process: number
   routerId: string
   ifaces: OspfIface[]
+  /**
+   * Annonce une route par défaut externe (default-information originate) : `always`, ou une
+   * route par défaut statique présente dans sa table.
+   */
+  originatesDefault: boolean
 }
 
 /** Voisin OSPF vu depuis un routeur. */
@@ -98,7 +103,10 @@ function buildRouter(state: LabState, device: IosDevice): OspfRouter | null {
       cost: ifaceCost(iface)
     })
   }
-  return { device, process: proc.process, routerId, ifaces }
+  const originatesDefault =
+    proc.defaultOriginate === 'always' ||
+    (proc.defaultOriginate === 'on' && (device.routes ?? []).some((r) => r.prefixLength === 0))
+  return { device, process: proc.process, routerId, ifaces, originatesDefault }
 }
 
 function compute(state: LabState): OspfDatabase {
@@ -208,5 +216,21 @@ export function ospfRoutes(state: LabState, device: IosDevice): Route[] {
       })
     }
   }
+  // Route par défaut externe de type 2 (métrique 1 quel que soit le chemin) : ASBR le plus proche
+  let asbr: { id: string; d: number } | null = null
+  for (const [id, d] of dist)
+    if (id !== device.id && db.routers.get(id)?.originatesDefault && (!asbr || d < asbr.d)) asbr = { id, d }
+  const hop = asbr ? firstHop.get(asbr.id) : undefined
+  if (hop && !self.originatesDefault)
+    best.set('0.0.0.0/0', {
+      network: '0.0.0.0',
+      prefixLength: 0,
+      gateway: hop.gateway,
+      ifaceId: hop.ifaceId,
+      source: 'ospf',
+      distance: 110,
+      metric: 1,
+      external: true
+    })
   return [...best.values()]
 }

@@ -9,6 +9,8 @@
  * Depuis la v17 : fichier C:\Scripts\users.csv de SRV1 avec son contenu texte.
  * Depuis la v18 : passerelle par défaut de CSW1 (ip default-gateway).
  * Depuis la v20 : EtherChannel de CSW1 (Fa0/23-24 en LACP) et VTP (domaine SIO, transparent).
+ * Depuis la v21 : horloge et NTP de CR1 (clock timezone, ntp server, exec-timeout de la console).
+ * Depuis la v22 : RIP v2 de CR1 et default-information originate d'OSPF.
  * Depuis la v19 : spanning-tree de CSW1 (rapid-pvst, priorité du VLAN 30, BPDU Guard).
  * Le même scénario a servi à produire chaque fichier vN.slab avec le code de la version N.
  */
@@ -228,7 +230,11 @@ export function buildReferenceLab(): LabState {
     // v16 : logging synchronous sur la console
     'line con 0',
     'logging synchronous',
+    // v21 : délai d'inactivité de la console, fuseau horaire et serveur NTP
+    'exec-timeout 0 0',
     'exit',
+    'clock timezone CET 1',
+    'ntp server 192.168.30.10',
     'interface Gi0/0',
     'no shutdown',
     'interface Gi0/0.30',
@@ -238,6 +244,13 @@ export function buildReferenceLab(): LabState {
     'exit',
     'router ospf 1',
     'network 192.168.30.0 0.0.0.255 area 0',
+    // v22 : route par défaut annoncée par OSPF, processus RIP v2
+    'default-information originate always',
+    'exit',
+    'router rip',
+    'version 2',
+    'network 192.168.30.0',
+    'no auto-summary',
     'end',
     'write memory'
   ])

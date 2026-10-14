@@ -651,6 +651,11 @@ export const IosLineSchema = z.object({
   login: z.enum(['none', 'line', 'local']).default('none'),
   /** logging synchronous : messages de la console resynchronisés avec la saisie (v16). */
   loggingSync: z.boolean().default(false),
+  /** Délai d'inactivité (exec-timeout minutes secondes, v21) ; null : valeur d'usine 10 0. */
+  execTimeout: z
+    .object({ minutes: z.number().int().min(0), seconds: z.number().int().min(0) })
+    .nullable()
+    .default(null),
   /** Protocoles autorisés (transport input) ; null : valeur d'usine. */
   transport: z
     .array(z.enum(['ssh', 'telnet']))
@@ -754,7 +759,26 @@ export const OspfProcessSchema = z.object({
   passive: z.array(z.string()).default([]),
   passiveDefault: z.boolean().default(false),
   /** Exceptions à passive-interface default (no passive-interface Gi0/0). */
-  active: z.array(z.string()).default([])
+  active: z.array(z.string()).default([]),
+  /** default-information originate [always] (v22) ; null : aucune route par défaut annoncée. */
+  defaultOriginate: z.enum(['on', 'always']).nullable().default(null)
+})
+
+/** Processus RIP d'un équipement IOS (router rip, v22). */
+export const RipProcessSchema = z.object({
+  /** version 1 | 2 ; null : envoi en version 1, réception des versions 1 et 2. */
+  version: z
+    .union([z.literal(1), z.literal(2)])
+    .nullable()
+    .default(null),
+  /** Réseaux de classe annoncés (network 10.0.0.0). */
+  networks: z.array(z.string()).default([]),
+  /** Résumé automatique aux frontières de classe (auto-summary, actif par défaut). */
+  autoSummary: z.boolean().default(true),
+  /** Interfaces passives (noms courts) : aucune mise à jour émise. */
+  passive: z.array(z.string()).default([]),
+  /** default-information originate : annonce de 0.0.0.0/0. */
+  defaultOriginate: z.boolean().default(false)
 })
 
 /** Configuration IOS globale (running-config, hors interfaces du moteur). */
@@ -769,6 +793,8 @@ export const IosConfigSchema = z.object({
   ipRouting: z.boolean().default(false),
   /** Processus OSPF (router ospf N). */
   ospf: z.array(OspfProcessSchema).default([]),
+  /** Processus RIP (router rip, v22) ; null : non configuré. */
+  rip: RipProcessSchema.nullable().default(null),
   /** Serveur DHCP IOS : pools (ip dhcp pool), une étendue par pool. */
   dhcpServer: DhcpServerSchema.nullable().default(null),
   /** Adresses exclues de tous les pools (ip dhcp excluded-address). */
@@ -806,6 +832,17 @@ export const IosConfigSchema = z.object({
   /** Mode VTP (vtp mode) et nom de domaine (vtp domain, vide par défaut). */
   vtpMode: z.enum(['server', 'client', 'transparent']).default('server'),
   vtpDomain: z.string().default(''),
+  /** Fuseau horaire (clock timezone, v21) ; null : UTC. */
+  clockTimezone: z
+    .object({
+      zone: z.string(),
+      hours: z.number().int().min(-23).max(23),
+      minutes: z.number().int().min(0).max(59)
+    })
+    .nullable()
+    .default(null),
+  /** Serveurs NTP (ntp server, v21), synchronisation non simulée. */
+  ntpServers: z.array(z.string()).default([]),
   /** CDP actif globalement (cdp run, actif par défaut). */
   cdpRun: z.boolean().default(true),
   /** Données IOS par interface (clé : nom court Gi0/0). */
@@ -858,7 +895,36 @@ export const IosStateSchema = IosConfigSchema.extend({
   /** Tampon de journalisation (show logging), perdu au redémarrage. */
   syslog: z.array(z.string()).default([]),
   /** Table d'adresses MAC apprises par les trames simulées, perdue au redémarrage. */
-  macTable: z.array(MacEntrySchema).default([])
+  macTable: z.array(MacEntrySchema).default([]),
+  /**
+   * Horloge réglée par clock set (v21) : écart en ms avec l'horloge du lab ; null : jamais réglée
+   * (heure non fiable, « * » de show clock). Conservée au redémarrage (calendrier matériel).
+   */
+  clockOffset: z.number().int().nullable().default(null),
+  /** Compteurs de trafic par interface (show interfaces, v23), remis à zéro au redémarrage. */
+  ifaceCounters: z
+    .record(
+      z.string(),
+      z.object({
+        inPackets: z.number().int().nonnegative(),
+        inBytes: z.number().int().nonnegative(),
+        inBroadcasts: z.number().int().nonnegative(),
+        outPackets: z.number().int().nonnegative(),
+        outBytes: z.number().int().nonnegative(),
+        /** Horloge du lab de la dernière trame reçue / émise. */
+        lastIn: z.number().nullable(),
+        lastOut: z.number().nullable()
+      })
+    )
+    .default({}),
+  /** Cache ARP appris par les trames simulées (show ip arp, v23), perdu au redémarrage. */
+  arpTable: z
+    .array(z.object({ ip: z.string(), mac: z.string(), iface: z.string(), at: z.number() }))
+    .default([]),
+  /** Paquets traduits par le NAT (Hits de show ip nat statistics, v23). */
+  natHits: z.number().int().nonnegative().default(0),
+  /** Débogages actifs (debug ip packet, debug ip ospf events, v23), perdus au redémarrage. */
+  debugs: z.array(z.enum(['ip packet', 'ip ospf events'])).default([])
 })
 
 const deviceBase = {
@@ -1242,6 +1308,7 @@ export type ClientDevice = z.infer<typeof ClientDeviceSchema>
 export type SwitchDevice = z.infer<typeof SwitchDeviceSchema>
 export type IosConfig = z.infer<typeof IosConfigSchema>
 export type OspfProcess = z.infer<typeof OspfProcessSchema>
+export type RipProcess = z.infer<typeof RipProcessSchema>
 export type IosAcl = z.infer<typeof AclSchema>
 export type IosAclEntry = z.infer<typeof AclEntrySchema>
 export type NatRule = z.infer<typeof NatRuleSchema>
