@@ -1,0 +1,5 @@
+# Source: https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/select-object?view=powershell-5.1 (exemple 12, tableau de propriétés écrit sur une ligne)
+# Commande: @{ name = 'a' ; weight = 7 } | Select-Object -Property @(@{ Label = 'Name' ; Expression = { $_.name } }, @{ Label = 'Weight' ; Expression = { $_.weight } })
+Name Weight
+---- ------
+a         7

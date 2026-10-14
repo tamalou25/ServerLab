@@ -60,6 +60,14 @@ export function unsimulatedMessage(shell: 'cmd' | 'ps' | 'bash', name: string): 
 }
 
 /**
+ * Garde-fou des boucles : au-delà de `limit` itérations, ServerLab arrête la boucle (le vrai
+ * PowerShell continuerait, une boucle infinie se termine par Ctrl+C).
+ */
+export function iterationLimitMessage(keyword: string, limit: number): string {
+  return `Boucle « ${keyword} » interrompue : plus de ${limit} itérations. Cette limite est propre au simulateur ServerLab (PowerShell n’en a pas).`
+}
+
+/**
  * Message d'un paramètre réel d'une applet de commande, accepté par Windows PowerShell mais non
  * reproduit par ServerLab (au lieu d'un « paramètre introuvable » trompeur).
  */
