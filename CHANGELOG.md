@@ -29,6 +29,11 @@ Lot 1 de la v2.7 :
   évaluateur d'expressions PowerShell (#207) ; filtres de sortie IOS `| include`, `exclude`, `begin`, `section`, `count` (#206).
 - Lab 37 « Création d'utilisateurs par CSV » (fichiers de départ déclarables dans les labs via `files`).
 
+Lot 3 de la v2.7 :
+
+- Administration en ligne de commande CMD : `net user` / `localgroup` / `group`, `&&`, redirection `>`, `copy`, `dcdiag`, `dsadd`… (#211).
+- Lab 39 « Administration en ligne de commande (CMD) » et critère de lab `fileExists` (fichier présent, contenu facultatif).
+
 ## [2.6.2] — 2026-10-13
 
 Version de stabilisation issue de l'audit complet du code (`docs/audit-v2.6.2.md`, label `audit-v2.6.2`).
