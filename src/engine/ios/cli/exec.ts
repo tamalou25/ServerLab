@@ -6,7 +6,9 @@
 import type { LabState } from '../../model/schema'
 import type { PacketTrace } from '../../sim/trace'
 import { NeedInput, type OutputLine, type ShellResult, type ShellSession } from '../../shell/types'
-import { parseLine, tokenize, type ParseOutcome } from './parser'
+import { parseLine, tokenize, type ParseOutcome, type Token } from './parser'
+import { applyFilter, parseFilter, type FilterParse } from './filter'
+import { unsimulatedIosMessage } from '../../shell/unsimulated'
 import { iosPrompt, iosSessionOf } from './session'
 import { modeTree } from './tree'
 import { applyTraceEffects, settleIos, settleMessages } from '../registry'
@@ -90,6 +92,21 @@ function parseInMode(
   return { outcome, mode }
 }
 
+/** Mot abrégé d'un mot-clé IOS (sh, sho, show). */
+const abbrev = (word: string | undefined, keyword: string): boolean =>
+  !!word && word.length >= 2 && keyword.startsWith(word.toLowerCase())
+
+/**
+ * Position du `|` d'un filtre de sortie : seulement après une commande show (ou `do show` depuis
+ * la configuration) ; ailleurs, `|` reste un caractère ordinaire (description, banner…).
+ */
+function pipeIndex(tokens: readonly Token[]): number {
+  const first = tokens[0]?.text.toLowerCase()
+  const cmd = first === 'do' ? tokens[1]?.text : tokens[0]?.text
+  if (!abbrev(cmd, 'show')) return -1
+  return tokens.findIndex((t) => t.text === '|')
+}
+
 export function executeIos(
   state: LabState,
   session: ShellSession,
@@ -117,17 +134,45 @@ export function executeIos(
     if (isConfigMode(ctx.session.mode)) ctx.setMode('exec')
     return done()
   }
-  const tokens = tokenize(line)
-  if (tokens.length === 0) return done()
+  const allTokens = tokenize(line)
+  if (allTokens.length === 0) return done()
+  const pipe = pipeIndex(allTokens)
+  const tokens = pipe < 0 ? allTokens : allTokens.slice(0, pipe)
+  const filter: FilterParse | null = pipe < 0 ? null : parseFilter(line, allTokens, pipe + 1)
   const words = tokens.map((t) => t.text)
+  const caret = (token: Token | undefined): void => {
+    ctx.print(`${' '.repeat(prompt.length + (token?.start ?? 0))}^`)
+    ctx.print("% Invalid input detected at '^' marker.")
+    ctx.print('')
+  }
   const { outcome, mode } = parseInMode(ctx.session.mode, words, ctx)
 
   try {
     switch (outcome.kind) {
-      case 'run':
+      case 'run': {
+        if (filter?.kind === 'invalid') {
+          caret(allTokens[filter.index])
+          break
+        }
+        if (filter?.kind === 'incomplete') {
+          ctx.print('% Incomplete command.')
+          ctx.print('')
+          break
+        }
+        if (filter?.kind === 'unsimulated') {
+          ctx.print(`% ${unsimulatedIosMessage(filter.name)}`)
+          break
+        }
         if (mode !== ctx.session.mode) ctx.session = { mode }
+        const from = ctx.output.length
         outcome.run(ctx, outcome.args)
+        if (filter?.kind === 'ok') {
+          // Filtre appliqué aux seules lignes affichées par la commande
+          const lines = ctx.output.splice(from).map((l) => l.text)
+          for (const text of applyFilter(lines, filter.filter)) ctx.print(text)
+        }
         break
+      }
       case 'incomplete':
         ctx.print('% Incomplete command.')
         ctx.print('')
@@ -145,10 +190,7 @@ export function executeIos(
           ctx.print('% Unknown command or computer name, or unable to find computer address')
           break
         }
-        const token = tokens[outcome.index] ?? tokens[tokens.length - 1]
-        ctx.print(`${' '.repeat(prompt.length + (token?.start ?? 0))}^`)
-        ctx.print("% Invalid input detected at '^' marker.")
-        ctx.print('')
+        caret(tokens[outcome.index] ?? tokens[tokens.length - 1])
         break
       }
     }
