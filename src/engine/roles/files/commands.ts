@@ -15,7 +15,8 @@ import {
   removeShare,
   setNtfsEntry,
   setNtfsInheritance,
-  setShareAcl
+  setShareAcl,
+  writeFileContent
 } from './actions'
 import { findNode } from './paths'
 import { mapDrive, unmapDrive, type DriveOperation } from './smb'
@@ -48,6 +49,11 @@ export const filesCommands = {
   'files.createItem': def(
     createItem,
     (s, id, path, kind) => `Créer ${kind === 'folder' ? 'le dossier' : 'le fichier'} ${path}${on(s, id)}`
+  ),
+  'files.writeContent': def(
+    writeFileContent,
+    (s, id, path, _text, _token, options) =>
+      `${options?.append ? 'Ajouter au fichier' : 'Écrire le fichier'} ${path}${on(s, id)}`
   ),
   'files.removeItem': def(removeItem, (s, id, path) => `Supprimer ${path}${on(s, id)}`),
   'files.createShare': def(
