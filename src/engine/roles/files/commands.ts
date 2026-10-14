@@ -11,6 +11,7 @@ import {
   copyItem,
   createItem,
   createShare,
+  moveItem,
   removeItem,
   removeNtfs,
   removeShare,
@@ -62,6 +63,10 @@ export const filesCommands = {
     (s, id, source, destination) => `Copier ${source} vers ${destination}${on(s, id)}`
   ),
   'files.renameItem': def(renameItem, (s, id, path, newName) => `Renommer ${path} en ${newName}${on(s, id)}`),
+  'files.moveItem': def(
+    moveItem,
+    (s, id, source, destination) => `Déplacer ${source} vers ${destination}${on(s, id)}`
+  ),
   'files.removeItem': def(removeItem, (s, id, path) => `Supprimer ${path}${on(s, id)}`),
   'files.createShare': def(
     createShare,

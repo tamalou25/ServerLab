@@ -106,6 +106,7 @@ const IPCONFIG_HELP = [
 
 export const ipconfigTool: ToolDef = {
   name: 'ipconfig',
+  handlesHelp: true,
   synopsis: 'Affiche la configuration IP et gère les baux DHCP.',
   switches: ['/all', '/release', '/renew', '/flushdns', '/registerdns', '/?'],
   run(ctx, args) {
@@ -197,6 +198,7 @@ export const ipconfigTool: ToolDef = {
 
 export const pingTool: ToolDef = {
   name: 'ping',
+  handlesHelp: true,
   synopsis: 'Teste la connectivité avec un hôte (requêtes d’écho ICMP).',
   switches: ['-n', '-l', '-i', '-t', '/?'],
   run(ctx, args) {

@@ -12,6 +12,7 @@ import { controlledDomain } from './directory'
 import { replicateDirectory } from './replication'
 import { siteCmdlets } from './site-cmdlets'
 import { netdomTool, nltestTool, repadminTool } from './site-tools'
+import { dsTools } from './ds-tools'
 import { addsBashTools } from './realm'
 
 export const addsRole = defineRole({
@@ -40,7 +41,7 @@ export const addsRole = defineRole({
   ],
   commands: addsCommands,
   cmdlets: [...adCmdlets, ...recycleBinCmdlets, ...siteCmdlets],
-  tools: [repadminTool, netdomTool, nltestTool],
+  tools: [repadminTool, netdomTool, nltestTool, ...dsTools],
   bashTools: addsBashTools,
   views: [
     {

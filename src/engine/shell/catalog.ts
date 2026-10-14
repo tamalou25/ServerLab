@@ -11,6 +11,7 @@ import { netCmdlets } from './ps/cmdlets/net'
 import { systemCmdlets } from './ps/cmdlets/system'
 import { hostnameTool, ipconfigTool, pingTool, tracertTool, whoamiTool } from './tools/net'
 import { netshTool } from './tools/netsh'
+import { diagTools } from './tools/diag'
 import { coreBashTools } from './bash/core'
 
 let catalog: CommandCatalog | null = null
@@ -35,6 +36,7 @@ export function shellCatalog(): CommandCatalog {
       hostnameTool,
       whoamiTool,
       netshTool,
+      ...diagTools,
       ...roles.flatMap((m) => m.tools)
     ],
     bashTools: [...coreBashTools, ...roles.flatMap((m) => m.bashTools ?? [])]

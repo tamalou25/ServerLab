@@ -25,6 +25,7 @@ function invalidOption(ctx: ExecContext, tool: string, option: string): void {
 
 export const gpupdateTool: ToolDef = {
   name: 'gpupdate',
+  handlesHelp: true,
   synopsis: 'Actualise les paramètres de stratégie de groupe.',
   switches: ['/force', '/target:computer', '/target:user', '/wait:0', '/logoff', '/boot', '/sync', '/?'],
   run(ctx, args) {
@@ -146,6 +147,7 @@ function settingsBlock(title: string, lines: ReturnType<typeof describeSettings>
 
 export const gpresultTool: ToolDef = {
   name: 'gpresult',
+  handlesHelp: true,
   synopsis: 'Affiche le jeu de stratégie résultant (RSoP) de l’ordinateur et de l’utilisateur.',
   switches: ['/r', '/v', '/z', '/scope', 'user', 'computer', '/user', '/h', '/?'],
   run(ctx, args) {

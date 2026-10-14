@@ -87,8 +87,8 @@ export function isolatedSites(domain: Domain): string[] {
   return sites.filter((s) => !linked.has(s))
 }
 
-/** Tentative de réplication : le contrôleur joint-il son partenaire ? */
-function attempt(state: LabState, dcId: string, partnerId: string): boolean {
+/** Tentative de réplication : le contrôleur joint-il son partenaire ? (aussi utilisée par dcdiag) */
+export function replicationAttempt(state: LabState, dcId: string, partnerId: string): boolean {
   const ip = addressOf(state, partnerId)
   if (!ip || !state.devices[dcId]?.powered || !state.devices[partnerId]?.powered) return false
   return serverExchange(state, dcId, ip, {
@@ -188,7 +188,7 @@ function replicateDomain(draft: Draft<LabState>, domain: Draft<Domain>, state: L
   const status: ReplicationStatus[] = []
   for (const c of connections) {
     const previous = domain.replication.status.find((s) => s.dcId === c.dcId && s.partnerId === c.partnerId)
-    const ok = attempt(state, c.dcId, c.partnerId)
+    const ok = replicationAttempt(state, c.dcId, c.partnerId)
     if (ok) succeeded.push(c)
     status.push({
       dcId: c.dcId,
