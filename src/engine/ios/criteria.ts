@@ -14,6 +14,8 @@ import { isIos, type IosDevice } from './device'
 import { configBody, showStartupConfig } from './running-config'
 import { ospfDatabase } from './ospf'
 import { ifaceStatus } from './status'
+import { memberFlag, members } from './features/etherchannel'
+import { stpInstance } from './features/stp'
 
 function iosDevice(state: LabState, name: string): IosDevice | null {
   const device = byName(state, name)
@@ -203,5 +205,46 @@ export const IOS_CRITERIA: CriterionType[] = [
       return entry.portSecurity.violations > 0 === (check.violated !== false)
     },
     'Violation de port-security sur un port'
+  ),
+  defineCriterion(
+    z.object({
+      type: z.literal('iosStpRoot'),
+      device: z.string(),
+      vlan: z.number().int().min(1).max(4094).default(1),
+      /** false : le switch ne doit pas être le pont racine du VLAN. */
+      root: z.boolean().default(true)
+    }),
+    (state, check) => {
+      const device = iosDevice(state, check.device)
+      const inst = device ? stpInstance(state, device, check.vlan) : null
+      return !!inst && inst.isRoot === (check.root !== false)
+    },
+    'Pont racine spanning-tree d’un VLAN (élection calculée, comme show spanning-tree)'
+  ),
+  defineCriterion(
+    z.object({
+      type: z.literal('iosEtherchannel'),
+      device: z.string(),
+      group: z.number().int().min(1).max(6),
+      /** Nombre minimal de ports membres, tous groupés (P). */
+      minPorts: z.number().int().min(1).default(2),
+      /** Protocole de négociation attendu (LACP : active/passive ; PAgP : desirable/auto). */
+      protocol: z.enum(['LACP', 'PAgP']).optional()
+    }),
+    (state, check) => {
+      const device = iosDevice(state, check.device)
+      if (!device) return false
+      const ports = members(device, check.group)
+      if (ports.length < check.minPorts) return false
+      if (!ports.every((p) => memberFlag(state, device, p) === 'P')) return false
+      if (check.protocol === undefined) return true
+      return ports.every((p) => {
+        const mode = iosState(device).interfaces[p.name]?.channelGroup?.mode
+        const lacp = mode === 'active' || mode === 'passive'
+        const pagp = mode === 'desirable' || mode === 'auto'
+        return check.protocol === 'LACP' ? lacp : pagp
+      })
+    },
+    'EtherChannel monté (ports membres groupés, état SU/P de show etherchannel summary)'
   )
 ]
