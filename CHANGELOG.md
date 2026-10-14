@@ -34,6 +34,13 @@ Lot 3 de la v2.7 :
 - Administration en ligne de commande CMD : `net user` / `localgroup` / `group`, `&&`, redirection `>`, `copy`, `dcdiag`, `dsadd`… (#211).
 - Lab 39 « Administration en ligne de commande (CMD) » et critère de lab `fileExists` (fichier présent, contenu facultatif).
 
+Lot 5 de la v2.7 :
+
+- Switch Catalyst 2960 : bases, STP, EtherChannel, VTP, CDP (#210) et `interface range` (#209).
+- Critères IOS `iosStpRoot` (pont racine calculé) et `iosEtherchannel` (canal monté, SU/P).
+- Lab 38 « STP et EtherChannel ».
+- Formats `.slab` 18, 19 et 20 (état des switchs : STP, EtherChannel, VTP).
+
 ## [2.6.2] — 2026-10-13
 
 Version de stabilisation issue de l'audit complet du code (`docs/audit-v2.6.2.md`, label `audit-v2.6.2`).

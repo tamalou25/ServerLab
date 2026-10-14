@@ -46,6 +46,8 @@ const FIELD_LABELS: Record<string, string> = {
   minNeighbors: 'Voisins OSPF (minimum)',
   minTranslations: 'Traductions NAT (minimum)',
   minBindings: 'Baux (minimum)',
+  minPorts: 'Ports membres (minimum)',
+  root: 'Pont racine',
   rule: 'Règle',
   scenario: 'Scénario (identifiant)',
   after: 'Scénarios joués avant (identifiants)',
