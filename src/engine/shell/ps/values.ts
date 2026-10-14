@@ -27,6 +27,8 @@ export interface PsObject {
 export interface PsScriptBlock {
   kind: 'script'
   source: string
+  /** Position du début du bloc dans la ligne saisie (erreurs soulignées au bon endroit). */
+  offset?: number
 }
 
 export interface PsCredential {

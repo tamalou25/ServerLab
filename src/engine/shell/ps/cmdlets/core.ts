@@ -252,7 +252,7 @@ export const coreCmdlets: CmdletDef[] = [
     run(ctx: CmdContext, args, input) {
       const filter = args['FilterScript'] ?? null
       const items = flatten(input)
-      if (isScript(filter)) return items.filter((i) => ctx.test(filter.source, i))
+      if (isScript(filter)) return items.filter((i) => ctx.test(filter, i))
       const property = psToString(filter ?? '')
       const op = [
         'EQ',
@@ -270,6 +270,34 @@ export const coreCmdlets: CmdletDef[] = [
       ].find((o) => args[o] === true)
       if (!op) return items.filter((i) => !!getProp(i, property) && getProp(i, property) !== false)
       return items.filter((i) => compare(op.toLowerCase(), getProp(i, property), args['Value'] ?? null))
+    }
+  },
+  {
+    // ForEach-Object (learn.microsoft.com/powershell/module/microsoft.powershell.core/foreach-object) :
+    // bloc -Process exécuté pour chaque objet ($_), -Begin / -End une fois ; un nom (-MemberName)
+    // renvoie la propriété de chaque objet.
+    name: 'ForEach-Object',
+    aliases: ['foreach', '%'],
+    module: 'Core',
+    synopsis: 'Exécute une opération sur chaque objet du pipeline.',
+    params: [
+      { name: 'Process', type: 'any', position: 0, aliases: ['MemberName'] },
+      { name: 'Begin', type: 'script' },
+      { name: 'End', type: 'script' },
+      { name: 'InputObject', type: 'any', pipeline: true }
+    ],
+    run(ctx: CmdContext, args, input) {
+      const out: PsValue[] = []
+      const begin = args['Begin'] ?? null
+      if (isScript(begin)) out.push(...ctx.invoke(begin, null))
+      const process = args['Process'] ?? null
+      for (const item of flatten(input)) {
+        if (isScript(process)) out.push(...ctx.invoke(process, item))
+        else if (process !== null) out.push(getProp(item, psToString(process)))
+      }
+      const end = args['End'] ?? null
+      if (isScript(end)) out.push(...ctx.invoke(end, null))
+      return out
     }
   },
   {

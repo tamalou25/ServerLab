@@ -37,6 +37,8 @@ export interface Token {
   members?: string[]
   /** Mot déjà redécoupé en mode expression (voir `splitExprWord`). */
   split?: boolean
+  /** Bloc de script : position du premier caractère de `value` dans la source. */
+  valueStart?: number
 }
 
 /**
@@ -151,11 +153,20 @@ export function tokenize(source: string): Token[] {
 
   while (i < n) {
     const c = source[i] as string
-    if (c === ' ' || c === '\t' || c === '\r' || c === '\n') {
+    if (c === ' ' || c === '\t' || c === '\r') {
       i++
       continue
     }
-    if (c === '#') break // commentaire jusqu'à la fin de la ligne
+    if (c === '\n') {
+      // Retour à la ligne : séparateur d'instructions (script sur plusieurs lignes)
+      tokens.push({ type: 'semi', text: '\n', value: '\n', start: i, end: ++i })
+      continue
+    }
+    if (c === '#') {
+      // Commentaire jusqu'à la fin de la ligne
+      while (i < n && source[i] !== '\n') i++
+      continue
+    }
     const start = i
 
     if (c === '|') {
@@ -231,6 +242,8 @@ export function tokenize(source: string): Token[] {
         type: hash ? 'hash' : 'script',
         text: source.slice(start, j),
         value: source.slice(i + 1, j - 1).trim(),
+        valueStart:
+          i + 1 + (source.slice(i + 1, j - 1).length - source.slice(i + 1, j - 1).trimStart().length),
         start,
         end: j
       })

@@ -58,3 +58,11 @@ export function unsimulatedMessage(shell: 'cmd' | 'ps' | 'bash', name: string): 
     ? `${name}: commande réelle non simulée dans ServerLab`
     : `« ${name} » est une commande réelle qui n’est pas simulée dans ServerLab.`
 }
+
+/**
+ * Garde-fou des boucles : au-delà de `limit` itérations, ServerLab arrête la boucle (le vrai
+ * PowerShell continuerait, une boucle infinie se termine par Ctrl+C).
+ */
+export function iterationLimitMessage(keyword: string, limit: number): string {
+  return `Boucle « ${keyword} » interrompue : plus de ${limit} itérations. Cette limite est propre au simulateur ServerLab (PowerShell n’en a pas).`
+}

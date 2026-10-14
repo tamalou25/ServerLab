@@ -68,7 +68,8 @@ export type Expr =
       start: number
       end: number
     }
-  | { kind: 'script'; source: string; start: number; end: number }
+  /** Bloc de script : source brute et position de son début dans la ligne. */
+  | { kind: 'script'; source: string; offset?: number; start: number; end: number }
   | { kind: 'hash'; entries: { key: string; value: Expr }[]; start: number; end: number }
   | { kind: 'binary'; op: string; left: Expr; right: Expr; start: number; end: number }
   | { kind: 'unary'; op: '-' | '+' | 'not'; operand: Expr; start: number; end: number }
@@ -99,9 +100,42 @@ export interface Statement {
   assign: string | null
   /** Opérateur d'affectation composé (+= -= *= /= %=, about_Assignment_Operators). */
   assignOp?: string
+  /** Instruction de contrôle (foreach, for, while, if, switch, break, continue). */
+  control?: Control
   start: number
   end: number
 }
+
+/** Clause d'un switch : valeur à comparer (`null` pour default) et bloc d'action. */
+export interface SwitchClause {
+  match: Expr | null
+  body: Statement[]
+}
+
+/** Instructions du langage (about_Foreach, about_For, about_While, about_If, about_Switch). */
+export type Control =
+  | { kind: 'foreach'; variable: string; collection: Statement; body: Statement[] }
+  | {
+      kind: 'for'
+      init: Statement | null
+      condition: Statement | null
+      repeat: Statement | null
+      body: Statement[]
+    }
+  | { kind: 'while'; condition: Statement; body: Statement[] }
+  | { kind: 'if'; clauses: { condition: Statement; body: Statement[] }[]; otherwise: Statement[] | null }
+  | {
+      kind: 'switch'
+      mode: 'exact' | 'wildcard' | 'regex'
+      caseSensitive: boolean
+      subject: Statement
+      clauses: SwitchClause[]
+    }
+  | { kind: 'break' }
+  | { kind: 'continue' }
+
+/** Mots clés qui commencent une instruction de contrôle. */
+const KEYWORDS = new Set(['foreach', 'for', 'while', 'if', 'switch', 'break', 'continue'])
 
 const ASSIGN_OPS = new Set(['=', '+=', '-=', '*=', '/=', '%='])
 
@@ -157,8 +191,209 @@ class Parser {
     return statements
   }
 
+  /** Ignore les retours à la ligne (là où PowerShell les autorise : avant « { », « else »…). */
+  private skipNewlines(): void {
+    while (this.peek().type === 'semi' && this.peek().text === '\n') this.next()
+  }
+
+  private keywordError(message: string, at: Token, errorId: string): PsSyntaxError {
+    return new PsSyntaxError(message, at.start, errorId)
+  }
+
+  /** « ( instruction ) » après un mot clé. */
+  private parseCondition(keyword: Token): Statement {
+    this.skipNewlines()
+    const open = this.next()
+    if (open.type !== 'lparen')
+      throw this.keywordError(
+        `Parenthèse ouvrante « ( » manquante après le mot clé « ${keyword.value.toLowerCase()} ».`,
+        open,
+        'MissingOpenParenthesisAfterKeyword'
+      )
+    this.skipNewlines()
+    const st = this.parseStatement()
+    this.skipNewlines()
+    this.expectClose()
+    return st
+  }
+
+  private expectClose(): Token {
+    const close = this.peek()
+    if (close.type !== 'rparen')
+      throw new PsSyntaxError(
+        'Parenthèse fermante « ) » manquante dans l’expression.',
+        close.start,
+        'MissingEndParenthesisInExpression'
+      )
+    return this.next()
+  }
+
+  /** Bloc « { … } » d'une instruction : ses instructions sont analysées avec leur position réelle. */
+  private parseBlock(keyword: Token, errorId: string): { statements: Statement[]; end: number } {
+    this.skipNewlines()
+    const t = this.peek()
+    if (t.type !== 'script')
+      throw this.keywordError(
+        `Accolade ouvrante « { » manquante dans l’instruction « ${keyword.value.toLowerCase()} ».`,
+        t,
+        errorId
+      )
+    this.next()
+    return { statements: parse(t.value, t.valueStart ?? t.start + 1), end: t.end }
+  }
+
+  private parseControl(first: Token): Statement {
+    const keyword = first.value.toLowerCase()
+    this.next()
+    const make = (control: Control, end: number): Statement => ({
+      pipeline: { elements: [], start: first.start, end },
+      assign: null,
+      control,
+      start: first.start,
+      end
+    })
+    switch (keyword) {
+      case 'break':
+      case 'continue':
+        return make({ kind: keyword }, first.end)
+      case 'foreach': {
+        this.skipNewlines()
+        const open = this.next()
+        if (open.type !== 'lparen')
+          throw this.keywordError(
+            'Parenthèse ouvrante « ( » manquante après le mot clé « foreach ».',
+            open,
+            'MissingOpenParenthesisAfterKeyword'
+          )
+        const v = this.next()
+        if (v.type !== 'variable')
+          throw this.keywordError(
+            'Nom de variable manquant après « foreach ( ».',
+            v,
+            'MissingVariableNameAfterForeach'
+          )
+        const kw = this.next()
+        if (kw.type !== 'word' || kw.value.toLowerCase() !== 'in')
+          throw this.keywordError(
+            'Mot clé « in » manquant dans l’instruction foreach.',
+            kw,
+            'MissingInInForeach'
+          )
+        const collection = this.parseStatement()
+        this.expectClose()
+        const body = this.parseBlock(first, 'MissingForeachStatement')
+        return make({ kind: 'foreach', variable: v.value, collection, body: body.statements }, body.end)
+      }
+      case 'for': {
+        this.skipNewlines()
+        const open = this.next()
+        if (open.type !== 'lparen')
+          throw this.keywordError(
+            'Parenthèse ouvrante « ( » manquante après le mot clé « for ».',
+            open,
+            'MissingOpenParenthesisAfterKeyword'
+          )
+        // for (<Init>; <Condition>; <Repeat>) : chaque partie est facultative (about_For)
+        const part = (last: boolean): Statement | null => {
+          const t = this.peek()
+          const st = (last ? t.type === 'rparen' : t.type === 'semi') ? null : this.parseStatement()
+          if (!last) {
+            const sep = this.next()
+            if (sep.type !== 'semi')
+              throw this.keywordError(
+                'Point-virgule « ; » manquant dans l’instruction for.',
+                sep,
+                'MissingSemicolonInForLoop'
+              )
+          }
+          return st
+        }
+        const init = part(false)
+        const condition = part(false)
+        this.skipNewlines()
+        const repeat = part(true)
+        this.expectClose()
+        const body = this.parseBlock(first, 'MissingLoopStatement')
+        return make({ kind: 'for', init, condition, repeat, body: body.statements }, body.end)
+      }
+      case 'while': {
+        const condition = this.parseCondition(first)
+        const body = this.parseBlock(first, 'MissingLoopStatement')
+        return make({ kind: 'while', condition, body: body.statements }, body.end)
+      }
+      case 'if': {
+        const clauses: { condition: Statement; body: Statement[] }[] = []
+        const condition = this.parseCondition(first)
+        let block = this.parseBlock(first, 'MissingStatementBlock')
+        clauses.push({ condition, body: block.statements })
+        let otherwise: Statement[] | null = null
+        let end = block.end
+        for (;;) {
+          const save = this.pos
+          this.skipNewlines()
+          const t = this.peek()
+          const word = t.type === 'word' ? t.value.toLowerCase() : ''
+          if (word === 'elseif') {
+            this.next()
+            const c = this.parseCondition(t)
+            block = this.parseBlock(t, 'MissingStatementBlock')
+            clauses.push({ condition: c, body: block.statements })
+            end = block.end
+            continue
+          }
+          if (word === 'else') {
+            this.next()
+            block = this.parseBlock(t, 'MissingStatementBlockAfterElse')
+            otherwise = block.statements
+            end = block.end
+            break
+          }
+          this.pos = save
+          break
+        }
+        return make({ kind: 'if', clauses, otherwise }, end)
+      }
+      default: {
+        // switch [-Regex | -Wildcard | -Exact] [-CaseSensitive] (<test-expression>) { … }
+        let mode: 'exact' | 'wildcard' | 'regex' = 'exact'
+        let caseSensitive = false
+        while (this.peek().type === 'param') {
+          const p = this.next()
+          const name = p.value.toLowerCase()
+          if (name === 'regex' || name === 'wildcard' || name === 'exact') mode = name
+          else if (name === 'casesensitive') caseSensitive = true
+          else if (name === 'file')
+            throw this.keywordError(
+              'Le paramètre -File de switch n’est pas simulé dans ServerLab.',
+              p,
+              'SwitchFileNotSimulated'
+            )
+          else throw this.keywordError(`Paramètre « ${p.text} » de switch inconnu.`, p, 'InvalidSwitchFlag')
+        }
+        const subject = this.parseCondition(first)
+        this.skipNewlines()
+        const t = this.peek()
+        if (t.type !== 'script')
+          throw this.keywordError(
+            'Accolade ouvrante « { » manquante dans l’instruction « switch ».',
+            t,
+            'MissingCurlyBraceInSwitchStatement'
+          )
+        this.next()
+        const clauses = parseSwitchClauses(t.value, t.valueStart ?? t.start + 1)
+        return make({ kind: 'switch', mode, caseSensitive, subject, clauses }, t.end)
+      }
+    }
+  }
+
   private parseStatement(): Statement {
     const first = this.peek()
+    if (first.type === 'word' && KEYWORDS.has(first.value.toLowerCase())) {
+      const kw = first.value.toLowerCase()
+      // « foreach » sans parenthèse est l'alias de ForEach-Object
+      const next = this.peek(1)
+      if (kw !== 'foreach' || next.type === 'lparen') return this.parseControl(first)
+    }
     let assign: string | null = null
     let assignOp = '='
     if (first.type === 'variable' && (first.members ?? []).length === 0) {
@@ -192,6 +427,7 @@ class Parser {
     const elements: Element[] = [this.parseElement()]
     while (this.peek().type === 'pipe') {
       const pipe = this.next()
+      this.skipNewlines()
       const t = this.peek()
       if (t.type === 'eof' || t.type === 'semi' || t.type === 'rparen')
         throw new PsSyntaxError(
@@ -297,6 +533,8 @@ class Parser {
 
   /** Opérande obligatoire après un opérateur. */
   private operand(op: Token, parse: () => Expr): Expr {
+    // Un retour à la ligne après un opérateur continue l'expression
+    this.skipNewlines()
     const t = this.epeek()
     if (
       isTerminator(t) ||
@@ -581,7 +819,13 @@ class Parser {
       case 'variable':
         return { kind: 'variable', name: t.value, members: t.members ?? [], start: t.start, end: t.end }
       case 'script':
-        return { kind: 'script', source: t.value, start: t.start, end: t.end }
+        return {
+          kind: 'script',
+          source: t.value,
+          offset: t.valueStart ?? t.start + 1,
+          start: t.start,
+          end: t.end
+        }
       case 'hash':
         return { kind: 'hash', entries: parseHashEntries(t.value, t.start), start: t.start, end: t.end }
       case 'lparen':
@@ -674,7 +918,82 @@ function parseHashEntries(source: string, offset: number): { key: string; value:
     })
 }
 
-export function parse(source: string): Statement[] {
-  const parser = new Parser(tokenize(source))
+/** Jetons d'une source qui commence à la position `offset` de la ligne. */
+function tokensAt(source: string, offset: number): Token[] {
+  const tokens = tokenize(source)
+  if (offset === 0) return tokens
+  return tokens.map((t) => ({
+    ...t,
+    start: t.start + offset,
+    end: t.end + offset,
+    ...(t.valueStart !== undefined ? { valueStart: t.valueStart + offset } : {})
+  }))
+}
+
+/** Clauses « valeur { action } » du corps d'un switch (about_Switch). */
+function parseSwitchClauses(source: string, offset: number): SwitchClause[] {
+  const tokens = tokensAt(source, offset)
+  const clauses: SwitchClause[] = []
+  let i = 0
+  const at = () => tokens[Math.min(i, tokens.length - 1)] as Token
+  for (;;) {
+    while (at().type === 'semi') i++
+    const t = at()
+    if (t.type === 'eof') break
+    let match: Expr | null
+    if (t.type === 'word' && t.value.toLowerCase() === 'default') match = null
+    else if (t.type === 'script')
+      match = {
+        kind: 'script',
+        source: t.value,
+        offset: t.valueStart ?? t.start + 1,
+        start: t.start,
+        end: t.end
+      }
+    else if (t.type === 'number')
+      match = { kind: 'number', value: Number(t.value), start: t.start, end: t.end }
+    else if (t.type === 'string')
+      match = {
+        kind: 'string',
+        value: t.value,
+        expandable: !!t.expandable,
+        bare: false,
+        start: t.start,
+        end: t.end
+      }
+    else if (t.type === 'variable')
+      match = { kind: 'variable', name: t.value, members: t.members ?? [], start: t.start, end: t.end }
+    else if (t.type === 'word')
+      match = { kind: 'string', value: t.value, expandable: false, bare: true, start: t.start, end: t.end }
+    else
+      throw new PsSyntaxError(
+        `Jeton inattendu « ${t.text} » dans l’instruction switch.`,
+        t.start,
+        'UnexpectedToken'
+      )
+    i++
+    while (at().type === 'semi' && at().text === '\n') i++
+    const body = at()
+    if (body.type !== 'script')
+      throw new PsSyntaxError(
+        'Bloc d’action « { } » manquant après la condition du switch.',
+        body.start,
+        'MissingSwitchStatementClause'
+      )
+    i++
+    clauses.push({ match, body: parse(body.value, body.valueStart ?? body.start + 1) })
+  }
+  if (clauses.length === 0)
+    throw new PsSyntaxError(
+      'L’instruction switch doit comporter au moins une condition.',
+      offset,
+      'MissingSwitchConditionExpression'
+    )
+  return clauses
+}
+
+/** Analyse une ligne (ou un bloc de script commençant à la position `offset`). */
+export function parse(source: string, offset = 0): Statement[] {
+  const parser = new Parser(tokensAt(source, offset))
   return parser.parseStatements('eof')
 }

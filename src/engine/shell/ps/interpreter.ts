@@ -5,11 +5,12 @@
 import type { LabState } from '../../model/schema'
 import { CommandFailure, ExecContext } from '../context'
 import type { ToolDef } from '../tools/types'
-import { NeedInput, type ShellSession } from '../types'
+import { NeedInput, type LineKind, type ShellSession } from '../types'
 import { formatPsError, PsError, psError, type PsErrorInfo } from './errors'
 import {
   arithmetic,
   comparison,
+  MAX_ITERATIONS,
   formatOperator,
   indexValue,
   interpolate,
@@ -18,11 +19,18 @@ import {
   range,
   toNumber
 } from './operators'
-import { evaluateExpression } from './expression'
 import { formatDefault } from './format'
 import { ESCAPED_DOLLAR, PsSyntaxError } from './lexer'
-import { parse, type Arg, type Element, type Expr, type Pipeline, type Statement } from './parser'
-import { isUnsimulated, unsimulatedMessage } from '../unsimulated'
+import {
+  parse,
+  type Arg,
+  type Control,
+  type Element,
+  type Expr,
+  type Pipeline,
+  type Statement
+} from './parser'
+import { isUnsimulated, iterationLimitMessage, unsimulatedMessage } from '../unsimulated'
 import { COMMON_PARAMS, type BoundArgs, type CmdletDef, type ParamDef } from './registry'
 import {
   psObject,
@@ -33,6 +41,8 @@ import {
   isSecure,
   psToBool,
   psToString,
+  wildcardToRegExp,
+  type PsScriptBlock,
   type PsValue
 } from './values'
 
@@ -63,6 +73,8 @@ export class CmdContext extends ExecContext {
   skipConfirm = false
   /** Objet courant du pipeline ($_). */
   current: PsValue = null
+  /** Sortie d'une instruction de contrôle en attente d'affichage (mise en forme groupée). */
+  private sink: PsValue[] = []
 
   constructor(
     state: LabState,
@@ -137,20 +149,49 @@ export class CmdContext extends ExecContext {
     }
   }
 
-  /** Teste une condition de bloc de script sur un objet ($_). */
-  test(script: string, item: PsValue): boolean {
+  /** Ajoute des objets au flux de sortie de la console. */
+  emit(values: PsValue[]): void {
+    this.sink.push(...values)
+  }
+
+  /** Affiche la sortie en attente (avant tout texte écrit directement : Write-Host, invite…). */
+  flush(): void {
+    if (this.sink.length === 0) return
+    const values = this.sink
+    this.sink = []
+    super.writeLines(formatDefault(values))
+  }
+
+  override write(text: string, kind?: LineKind): void {
+    this.flush()
+    super.write(text, kind)
+  }
+
+  override writeLines(lines: string[], kind?: LineKind): void {
+    this.flush()
+    super.writeLines(lines, kind)
+  }
+
+  override ask(message: string, secure = false): string {
+    this.flush()
+    return super.ask(message, secure)
+  }
+
+  /** Exécute un bloc de script avec $_ = `item` (ForEach-Object, Where-Object) ; renvoie sa sortie. */
+  invoke(script: PsScriptBlock, item: PsValue): PsValue[] {
     const previous = this.current
     this.current = item
     try {
-      return psToBool(
-        evaluateExpression(script, {
-          variable: (n) => this.variable(n),
-          bare: (w) => w
-        })
-      )
+      return runStatements(this, parse(script.source, script.offset ?? 0), this.source, 'collect')
     } finally {
       this.current = previous
     }
+  }
+
+  /** Teste une condition de bloc de script sur un objet ($_). */
+  test(script: PsScriptBlock, item: PsValue): boolean {
+    const values = this.invoke(script, item)
+    return psToBool(values.length === 1 ? (values[0] as PsValue) : values)
   }
 }
 
@@ -281,7 +322,7 @@ export function evalExpr(ctx: CmdContext, expr: Expr): PsValue {
     case 'array':
       return expr.items.map((i) => evalExpr(ctx, i))
     case 'script':
-      return { kind: 'script', source: expr.source }
+      return { kind: 'script', source: expr.source, offset: expr.offset ?? expr.start + 1 }
     case 'hash':
       return psObject(
         'System.Collections.Hashtable',
@@ -658,48 +699,228 @@ function runPipeline(ctx: CmdContext, pipeline: Pipeline): PsValue[] {
   return values
 }
 
-/** Exécute des instructions ; si `display`, les résultats sont affichés (sinon renvoyés). */
+/**
+ * Mode d'exécution d'une suite d'instructions :
+ *  - `display` : instructions saisies à l'invite, sortie mise en forme et affichée ;
+ *  - `stream`  : corps d'une instruction de contrôle affichée, sortie envoyée au flux de la console
+ *                (une erreur arrête l'instruction en cours, pas la boucle) ;
+ *  - `collect` : sous-expression ou bloc de script, sortie renvoyée, erreurs propagées.
+ */
+type RunMode = 'display' | 'stream' | 'collect'
+
+/** break / continue (about_Break, about_Continue) : remonte jusqu'à la boucle ou au switch. */
+class LoopSignal extends Error {
+  constructor(readonly kind: 'break' | 'continue') {
+    super(kind)
+  }
+}
+
+/** Limite d'itérations du simulateur atteinte : arrête toute l'instruction de premier niveau. */
+class IterationLimit extends PsError {}
+
+function iterationLimit(keyword: string, st: Statement): IterationLimit {
+  const err = new IterationLimit({
+    message: iterationLimitMessage(keyword, MAX_ITERATIONS),
+    category: 'NotImplemented',
+    errorId: 'IterationLimitReached'
+  })
+  err.span = { start: st.start, end: st.end }
+  return err
+}
+
+/** Valeur d'une condition : la sortie de l'instruction, convertie en booléen. */
+function condition(ctx: CmdContext, st: Statement): boolean {
+  const values = runStatements(ctx, [st], ctx.source, 'collect')
+  return psToBool(values.length === 1 ? (values[0] as PsValue) : values)
+}
+
+/** Corps d'une boucle : renvoie `false` si un break l'a interrompue. */
+function loopBody(ctx: CmdContext, body: Statement[], mode: RunMode, out: PsValue[]): boolean {
+  try {
+    out.push(...runStatements(ctx, body, ctx.source, mode))
+    return true
+  } catch (e) {
+    if (e instanceof LoopSignal) return e.kind === 'continue'
+    throw e
+  }
+}
+
+/** Bloc d'action d'un switch : indique si un break ou un continue l'a interrompu. */
+function clauseBody(
+  ctx: CmdContext,
+  body: Statement[],
+  mode: RunMode,
+  out: PsValue[]
+): 'ok' | 'break' | 'continue' {
+  try {
+    out.push(...runStatements(ctx, body, ctx.source, mode))
+    return 'ok'
+  } catch (e) {
+    if (e instanceof LoopSignal) return e.kind
+    throw e
+  }
+}
+
+/** Correspondance d'une clause de switch (valeurs converties en chaînes, about_Switch). */
+function switchMatches(
+  ctx: CmdContext,
+  ctl: Extract<Control, { kind: 'switch' }>,
+  match: Expr,
+  item: PsValue
+): boolean {
+  if (match.kind === 'script')
+    return ctx.test({ kind: 'script', source: match.source, offset: match.offset }, item)
+  const pattern = psToString(evalExpr(ctx, match))
+  const value = psToString(item)
+  switch (ctl.mode) {
+    case 'wildcard': {
+      const re = wildcardToRegExp(pattern)
+      return new RegExp(re.source, ctl.caseSensitive ? '' : 'i').test(value)
+    }
+    case 'regex': {
+      // $Matches reçoit les groupes de la correspondance (about_Switch, about_Automatic_Variables)
+      const m = new RegExp(pattern, ctl.caseSensitive ? '' : 'i').exec(value)
+      if (m)
+        ctx.setVariable(
+          'Matches',
+          psObject(
+            'System.Collections.Hashtable',
+            Object.fromEntries(m.map((g, i) => [String(i), g ?? null]))
+          )
+        )
+      return m !== null
+    }
+    default:
+      return ctl.caseSensitive ? value === pattern : value.toLowerCase() === pattern.toLowerCase()
+  }
+}
+
+function runControl(ctx: CmdContext, st: Statement, ctl: Control, mode: RunMode): PsValue[] {
+  const out: PsValue[] = []
+  switch (ctl.kind) {
+    case 'break':
+    case 'continue':
+      throw new LoopSignal(ctl.kind)
+    case 'if': {
+      for (const clause of ctl.clauses) {
+        if (condition(ctx, clause.condition)) return runStatements(ctx, clause.body, ctx.source, mode)
+      }
+      return ctl.otherwise ? runStatements(ctx, ctl.otherwise, ctx.source, mode) : []
+    }
+    case 'foreach': {
+      // La collection est évaluée une fois ; $null ne produit aucune itération (about_Foreach)
+      const items = flatten(runStatements(ctx, [ctl.collection], ctx.source, 'collect'))
+      if (items.length > MAX_ITERATIONS) throw iterationLimit('foreach', st)
+      for (const item of items) {
+        ctx.setVariable(ctl.variable, item)
+        if (!loopBody(ctx, ctl.body, mode, out)) break
+      }
+      return out
+    }
+    case 'for': {
+      if (ctl.init) runStatements(ctx, [ctl.init], ctx.source, 'collect')
+      let count = 0
+      while (!ctl.condition || condition(ctx, ctl.condition)) {
+        if (++count > MAX_ITERATIONS) throw iterationLimit('for', st)
+        if (!loopBody(ctx, ctl.body, mode, out)) break
+        if (ctl.repeat) runStatements(ctx, [ctl.repeat], ctx.source, 'collect')
+      }
+      return out
+    }
+    case 'while': {
+      let count = 0
+      while (condition(ctx, ctl.condition)) {
+        if (++count > MAX_ITERATIONS) throw iterationLimit('while', st)
+        if (!loopBody(ctx, ctl.body, mode, out)) break
+      }
+      return out
+    }
+    case 'switch': {
+      // Une collection est traitée élément par élément ; toutes les clauses sont testées (about_Switch)
+      const values = runStatements(ctx, [ctl.subject], ctx.source, 'collect')
+      const items = values.length === 0 ? [null] : flatten(values)
+      const previous = ctx.current
+      try {
+        for (const item of items) {
+          ctx.current = item
+          let matched = false
+          let signal: 'ok' | 'break' | 'continue' = 'ok'
+          for (const clause of ctl.clauses) {
+            if (clause.match === null || !switchMatches(ctx, ctl, clause.match, item)) continue
+            matched = true
+            signal = clauseBody(ctx, clause.body, mode, out)
+            if (signal !== 'ok') break
+          }
+          if (!matched) {
+            const fallback = ctl.clauses.find((c) => c.match === null)
+            if (fallback) signal = clauseBody(ctx, fallback.body, mode, out)
+          }
+          // break quitte le switch, continue passe à la valeur suivante
+          if (signal === 'break') break
+        }
+      } finally {
+        ctx.current = previous
+      }
+      return out
+    }
+  }
+}
+
+function runStatement(ctx: CmdContext, st: Statement, mode: RunMode): PsValue[] {
+  if (st.control) return runControl(ctx, st, st.control, mode === 'collect' ? 'collect' : 'stream')
+  const single = st.pipeline.elements.length === 1 ? st.pipeline.elements[0] : undefined
+  if (st.assign) {
+    // Une expression seule est affectée telle quelle (@(5) reste un tableau) ;
+    // un pipeline renvoie un objet ou un tableau d'objets
+    let value: PsValue
+    if (single?.kind === 'expr') value = evalExpr(ctx, single.expr)
+    else {
+      const values = runPipeline(ctx, st.pipeline)
+      value = values.length === 1 ? (values[0] as PsValue) : values
+    }
+    if (st.assignOp) {
+      const op = st.assignOp.slice(0, 1)
+      const current = ctx.variable(st.assign)
+      value = withSpan(st.pipeline, () => arithmetic(op, current, value))
+    }
+    ctx.setVariable(st.assign, value)
+    return []
+  }
+  // « $i++ » seul est une instruction sans sortie (about_Assignment_Operators)
+  if (single?.kind === 'expr' && single.expr.kind === 'incr') {
+    evalExpr(ctx, single.expr)
+    return []
+  }
+  return runPipeline(ctx, st.pipeline)
+}
+
+/** Exécute des instructions ; `true` : affichées à l'invite, `false` : sortie renvoyée. */
 function runStatements(
   ctx: CmdContext,
   statements: Statement[],
   source: string,
-  display: boolean
+  modeOrDisplay: RunMode | boolean
 ): PsValue[] {
+  const mode: RunMode =
+    modeOrDisplay === true ? 'display' : modeOrDisplay === false ? 'collect' : modeOrDisplay
   const collected: PsValue[] = []
   for (const st of statements) {
-    if (display) ctx.commandName = ''
+    if (mode === 'display') ctx.commandName = ''
     try {
-      const single = st.pipeline.elements.length === 1 ? st.pipeline.elements[0] : undefined
-      if (st.assign) {
-        // Une expression seule est affectée telle quelle (@(5) reste un tableau) ;
-        // un pipeline renvoie un objet ou un tableau d'objets
-        let value: PsValue
-        if (single?.kind === 'expr') value = evalExpr(ctx, single.expr)
-        else {
-          const values = runPipeline(ctx, st.pipeline)
-          value = values.length === 1 ? (values[0] as PsValue) : values
-        }
-        if (st.assignOp) {
-          const op = st.assignOp.slice(0, 1)
-          const current = ctx.variable(st.assign)
-          value = withSpan(st.pipeline, () => arithmetic(op, current, value))
-        }
-        ctx.setVariable(st.assign, value)
-        continue
-      }
-      // « $i++ » seul est une instruction sans sortie (about_Assignment_Operators)
-      if (single?.kind === 'expr' && single.expr.kind === 'incr') {
-        evalExpr(ctx, single.expr)
-        continue
-      }
-      const values = runPipeline(ctx, st.pipeline)
-      if (display) {
-        ctx.writeLines(formatDefault(values))
-      } else {
-        collected.push(...values)
-      }
+      const values = runStatement(ctx, st, mode)
+      if (mode === 'collect') collected.push(...values)
+      else ctx.emit(values)
+      if (mode === 'display') ctx.flush()
     } catch (e) {
-      if (!display) throw e
+      if (mode === 'collect' || e instanceof NeedInput) throw e
+      if (e instanceof LoopSignal) {
+        if (mode === 'stream') throw e
+        // break / continue hors d'une boucle : la suite de la ligne n'est pas exécutée
+        ctx.flush()
+        break
+      }
+      if (e instanceof IterationLimit && mode === 'stream') throw e
+      ctx.flush()
       reportError(ctx, e, source, st)
     }
   }
