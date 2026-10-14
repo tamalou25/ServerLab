@@ -24,12 +24,13 @@ import { navigation } from './features/navigation'
 import { routing } from './features/routing'
 import { security } from './features/security'
 import { services } from './features/services'
+import { stp } from './features/stp'
 import { learnMacs, switching } from './features/switching'
 import { vlan } from './features/vlan'
 
 /** Fonctionnalités, dans l'ordre d'enregistrement. */
 export function iosFeatures(): readonly IosFeature[] {
-  return [navigation, base, vlan, switching, routing, services, hsrp, acl, security, l2sec, logging]
+  return [navigation, base, vlan, switching, stp, routing, services, hsrp, acl, security, l2sec, logging]
 }
 
 /** Crochets d'acheminement des fonctionnalités (routage d'un switch, NAT, ACL…). */

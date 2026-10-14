@@ -5,7 +5,7 @@
  */
 import { DEFAULT_DC_POLICY_ID, DEFAULT_DOMAIN_POLICY_ID, defaultDomainGpos } from '../roles/gpo/defaults'
 
-export const CURRENT_SCHEMA_VERSION = 18
+export const CURRENT_SCHEMA_VERSION = 19
 
 type RawDocument = Record<string, unknown>
 
@@ -191,6 +191,14 @@ function addV27SwitchBasics(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 18 }
 }
 
+/**
+ * Version 19 : spanning-tree des switchs IOS (mode, priorités par VLAN, portfast, BPDU Guard).
+ * Valeurs par défaut (PVST, 32768, désactivés) : seul le numéro de version change.
+ */
+function addV27Stp(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 19 }
+}
+
 /** migrations[n] migre un document de la version n vers n + 1. */
 export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   1: addDefaultGpos,
@@ -209,7 +217,8 @@ export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   14: addV27AclLog,
   15: addV27LoggingSync,
   16: addV27FileContent,
-  17: addV27SwitchBasics
+  17: addV27SwitchBasics,
+  18: addV27Stp
 }
 
 export type MigrationResult = { ok: true; doc: RawDocument } | { ok: false; message: string }

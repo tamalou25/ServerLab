@@ -684,7 +684,11 @@ export const IosInterfaceSchema = z.object({
   /** Port de confiance de l'inspection ARP (ip arp inspection trust). */
   arpInspectionTrust: z.boolean().default(false),
   /** Négociation DTP désactivée (switchport nonegotiate). */
-  nonegotiate: z.boolean().default(false)
+  nonegotiate: z.boolean().default(false),
+  /** Port d'extrémité spanning-tree (spanning-tree portfast). */
+  portfast: z.boolean().default(false),
+  /** BPDU Guard du port (spanning-tree bpduguard enable) : err-disabled si un BPDU est reçu. */
+  bpduGuard: z.boolean().default(false)
 })
 
 /** Entrée d'une liste d'accès IOS (standard : source seule ; étendue : protocole, destination, port). */
@@ -785,6 +789,10 @@ export const IosConfigSchema = z.object({
   arpInspectionVlans: z.array(z.number().int().min(1).max(4094)).default([]),
   /** Passerelle par défaut d'un switch sans routage IP (ip default-gateway). */
   defaultGateway: z.string().nullable().default(null),
+  /** Protocole spanning-tree (spanning-tree mode pvst | rapid-pvst). */
+  stpMode: z.enum(['pvst', 'rapid-pvst']).default('pvst'),
+  /** Priorités de pont par VLAN (clé : numéro de VLAN ; absente : 32768). */
+  stpPriorities: z.record(z.string(), z.number().int().min(0).max(61440)).default({}),
   /** CDP actif globalement (cdp run, actif par défaut). */
   cdpRun: z.boolean().default(true),
   /** Données IOS par interface (clé : nom court Gi0/0). */

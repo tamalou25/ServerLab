@@ -37,6 +37,8 @@ export function defaultIosState(): IosState {
     syslog: [],
     defaultGateway: null,
     cdpRun: true,
+    stpMode: 'pvst',
+    stpPriorities: {},
     macTable: []
   }
 }
@@ -228,6 +230,8 @@ export function draftIfaceEntry(ios: Draft<IosState>, name: string): Draft<IosSt
     errDisabled: false,
     dhcpSnoopingTrust: false,
     arpInspectionTrust: false,
-    nonegotiate: false
+    nonegotiate: false,
+    portfast: false,
+    bpduGuard: false
   })
 }

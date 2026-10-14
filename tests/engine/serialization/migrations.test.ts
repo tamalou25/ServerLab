@@ -360,6 +360,27 @@ describe('migration 9 → 10 (cybersécurité défensive de la v2.6)', () => {
   })
 })
 
+describe('migration 18 → 19 (spanning-tree de la v2.7)', () => {
+  const running = (lab: ReturnType<typeof open>['lab'], line: string) =>
+    evaluateCheck(lab, { type: 'iosStartup', device: 'CSW1', line })
+
+  it('change seulement la version ; PVST et priorités par défaut', () => {
+    const doc = JSON.parse(readFixture(18)) as Record<string, unknown>
+    expect(migrations[18]!(doc)).toEqual({ ...doc, schemaVersion: 19 })
+    expect(running(open(18).lab, 'spanning-tree mode rapid-pvst')).toBe(false)
+  })
+
+  it('v19.slab : s’ouvre sans migration et garde le spanning-tree', () => {
+    const lab = open(19).lab
+    for (const line of [
+      'spanning-tree mode rapid-pvst',
+      'spanning-tree vlan 30 priority 24576',
+      'spanning-tree bpduguard enable'
+    ])
+      expect(running(lab, line), line).toBe(true)
+  })
+})
+
 describe('migration 17 → 18 (switch 2960 de la v2.7)', () => {
   const csw1 = (lab: ReturnType<typeof open>['lab']) =>
     Object.values(lab.devices).find((d) => d.name === 'CSW1') as {
