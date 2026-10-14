@@ -29,7 +29,7 @@ import {
 } from '../../sim/trace'
 import { registerHostDns } from '../adds/join'
 import { effectiveOptions, inScopeRange, isExcluded, formatLeaseDuration } from './server'
-import { dhcpServiceOf } from './state'
+import { dhcpServiceOf, dhcpServiceStopped } from './state'
 
 export type DhcpOutcome = 'bound' | 'renewed' | 'released' | 'failed' | 'not-dhcp' | 'no-carrier'
 
@@ -299,6 +299,11 @@ export function dhcpAcquire(
           note: `${name} est agent de relais DHCP (ip helper-address) : il retransmet la requête en unicast à ${relay.helpers.join(', ')}, en indiquant son adresse ${relay.giaddr} (giaddr).`
         }
       }
+      if (dhcpServiceStopped(dev))
+        return {
+          outcome: 'ignored',
+          note: `Le service Serveur DHCP de ${name} est arrêté : la diffusion est ignorée.`
+        }
       if (!dev || !dhcpServiceOf(dev))
         return { outcome: 'ignored', note: `${name} n’est pas un serveur DHCP : la diffusion est ignorée.` }
       const scope = scopeFor(dev, member.port)
@@ -360,7 +365,13 @@ export function dhcpAcquire(
       const dev = state.devices[delivery.deviceId]
       const name = dev?.name ?? '?'
       if (!dev || !dhcpServiceOf(dev)) {
-        setLastOutcome(ctx, 'dropped', `${name} n’est pas un serveur DHCP : la requête relayée est rejetée.`)
+        setLastOutcome(
+          ctx,
+          'dropped',
+          dhcpServiceStopped(dev)
+            ? `Le service Serveur DHCP de ${name} est arrêté : la requête relayée est rejetée.`
+            : `${name} n’est pas un serveur DHCP : la requête relayée est rejetée.`
+        )
         continue
       }
       if (!dhcpAuthorized(dev)) {

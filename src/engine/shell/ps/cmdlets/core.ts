@@ -10,6 +10,7 @@ import type { CmdletDef } from '../registry'
 import {
   flatten,
   getProp,
+  enumValue,
   isPsObject,
   isScript,
   psObject,
@@ -471,8 +472,12 @@ export const coreCmdlets: CmdletDef[] = [
     ],
     run(_ctx, args, input) {
       const props = propsArg(args['Property'])
-      const key = (v: PsValue) =>
-        props ? props.map((p) => psToString(getProp(v, p))).join('\u0000') : psToString(v)
+      // Énumération (Status d'un service) : tri sur la valeur entière (Learn, Get-Service)
+      const text = (v: PsValue) => {
+        const n = enumValue(v)
+        return n === null ? psToString(v) : String(n).padStart(10, '0')
+      }
+      const key = (v: PsValue) => (props ? props.map((p) => text(getProp(v, p))).join('\u0000') : text(v))
       const sorted = [...flatten(input)].sort((a, b) => key(a).localeCompare(key(b), 'fr', { numeric: true }))
       return args['Descending'] === true ? sorted.reverse() : sorted
     }

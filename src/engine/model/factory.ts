@@ -82,6 +82,7 @@ export function createHost(kind: 'server' | 'client', os: HostOs = 'windows'): H
     vpnConnections: [],
     smb1: false,
     eventLog: [],
+    services: {},
     mounts: []
   }
 }

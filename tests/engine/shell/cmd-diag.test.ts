@@ -83,13 +83,13 @@ describe('netstat, tasklist, sc', () => {
     expect(csv[0]).toBe('"System Idle Process","0","Services","0"')
     expect(cmd.run('tasklist /fo xml').errors).toContain('/fo')
   })
-  it('sc query : services dérivés des rôles ; introuvable (1060) ; stop non simulé', () => {
+  it('sc query : services dérivés des rôles ; introuvable (1060) ; config sans start= refusé', () => {
     const cmd = new Cmd(buildReferenceLab())
     expect(cmd.run('sc query DNS').text).toContain('NOM_SERVICE: DNS')
     expect(cmd.run('sc query').text).toContain('NOM_SERVICE: NTDS')
     expect(cmd.run('sc query Absent').errors).toContain('1060')
-    expect(cmd.run('sc stop DNS').errors).toContain('n’est pas simulé')
     expect(cmd.run('sc config DNS').errors).toContain('n’est pas simulée')
+    expect(cmd.run('sc pause DNS').errors).toContain('n’est pas simulée')
   })
 })
 

@@ -13,6 +13,7 @@ import { firstAddress, resolveName } from '../dns/resolver'
 import { findNode } from '../files/paths'
 import type { IisBinding, IisSite } from './schema'
 import { DEFAULT_DOCUMENTS, iisServerOf } from './state'
+import { serviceRunning } from '../../services/servicestate'
 
 export interface ParsedUrl {
   protocol: 'http' | 'https'
@@ -166,7 +167,11 @@ export function httpGet(state: LabState, clientId: string, urlText: string): Htt
   }
 
   const server = local ? (client.kind === 'server' ? client : null) : serverAt(state, ip)
-  const iis = server?.host.features.includes('Web-Server') ? iisServerOf(server) : null
+  // Service de publication World Wide Web (W3SVC) arrêté : aucun site n'écoute
+  const iis =
+    server?.host.features.includes('Web-Server') && serviceRunning(server, 'W3SVC')
+      ? iisServerOf(server)
+      : null
   const match = iis ? matchSite(iis.sites, url, ip) : { listening: false, site: null, binding: null }
 
   // Connexion TCP (et requête HTTP si un site écoute sur ce port)

@@ -434,6 +434,18 @@ export const RemoteSessionSchema = z.object({
   at: z.number().default(0)
 })
 
+/**
+ * État d'un service système modifié par l'administrateur (Stop-Service, Set-Service, net stop,
+ * sc config). Un service absent de la table est démarré, en démarrage automatique (v2.7, .slab 21).
+ */
+export const SERVICE_STATUSES = ['Running', 'Stopped'] as const
+export const SERVICE_START_TYPES = ['Automatic', 'Manual', 'Disabled'] as const
+export const ServiceStateSchema = z.object({
+  status: z.enum(SERVICE_STATUSES).default('Running'),
+  startType: z.enum(SERVICE_START_TYPES).default('Automatic')
+})
+export type ServiceState = z.infer<typeof ServiceStateSchema>
+
 /** Partie « système d'exploitation » commune aux serveurs et postes clients. */
 /** Système d'un ordinateur : Windows (serveur, poste) ou poste Ubuntu simulé. */
 export const HOST_OS = ['windows', 'linux'] as const
@@ -485,6 +497,8 @@ export const HostSchema = z.object({
   /** Protocole SMB 1.0 accepté par le serveur SMB (EnableSMB1Protocol). */
   smb1: z.boolean().default(false),
   eventLog: z.array(EventLogEntrySchema).default([]),
+  /** Services dont l'état diffère du défaut (démarré, automatique), par nom court (DNS, LanmanServer…). */
+  services: z.record(z.string(), ServiceStateSchema).default({}),
   /** Poste Linux : partages SMB montés. */
   mounts: z.array(CifsMountSchema).default([])
 })

@@ -1,7 +1,7 @@
 /**
  * Mise en forme de la sortie (équivalent d'Out-Default : tables et listes).
  */
-import { flatten, isPsObject, psToString, type PsObject, type PsValue } from './values'
+import { enumValue, flatten, isPsObject, psToString, type PsObject, type PsValue } from './values'
 
 /** Propriétés affichées par défaut pour un objet. */
 function defaultProps(obj: PsObject): string[] {
@@ -78,7 +78,11 @@ export function formatDefault(values: PsValue[]): string[] {
   let i = 0
   while (i < items.length) {
     const item = items[i] as PsValue
-    if (isPsObject(item)) {
+    // Valeur d'énumération : affichée par son nom (« Running »)
+    if (enumValue(item) !== null) {
+      lines.push(psToString(item))
+      i++
+    } else if (isPsObject(item)) {
       // Regroupe les objets consécutifs de même type
       const group: PsObject[] = [item]
       let j = i + 1

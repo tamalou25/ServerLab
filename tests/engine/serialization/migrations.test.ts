@@ -360,6 +360,22 @@ describe('migration 9 → 10 (cybersécurité défensive de la v2.6)', () => {
   })
 })
 
+describe('migration 20 → 21 (état des services de la v2.7)', () => {
+  const services = (lab: ReturnType<typeof open>['lab']) =>
+    (Object.values(lab.devices).find((d) => d.name === 'SRV1') as { host: { services: unknown } }).host
+      .services
+
+  it('change seulement la version ; aucun service modifié', () => {
+    const doc = JSON.parse(readFixture(20)) as Record<string, unknown>
+    expect(migrations[20]!(doc)).toEqual({ ...doc, schemaVersion: 21 })
+    expect(services(open(20).lab)).toEqual({})
+  })
+
+  it('v21.slab : s’ouvre sans migration et garde le service W32Time arrêté (manuel)', () => {
+    expect(services(open(21).lab)).toEqual({ W32Time: { status: 'Stopped', startType: 'Manual' } })
+  })
+})
+
 describe('migration 19 → 20 (EtherChannel et VTP de la v2.7)', () => {
   const ios = (lab: ReturnType<typeof open>['lab']) =>
     (

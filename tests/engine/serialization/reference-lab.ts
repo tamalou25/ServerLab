@@ -34,6 +34,8 @@ import {
   runIosScript,
   setDhcpOptions,
   setInterfaceIpv4,
+  setServiceStartType,
+  stopService,
   setSwitchport,
   unwrap,
   writeFileContent,
@@ -214,6 +216,9 @@ export function buildReferenceLab(): LabState {
   s = unwrap(
     writeFileContent(s, id('SRV1'), 'C:\\Scripts\\users.csv', 'Nom;Prenom\r\nDupont;Jean\r\n', admin)
   ).state
+  // v21 : service Temps Windows arrêté, démarrage manuel
+  s = unwrap(setServiceStartType(s, id('SRV1'), 'W32Time', 'Manual')).state
+  s = unwrap(stopService(s, id('SRV1'), 'W32Time')).state
   return runIosScript(s, id('CR1'), [
     'enable',
     'configure terminal',
