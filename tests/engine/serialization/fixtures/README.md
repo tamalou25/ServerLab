@@ -20,6 +20,7 @@ switch, routeur, poste en DHCP joint au domaine, poste statique, OU, utilisateur
 | `v17.slab` | 17     | ServerLab 2.7 : contenu texte des fichiers (`C:\Scripts\users.csv` de SRV1)             |
 | `v21.slab` | 21     | ServerLab 2.7 : horloge et NTP de CR1 (clock timezone, ntp server, exec-timeout)        |
 | `v22.slab` | 22     | ServerLab 2.7 : RIP v2 de CR1, default-information originate d'OSPF                     |
+| `v23.slab` | 23     | ServerLab 2.7 : compteurs, cache ARP et débogage des routeurs (vides)                   |
 
 Ces fichiers ne doivent **jamais** être modifiés ni régénérés : ils représentent les fichiers que
 des utilisateurs ont réellement enregistrés. `../migrations.test.ts` vérifie que chacun s'ouvre,

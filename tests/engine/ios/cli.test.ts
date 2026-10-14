@@ -202,7 +202,7 @@ describe('do depuis la configuration', () => {
   it('do est proposé dans les modes de configuration, pas en exec', () => {
     const c = router()
     c.run('en')
-    expect(iosHelp(c.state, c.session, 'd')).toEqual(['disable  '])
+    expect(iosHelp(c.state, c.session, 'd')).toEqual(['debug  disable  '])
     c.run('conf t')
     expect(iosHelp(c.state, c.session, 'd')).toEqual(['do  '])
     // Les commandes de navigation ne passent pas par do

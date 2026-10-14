@@ -24,6 +24,7 @@ import { navigation } from './features/navigation'
 import { routing } from './features/routing'
 import { rip } from './features/rip'
 import { ospfShow } from './features/ospf-show'
+import { diagnostics, recordTraffic } from './features/diagnostics'
 import { security } from './features/security'
 import { services } from './features/services'
 import { etherchannel } from './features/etherchannel'
@@ -52,7 +53,8 @@ export function iosFeatures(): readonly IosFeature[] {
     security,
     l2sec,
     logging,
-    system
+    system,
+    diagnostics
   ]
 }
 
@@ -82,6 +84,8 @@ export function applyTraceEffects(state: LabState, trace: PacketTrace | null): L
   return produce(state, (draft) => {
     // Table d'adresses MAC des switchs IOS traversés
     learnMacs(draft, trace)
+    // Compteurs d'interface, cache ARP et débogage des routeurs IOS
+    recordTraffic(draft, trace)
     for (const effect of effects) {
       const device = draft.devices[effect.deviceId]
       if (!isIos(device as Device | undefined)) continue

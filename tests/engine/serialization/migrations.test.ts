@@ -360,6 +360,21 @@ describe('migration 9 → 10 (cybersécurité défensive de la v2.6)', () => {
   })
 })
 
+describe('migration 22 → 23 (diagnostic des routeurs de la v2.7)', () => {
+  it('change seulement la version ; compteurs et cache ARP vides', () => {
+    const doc = JSON.parse(readFixture(22)) as Record<string, unknown>
+    expect(migrations[22]!(doc)).toEqual({ ...doc, schemaVersion: 23 })
+    const cr1 = Object.values(open(22).lab.devices).find((d) => d.name === 'CR1') as {
+      ios?: { arpTable: unknown[]; debugs: unknown[]; natHits: number }
+    }
+    expect(cr1.ios).toMatchObject({ arpTable: [], debugs: [], natHits: 0 })
+  })
+
+  it('v23.slab : s’ouvre sans migration', () => {
+    expect(evaluateCheck(open(23).lab, { type: 'iosStartup', device: 'CR1', line: 'router rip' })).toBe(true)
+  })
+})
+
 describe('migration 21 → 22 (RIP et default-information originate de la v2.7)', () => {
   const startup = (lab: ReturnType<typeof open>['lab'], line: string) =>
     evaluateCheck(lab, { type: 'iosStartup', device: 'CR1', line })

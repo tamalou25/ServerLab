@@ -511,6 +511,7 @@ export const services = defineIosFeature({
   onEffect(device, effect) {
     if (effect.kind !== 'nat') return
     const ios = draftIosState(device)
+    ios.natHits += 1
     const t = effect.data
     const entry = {
       protocol: t.protocol as 'icmp' | 'tcp' | 'udp',

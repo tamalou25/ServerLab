@@ -46,7 +46,11 @@ export function defaultIosState(): IosState {
     macTable: [],
     clockTimezone: null,
     ntpServers: [],
-    clockOffset: null
+    clockOffset: null,
+    ifaceCounters: {},
+    arpTable: [],
+    natHits: 0,
+    debugs: []
   }
 }
 
@@ -72,6 +76,10 @@ export function snapshotOf(device: IosDevice): IosSnapshot {
     syslog: _syslog,
     macTable: _mac,
     clockOffset: _clock,
+    ifaceCounters: _counters,
+    arpTable: _arp,
+    natHits: _natHits,
+    debugs: _debugs,
     ...running
   } = iosState(device)
   const config = clone(running)
@@ -146,7 +154,11 @@ export function applyStartup(device: Draft<IosDevice>, nextId: () => number): vo
     syslog: [],
     macTable: [],
     // Calendrier matériel : l'heure réglée survit au redémarrage
-    clockOffset: device.ios?.clockOffset ?? null
+    clockOffset: device.ios?.clockOffset ?? null,
+    ifaceCounters: {},
+    arpTable: [],
+    natHits: 0,
+    debugs: []
   }
   if (!startup) return
   device.name = startup.hostname

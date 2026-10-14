@@ -240,6 +240,55 @@ function showInterface(ctx: IosRunContext, device: IosDevice, i: NetInterface): 
       ? `  Encapsulation 802.1Q Virtual LAN, Vlan ID  ${i.subinterface.vlan ?? 1}.`
       : '  Encapsulation ARPA, loopback not set'
   )
+  if (!i.svi) interfaceCounters(ctx, device, i, s.status === 'up', bw)
+}
+
+/** Durée IOS depuis un instant de l'horloge du lab (« never » sans trafic). */
+function since(clock: number, at: number | null): string {
+  if (at === null) return 'never'
+  const s = Math.max(0, Math.floor((clock - at) / 1000))
+  const p2 = (n: number) => String(n).padStart(2, '0')
+  return `${p2(Math.floor(s / 3600))}:${p2(Math.floor(s / 60) % 60)}:${p2(s % 60)}`
+}
+
+/**
+ * Fin de show interfaces : duplex, ARP, files d'attente et compteurs calculés depuis les trames
+ * simulées (champs de l'exemple de l'Interface Command Reference,
+ * https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/interface/command/ir-cr-book/ir-s4.html).
+ */
+function interfaceCounters(
+  ctx: IosRunContext,
+  device: IosDevice,
+  i: NetInterface,
+  up: boolean,
+  bw: number
+): void {
+  const c = iosState(device).ifaceCounters[i.name]
+  const n = (v: number | undefined) => v ?? 0
+  ctx.print('  Keepalive set (10 sec)')
+  if (!i.subinterface)
+    ctx.print(up ? `  Full-duplex, ${bw >= 1000000 ? '1000' : '100'}Mb/s` : '  Auto-duplex, Auto-speed')
+  ctx.print('  ARP type: ARPA, ARP Timeout 04:00:00')
+  ctx.print(
+    `  Last input ${since(ctx.state.clock, c?.lastIn ?? null)}, output ${since(ctx.state.clock, c?.lastOut ?? null)}, output hang never`
+  )
+  ctx.print('  Last clearing of "show interface" counters never')
+  ctx.print('  Input queue: 0/75/0/0 (size/max/drops/flushes); Total output drops: 0')
+  ctx.print('  Queueing strategy: fifo')
+  ctx.print('  Output queue: 0/40 (size/max)')
+  ctx.print('  5 minute input rate 0 bits/sec, 0 packets/sec')
+  ctx.print('  5 minute output rate 0 bits/sec, 0 packets/sec')
+  ctx.print(`     ${n(c?.inPackets)} packets input, ${n(c?.inBytes)} bytes`)
+  ctx.print(`     Received ${n(c?.inBroadcasts)} broadcasts (0 IP multicast)`)
+  ctx.print('     0 runts, 0 giants, 0 throttles')
+  ctx.print('     0 input errors, 0 CRC, 0 frame, 0 overrun, 0 ignored')
+  ctx.print('     0 watchdog')
+  ctx.print('     0 input packets with dribble condition detected')
+  ctx.print(`     ${n(c?.outPackets)} packets output, ${n(c?.outBytes)} bytes, 0 underruns`)
+  ctx.print('     0 output errors, 0 collisions, 0 interface resets')
+  ctx.print('     0 babbles, 0 late collision, 0 deferred')
+  ctx.print('     0 lost carrier, 0 no carrier')
+  ctx.print('     0 output buffer failures, 0 output buffers swapped out')
 }
 
 function showVersion(ctx: IosRunContext): void {

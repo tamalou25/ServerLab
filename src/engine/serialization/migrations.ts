@@ -5,7 +5,7 @@
  */
 import { DEFAULT_DC_POLICY_ID, DEFAULT_DOMAIN_POLICY_ID, defaultDomainGpos } from '../roles/gpo/defaults'
 
-export const CURRENT_SCHEMA_VERSION = 22
+export const CURRENT_SCHEMA_VERSION = 23
 
 type RawDocument = Record<string, unknown>
 
@@ -225,6 +225,14 @@ function addV27RipOspfDefault(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 22 }
 }
 
+/**
+ * Version 23 : état de fonctionnement des routeurs IOS (v2.7, lot 4c) — compteurs d'interface,
+ * cache ARP, hits NAT et débogages actifs. Champs facultatifs (vides) : seule la version change.
+ */
+function addV27RouterDiagnostics(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 23 }
+}
+
 /** migrations[n] migre un document de la version n vers n + 1. */
 export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   1: addDefaultGpos,
@@ -247,7 +255,8 @@ export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   18: addV27Stp,
   19: addV27EtherChannelVtp,
   20: addV27SystemAdmin,
-  21: addV27RipOspfDefault
+  21: addV27RipOspfDefault,
+  22: addV27RouterDiagnostics
 }
 
 export type MigrationResult = { ok: true; doc: RawDocument } | { ok: false; message: string }

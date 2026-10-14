@@ -900,7 +900,31 @@ export const IosStateSchema = IosConfigSchema.extend({
    * Horloge réglée par clock set (v21) : écart en ms avec l'horloge du lab ; null : jamais réglée
    * (heure non fiable, « * » de show clock). Conservée au redémarrage (calendrier matériel).
    */
-  clockOffset: z.number().int().nullable().default(null)
+  clockOffset: z.number().int().nullable().default(null),
+  /** Compteurs de trafic par interface (show interfaces, v23), remis à zéro au redémarrage. */
+  ifaceCounters: z
+    .record(
+      z.string(),
+      z.object({
+        inPackets: z.number().int().nonnegative(),
+        inBytes: z.number().int().nonnegative(),
+        inBroadcasts: z.number().int().nonnegative(),
+        outPackets: z.number().int().nonnegative(),
+        outBytes: z.number().int().nonnegative(),
+        /** Horloge du lab de la dernière trame reçue / émise. */
+        lastIn: z.number().nullable(),
+        lastOut: z.number().nullable()
+      })
+    )
+    .default({}),
+  /** Cache ARP appris par les trames simulées (show ip arp, v23), perdu au redémarrage. */
+  arpTable: z
+    .array(z.object({ ip: z.string(), mac: z.string(), iface: z.string(), at: z.number() }))
+    .default([]),
+  /** Paquets traduits par le NAT (Hits de show ip nat statistics, v23). */
+  natHits: z.number().int().nonnegative().default(0),
+  /** Débogages actifs (debug ip packet, debug ip ospf events, v23), perdus au redémarrage. */
+  debugs: z.array(z.enum(['ip packet', 'ip ospf events'])).default([])
 })
 
 const deviceBase = {
