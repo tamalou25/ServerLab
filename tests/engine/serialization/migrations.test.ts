@@ -360,6 +360,27 @@ describe('migration 9 → 10 (cybersécurité défensive de la v2.6)', () => {
   })
 })
 
+describe('migration 16 → 17 (contenu des fichiers de la v2.7)', () => {
+  type Node = { name: string; content?: string; size: number }
+  const file = (lab: ReturnType<typeof open>['lab']) =>
+    Object.values(lab.devices)
+      .filter((d) => d.name === 'SRV1')
+      .flatMap((d) => (d as { storage?: { nodes: Node[] } }).storage?.nodes ?? [])
+      .find((n) => n.name === 'users.csv')
+
+  it('change seulement la version ; les fichiers existants restent sans contenu', () => {
+    const doc = JSON.parse(readFixture(16)) as Record<string, unknown>
+    expect(migrations[16]!(doc)).toEqual({ ...doc, schemaVersion: 17 })
+    expect(file(open(16).lab)).toBeUndefined()
+  })
+
+  it('v17.slab : s’ouvre sans migration et garde le contenu et la taille du fichier', () => {
+    const csv = file(open(17).lab)
+    expect(csv?.content).toBe('Nom;Prenom\r\nDupont;Jean\r\n')
+    expect(csv?.size).toBe(25)
+  })
+})
+
 describe('migration 15 → 16 (logging synchronous de la v2.7)', () => {
   const lines = (lab: ReturnType<typeof open>['lab']) =>
     Object.values(lab.devices)

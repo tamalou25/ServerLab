@@ -5,7 +5,7 @@
  */
 import { DEFAULT_DC_POLICY_ID, DEFAULT_DOMAIN_POLICY_ID, defaultDomainGpos } from '../roles/gpo/defaults'
 
-export const CURRENT_SCHEMA_VERSION = 16
+export const CURRENT_SCHEMA_VERSION = 17
 
 type RawDocument = Record<string, unknown>
 
@@ -174,6 +174,14 @@ function addV27LoggingSync(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 16 }
 }
 
+/**
+ * Version 17 : contenu texte des fichiers simulés (champ optionnel `content` des éléments du
+ * stockage). Les fichiers existants n'ont pas de contenu : seul le numéro de version change.
+ */
+function addV27FileContent(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 17 }
+}
+
 /** migrations[n] migre un document de la version n vers n + 1. */
 export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   1: addDefaultGpos,
@@ -190,7 +198,8 @@ export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   12: addV261Game,
   13: addV261Labs,
   14: addV27AclLog,
-  15: addV27LoggingSync
+  15: addV27LoggingSync,
+  16: addV27FileContent
 }
 
 export type MigrationResult = { ok: true; doc: RawDocument } | { ok: false; message: string }

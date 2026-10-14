@@ -18,7 +18,7 @@ import type {
   SmbShare,
   Storage
 } from '../../model/schema'
-import { WELL_KNOWN_SIDS } from '../../model/schema'
+import { MAX_FILE_CONTENT, WELL_KNOWN_SIDS } from '../../model/schema'
 import { requireDevice } from '../../topology/actions'
 import { accessPerms, effectiveAcl, resolvePrincipal, type AccessToken, type Perm } from './acl'
 import { findNode, isWithin, normalizeItemName, splitLocalPath, validItemName } from './paths'
@@ -240,6 +240,120 @@ export function removeItem(
     storage.nodes = storage.nodes.filter((n) => !ids.has(n.id))
     storage.shares = storage.shares.filter((s) => !ids.has(s.folderId))
     return undefined
+  })
+}
+
+/**
+ * Encodages des cmdlets de contenu de Windows PowerShell 5.1 (paramètre -Encoding de Set-Content,
+ * Add-Content, Out-File, Export-Csv) :
+ * https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/set-content?view=powershell-5.1
+ */
+export const FILE_ENCODINGS = [
+  'ASCII',
+  'BigEndianUnicode',
+  'BigEndianUTF32',
+  'Default',
+  'OEM',
+  'String',
+  'Unicode',
+  'Unknown',
+  'UTF7',
+  'UTF8',
+  'UTF32'
+] as const
+export type FileEncoding = (typeof FILE_ENCODINGS)[number]
+
+/** Octets d'un texte en UTF-8. */
+function utf8Bytes(text: string): number {
+  let n = 0
+  for (const ch of text) {
+    const c = ch.codePointAt(0) ?? 0
+    n += c < 0x80 ? 1 : c < 0x800 ? 2 : c < 0x10000 ? 3 : 4
+  }
+  return n
+}
+
+/**
+ * Taille en octets d'un texte encodé : UTF-16 (Unicode, BigEndianUnicode), UTF-32 et UTF-8 de
+ * Windows PowerShell 5.1 précédés de leur marque d'ordre des octets (BOM) ; ASCII, Default (ANSI),
+ * OEM : un octet par caractère. `bom` = faux pour un ajout à un fichier existant.
+ */
+export function encodedSize(text: string, encoding: FileEncoding, bom = true): number {
+  switch (encoding) {
+    case 'Unicode':
+    case 'BigEndianUnicode':
+    case 'String':
+    case 'Unknown':
+      return (bom ? 2 : 0) + text.length * 2
+    case 'UTF32':
+    case 'BigEndianUTF32':
+      return (bom ? 4 : 0) + [...text].length * 4
+    case 'UTF8':
+      return (bom ? 3 : 0) + utf8Bytes(text)
+    case 'UTF7':
+      return utf8Bytes(text)
+    default:
+      return [...text].length
+  }
+}
+
+export interface WriteContentOptions {
+  /** Ajoute à la fin du contenu existant (Add-Content, Out-File -Append). */
+  append?: boolean
+  /** Encodage de l'écriture (taille du fichier) ; ANSI (Default) par défaut. */
+  encoding?: FileEncoding
+  /** Opération au travers de ce partage (accès réseau). */
+  share?: string
+}
+
+/**
+ * Écrit le contenu texte d'un fichier, créé s'il n'existe pas dans un dossier existant
+ * (Set-Content, Add-Content, Out-File). Exige l'écriture sur le fichier, ou sur le dossier parent
+ * pour une création. Renvoie l'identifiant du fichier.
+ */
+export function writeFileContent(
+  state: LabState,
+  serverId: string,
+  path: string,
+  text: string,
+  token: AccessToken,
+  options: WriteContentOptions = {}
+): EngineResult<string> {
+  const encoding = options.encoding ?? 'Default'
+  return transact(state, (draft) => {
+    const server = requireServer(draft, serverId)
+    const storage = server.storage
+    const share = shareOf(server as ServerDevice, options.share)
+    const parts = splitLocalPath(path)
+    if (!parts || parts.length === 0) raise('InvalidPath', BAD_PATH)
+    const existing = findNode(storage as Storage, path)
+    if (existing === null || existing?.kind === 'folder') raise('AccessDenied', ACCESS_DENIED)
+    let target: Draft<FsNode>
+    if (existing === undefined) {
+      const parentPath = `C:\\${parts.slice(0, -1).join('\\')}`
+      const parent = findNode(storage as Storage, parentPath)
+      if (parent === undefined || parent?.kind === 'file') raise('PathNotFound', PATH_NOT_FOUND)
+      const name = normalizeItemName(parts[parts.length - 1] as string)
+      if (!validItemName(name)) raise('InvalidName', BAD_PATH)
+      demand(storage as Storage, parent?.id ?? null, token, 'write', share)
+      target = newNode(`fs${nextSeq(draft)}`, name, parent?.id ?? null, 'file', token, draft.clock)
+      storage.nodes.push(target)
+      target = storage.nodes[storage.nodes.length - 1] as Draft<FsNode>
+    } else {
+      demand(storage as Storage, existing.id, token, 'write', share)
+      target = storage.nodes.find((n) => n.id === existing.id) as Draft<FsNode>
+    }
+    const append = options.append === true && existing !== undefined
+    const content = append ? `${target.content ?? ''}${text}` : text
+    if (content.length > MAX_FILE_CONTENT)
+      raise(
+        'ContentTooLarge',
+        `Le contenu dépasse la taille maximale d’un fichier simulé (${MAX_FILE_CONTENT} caractères, limite de ServerLab).`
+      )
+    target.content = content
+    target.size = append ? target.size + encodedSize(text, encoding, false) : encodedSize(text, encoding)
+    target.modifiedAt = draft.clock
+    return target.id
   })
 }
 
