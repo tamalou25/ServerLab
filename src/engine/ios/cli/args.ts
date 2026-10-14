@@ -162,9 +162,7 @@ export const MAX_IFACE_RANGES = 5
 
 /** Résultat de l'analyse d'une plage : ports désignés, jeton fautif ou élément non simulé. */
 export type IfaceRangeParse =
-  | { kind: 'ok'; names: string[] }
-  | { kind: 'invalid'; index: number }
-  | { kind: 'unsimulated'; name: string }
+  { kind: 'ok'; names: string[] } | { kind: 'invalid'; index: number } | { kind: 'unsimulated'; name: string }
 
 /**
  * Analyse `fa0/1 - 5 , gi0/1 - 2` à partir de tokens[index] : jusqu'à cinq plages séparées par
@@ -194,7 +192,8 @@ export function parseIfaceRange(tokens: readonly string[], index: number, ctx: A
     // Virgule collée au numéro (« gi0/1 - 3, gi0/5 », exemple du guide 2960)
     let comma = num.endsWith(',')
     if (comma) num = num.slice(0, -1)
-    if (/^\d+(?:\/\d+)+\.\d+$/.test(num)) return { kind: 'unsimulated', name: 'interface range (sous-interfaces)' }
+    if (/^\d+(?:\/\d+)+\.\d+$/.test(num))
+      return { kind: 'unsimulated', name: 'interface range (sous-interfaces)' }
     const m = /^((?:\d+\/)+)(\d+)$/.exec(num)
     if (!m || !exists(`${type.short}${num}`)) return { kind: 'invalid', index: numIndex }
     const base = `${type.short}${m[1]}`

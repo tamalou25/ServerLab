@@ -65,7 +65,9 @@ function enterRange(ctx: IosRunContext, value: string): void {
   }
   const names = value.slice('ok:'.length).split(',')
   const device = ctx.state.devices[ctx.deviceId]
-  const ids = names.map((n) => device?.interfaces.find((i) => i.name === n)?.id).filter((id) => id !== undefined)
+  const ids = names
+    .map((n) => device?.interfaces.find((i) => i.name === n)?.id)
+    .filter((id) => id !== undefined)
   ctx.setMode('config-if-range', { ifaces: ids })
 }
 

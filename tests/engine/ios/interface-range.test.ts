@@ -23,7 +23,11 @@ function sw(): IosConsole {
   return c
 }
 
-const CARET = (col: number): string[] => [`${' '.repeat(col)}^`, "% Invalid input detected at '^' marker.", '']
+const CARET = (col: number): string[] => [
+  `${' '.repeat(col)}^`,
+  "% Invalid input detected at '^' marker.",
+  ''
+]
 
 const ifaceOf = (c: IosConsole, name: string) =>
   Object.values(c.state.devices)[0]?.interfaces.find((i) => i.name === name)
@@ -101,7 +105,9 @@ describe('interface range', () => {
     // Dernier port inexistant
     expect(c.run('interface range fa0/1 - 30')).toEqual(CARET(p + 'interface range fa0/1 - '.length))
     // Second élément de la liste invalide
-    expect(c.run('interface range fa0/1 - 2 , xyz0/1')).toEqual(CARET(p + 'interface range fa0/1 - 2 , '.length))
+    expect(c.run('interface range fa0/1 - 2 , xyz0/1')).toEqual(
+      CARET(p + 'interface range fa0/1 - 2 , '.length)
+    )
     // Sixième plage (cinq au plus)
     expect(c.run('interface range fa0/1 , fa0/2 , fa0/3 , fa0/4 , fa0/5 , fa0/6')).toEqual(
       CARET(p + 'interface range fa0/1 , fa0/2 , fa0/3 , fa0/4 , fa0/5 , '.length)
@@ -112,8 +118,12 @@ describe('interface range', () => {
 
   it('interface range macro et plages de VLAN : message honnête', () => {
     const c = sw()
-    expect(c.run('interface range macro enet_list')).toEqual([`% ${unsimulatedIosMessage('interface range macro')}`])
-    expect(c.run('interface range vlan 10 - 20')).toEqual([`% ${unsimulatedIosMessage('interface range vlan')}`])
+    expect(c.run('interface range macro enet_list')).toEqual([
+      `% ${unsimulatedIosMessage('interface range macro')}`
+    ])
+    expect(c.run('interface range vlan 10 - 20')).toEqual([
+      `% ${unsimulatedIosMessage('interface range vlan')}`
+    ])
     expect(c.prompt).toBe('Switch(config)#')
   })
 
