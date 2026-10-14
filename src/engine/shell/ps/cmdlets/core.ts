@@ -3,6 +3,7 @@
  */
 import { formatShortDate } from '../../../core/clock'
 import { psError } from '../errors'
+import { formatLabDate } from '../dateformat'
 import { formatList, formatTable } from '../format'
 import type { CmdContext } from '../interpreter'
 import type { CmdletDef } from '../registry'
@@ -15,12 +16,89 @@ import {
   psToString,
   wildcardToRegExp,
   type PsObject,
+  type PsScriptBlock,
   type PsValue
 } from '../values'
 import { compare } from '../expression'
 
 function asObjects(values: PsValue[]): PsObject[] {
   return flatten(values).map((v) => (isPsObject(v) ? v : psObject('System.String', { Value: v })))
+}
+
+/** Propriété demandée à Select-Object / Group-Object : nom ou expression calculée. */
+interface SelectSpec {
+  label: string
+  expression?: PsScriptBlock
+}
+
+/** Clé d'une propriété calculée (Label / l / Name / n, Expression / e), insensible à la casse. */
+function hashEntry(h: PsObject, names: string[]): PsValue | undefined {
+  const key = Object.keys(h.props).find((k) => names.includes(k.toLowerCase()))
+  return key === undefined ? undefined : (h.props[key] ?? null)
+}
+
+function selectSpecs(value: PsValue): SelectSpec[] | null {
+  if (value === null) return null
+  const items = Array.isArray(value) ? flatten(value) : [value]
+  if (items.length === 1 && items[0] === '*') return null
+  return items.map((v) => {
+    if (isScript(v)) return { label: v.source, expression: v }
+    if (isPsObject(v) && v.typeName === 'System.Collections.Hashtable') {
+      const expression = hashEntry(v, ['expression', 'e'])
+      const label = hashEntry(v, ['label', 'l', 'name', 'n'])
+      if (isScript(expression ?? null))
+        return {
+          label: psToString(label ?? (expression as PsScriptBlock).source),
+          expression: expression as PsScriptBlock
+        }
+      return { label: psToString(expression ?? label ?? '') }
+    }
+    return { label: psToString(v) }
+  })
+}
+
+/** Sortie d'un bloc de script ramenée à une valeur (un seul objet ou un tableau). */
+function collapse(values: PsValue[]): PsValue {
+  return values.length === 1 ? (values[0] as PsValue) : values
+}
+
+/** Vrai si l'objet a la propriété (insensible à la casse ; Count / Length des collections). */
+function hasProp(v: PsValue, name: string): boolean {
+  if (isPsObject(v)) return Object.keys(v.props).some((k) => k.toLowerCase() === name.toLowerCase())
+  return getProp(v, name) !== null
+}
+
+/** Cellule « Group » : au plus 4 éléments puis « ... » ($FormatEnumerationLimit). */
+function enumerationCell(values: PsValue): string {
+  const items = Array.isArray(values) ? flatten(values) : [values]
+  const shown = items.slice(0, 4).map(psToString)
+  return `{${shown.join(', ')}${items.length > 4 ? '...' : ''}}`
+}
+
+/**
+ * Tableau de Group-Object : Count sur 5 caractères aligné à droite, Name sur 25 (exemple 2 de la
+ * documentation : « Count Name                      Group »), Group en dernier.
+ */
+function renderGroups(objects: PsObject[]): string[] {
+  const noElement = !objects.some((o) => 'Group' in o.props)
+  const name = (o: PsObject) => {
+    const text = psToString(o.props['Name'] ?? null)
+    return text.length > 25 ? `${text.slice(0, 22)}...` : text
+  }
+  const lines = ['']
+  if (noElement) {
+    lines.push('Count Name', '----- ----')
+    for (const o of objects)
+      lines.push(`${psToString(o.props['Count'] ?? null).padStart(5)} ${name(o)}`.trimEnd())
+  } else {
+    lines.push(`Count ${'Name'.padEnd(25)} Group`, `----- ${'----'.padEnd(25)} -----`)
+    for (const o of objects)
+      lines.push(
+        `${psToString(o.props['Count'] ?? null).padStart(5)} ${name(o).padEnd(25)} ${enumerationCell(o.props['Group'] ?? null)}`
+      )
+  }
+  lines.push('')
+  return lines
 }
 
 function propsArg(value: PsValue | undefined): string[] | undefined {
@@ -197,40 +275,121 @@ export const coreCmdlets: CmdletDef[] = [
     }
   },
   {
+    // Select-Object (learn.microsoft.com/powershell/module/microsoft.powershell.utility/select-object) :
+    // -Skip, -First / -Last, propriétés (noms, blocs de script, propriétés calculées
+    // @{Label=…; Expression={…}}), -ExpandProperty, puis -Unique sur le résultat (exemple 5).
     name: 'Select-Object',
     aliases: ['select'],
     module: 'Core',
     synopsis: 'Sélectionne des propriétés ou des objets.',
     params: [
-      { name: 'Property', type: 'string[]', position: 0 },
+      { name: 'Property', type: 'any', position: 0 },
       { name: 'First', type: 'int' },
       { name: 'Last', type: 'int' },
+      { name: 'Skip', type: 'int' },
+      { name: 'Unique', type: 'switch' },
       { name: 'ExpandProperty', type: 'string' },
       { name: 'InputObject', type: 'any', pipeline: true }
     ],
-    run(_ctx, args, input) {
+    run(ctx: CmdContext, args, input) {
       let items = flatten(input)
+      if (typeof args['Skip'] === 'number') items = items.slice(args['Skip'])
       if (typeof args['First'] === 'number') items = items.slice(0, args['First'])
       if (typeof args['Last'] === 'number') items = items.slice(-args['Last'])
+      let result: PsValue[]
       if (args['ExpandProperty']) {
         const name = psToString(args['ExpandProperty'])
-        return flatten(items.map((i) => getProp(i, name)))
-      }
-      const props = propsArg(args['Property'])
-      if (!props || (props.length === 1 && props[0] === '*')) return items
-      return items.map((i) => {
-        const selected: Record<string, PsValue> = {}
-        for (const p of props) {
-          const real = isPsObject(i)
-            ? (Object.keys(i.props).find((k) => k.toLowerCase() === p.toLowerCase()) ?? p)
-            : p
-          selected[real] = getProp(i, p)
+        result = []
+        for (const i of items) {
+          if (!hasProp(i, name))
+            throw psError(
+              `La propriété « ${name} » est introuvable.`,
+              'InvalidArgument',
+              'ExpandPropertyNotFound,Microsoft.PowerShell.Commands.SelectObjectCommand',
+              psToString(i)
+            )
+          result.push(...flatten([getProp(i, name)]))
         }
-        return psObject('Selected', selected, {
-          kind: props.length <= 4 ? 'table' : 'list',
-          props: Object.keys(selected)
+      } else {
+        const specs = selectSpecs(args['Property'] ?? null)
+        result =
+          specs === null
+            ? items
+            : items.map((i) => {
+                const selected: Record<string, PsValue> = {}
+                for (const spec of specs) {
+                  if (spec.expression) {
+                    selected[spec.label] = collapse(ctx.invoke(spec.expression, i))
+                    continue
+                  }
+                  const real = isPsObject(i)
+                    ? (Object.keys(i.props).find((k) => k.toLowerCase() === spec.label.toLowerCase()) ??
+                      spec.label)
+                    : spec.label
+                  selected[real] = getProp(i, spec.label)
+                }
+                return psObject('Selected', selected, {
+                  kind: specs.length <= 4 ? 'table' : 'list',
+                  props: Object.keys(selected)
+                })
+              })
+      }
+      if (args['Unique'] === true) {
+        const seen = new Set<string>()
+        result = result.filter((v) => {
+          const key = isPsObject(v) ? JSON.stringify(v.props) : psToString(v)
+          if (seen.has(key)) return false
+          seen.add(key)
+          return true
         })
-      })
+      }
+      return result
+    }
+  },
+  {
+    // Group-Object (learn.microsoft.com/powershell/module/microsoft.powershell.utility/group-object) :
+    // une ligne par valeur (Count, Name, Group), groupes dans l'ordre d'apparition (exemple 10),
+    // propriété nommée ou bloc de script, -NoElement, insensible à la casse sauf -CaseSensitive.
+    name: 'Group-Object',
+    aliases: ['group'],
+    module: 'Core',
+    synopsis: 'Regroupe les objets qui ont la même valeur de propriété.',
+    params: [
+      { name: 'Property', type: 'any', position: 0 },
+      { name: 'NoElement', type: 'switch' },
+      { name: 'CaseSensitive', type: 'switch' },
+      { name: 'InputObject', type: 'any', pipeline: true }
+    ],
+    run(ctx: CmdContext, args, input) {
+      const specs = selectSpecs(args['Property'] ?? null)
+      const caseSensitive = args['CaseSensitive'] === true
+      const groups = new Map<string, { name: string; values: PsValue[]; group: PsValue[] }>()
+      for (const item of flatten(input)) {
+        const values = specs
+          ? specs.map((spec) =>
+              spec.expression ? collapse(ctx.invoke(spec.expression, item)) : getProp(item, spec.label)
+            )
+          : [item]
+        const name = values.map((v) => psToString(v)).join(', ')
+        const key = caseSensitive ? name : name.toLowerCase()
+        const existing = groups.get(key)
+        if (existing) existing.group.push(item)
+        else groups.set(key, { name, values, group: [item] })
+      }
+      const noElement = args['NoElement'] === true
+      return [...groups.values()].map((g) =>
+        psObject(
+          'GroupInfo',
+          noElement
+            ? { Count: g.group.length, Name: g.name }
+            : { Count: g.group.length, Name: g.name, Group: g.group, Values: g.values },
+          {
+            kind: 'table',
+            props: noElement ? ['Count', 'Name'] : ['Count', 'Name', 'Group'],
+            render: renderGroups
+          }
+        )
+      )
     }
   },
   {
@@ -404,11 +563,14 @@ export const coreCmdlets: CmdletDef[] = [
     }
   },
   {
+    // Get-Date -Format : chaîne de format .NET (culture fr-FR), temps = horloge du lab
     name: 'Get-Date',
     module: 'Core',
     synopsis: 'Affiche la date et l’heure (horloge du lab).',
-    params: [],
-    run(ctx) {
+    params: [{ name: 'Format', type: 'string' }],
+    run(ctx, args) {
+      const format = args['Format']
+      if (typeof format === 'string' && format !== '') return [formatLabDate(ctx.state.clock, format)]
       return [formatShortDate(ctx.state.clock)]
     }
   },

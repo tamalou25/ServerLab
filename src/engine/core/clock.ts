@@ -21,7 +21,8 @@ const MONTHS = [
   'décembre'
 ]
 
-function parts(clock: number) {
+/** Composantes (UTC) de l'horloge du lab. */
+export function clockParts(clock: number) {
   const d = new Date(LAB_EPOCH_MS + clock)
   return {
     day: d.getUTCDay(),
@@ -38,19 +39,19 @@ const p2 = (n: number) => String(n).padStart(2, '0')
 
 /** « lundi 5 janvier 2026 08:00:00 » (format d'ipconfig /all). */
 export function formatLongDate(clock: number): string {
-  const t = parts(clock)
+  const t = clockParts(clock)
   return `${DAYS[t.day]} ${t.date} ${MONTHS[t.month]} ${t.year} ${p2(t.h)}:${p2(t.m)}:${p2(t.s)}`
 }
 
 /** « 05/01/2026 08:00:00 ». */
 export function formatShortDate(clock: number): string {
-  const t = parts(clock)
+  const t = clockParts(clock)
   return `${p2(t.date)}/${p2(t.month + 1)}/${t.year} ${p2(t.h)}:${p2(t.m)}:${p2(t.s)}`
 }
 
 /** Éléments d'horloge pour l'affichage (barre des tâches, écran de verrouillage). */
 export function formatClockParts(clock: number): { time: string; date: string; longDate: string } {
-  const t = parts(clock)
+  const t = clockParts(clock)
   return {
     time: `${p2(t.h)}:${p2(t.m)}`,
     date: `${p2(t.date)}/${p2(t.month + 1)}/${t.year}`,

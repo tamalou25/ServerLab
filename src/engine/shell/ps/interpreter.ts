@@ -30,6 +30,7 @@ import {
   type Pipeline,
   type Statement
 } from './parser'
+import { executeCmd } from '../cmd/interpreter'
 import { isUnsimulated, iterationLimitMessage, unsimulatedMessage } from '../unsimulated'
 import { COMMON_PARAMS, type BoundArgs, type CmdletDef, type ParamDef } from './registry'
 import {
@@ -661,20 +662,55 @@ function runCommand(ctx: CmdContext, el: Extract<Element, { kind: 'command' }>, 
     const result = def.run(ctx, args, input)
     return result ? flatten(result) : []
   }
-  const tool = findTool(ctx.catalog, el.name)
-  if (tool && (tool.available?.(ctx) ?? true)) {
-    ctx.commandName = el.name
-    const args = el.args.map((a) => {
+  const nativeArgs = () =>
+    el.args.map((a) => {
       if (a.kind === 'param') return a.text
       const v = evalExpr(ctx, a.expr)
       return Array.isArray(v) ? flatten(v).map(psToString).join(',') : psToString(v)
     })
-    tool.run(ctx, args)
-    return []
+  const tool = findTool(ctx.catalog, el.name)
+  if (tool && (tool.available?.(ctx) ?? true)) {
+    ctx.commandName = el.name
+    const args = nativeArgs()
+    return captureNative(ctx, () => tool.run(ctx, args))
+  }
+  if (el.name.toLowerCase().replace(/\.exe$/, '') === 'cmd') {
+    // cmd /c <commande> : exécutée par l'invite de commandes simulée, sortie renvoyée en texte
+    const args = nativeArgs()
+    const c = args.findIndex((a) => a.toLowerCase() === '/c')
+    if (c < 0)
+      throw notSimulated(
+        'L’invite de commandes interactive lancée depuis PowerShell (utilisez cmd /c <commande>)',
+        el
+      )
+    const line = args
+      .slice(c + 1)
+      .map((a) => (/\s/.test(a) ? `"${a}"` : a))
+      .join(' ')
+    ctx.commandName = 'cmd'
+    return captureNative(ctx, () => executeCmd(ctx, line, ctx.catalog.tools))
   }
   if (isUnsimulated('ps', el.name))
     throw psError(unsimulatedMessage('ps', el.name), 'NotImplemented', 'CommandNotSimulated', el.name)
   throw commandNotFound(el.name, { start: el.start, end: el.start + el.name.length })
+}
+
+/**
+ * Exécutable lancé depuis PowerShell (ipconfig, ping, cmd /c …) : sa sortie standard devient des
+ * chaînes, une par ligne, que le pipeline peut filtrer ou affecter (commandes
+ * natives, about_Pipelines) ; les lignes d'erreur restent affichées telles quelles.
+ */
+function captureNative(ctx: CmdContext, run: () => void): PsValue[] {
+  ctx.flush()
+  const start = ctx.output.length
+  run()
+  const lines = ctx.output.splice(start)
+  const values: string[] = []
+  for (const line of lines) {
+    if (line.kind === 'out') values.push(line.text)
+    else ctx.output.push(line)
+  }
+  return values
 }
 
 function runPipeline(ctx: CmdContext, pipeline: Pipeline): PsValue[] {
