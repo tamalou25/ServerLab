@@ -58,3 +58,8 @@ export function unsimulatedMessage(shell: 'cmd' | 'ps' | 'bash', name: string): 
     ? `${name}: commande réelle non simulée dans ServerLab`
     : `« ${name} » est une commande réelle qui n’est pas simulée dans ServerLab.`
 }
+
+/** Élément réel d'IOS non simulé (filtre `| tee`, `interface range macro`…). */
+export function unsimulatedIosMessage(name: string): string {
+  return `« ${name} » est une fonction réelle d’IOS qui n’est pas simulée dans ServerLab.`
+}
