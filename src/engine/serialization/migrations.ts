@@ -5,7 +5,7 @@
  */
 import { DEFAULT_DC_POLICY_ID, DEFAULT_DOMAIN_POLICY_ID, defaultDomainGpos } from '../roles/gpo/defaults'
 
-export const CURRENT_SCHEMA_VERSION = 17
+export const CURRENT_SCHEMA_VERSION = 18
 
 type RawDocument = Record<string, unknown>
 
@@ -182,6 +182,15 @@ function addV27FileContent(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 17 }
 }
 
+/**
+ * Version 18 : switch 2960 (ip default-gateway, cdp run, table d'adresses MAC). Champs IOS
+ * facultatifs à valeur par défaut (passerelle absente, CDP actif, table vide) : seul le numéro de
+ * version change.
+ */
+function addV27SwitchBasics(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 18 }
+}
+
 /** migrations[n] migre un document de la version n vers n + 1. */
 export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   1: addDefaultGpos,
@@ -199,7 +208,8 @@ export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   13: addV261Labs,
   14: addV27AclLog,
   15: addV27LoggingSync,
-  16: addV27FileContent
+  16: addV27FileContent,
+  17: addV27SwitchBasics
 }
 
 export type MigrationResult = { ok: true; doc: RawDocument } | { ok: false; message: string }

@@ -7,6 +7,7 @@
  * Depuis la v10 : sécurité L2 de CSW1 (DHCP snooping, inspection ARP, trunk sans DTP)
  * (VLAN 30, trunk, sous-interface, OSPF, DHCP, ACL, HSRP, enregistrement).
  * Depuis la v17 : fichier C:\Scripts\users.csv de SRV1 avec son contenu texte.
+ * Depuis la v18 : passerelle par défaut de CSW1 (ip default-gateway).
  * Le même scénario a servi à produire chaque fichier vN.slab avec le code de la version N.
  */
 import {
@@ -187,6 +188,9 @@ export function buildReferenceLab(): LabState {
     'switchport nonegotiate',
     'ip dhcp snooping trust',
     'ip arp inspection trust',
+    // v18 : passerelle par défaut du switch
+    'exit',
+    'ip default-gateway 192.168.30.1',
     'end',
     'write memory'
   ])

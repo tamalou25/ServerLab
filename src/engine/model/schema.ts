@@ -783,8 +783,21 @@ export const IosConfigSchema = z.object({
   dhcpSnoopingVlans: z.array(z.number().int().min(1).max(4094)).default([]),
   /** VLAN soumis à l'inspection ARP dynamique (ip arp inspection vlan). */
   arpInspectionVlans: z.array(z.number().int().min(1).max(4094)).default([]),
+  /** Passerelle par défaut d'un switch sans routage IP (ip default-gateway). */
+  defaultGateway: z.string().nullable().default(null),
+  /** CDP actif globalement (cdp run, actif par défaut). */
+  cdpRun: z.boolean().default(true),
   /** Données IOS par interface (clé : nom court Gi0/0). */
   interfaces: z.record(z.string(), IosInterfaceSchema).default({})
+})
+
+/** Adresse MAC apprise par un switch sur un port (table d'adresses MAC, état de fonctionnement). */
+export const MacEntrySchema = z.object({
+  vlan: z.number().int().min(1).max(4094),
+  /** Adresse au format du moteur (00-11-22-33-44-55). */
+  mac: z.string(),
+  /** Port d'apprentissage (nom court Fa0/1). */
+  port: z.string()
 })
 
 /** Interface dans une configuration enregistrée (repérée par son nom). */
@@ -822,7 +835,9 @@ export const IosStateSchema = IosConfigSchema.extend({
   /** État HSRP par groupe (clé « Gi0/0|1 ») : Active, Standby, Listen, Init. */
   hsrpStates: z.record(z.string(), z.enum(['Active', 'Standby', 'Listen', 'Init'])).default({}),
   /** Tampon de journalisation (show logging), perdu au redémarrage. */
-  syslog: z.array(z.string()).default([])
+  syslog: z.array(z.string()).default([]),
+  /** Table d'adresses MAC apprises par les trames simulées, perdue au redémarrage. */
+  macTable: z.array(MacEntrySchema).default([])
 })
 
 const deviceBase = {

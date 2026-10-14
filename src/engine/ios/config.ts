@@ -34,7 +34,10 @@ export function defaultIosState(): IosState {
     dhcpSnooping: false,
     dhcpSnoopingVlans: [],
     arpInspectionVlans: [],
-    syslog: []
+    syslog: [],
+    defaultGateway: null,
+    cdpRun: true,
+    macTable: []
   }
 }
 
@@ -58,6 +61,7 @@ export function snapshotOf(device: IosDevice): IosSnapshot {
     hsrpStates: _hsrp,
     aclCounters: _acl,
     syslog: _syslog,
+    macTable: _mac,
     ...running
   } = iosState(device)
   const config = clone(running)
@@ -129,7 +133,8 @@ export function applyStartup(device: Draft<IosDevice>, nextId: () => number): vo
     natTranslations: [],
     hsrpStates: {},
     aclCounters: {},
-    syslog: []
+    syslog: [],
+    macTable: []
   }
   if (!startup) return
   device.name = startup.hostname

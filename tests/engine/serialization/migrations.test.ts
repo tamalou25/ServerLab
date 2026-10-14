@@ -360,6 +360,34 @@ describe('migration 9 → 10 (cybersécurité défensive de la v2.6)', () => {
   })
 })
 
+describe('migration 17 → 18 (switch 2960 de la v2.7)', () => {
+  const csw1 = (lab: ReturnType<typeof open>['lab']) =>
+    Object.values(lab.devices).find((d) => d.name === 'CSW1') as {
+      ios?: { defaultGateway: string | null; cdpRun: boolean; macTable: unknown[] }
+    }
+
+  it('change seulement la version ; passerelle absente, CDP actif, table MAC vide', () => {
+    const doc = JSON.parse(readFixture(17)) as Record<string, unknown>
+    expect(migrations[17]!(doc)).toEqual({ ...doc, schemaVersion: 18 })
+    const ios = csw1(open(17).lab).ios
+    expect(ios?.defaultGateway).toBeNull()
+    expect(ios?.cdpRun).toBe(true)
+    expect(ios?.macTable).toEqual([])
+  })
+
+  it('v18.slab : s’ouvre sans migration et garde ip default-gateway', () => {
+    const lab = open(18).lab
+    expect(csw1(lab).ios?.defaultGateway).toBe('192.168.30.1')
+    expect(
+      evaluateCheck(lab, {
+        type: 'iosStartup',
+        device: 'CSW1',
+        line: 'ip default-gateway 192.168.30.1'
+      })
+    ).toBe(true)
+  })
+})
+
 describe('migration 16 → 17 (contenu des fichiers de la v2.7)', () => {
   type Node = { name: string; content?: string; size: number }
   const file = (lab: ReturnType<typeof open>['lab']) =>
