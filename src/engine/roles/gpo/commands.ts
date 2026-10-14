@@ -1,6 +1,7 @@
 /**
  * Commandes du rôle Stratégies de groupe : actions pures du moteur + libellés français.
  */
+import { setGpRegistryValue } from './registry'
 import { def } from '../../commands/define'
 import { gpoName, linkTargetName } from '../../commands/labels'
 import type { EngineResult } from '../../core/result'
@@ -66,5 +67,9 @@ export const gpoCommands = {
   'gpo.updateSettings': def(
     updateGpoSettings,
     (s, d, id) => `Modifier les paramètres de ${gpoName(s, d, id)}`
+  ),
+  'gpo.setRegistryValue': def(
+    setGpRegistryValue,
+    (s, d, id, input) => `Valeur de registre ${input.key} dans ${gpoName(s, d, id)}`
   )
 }

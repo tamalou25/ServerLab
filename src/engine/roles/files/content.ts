@@ -78,6 +78,11 @@ function joinValues(values: PsValue[], noNewline: boolean): string {
   return noNewline ? items.join('') : items.map((v) => `${v}\r\n`).join('')
 }
 
+/** Écrit un texte dans un fichier (création au besoin), encodage par défaut (Get-GPOReport -Path…). */
+export function writeTextFile(ctx: CmdContext, path: string, text: string): void {
+  write(ctx, path, text, { encoding: 'Default' })
+}
+
 /** Écriture du contenu (création au besoin) par la commande du moteur. */
 function write(
   ctx: CmdContext,

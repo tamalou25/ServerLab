@@ -8,6 +8,7 @@
  * - partage : cumul des autorisations de tous les groupes, un refus l'emporte toujours ;
  * - accès réseau = le plus restrictif des deux (intersection).
  */
+import { isLocalAdmin } from '../../services/localaccounts'
 import type {
   Device,
   Domain,
@@ -107,9 +108,15 @@ export function domainToken(domain: Domain, sam: string): AccessToken | null {
   }
 }
 
-/** Jeton d'un compte local (Administrateur ou utilisateur standard) d'un ordinateur. */
-export function localToken(hostName: string, user: string): AccessToken {
-  const admin = user.toLowerCase() === 'administrateur'
+/**
+ * Jeton d'un compte local (Administrateur ou utilisateur standard) d'un ordinateur ; `admin` :
+ * membre du groupe local Administrateurs (base SAM, Lot 2b).
+ */
+export function localToken(
+  hostName: string,
+  user: string,
+  admin = user.toLowerCase() === 'administrateur'
+): AccessToken {
   return {
     account: `${hostName}\\${user}`,
     sids: [
@@ -134,7 +141,7 @@ export function sessionToken(state: LabState, hostId: string): AccessToken | nul
     )
     return domain ? domainToken(domain, session.user) : null
   }
-  return localToken(host.name, session.user)
+  return localToken(host.name, session.user, isLocalAdmin(state, hostId, session.user))
 }
 
 /** Domaine dont un ordinateur est membre. */
