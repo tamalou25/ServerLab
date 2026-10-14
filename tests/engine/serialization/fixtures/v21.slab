@@ -186,23 +186,8 @@
               "message": "Un compte d’ordinateur a été créé : LAB\\PC1$ (par LAB\\Administrateur).",
               "id": 65,
               "time": 9000
-            },
-            {
-              "log": "Système",
-              "level": "information",
-              "source": "Service Control Manager",
-              "eventId": 7036,
-              "message": "Le service Temps Windows est entré dans l’état : arrêté.",
-              "id": 102,
-              "time": 13000
             }
           ],
-          "services": {
-            "W32Time": {
-              "status": "Stopped",
-              "startType": "Manual"
-            }
-          },
           "mounts": []
         },
         "roles": {
@@ -907,7 +892,6 @@
               "time": 12000
             }
           ],
-          "services": {},
           "mounts": []
         }
       },
@@ -996,7 +980,6 @@
           "vpnConnections": [],
           "smb1": false,
           "eventLog": [],
-          "services": {},
           "mounts": []
         }
       },
@@ -1124,7 +1107,7 @@
             "bridge": null
           },
           {
-            "id": "if103",
+            "id": "if102",
             "name": "Gi0/0.30",
             "mac": "02-53-4C-00-00-46",
             "enabled": true,
@@ -1406,6 +1389,10 @@
                   "password": null,
                   "login": "none",
                   "loggingSync": true,
+                  "execTimeout": {
+                    "minutes": 0,
+                    "seconds": 0
+                  },
                   "transport": null
                 }
               ],
@@ -1419,7 +1406,15 @@
               "stpPriorities": {},
               "portChannels": [],
               "vtpMode": "server",
-              "vtpDomain": ""
+              "vtpDomain": "",
+              "clockTimezone": {
+                "zone": "CET",
+                "hours": 1,
+                "minutes": 0
+              },
+              "ntpServers": [
+                "192.168.30.10"
+              ]
             },
             "interfaces": [
               {
@@ -1464,6 +1459,10 @@
               "password": null,
               "login": "none",
               "loggingSync": true,
+              "execTimeout": {
+                "minutes": 0,
+                "seconds": 0
+              },
               "transport": null
             }
           ],
@@ -1479,7 +1478,16 @@
           "portChannels": [],
           "vtpMode": "server",
           "vtpDomain": "",
-          "macTable": []
+          "macTable": [],
+          "clockTimezone": {
+            "zone": "CET",
+            "hours": 1,
+            "minutes": 0
+          },
+          "ntpServers": [
+            "192.168.30.10"
+          ],
+          "clockOffset": null
         }
       },
       "d72": {
@@ -2136,7 +2144,9 @@
                 1
               ],
               "vtpMode": "transparent",
-              "vtpDomain": "SIO"
+              "vtpDomain": "SIO",
+              "clockTimezone": null,
+              "ntpServers": []
             },
             "interfaces": [
               {
@@ -2339,7 +2349,10 @@
           ],
           "vtpMode": "transparent",
           "vtpDomain": "SIO",
-          "macTable": []
+          "macTable": [],
+          "clockTimezone": null,
+          "ntpServers": [],
+          "clockOffset": null
         }
       }
     },
@@ -2405,8 +2418,8 @@
         "virtual": false
       }
     },
-    "seq": 103,
-    "clock": 13000,
+    "seq": 102,
+    "clock": 12000,
     "domains": {
       "lab.local": {
         "name": "lab.local",

@@ -18,6 +18,7 @@ import { ospfDatabase, ospfRoutes, type OspfNeighbor } from '../ospf'
 import type { ConfigBlock } from '../running-config'
 import { ifaceStatus } from '../status'
 import { deviceOf, update } from './base'
+import { inRip, ripAge, updateRip } from './rip'
 
 const kw = (keyword: string, help: string): SyntaxToken => ({ keyword, help })
 
@@ -103,7 +104,15 @@ function enterOspf(ctx: IosRunContext, process: number): void {
     const ospf = draftIosState(d).ospf
     if (ospf.some((p) => p.process === process)) return
     if (ospf.length > 0) raise('OneProcess', 'Un seul processus OSPF est simulé par équipement.')
-    ospf.push({ process, routerId: null, networks: [], passive: [], passiveDefault: false, active: [] })
+    ospf.push({
+      process,
+      routerId: null,
+      networks: [],
+      passive: [],
+      passiveDefault: false,
+      active: [],
+      defaultOriginate: null
+    })
   })
   if (ok) ctx.setMode('config-router', { router: { protocol: 'ospf', process } })
 }
@@ -163,7 +172,21 @@ function showIpRoute(ctx: IosRunContext): void {
   for (const r of table) {
     if (r.source === 'connected') continue
     const gw = r.gateway ?? ''
-    if (r.source === 'ospf')
+    if (r.source === 'rip')
+      lines.push({
+        network: r.network,
+        prefixLength: r.prefixLength,
+        code: r.prefixLength === 0 ? 'R*' : 'R',
+        text: `[120/${r.metric ?? 1}] via ${gw}, ${ripAge(ctx.state.clock)}, ${ifName(r.ifaceId)}`
+      })
+    else if (r.source === 'ospf' && r.external)
+      lines.push({
+        network: r.network,
+        prefixLength: r.prefixLength,
+        code: 'O*E2',
+        text: `[110/${r.metric ?? 1}] via ${gw}, ${age(ctx.state)}, ${ifName(r.ifaceId)}`
+      })
+    else if (r.source === 'ospf')
       lines.push({
         network: r.network,
         prefixLength: r.prefixLength,
@@ -262,6 +285,9 @@ const NETWORK = [
 ]
 const PASSIVE = kw('passive-interface', 'Suppress routing updates on an interface')
 
+/** Mode config-router d'un processus OSPF. */
+const inOspf = (ctx: ArgContext): boolean => ctx.session.router?.protocol === 'ospf'
+
 const commands: CliCommand[] = [
   {
     modes: ['config'],
@@ -290,6 +316,7 @@ const commands: CliCommand[] = [
   {
     modes: ['config-router'],
     syntax: NETWORK,
+    available: inOspf,
     run: (ctx, args) =>
       updateOspf(ctx, (proc) => {
         const entry = { network: args.network ?? '', wildcard: args.wildcard ?? '', area: Number(args.area) }
@@ -312,6 +339,7 @@ const commands: CliCommand[] = [
       kw('router-id', 'router-id for this OSPF process'),
       { arg: 'id', type: IPV4, help: 'OSPF router-id in IP address format' }
     ],
+    available: inOspf,
     run: (ctx, args) => {
       updateOspf(ctx, (proc) => {
         proc.routerId = args.id ?? null
@@ -324,23 +352,32 @@ const commands: CliCommand[] = [
     modes: ['config-router'],
     syntax: [PASSIVE, { arg: 'iface', type: iface({ subinterfaces: true, vlans: true }), help: 'Interface' }],
     run: (ctx, args) =>
-      updateOspf(ctx, (proc) => {
-        const name = args.iface ?? ''
-        proc.active = proc.active.filter((n) => n !== name)
-        if (!proc.passive.includes(name)) proc.passive.push(name)
-      }),
+      inRip(ctx)
+        ? updateRip(ctx, (rip) => {
+            if (!rip.passive.includes(args.iface ?? '')) rip.passive.push(args.iface ?? '')
+          })
+        : updateOspf(ctx, (proc) => {
+            const name = args.iface ?? ''
+            proc.active = proc.active.filter((n) => n !== name)
+            if (!proc.passive.includes(name)) proc.passive.push(name)
+          }),
     no: {
       run: (ctx, args) =>
-        updateOspf(ctx, (proc) => {
-          const name = args.iface ?? ''
-          proc.passive = proc.passive.filter((n) => n !== name)
-          if (proc.passiveDefault && !proc.active.includes(name)) proc.active.push(name)
-        })
+        inRip(ctx)
+          ? updateRip(ctx, (rip) => {
+              rip.passive = rip.passive.filter((n) => n !== args.iface)
+            })
+          : updateOspf(ctx, (proc) => {
+              const name = args.iface ?? ''
+              proc.passive = proc.passive.filter((n) => n !== name)
+              if (proc.passiveDefault && !proc.active.includes(name)) proc.active.push(name)
+            })
     }
   },
   {
     modes: ['config-router'],
     syntax: [PASSIVE, kw('default', 'Suppress routing updates on all interfaces')],
+    available: inOspf,
     run: (ctx) =>
       updateOspf(ctx, (proc) => {
         proc.passiveDefault = true
@@ -354,6 +391,27 @@ const commands: CliCommand[] = [
         })
     }
   },
+  ...[false, true].map((always): CliCommand => ({
+    modes: ['config-router'],
+    syntax: [
+      kw('default-information', 'Control distribution of default information'),
+      kw('originate', 'Distribute a default route'),
+      ...(always ? [kw('always', 'Always advertise default route')] : [])
+    ],
+    // RIP : default-information originate sans « always »
+    available: always ? inOspf : undefined,
+    run: (ctx) =>
+      inRip(ctx)
+        ? updateRip(ctx, (rip) => (rip.defaultOriginate = true))
+        : updateOspf(ctx, (proc) => (proc.defaultOriginate = always ? 'always' : 'on')),
+    no: {
+      min: 2,
+      run: (ctx) =>
+        inRip(ctx)
+          ? updateRip(ctx, (rip) => (rip.defaultOriginate = false))
+          : updateOspf(ctx, (proc) => (proc.defaultOriginate = null))
+    }
+  })),
   {
     modes: ['user', 'exec'],
     syntax: [
@@ -386,6 +444,8 @@ function config(device: IosDevice): ConfigBlock[] {
     for (const name of proc.active) lines.push(` no passive-interface ${ifaceLongName(name)}`)
     for (const name of proc.passive) lines.push(` passive-interface ${ifaceLongName(name)}`)
     for (const n of proc.networks) lines.push(` network ${n.network} ${n.wildcard} area ${n.area}`)
+    if (proc.defaultOriginate)
+      lines.push(` default-information originate${proc.defaultOriginate === 'always' ? ' always' : ''}`)
     blocks.push({ order: 110, lines })
   }
   const statics = device.routes ?? []

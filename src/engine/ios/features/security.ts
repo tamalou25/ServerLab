@@ -254,7 +254,10 @@ function generateKeys(ctx: IosRunContext, bits?: number): void {
 }
 
 /** Ligne en cours de configuration (créée à la première modification). */
-function updateLine(ctx: IosRunContext, change: (line: Draft<IosState['lines'][number]>) => void): void {
+export function updateLine(
+  ctx: IosRunContext,
+  change: (line: Draft<IosState['lines'][number]>) => void
+): void {
   const ref = ctx.session.line
   if (!ref) return
   update(ctx, (d) => {
@@ -268,6 +271,7 @@ function updateLine(ctx: IosRunContext, change: (line: Draft<IosState['lines'][n
         password: null,
         login: 'none',
         loggingSync: false,
+        execTimeout: null,
         transport: null
       }
       lines.push(line)
@@ -603,6 +607,8 @@ function lineBlocks(device: IosDevice): string[] {
           ? 'line aux 0'
           : `line vty ${ref.first} ${ref.last}`
     )
+    // exec-timeout avant password (running-config des exemples Cisco : « exec-timeout 0 0 »)
+    if (line?.execTimeout) out.push(` exec-timeout ${line.execTimeout.minutes} ${line.execTimeout.seconds}`)
     if (line?.password)
       out.push(encrypt ? ` password 7 ${type7(line.password)}` : ` password ${line.password}`)
     // Ordre relatif à password / login à vérifier (exemples Cisco sans mot de passe)

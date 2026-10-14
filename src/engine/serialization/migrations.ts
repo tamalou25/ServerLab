@@ -5,7 +5,7 @@
  */
 import { DEFAULT_DC_POLICY_ID, DEFAULT_DOMAIN_POLICY_ID, defaultDomainGpos } from '../roles/gpo/defaults'
 
-export const CURRENT_SCHEMA_VERSION = 21
+export const CURRENT_SCHEMA_VERSION = 24
 
 type RawDocument = Record<string, unknown>
 
@@ -208,11 +208,37 @@ function addV27EtherChannelVtp(doc: RawDocument): RawDocument {
 }
 
 /**
- * Version 21 : état des services système (démarré / arrêté, type de démarrage) des ordinateurs,
- * `host.services`. Valeur par défaut (table vide : tout démarré, automatique) : seul le numéro change.
+ * Version 21 : administration du système IOS (v2.7, lot 4a) — clock timezone, ntp server,
+ * exec-timeout des lignes et horloge réglée par clock set. Champs facultatifs (valeurs par défaut
+ * du schéma : UTC, aucun serveur, 10 0, horloge jamais réglée) : seule la version change.
+ */
+function addV27SystemAdmin(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 21 }
+}
+
+/**
+ * Version 22 : routage dynamique du routeur (v2.7, lot 4b) — processus RIP (router rip) et
+ * default-information originate d'OSPF. Champs facultatifs (aucun RIP, aucune route par défaut
+ * annoncée) : seule la version change.
+ */
+function addV27RipOspfDefault(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 22 }
+}
+
+/**
+ * Version 23 : état de fonctionnement des routeurs IOS (v2.7, lot 4c) — compteurs d'interface,
+ * cache ARP, hits NAT et débogages actifs. Champs facultatifs (vides) : seule la version change.
+ */
+function addV27RouterDiagnostics(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 23 }
+}
+
+/**
+ * Version 24 : état des services système des ordinateurs (`host.services` : démarré / arrêté, type de démarrage).
+ * Valeurs par défaut (vides) : seul le numéro de version change.
  */
 function addV27Services(doc: RawDocument): RawDocument {
-  return { ...doc, schemaVersion: 21 }
+  return { ...doc, schemaVersion: 24 }
 }
 
 /** migrations[n] migre un document de la version n vers n + 1. */
@@ -236,7 +262,10 @@ export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   17: addV27SwitchBasics,
   18: addV27Stp,
   19: addV27EtherChannelVtp,
-  20: addV27Services
+  20: addV27SystemAdmin,
+  21: addV27RipOspfDefault,
+  22: addV27RouterDiagnostics,
+  23: addV27Services
 }
 
 export type MigrationResult = { ok: true; doc: RawDocument } | { ok: false; message: string }

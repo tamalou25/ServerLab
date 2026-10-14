@@ -31,7 +31,7 @@ export function configBody(device: IosDevice, state: LabState): string[] {
   return lines
 }
 
-function interfaceSection(device: IosDevice, iface: NetInterface, state: LabState): string[] {
+export function interfaceSection(device: IosDevice, iface: NetInterface, state: LabState): string[] {
   const parts = iosFeatures()
     .flatMap((f) => f.interfaceConfig?.(device, iface, state) ?? [])
     .sort((a, b) => a.order - b.order)

@@ -115,6 +115,22 @@ describe('fichiers .slab de référence', () => {
   }
 })
 
+describe('migration 23 → 24 (état des services de la v2.7)', () => {
+  const services = (lab: ReturnType<typeof open>['lab']) =>
+    (Object.values(lab.devices).find((d) => d.name === 'SRV1') as { host: { services: unknown } }).host
+      .services
+
+  it('change seulement la version ; aucun service modifié', () => {
+    const doc = JSON.parse(readFixture(23)) as Record<string, unknown>
+    expect(migrations[23]!(doc)).toEqual({ ...doc, schemaVersion: 24 })
+    expect(services(open(23).lab)).toEqual({})
+  })
+
+  it('v24.slab : s’ouvre sans migration et garde le service W32Time arrêté (manuel)', () => {
+    expect(services(open(24).lab)).toEqual({ W32Time: { status: 'Stopped', startType: 'Manual' } })
+  })
+})
+
 describe('migration 1 → 2 (stratégies de groupe par défaut)', () => {
   const v1 = () => JSON.parse(readFixture(1)) as Record<string, unknown>
   const domainOf = (doc: Record<string, unknown>) =>
@@ -360,19 +376,62 @@ describe('migration 9 → 10 (cybersécurité défensive de la v2.6)', () => {
   })
 })
 
-describe('migration 20 → 21 (état des services de la v2.7)', () => {
-  const services = (lab: ReturnType<typeof open>['lab']) =>
-    (Object.values(lab.devices).find((d) => d.name === 'SRV1') as { host: { services: unknown } }).host
-      .services
-
-  it('change seulement la version ; aucun service modifié', () => {
-    const doc = JSON.parse(readFixture(20)) as Record<string, unknown>
-    expect(migrations[20]!(doc)).toEqual({ ...doc, schemaVersion: 21 })
-    expect(services(open(20).lab)).toEqual({})
+describe('migration 22 → 23 (diagnostic des routeurs de la v2.7)', () => {
+  it('change seulement la version ; compteurs et cache ARP vides', () => {
+    const doc = JSON.parse(readFixture(22)) as Record<string, unknown>
+    expect(migrations[22]!(doc)).toEqual({ ...doc, schemaVersion: 23 })
+    const cr1 = Object.values(open(22).lab.devices).find((d) => d.name === 'CR1') as {
+      ios?: { arpTable: unknown[]; debugs: unknown[]; natHits: number }
+    }
+    expect(cr1.ios).toMatchObject({ arpTable: [], debugs: [], natHits: 0 })
   })
 
-  it('v21.slab : s’ouvre sans migration et garde le service W32Time arrêté (manuel)', () => {
-    expect(services(open(21).lab)).toEqual({ W32Time: { status: 'Stopped', startType: 'Manual' } })
+  it('v23.slab : s’ouvre sans migration', () => {
+    expect(evaluateCheck(open(23).lab, { type: 'iosStartup', device: 'CR1', line: 'router rip' })).toBe(true)
+  })
+})
+
+describe('migration 21 → 22 (RIP et default-information originate de la v2.7)', () => {
+  const startup = (lab: ReturnType<typeof open>['lab'], line: string) =>
+    evaluateCheck(lab, { type: 'iosStartup', device: 'CR1', line })
+
+  it('change seulement la version ; aucun RIP ni route par défaut annoncée', () => {
+    const doc = JSON.parse(readFixture(21)) as Record<string, unknown>
+    expect(migrations[21]!(doc)).toEqual({ ...doc, schemaVersion: 22 })
+    const lab = open(21).lab
+    expect(startup(lab, 'router rip')).toBe(false)
+    expect(startup(lab, 'default-information originate always')).toBe(false)
+  })
+
+  it('v22.slab : s’ouvre sans migration et garde RIP et la route par défaut OSPF', () => {
+    const lab = open(22).lab
+    for (const line of [
+      'router rip',
+      'version 2',
+      'network 192.168.30.0',
+      'no auto-summary',
+      'default-information originate always'
+    ])
+      expect(startup(lab, line)).toBe(true)
+  })
+})
+
+describe('migration 20 → 21 (administration du système IOS de la v2.7)', () => {
+  const startup = (lab: ReturnType<typeof open>['lab'], line: string) =>
+    evaluateCheck(lab, { type: 'iosStartup', device: 'CR1', line })
+
+  it('change seulement la version ; UTC, aucun serveur NTP, exec-timeout d’usine', () => {
+    const doc = JSON.parse(readFixture(20)) as Record<string, unknown>
+    expect(migrations[20]!(doc)).toEqual({ ...doc, schemaVersion: 21 })
+    const lab = open(20).lab
+    expect(startup(lab, 'clock timezone CET 1')).toBe(false)
+    expect(startup(lab, 'exec-timeout 0 0')).toBe(false)
+  })
+
+  it('v21.slab : s’ouvre sans migration et garde fuseau, NTP et exec-timeout', () => {
+    const lab = open(21).lab
+    for (const line of ['clock timezone CET 1', 'ntp server 192.168.30.10', 'exec-timeout 0 0'])
+      expect(startup(lab, line)).toBe(true)
   })
 })
 
