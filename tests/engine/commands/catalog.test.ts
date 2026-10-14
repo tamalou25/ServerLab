@@ -144,6 +144,13 @@ describe('catalogue des commandes', () => {
     r.run(command('service.start', r.id('SRV1'), 'DNS'))
     r.run(command('service.setStartType', r.id('SRV1'), 'Kdc', 'Manual'))
     r.run(command('service.restart', r.id('SRV1'), 'Kdc'))
+    // Base de comptes locale de PC2 (Lot 2b)
+    r.run(command('local.newUser', r.id('POSTE2'), { name: 'u1', password: 'x' }))
+    r.run(command('local.setUser', r.id('POSTE2'), 'u1', { description: 'd' }))
+    r.run(command('local.newGroup', r.id('POSTE2'), { name: 'G1' }))
+    r.run(command('local.addGroupMembers', r.id('POSTE2'), 'G1', ['u1']))
+    r.run(command('local.removeGroupMembers', r.id('POSTE2'), 'G1', ['u1']))
+    r.run(command('local.removeUser', r.id('POSTE2'), 'u1'))
     r.run(command('system.installFeatures', r.id('SRV1'), ['FS-FileServer']))
     r.run(command('system.uninstallFeatures', r.id('SRV1'), ['FS-FileServer']))
     done(r)
@@ -341,6 +348,9 @@ describe('catalogue des commandes', () => {
       })
     )
     r.run(command('adds.addGroup', DOMAIN, { name: 'GG_Direction', scope: 'Global' }))
+    // Lot 2b : groupe modifié, compte d'ordinateur pré-créé
+    r.run(command('adds.setGroupProperties', DOMAIN, 'GG_Direction', { description: 'Direction' }))
+    r.run(command('adds.addComputer', DOMAIN, { name: 'POSTE42' }))
     r.run(command('adds.addGroupMembers', DOMAIN, 'GG_Direction', ['pdurand']))
     r.run(command('adds.removeGroupMembers', DOMAIN, 'GG_Direction', ['pdurand']))
     const user = r.state.domains[DOMAIN]!.users.find((u) => u.sam === 'pdurand')!
@@ -478,6 +488,14 @@ describe('catalogue des commandes', () => {
     r.run(command('gpo.setInheritanceBlocked', DOMAIN, ou.id, true))
     r.run(command('gpo.setSecurityFilter', DOMAIN, gpo, 'GG_Compta', true))
     r.run(command('gpo.updateSettings', DOMAIN, gpo, { computer: { minPasswordLength: 10 } }))
+    r.run(
+      command('gpo.setRegistryValue', DOMAIN, gpo, {
+        key: 'HKLM\\Software\\Policies\\Exemple',
+        valueNames: ['Valeur'],
+        values: [1],
+        type: 'DWord'
+      })
+    )
     r.run(command('gpo.unlink', DOMAIN, gpo, ou.id))
     r.run(command('gpo.delete', DOMAIN, gpo))
     const linked = r.run<string>(command('gpo.createAndLink', DOMAIN, { name: 'Lecteurs' }, ou.id))

@@ -18,6 +18,7 @@ import {
 import { installForest } from './forest'
 import { joinDomain, leaveDomain } from './join'
 import {
+  addComputer,
   addGroup,
   addGroupMembers,
   addOrganizationalUnit,
@@ -27,10 +28,17 @@ import {
   removeObject,
   resetPassword,
   setAccountEnabled,
+  setGroupProperties,
   setOuProtection,
   unlockAccount,
   setUserProperties
 } from './objects'
+import { fsmoHolder } from './fsmo'
+import { domainLockoutPolicy, domainPasswordPolicy } from '../gpo/scope'
+import { updateGpoSettings, type GpoSettingsPatch } from '../gpo/objects'
+import { DEFAULT_DOMAIN_POLICY_ID } from '../gpo/defaults'
+import { CommandFailure } from '../../shell/context'
+import { unsimulatedParameterMessage } from '../../shell/unsimulated'
 import { restartComputer } from '../../services/system'
 import { isLockedOut } from './lockout'
 import { psError } from '../../shell/ps/errors'
@@ -973,3 +981,348 @@ export function currentUserGroups(ctx: ExecContext): string[] {
   const user = domain?.users.find((u) => u.sam.toLowerCase() === ctx.user.name.toLowerCase())
   return domain && user ? groupsOf(domain, user.id).map((g) => `${domain.netbios}\\${g.name}`) : []
 }
+
+// ---------------------------------------------------------------------------------------------
+// Forêt, groupes, stratégie de mot de passe, comptes d'ordinateurs (v2.7, Lot 2b)
+
+/** Durée en minutes au format TimeSpan (« 00:30:00 », « 1.00:00:00 »). */
+export function formatTimeSpan(minutes: number): string {
+  const days = Math.floor(minutes / 1440)
+  const h = Math.floor((minutes % 1440) / 60)
+  const m = minutes % 60
+  const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`
+  return days > 0 ? `${days}.${time}` : time
+}
+
+/** TimeSpan saisi (« 00:40:00 », « 1.00:00:00 ») → minutes entières. */
+function parseTimeSpan(value: PsValue, name: string): number {
+  const text = str(value).trim()
+  const m = /^(?:(\d+)\.)?(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(text)
+  if (!m || Number(m[4] ?? 0) !== 0)
+    throw psError(
+      `Impossible de lier le paramètre « ${name} ». Impossible de convertir la valeur « ${text} » en type « System.TimeSpan » (minutes entières attendues, ex. 00:30:00).`,
+      'InvalidArgument',
+      `CannotConvertArgumentNoMessage,${name}`
+    )
+  return Number(m[1] ?? 0) * 1440 + Number(m[2]) * 60 + Number(m[3])
+}
+
+/** Domaine désigné par -Identity (DNS, NetBIOS ou DN) : celui de l'ordinateur, seul domaine simulé. */
+function domainIdentity(domain: Domain, args: BoundArgs, input: PsValue[] = []): Domain {
+  const v = args['Identity'] ?? input[0]
+  if (v === undefined) return domain
+  const text = isPsObjectValue(v) ? str(getProp(v, 'DNSRoot') ?? getProp(v, 'Name')) : str(v)
+  const lower = text.toLowerCase()
+  if (
+    lower === domain.name ||
+    lower === domain.netbios.toLowerCase() ||
+    lower === domainDn(domain).toLowerCase()
+  )
+    return domain
+  throw psError(
+    `Impossible de trouver un objet avec l’identité « ${text} » sous « ${domainDn(domain)} ».`,
+    'ObjectNotFound',
+    'ActiveDirectoryCmdlet:ActiveDirectory.Management.ADIdentityNotFoundException',
+    text,
+    'ADIdentityNotFoundException'
+  )
+}
+
+const isPsObjectValue = (v: PsValue): boolean =>
+  typeof v === 'object' && v !== null && !Array.isArray(v) && v.kind === 'object'
+
+/** Erreur du moteur → erreur AD (ADException). */
+function adRun(fn: () => void, target: string): void {
+  try {
+    fn()
+  } catch (e) {
+    if (e instanceof CommandFailure)
+      throw psError(e.message, 'InvalidOperation', `ActiveDirectoryCmdlet:${e.code}`, target, 'ADException')
+    throw e
+  }
+}
+
+function passwordPolicyObject(domain: Domain): PsObject {
+  const pwd = domainPasswordPolicy(domain)
+  const lockout = domainLockoutPolicy(domain)
+  return psObject(
+    'ADDefaultDomainPasswordPolicy',
+    {
+      ComplexityEnabled: pwd.complexity,
+      DistinguishedName: domainDn(domain),
+      LockoutDuration: formatTimeSpan(lockout.duration),
+      LockoutObservationWindow: formatTimeSpan(lockout.reset),
+      LockoutThreshold: lockout.threshold,
+      MinPasswordLength: pwd.minLength,
+      objectClass: '{domainDNS}'
+    },
+    {
+      kind: 'list',
+      props: [
+        'ComplexityEnabled',
+        'DistinguishedName',
+        'LockoutDuration',
+        'LockoutObservationWindow',
+        'LockoutThreshold',
+        'MinPasswordLength',
+        'objectClass'
+      ]
+    }
+  )
+}
+
+export const adLot2Cmdlets: CmdletDef[] = [
+  {
+    name: 'Get-ADForest',
+    module: 'ActiveDirectory',
+    synopsis: 'Informations sur la forêt (forêt à un seul domaine).',
+    available: adAvailable,
+    params: [
+      { name: 'Identity', type: 'string', position: 0 },
+      { name: 'Current', type: 'string', validateSet: ['LocalComputer', 'LoggedOnUser'] },
+      { name: 'Server', type: 'string' }
+    ],
+    run(ctx, args) {
+      const domain = domainIdentity(adDomain(ctx), args)
+      const fqdn = (id: string | null) => {
+        const d = id ? ctx.state.devices[id] : undefined
+        return d ? `${d.name}.${domain.name}` : ''
+      }
+      const dn = domainDn(domain)
+      const set = (items: string[]) => `{${items.join(', ')}}`
+      return [
+        psObject(
+          'ADForest',
+          {
+            ApplicationPartitions: set([`DC=ForestDnsZones,${dn}`, `DC=DomainDnsZones,${dn}`]),
+            CrossForestReferences: '{}',
+            DomainNamingMaster: fqdn(fsmoHolder(domain, 'DomainNamingMaster')),
+            Domains: set([domain.name]),
+            GlobalCatalogs: set(domain.controllers.map((id) => fqdn(id)).filter(Boolean)),
+            Name: domain.name,
+            PartitionsContainer: `CN=Partitions,CN=Configuration,${dn}`,
+            RootDomain: domain.name,
+            SchemaMaster: fqdn(fsmoHolder(domain, 'SchemaMaster')),
+            Sites: set(domain.sites.map((s) => s.name)),
+            SPNSuffixes: '{}',
+            UPNSuffixes: '{}'
+          },
+          {
+            kind: 'list',
+            props: [
+              'ApplicationPartitions',
+              'CrossForestReferences',
+              'DomainNamingMaster',
+              'Domains',
+              'GlobalCatalogs',
+              'Name',
+              'PartitionsContainer',
+              'RootDomain',
+              'SchemaMaster',
+              'Sites',
+              'SPNSuffixes',
+              'UPNSuffixes'
+            ]
+          }
+        )
+      ]
+    }
+  },
+  {
+    name: 'Set-ADGroup',
+    module: 'ActiveDirectory',
+    synopsis: 'Modifie un groupe (description, étendue, catégorie, nom SAM).',
+    available: adAvailable,
+    params: [
+      { ...identityParam, mandatory: true, pipeline: true },
+      { name: 'Description', type: 'string' },
+      {
+        name: 'GroupScope',
+        type: 'string',
+        validateSet: ['DomainLocal', 'Global', 'Universal', '0', '1', '2']
+      },
+      { name: 'GroupCategory', type: 'string', validateSet: ['Distribution', 'Security', '0', '1'] },
+      { name: 'SamAccountName', type: 'string' },
+      { name: 'PassThru', type: 'switch' },
+      { name: 'Server', type: 'string' },
+      { name: 'DisplayName', type: 'string' },
+      { name: 'ManagedBy', type: 'string' },
+      { name: 'Add', type: 'any' },
+      { name: 'Remove', type: 'any' },
+      { name: 'Replace', type: 'any' },
+      { name: 'Clear', type: 'any' },
+      { name: 'Instance', type: 'any' }
+    ],
+    run(ctx, args) {
+      for (const p of ['DisplayName', 'ManagedBy', 'Add', 'Remove', 'Replace', 'Clear', 'Instance'])
+        if (args[p] !== undefined)
+          throw psError(
+            unsimulatedParameterMessage('Set-ADGroup', p),
+            'NotImplemented',
+            'UnsimulatedParameter'
+          )
+      const domain = adDomain(ctx, true)
+      const [g] = select(ctx, domain, args, 'group')
+      if (!g) return []
+      // Learn : DomainLocal ou 0, Global ou 1, Universal ou 2 ; Distribution ou 0, Security ou 1
+      const scopes = ['DomainLocal', 'Global', 'Universal'] as const
+      const scopeArg = args['GroupScope'] === undefined ? undefined : str(args['GroupScope'])
+      const scope =
+        scopeArg === undefined ? undefined : (scopes[Number(scopeArg)] ?? (scopeArg as AdGroup['scope']))
+      const categoryArg = args['GroupCategory'] === undefined ? undefined : str(args['GroupCategory'])
+      const category =
+        categoryArg === undefined
+          ? undefined
+          : categoryArg === '0'
+            ? 'Distribution'
+            : categoryArg === '1'
+              ? 'Security'
+              : (categoryArg as AdGroup['category'])
+      adRun(
+        () =>
+          ctx.apply(
+            setGroupProperties(ctx.state, domain.name, g.kind === 'group' ? g.obj.sam : g.obj.name, {
+              ...(args['Description'] !== undefined ? { description: str(args['Description']) } : {}),
+              ...(scope ? { scope } : {}),
+              ...(category ? { category } : {}),
+              ...(args['SamAccountName'] !== undefined ? { sam: str(args['SamAccountName']) } : {})
+            })
+          ),
+        g.obj.name
+      )
+      if (args['PassThru'] !== true) return []
+      const updated = ctx.state.domains[domain.name]
+      const group = updated?.groups.find((x) => x.id === g.obj.id)
+      return updated && group ? [groupObject(updated, group)] : []
+    }
+  },
+  {
+    name: 'Get-ADDefaultDomainPasswordPolicy',
+    module: 'ActiveDirectory',
+    synopsis: 'Stratégie de mot de passe par défaut du domaine (GPO liées à la racine du domaine).',
+    available: adAvailable,
+    params: [
+      { name: 'Identity', type: 'any', position: 0, pipeline: true },
+      { name: 'Current', type: 'string', validateSet: ['LocalComputer', 'LoggedOnUser'] },
+      { name: 'Server', type: 'string' }
+    ],
+    run(ctx, args, input) {
+      const domain = domainIdentity(adDomain(ctx), args, input)
+      return [passwordPolicyObject(domain)]
+    }
+  },
+  {
+    name: 'Set-ADDefaultDomainPasswordPolicy',
+    module: 'ActiveDirectory',
+    synopsis: 'Modifie la stratégie de mot de passe du domaine (écrite dans la Default Domain Policy).',
+    available: adAvailable,
+    params: [
+      { name: 'Identity', type: 'any', position: 0, pipeline: true },
+      { name: 'ComplexityEnabled', type: 'any' },
+      { name: 'MinPasswordLength', type: 'int' },
+      { name: 'LockoutThreshold', type: 'int' },
+      { name: 'LockoutDuration', type: 'any' },
+      { name: 'LockoutObservationWindow', type: 'any' },
+      { name: 'MaxPasswordAge', type: 'any' },
+      { name: 'MinPasswordAge', type: 'any' },
+      { name: 'PasswordHistoryCount', type: 'int' },
+      { name: 'ReversibleEncryptionEnabled', type: 'any' },
+      { name: 'PassThru', type: 'switch' },
+      { name: 'Server', type: 'string' }
+    ],
+    run(ctx, args, input) {
+      for (const p of [
+        'MaxPasswordAge',
+        'MinPasswordAge',
+        'PasswordHistoryCount',
+        'ReversibleEncryptionEnabled'
+      ])
+        if (args[p] !== undefined)
+          throw psError(
+            unsimulatedParameterMessage('Set-ADDefaultDomainPasswordPolicy', p),
+            'NotImplemented',
+            'UnsimulatedParameter'
+          )
+      const domain = domainIdentity(adDomain(ctx, true), args, input)
+      if (args['Identity'] === undefined && input.length === 0)
+        throw psError(
+          'Le paramètre -Identity est obligatoire (domaine, par exemple lab.local).',
+          'InvalidArgument',
+          'ParameterBindingException'
+        )
+      const ddp = domain.gpos.find((g) => g.id === DEFAULT_DOMAIN_POLICY_ID)
+      if (!ddp)
+        throw psError(
+          'La stratégie Default Domain Policy est introuvable : la stratégie de mot de passe du domaine ne peut pas être modifiée.',
+          'ObjectNotFound',
+          'ActiveDirectoryCmdlet:GpoNotFound'
+        )
+      const computer: GpoSettingsPatch['computer'] = {}
+      if (args['ComplexityEnabled'] !== undefined)
+        computer.passwordComplexity = psToBool(args['ComplexityEnabled'])
+      if (args['MinPasswordLength'] !== undefined)
+        computer.minPasswordLength = Number(args['MinPasswordLength'])
+      if (args['LockoutThreshold'] !== undefined) computer.lockoutThreshold = Number(args['LockoutThreshold'])
+      if (args['LockoutDuration'] !== undefined)
+        computer.lockoutDuration = parseTimeSpan(args['LockoutDuration'], 'LockoutDuration')
+      if (args['LockoutObservationWindow'] !== undefined)
+        computer.lockoutReset = parseTimeSpan(args['LockoutObservationWindow'], 'LockoutObservationWindow')
+      adRun(() => ctx.apply(updateGpoSettings(ctx.state, domain.name, ddp.id, { computer })), domain.name)
+      const updated = ctx.state.domains[domain.name]
+      return args['PassThru'] === true && updated ? [passwordPolicyObject(updated)] : []
+    }
+  },
+  {
+    name: 'New-ADComputer',
+    module: 'ActiveDirectory',
+    synopsis: 'Crée un compte d’ordinateur (sans joindre l’ordinateur au domaine).',
+    available: adAvailable,
+    params: [
+      { name: 'Name', type: 'string', mandatory: true, position: 0 },
+      { name: 'SamAccountName', type: 'string' },
+      { name: 'Path', type: 'string' },
+      { name: 'Enabled', type: 'any' },
+      { name: 'Description', type: 'string' },
+      { name: 'Location', type: 'string' },
+      { name: 'DNSHostName', type: 'string' },
+      { name: 'Instance', type: 'any' },
+      { name: 'OtherAttributes', type: 'any' },
+      { name: 'PassThru', type: 'switch' },
+      { name: 'Server', type: 'string' }
+    ],
+    run(ctx, args) {
+      for (const p of ['Description', 'Location', 'DNSHostName', 'Instance', 'OtherAttributes'])
+        if (args[p] !== undefined)
+          throw psError(
+            unsimulatedParameterMessage('New-ADComputer', p),
+            'NotImplemented',
+            'UnsimulatedParameter'
+          )
+      const domain = adDomain(ctx, true)
+      const name = str(args['Name'])
+      const sam =
+        args['SamAccountName'] === undefined ? undefined : str(args['SamAccountName']).replace(/\$$/, '')
+      if (sam !== undefined && sam.toLowerCase() !== name.toLowerCase())
+        throw psError(
+          'Un SamAccountName différent du nom de l’ordinateur n’est pas simulé dans ServerLab.',
+          'NotImplemented',
+          'UnsimulatedParameter'
+        )
+      adRun(
+        () =>
+          ctx.apply(
+            addComputer(ctx.state, domain.name, {
+              name,
+              ...(args['Path'] !== undefined ? { path: str(args['Path']) } : {}),
+              ...(args['Enabled'] !== undefined ? { enabled: psToBool(args['Enabled']) } : {})
+            })
+          ),
+        name
+      )
+      if (args['PassThru'] !== true) return []
+      const updated = ctx.state.domains[domain.name]
+      const c = updated?.computers.find((x) => x.name.toLowerCase() === name.toLowerCase())
+      return updated && c ? [computerObject(updated, c)] : []
+    }
+  }
+]

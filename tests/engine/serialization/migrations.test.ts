@@ -115,6 +115,28 @@ describe('fichiers .slab de référence', () => {
   }
 })
 
+describe('migration 24 → 25 (base locale et registre des GPO de la v2.7)', () => {
+  it('change seulement la version ; base locale et registre des GPO vides', () => {
+    const doc = JSON.parse(readFixture(24)) as Record<string, unknown>
+    expect(migrations[24]!(doc)).toEqual({ ...doc, schemaVersion: 25 })
+    const pc2 = Object.values(open(24).lab.devices).find((d) => d.name === 'PC2') as unknown as {
+      host: { localUsers: unknown[]; localGroups: unknown[] }
+    }
+    expect(pc2.host.localUsers).toEqual([])
+    expect(pc2.host.localGroups).toEqual([])
+  })
+
+  it('v25.slab : garde l’utilisateur local de PC2 et la valeur de registre de la GPO', () => {
+    const lab = open(25).lab
+    const pc2 = Object.values(lab.devices).find((d) => d.name === 'PC2') as unknown as {
+      host: { localUsers: { name: string }[] }
+    }
+    expect(pc2.host.localUsers.map((u) => u.name)).toEqual(['tech'])
+    const ddp = lab.domains['lab.local']?.gpos.find((g) => g.name === 'Default Domain Policy')
+    expect(ddp?.registry[0]).toMatchObject({ hive: 'HKCU', valueName: 'ScreenSaveTimeOut', value: 900 })
+  })
+})
+
 describe('migration 23 → 24 (état des services de la v2.7)', () => {
   const services = (lab: ReturnType<typeof open>['lab']) =>
     (Object.values(lab.devices).find((d) => d.name === 'SRV1') as { host: { services: unknown } }).host

@@ -446,6 +446,32 @@ export const ServiceStateSchema = z.object({
 })
 export type ServiceState = z.infer<typeof ServiceStateSchema>
 
+/**
+ * Compte d'utilisateur local (base SAM d'un serveur membre ou d'un poste, v2.7 Lot 2b, .slab 25).
+ * Les comptes intégrés (Administrateur, Invité) ne sont stockés que s'ils sont modifiés.
+ */
+export const LocalUserSchema = z.object({
+  name: z.string(),
+  fullName: z.string().default(''),
+  description: z.string().default(''),
+  enabled: z.boolean().default(true),
+  password: z.string().default(''),
+  passwordNeverExpires: z.boolean().default(false),
+  userMayChangePassword: z.boolean().default(true)
+})
+export type LocalUser = z.infer<typeof LocalUserSchema>
+
+/**
+ * Groupe local : groupe créé (New-LocalGroup) ou membres ajoutés à un groupe intégré
+ * (Administrateurs, Utilisateurs, Invités). Membres : comptes locaux (nom) ou DOMAINE\nom.
+ */
+export const LocalGroupSchema = z.object({
+  name: z.string(),
+  description: z.string().default(''),
+  members: z.array(z.string()).default([])
+})
+export type LocalGroup = z.infer<typeof LocalGroupSchema>
+
 /** Partie « système d'exploitation » commune aux serveurs et postes clients. */
 /** Système d'un ordinateur : Windows (serveur, poste) ou poste Ubuntu simulé. */
 export const HOST_OS = ['windows', 'linux'] as const
@@ -499,6 +525,9 @@ export const HostSchema = z.object({
   eventLog: z.array(EventLogEntrySchema).default([]),
   /** Services dont l'état diffère du défaut (démarré, automatique), par nom court (DNS, LanmanServer…). */
   services: z.record(z.string(), ServiceStateSchema).default({}),
+  /** Base de comptes locale (SAM) : utilisateurs et groupes locaux créés ou modifiés. */
+  localUsers: z.array(LocalUserSchema).default([]),
+  localGroups: z.array(LocalGroupSchema).default([]),
   /** Poste Linux : partages SMB montés. */
   mounts: z.array(CifsMountSchema).default([])
 })
@@ -1042,6 +1071,30 @@ export const GPO_STATUSES = [
 /** SID bien connu « Utilisateurs authentifiés » (filtrage de sécurité par défaut). */
 export const AUTHENTICATED_USERS_SID = WELL_KNOWN_SIDS.authenticatedUsers
 
+/**
+ * Valeur de registre d'une stratégie (Set-GPRegistryValue, v2.7 Lot 2b, .slab 25) : HKLM dans la
+ * Configuration ordinateur, HKCU dans la Configuration utilisateur. `Delete` : valeur supprimée sur
+ * le client (paramètre -Disable).
+ */
+export const GP_REGISTRY_TYPES = [
+  'String',
+  'ExpandString',
+  'Binary',
+  'DWord',
+  'MultiString',
+  'QWord'
+] as const
+export const GpRegistryValueSchema = z.object({
+  hive: z.enum(['HKLM', 'HKCU']),
+  /** Chemin relatif à la ruche (Software\Policies\Microsoft\…). */
+  key: z.string(),
+  valueName: z.string(),
+  type: z.enum(GP_REGISTRY_TYPES).default('String'),
+  value: z.union([z.string(), z.number(), z.array(z.string())]).default(''),
+  state: z.enum(['Set', 'Delete']).default('Set')
+})
+export type GpRegistryValue = z.infer<typeof GpRegistryValueSchema>
+
 /** Objet de stratégie de groupe (GPO). */
 export const GpoSchema = z.object({
   /** GUID de l'objet ({31B2F340-016D-11D2-945F-00C04FB984F9}). */
@@ -1060,7 +1113,9 @@ export const GpoSchema = z.object({
   userVersion: z.number().int().nonnegative().default(0),
   computerVersion: z.number().int().nonnegative().default(0),
   computer: GpoComputerSettingsSchema.default(noComputerSettings),
-  user: GpoUserSettingsSchema.default(noUserSettings)
+  user: GpoUserSettingsSchema.default(noUserSettings),
+  /** Valeurs de registre sans paramètre simulé correspondant (Set-GPRegistryValue). */
+  registry: z.array(GpRegistryValueSchema).default([])
 })
 
 export const AdUserSchema = z.object({

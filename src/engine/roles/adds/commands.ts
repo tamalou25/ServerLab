@@ -31,6 +31,7 @@ import {
   type LogonOutcome
 } from './join'
 import {
+  addComputer,
   addGroup,
   addGroupMembers,
   addOrganizationalUnit,
@@ -45,7 +46,8 @@ import {
   setServicePrincipalNames,
   setAccountEnabled,
   setUserProperties,
-  unlockAccount
+  unlockAccount,
+  setGroupProperties
 } from './objects'
 
 /** Résultat métier d'une opération d'annuaire (jonction, ouverture de session…). */
@@ -88,6 +90,8 @@ export const addsCommands = {
   ),
   'adds.addUser': def(addUser, (_s, _d, u) => `Créer l’utilisateur ${u.name}`),
   'adds.addGroup': def(addGroup, (_s, _d, g) => `Créer le groupe ${g.name}`),
+  'adds.setGroupProperties': def(setGroupProperties, (_s, _d, group) => `Modifier le groupe ${group}`),
+  'adds.addComputer': def(addComputer, (_s, _d, c) => `Créer le compte d’ordinateur ${c.name}`),
   'adds.addGroupMembers': def(addGroupMembers, (_s, _d, group) => `Ajouter des membres au groupe ${group}`),
   'adds.removeGroupMembers': def(
     removeGroupMembers,

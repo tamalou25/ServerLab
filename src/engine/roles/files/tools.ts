@@ -2,7 +2,7 @@
  * Outils de fichiers et de partage de l'invite de commandes : dir, mkdir, rmdir, del, icacls, net
  * (share, use, view). Utilisables aussi depuis PowerShell.
  */
-import type { NtfsRight, ServerDevice, ShareRight } from '../../model/schema'
+import type { HostDevice, NtfsRight, ServerDevice, ShareRight } from '../../model/schema'
 import {
   accessPerms,
   canonicalAcl,
@@ -26,6 +26,7 @@ import {
 import { findNode, nodePath, parseUnc } from './paths'
 import { mapDrive, openUnc, sessionDrives, unmapDrive } from './smb'
 import { verifyCredentials } from '../adds/join'
+import { authenticate } from '../adds/credentials'
 import { netAccounts, netGroup, netLocalGroup, netUser } from '../adds/net'
 import { netStart, netStop } from '../../shell/tools/services'
 import type { ExecContext } from '../../shell/context'
@@ -364,9 +365,23 @@ export const icaclsTool: ToolDef = {
 }
 
 /** Compte utilisé pour une connexion réseau : session, ou identifiants /user: fournis. */
-function connectionToken(ctx: ExecContext, user: string | null, password: string | null): AccessToken | null {
+function connectionToken(
+  ctx: ExecContext,
+  user: string | null,
+  password: string | null,
+  serverName?: string
+): AccessToken | null {
   if (!user) return sessionToken(ctx.state, ctx.deviceId)
   const [domainPart, sam] = user.includes('\\') ? (user.split('\\') as [string, string]) : [null, user]
+  // Compte local du serveur visé (SRV2\tech) : base de comptes locale de cet ordinateur (Lot 2b)
+  const target = serverName
+    ? Object.values(ctx.state.devices).find(
+        (d): d is HostDevice =>
+          (d.kind === 'server' || d.kind === 'client') && d.name.toLowerCase() === serverName.toLowerCase()
+      )
+    : undefined
+  if (target && domainPart?.toLowerCase() === target.name.toLowerCase())
+    return authenticate(ctx.state, target, user, password ?? '')
   const domain = Object.values(ctx.state.domains).find(
     (d) =>
       (domainPart
@@ -529,7 +544,7 @@ function netUse(ctx: ExecContext, args: string[]): void {
       `Entrez le mot de passe pour « ${user} » pour vous connecter à « ${parseUnc(remote)?.server ?? remote} » : `,
       true
     )
-  const token = connectionToken(ctx, user, password)
+  const token = connectionToken(ctx, user, password, parseUnc(remote)?.server)
   if (user && !token) {
     systemError(ctx, 1326, 'Le nom d’utilisateur ou le mot de passe est incorrect.')
     return
