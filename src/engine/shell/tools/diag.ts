@@ -16,7 +16,7 @@ import { formatIpv4, networkInt, parseIpv4, prefixToMask, prefixToMaskInt } from
 import { routingTable } from '../../net/routing'
 import { carrierUp, l2Segment } from '../../net/segment'
 import type { NetInterface } from '../../model/schema'
-import { predefinedRules } from '../../services/firewall'
+import { listeningPorts } from '../../services/listening'
 import { restartComputer } from '../../services/system'
 import { setPower } from '../../topology/actions'
 import { LEARN_CMD } from '../cmd/help'
@@ -53,6 +53,35 @@ const ifIndex = (ctx: ExecContext, iface: NetInterface) =>
 // ---------------------------------------------------------------------------------------------
 // arp
 
+/**
+ * Cache ARP simulé (arp -a, Get-NetNeighbor) : par carte active, voisins allumés du segment et
+ * du même sous-réseau (adresses MAC au format aa-bb-cc-dd-ee-ff), et adresse de diffusion.
+ */
+export function neighborCache(ctx: ExecContext): {
+  iface: NetInterface
+  address: string
+  prefix: number
+  broadcast: string
+  neighbors: { ip: string; mac: string }[]
+}[] {
+  return activeInterfaces(ctx).map(({ iface, address, prefix }) => {
+    const net = networkInt(parseIpv4(address) ?? 0, prefix)
+    const neighbors = l2Segment(ctx.state, { deviceId: ctx.host.id, ifaceId: iface.id })
+      .flatMap((m) => {
+        const d = ctx.state.devices[m.port.deviceId]
+        const i = d?.interfaces.find((x) => x.id === m.port.ifaceId)
+        const eff = i ? effectiveIpv4(i) : null
+        if (!d?.powered || !i || !eff || eff.address === address) return []
+        if (networkInt(parseIpv4(eff.address) ?? 0, prefix) !== net) return []
+        return [{ ip: eff.address, mac: i.mac.toLowerCase().replace(/[:.]/g, '-') }]
+      })
+      .filter((n, i, all) => all.findIndex((o) => o.ip === n.ip) === i)
+      .sort((a, b) => (parseIpv4(a.ip) ?? 0) - (parseIpv4(b.ip) ?? 0))
+    const broadcast = formatIpv4((net | ~prefixToMaskInt(prefix)) >>> 0)
+    return { iface, address, prefix, broadcast, neighbors }
+  })
+}
+
 export const arpTool: ToolDef = {
   name: 'arp',
   synopsis: 'Affiche les entrées du cache ARP (voisins du segment).',
@@ -80,22 +109,10 @@ export const arpTool: ToolDef = {
     const ifFilter = nIndex >= 0 ? rest[nIndex + 1] : undefined
     const inet = rest.find((a, i) => !a.startsWith('-') && !a.startsWith('/') && i !== nIndex + 1)
     const lines: string[] = []
-    for (const { iface, address, prefix } of activeInterfaces(ctx)) {
+    for (const entry of neighborCache(ctx)) {
+      const { iface, address, broadcast } = entry
       if (ifFilter && ifFilter !== address) continue
-      const net = networkInt(parseIpv4(address) ?? 0, prefix)
-      const neighbors = l2Segment(ctx.state, { deviceId: ctx.host.id, ifaceId: iface.id })
-        .flatMap((m) => {
-          const d = ctx.state.devices[m.port.deviceId]
-          const i = d?.interfaces.find((x) => x.id === m.port.ifaceId)
-          const eff = i ? effectiveIpv4(i) : null
-          if (!d?.powered || !i || !eff || eff.address === address) return []
-          if (networkInt(parseIpv4(eff.address) ?? 0, prefix) !== net) return []
-          return [{ ip: eff.address, mac: i.mac.toLowerCase().replace(/[:.]/g, '-') }]
-        })
-        .filter((n, i, all) => all.findIndex((o) => o.ip === n.ip) === i)
-        .filter((n) => !inet || n.ip === inet)
-        .sort((a, b) => (parseIpv4(a.ip) ?? 0) - (parseIpv4(b.ip) ?? 0))
-      const broadcast = formatIpv4((net | ~prefixToMaskInt(prefix)) >>> 0)
+      const neighbors = entry.neighbors.filter((n) => !inet || n.ip === inet)
       lines.push(
         '',
         `Interface : ${address} --- 0x${ifIndex(ctx, iface).toString(16)}`,
@@ -271,7 +288,7 @@ export const tasklistTool: ToolDef = {
 }
 
 /** Processus propriétaire d'un port en écoute (PID cohérent avec tasklist). */
-function portOwner(ctx: ExecContext, port: number): number {
+export function portOwner(ctx: ExecContext, port: number): number {
   const procs = processes(ctx)
   const pid = (image: string) => procs.find((p) => p.image === image)?.pid ?? 4
   if (port === 53) return pid('dns.exe')
@@ -302,15 +319,9 @@ export const netstatTool: ToolDef = {
       return
     }
     const withPid = flags.has('o')
-    const host = ctx.host
-    // Ports d'écoute : règles prédéfinies des services présents (TCP / UDP) ; le pare-feu
-    // filtre le trafic mais ne ferme pas les ports en écoute.
-    const listen = predefinedRules(host)
-      .filter((r) => r.protocol === 'TCP' || r.protocol === 'UDP')
-      .filter((r) => r.id !== 'RemoteDesktop-UserMode-In-TCP' || host.host.remoteDesktop.enabled)
-      .flatMap((r) => r.localPorts.map((port) => ({ proto: r.protocol, port })))
-      .filter((e, i, all) => all.findIndex((o) => o.proto === e.proto && o.port === e.port) === i)
-      .sort((a, b) => (a.proto === b.proto ? a.port - b.port : a.proto === 'TCP' ? -1 : 1))
+    // Ports d'écoute : rôles installés dont le service est démarré (services/listening.ts) ; le
+    // pare-feu filtre le trafic mais ne ferme pas les ports en écoute.
+    const listen = listeningPorts(ctx.host).map((p) => ({ proto: p.protocol, port: p.port }))
     // Sans -a : connexions actives seulement (aucune connexion établie n'est simulée)
     const rows = flags.has('a')
       ? listen.map(({ proto, port }) => {

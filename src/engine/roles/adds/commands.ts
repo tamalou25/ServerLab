@@ -47,7 +47,8 @@ import {
   setAccountEnabled,
   setUserProperties,
   unlockAccount,
-  setGroupProperties
+  setGroupProperties,
+  repairSecureChannel
 } from './objects'
 
 /** Résultat métier d'une opération d'annuaire (jonction, ouverture de session…). */
@@ -92,6 +93,10 @@ export const addsCommands = {
   'adds.addGroup': def(addGroup, (_s, _d, g) => `Créer le groupe ${g.name}`),
   'adds.setGroupProperties': def(setGroupProperties, (_s, _d, group) => `Modifier le groupe ${group}`),
   'adds.addComputer': def(addComputer, (_s, _d, c) => `Créer le compte d’ordinateur ${c.name}`),
+  'adds.repairSecureChannel': def(
+    repairSecureChannel,
+    (s, id) => `Réparer le canal sécurisé de ${deviceName(s, id)}`
+  ),
   'adds.addGroupMembers': def(addGroupMembers, (_s, _d, group) => `Ajouter des membres au groupe ${group}`),
   'adds.removeGroupMembers': def(
     removeGroupMembers,

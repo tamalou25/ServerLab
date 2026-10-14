@@ -35,6 +35,9 @@ const ALLOWED_CORE_TO_ROLE = [
   'shell/cmd/builtins.ts', // copy, move, ren, type, cd (système de fichiers du serveur)
   'shell/cmd/interpreter.ts', // redirections > et >> (contenu des fichiers)
   'shell/filesystem.ts', // chemins, partages et jetons d'accès
+  'shell/ps/cmdlets/net.ts', // Test-NetConnection -Port : échange TCP tracé (serverExchange)
+  'shell/ps/cmdlets/netsys.ts', // Test-ComputerSecureChannel : compte d'ordinateur du domaine
+  'shell/ps/cmdlets/system.ts', // Restart-Computer -ComputerName : administrateur du domaine
   'shell/tools/net.ts' // ipconfig /renew, résolution de noms, whoami /groups
 ]
 

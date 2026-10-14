@@ -711,3 +711,44 @@ export function addComputer(state: LabState, domainName: string, input: Computer
     return id
   })
 }
+
+/**
+ * Canal sécurisé d'un membre du domaine (Test-ComputerSecureChannel) : un contrôleur allumé et le
+ * compte d'ordinateur du même nom, activé et lié à cet ordinateur. Un compte recréé (New-ADComputer
+ * après suppression) n'est plus lié à l'ordinateur : le canal est rompu.
+ */
+export function secureChannelStatus(
+  state: LabState,
+  deviceId: string
+): 'ok' | 'notDomainMember' | 'noDc' | 'broken' {
+  const d = state.devices[deviceId]
+  if (!d || (d.kind !== 'server' && d.kind !== 'client') || !d.host.domain) return 'notDomainMember'
+  const domain = state.domains[d.host.domain]
+  if (!domain) return 'notDomainMember'
+  if (domain.controllers.includes(deviceId)) return 'ok'
+  if (!domain.controllers.some((id) => state.devices[id]?.powered)) return 'noDc'
+  const account = domain.computers.find((c) => c.name.toLowerCase() === d.name.toLowerCase())
+  return account && account.enabled && account.deviceId === deviceId ? 'ok' : 'broken'
+}
+
+/**
+ * Réparation du canal (Test-ComputerSecureChannel -Repair) : le compte d'ordinateur du même nom
+ * est de nouveau lié à l'ordinateur. Sans compte, la réparation échoue (il faut rejoindre le domaine).
+ */
+export function repairSecureChannel(state: LabState, deviceId: string): EngineResult {
+  return transact(state, (draft) => {
+    const d = draft.devices[deviceId]
+    if (!d || (d.kind !== 'server' && d.kind !== 'client') || !d.host.domain)
+      raise('NotDomainMember', 'Cet ordinateur n’est pas membre d’un domaine.')
+    const domain = requireDomain(draft, d.host.domain)
+    const account = domain.computers.find((c) => c.name.toLowerCase() === d.name.toLowerCase())
+    if (!account)
+      raise(
+        'ComputerAccountNotFound',
+        `Le compte d’ordinateur ${d.name} est introuvable dans le domaine ${domain.name} : joignez de nouveau l’ordinateur au domaine.`
+      )
+    if (!account.enabled) raise('ComputerAccountDisabled', `Le compte d’ordinateur ${d.name} est désactivé.`)
+    account.deviceId = deviceId
+    return undefined
+  })
+}

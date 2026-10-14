@@ -351,6 +351,8 @@ describe('catalogue des commandes', () => {
     // Lot 2b : groupe modifié, compte d'ordinateur pré-créé
     r.run(command('adds.setGroupProperties', DOMAIN, 'GG_Direction', { description: 'Direction' }))
     r.run(command('adds.addComputer', DOMAIN, { name: 'POSTE42' }))
+    // Canal sécurisé déjà valide : aucune modification
+    r.run(command('adds.repairSecureChannel', r.id('PC1')), false)
     r.run(command('adds.addGroupMembers', DOMAIN, 'GG_Direction', ['pdurand']))
     r.run(command('adds.removeGroupMembers', DOMAIN, 'GG_Direction', ['pdurand']))
     const user = r.state.domains[DOMAIN]!.users.find((u) => u.sam === 'pdurand')!
