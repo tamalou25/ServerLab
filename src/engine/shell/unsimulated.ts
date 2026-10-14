@@ -59,6 +59,22 @@ export function unsimulatedMessage(shell: 'cmd' | 'ps' | 'bash', name: string): 
     : `« ${name} » est une commande réelle qui n’est pas simulée dans ServerLab.`
 }
 
+/**
+ * Garde-fou des boucles : au-delà de `limit` itérations, ServerLab arrête la boucle (le vrai
+ * PowerShell continuerait, une boucle infinie se termine par Ctrl+C).
+ */
+export function iterationLimitMessage(keyword: string, limit: number): string {
+  return `Boucle « ${keyword} » interrompue : plus de ${limit} itérations. Cette limite est propre au simulateur ServerLab (PowerShell n’en a pas).`
+}
+
+/**
+ * Message d'un paramètre réel d'une applet de commande, accepté par Windows PowerShell mais non
+ * reproduit par ServerLab (au lieu d'un « paramètre introuvable » trompeur).
+ */
+export function unsimulatedParameterMessage(command: string, parameter: string): string {
+  return `Le paramètre « -${parameter} » de ${command} existe réellement mais n’est pas simulé dans ServerLab.`
+}
+
 /** Élément réel d'IOS non simulé (filtre `| tee`, `interface range macro`…). */
 export function unsimulatedIosMessage(name: string): string {
   return `« ${name} » est une fonction réelle d’IOS qui n’est pas simulée dans ServerLab.`

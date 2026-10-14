@@ -14,6 +14,8 @@ export type TokenType =
   | 'lparen'
   | 'rparen'
   | 'atparen'
+  | 'dollarparen'
+  | 'op'
   | 'hash'
   | 'script'
   | 'assign'
@@ -33,7 +35,17 @@ export interface Token {
   inlineValue?: string
   /** Pour une variable : chemin de propriétés ($user.Name → ['Name']). */
   members?: string[]
+  /** Mot déjà redécoupé en mode expression (voir `splitExprWord`). */
+  split?: boolean
+  /** Bloc de script : position du premier caractère de `value` dans la source. */
+  valueStart?: number
 }
+
+/**
+ * Caractère privé qui remplace un « `$ » échappé dans une chaîne entre guillemets doubles :
+ * le développement des variables le laisse tel quel puis le rend en « $ » (about_Quoting_Rules).
+ */
+export const ESCAPED_DOLLAR = '\uE000'
 
 export class PsSyntaxError extends Error {
   constructor(
@@ -56,6 +68,84 @@ function isLetter(c: string | undefined): boolean {
   return c !== undefined && /[A-Za-zÀ-ÿ_?]/.test(c)
 }
 
+/** Position qui suit la parenthèse fermante d'une sous-expression commencée en `from`. */
+function subExpressionEnd(source: string, from: number): number {
+  let depth = 1
+  let j = from
+  let quote: string | null = null
+  while (j < source.length && depth > 0) {
+    const d = source[j]
+    if (quote) {
+      if (d === quote) quote = null
+    } else if (d === '"' || d === "'") quote = d
+    else if (d === '(') depth++
+    else if (d === ')') depth--
+    j++
+  }
+  return j
+}
+
+/** Opérateurs reconnus à l'intérieur d'un mot en mode expression (le plus long d'abord). */
+const EXPR_OPS = [
+  '++',
+  '--',
+  '+=',
+  '-=',
+  '*=',
+  '/=',
+  '%=',
+  '..',
+  '+',
+  '-',
+  '*',
+  '/',
+  '%',
+  '!',
+  '[',
+  ']',
+  '.',
+  '='
+]
+
+/**
+ * Redécoupe un mot en mode expression (about_Parsing : « 2+3 », « $i++ », « 1..10 »,
+ * « [0] » sont des opérateurs et des opérandes, pas un argument nu).
+ */
+export function splitExprWord(tok: Token): Token[] {
+  const s = tok.text
+  const out: Token[] = []
+  let i = 0
+  while (i < s.length) {
+    const at = tok.start + i
+    const rest = s.slice(i)
+    if (rest[0] === '$') {
+      const sub = tokenize(rest)[0] as Token
+      if (sub.type === 'variable' && sub.end > 0) {
+        out.push({ ...sub, start: sub.start + at, end: sub.end + at })
+        i += sub.end
+        continue
+      }
+    }
+    const num = /^\d+(\.\d+)?/.exec(rest)
+    if (num) {
+      out.push({ type: 'number', text: num[0], value: num[0], start: at, end: at + num[0].length })
+      i += num[0].length
+      continue
+    }
+    const op = EXPR_OPS.find((o) => rest.startsWith(o))
+    if (op) {
+      out.push({ type: 'op', text: op, value: op, start: at, end: at + op.length, split: true })
+      i += op.length
+      continue
+    }
+    const ident = /^[A-Za-zÀ-ÿ_][A-Za-z0-9À-ÿ_]*/.exec(rest)
+    const text = ident ? ident[0] : (rest[0] as string)
+    out.push({ type: 'word', text, value: text, start: at, end: at + text.length, split: true })
+    i += text.length
+  }
+  return out
+}
+
 export function tokenize(source: string): Token[] {
   const tokens: Token[] = []
   let i = 0
@@ -63,11 +153,20 @@ export function tokenize(source: string): Token[] {
 
   while (i < n) {
     const c = source[i] as string
-    if (c === ' ' || c === '\t' || c === '\r' || c === '\n') {
+    if (c === ' ' || c === '\t' || c === '\r') {
       i++
       continue
     }
-    if (c === '#') break // commentaire jusqu'à la fin de la ligne
+    if (c === '\n') {
+      // Retour à la ligne : séparateur d'instructions (script sur plusieurs lignes)
+      tokens.push({ type: 'semi', text: '\n', value: '\n', start: i, end: ++i })
+      continue
+    }
+    if (c === '#') {
+      // Commentaire jusqu'à la fin de la ligne
+      while (i < n && source[i] !== '\n') i++
+      continue
+    }
     const start = i
 
     if (c === '|') {
@@ -89,6 +188,28 @@ export function tokenize(source: string): Token[] {
     if (c === ')') {
       tokens.push({ type: 'rparen', text: c, value: c, start, end: ++i })
       continue
+    }
+    if (c === '$' && source[i + 1] === '(') {
+      // Sous-expression $( … ) (about_Operators)
+      i += 2
+      tokens.push({ type: 'dollarparen', text: '$(', value: '$(', start, end: i })
+      continue
+    }
+    if (c === '$' && source[i + 1] === '{') {
+      // ${nom} : nom de variable délimité par des accolades (about_Quoting_Rules)
+      const close = source.indexOf('}', i + 2)
+      if (close > 0) {
+        tokens.push({
+          type: 'variable',
+          text: source.slice(i, close + 1),
+          value: source.slice(i + 2, close),
+          start,
+          end: close + 1,
+          members: []
+        })
+        i = close + 1
+        continue
+      }
     }
     if (c === '@' && source[i + 1] === '(') {
       i += 2
@@ -121,6 +242,8 @@ export function tokenize(source: string): Token[] {
         type: hash ? 'hash' : 'script',
         text: source.slice(start, j),
         value: source.slice(i + 1, j - 1).trim(),
+        valueStart:
+          i + 1 + (source.slice(i + 1, j - 1).length - source.slice(i + 1, j - 1).trimStart().length),
         start,
         end: j
       })
@@ -143,9 +266,29 @@ export function tokenize(source: string): Token[] {
       while (j < n) {
         const d = source[j] as string
         if (double && d === '`' && j + 1 < n) {
+          // Caractères spéciaux (about_Special_Characters) ; « `$ » reste littéral
           const next = source[j + 1] as string
-          value += next === 'n' ? '\n' : next === 't' ? '\t' : next
+          value +=
+            next === 'n'
+              ? '\n'
+              : next === 't'
+                ? '\t'
+                : next === 'r'
+                  ? '\r'
+                  : next === '0'
+                    ? '\0'
+                    : next === '$'
+                      ? ESCAPED_DOLLAR
+                      : next
           j += 2
+          continue
+        }
+        if (double && d === '$' && source[j + 1] === '(') {
+          // Sous-expression dans la chaîne : copiée telle quelle jusqu'à la parenthèse fermante,
+          // guillemets imbriqués compris (« "Total : $($a + "x")" »)
+          const close = subExpressionEnd(source, j + 2)
+          value += source.slice(j, close)
+          j = close
           continue
         }
         if (closers.includes(d)) {

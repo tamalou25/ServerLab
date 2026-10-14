@@ -1,0 +1,7 @@
+# Source: https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/group-object?view=powershell-5.1 (exemple 10, éléments du tableau séparés par des virgules au lieu de retours à la ligne)
+# Commande: @(@{ name = 'a' ; weight = 7 }, @{ name = 'b' ; weight = 1 }, @{ name = 'c' ; weight = 3 }, @{ name = 'd' ; weight = 7 }) | Group-Object -Property { $_.weight } -NoElement
+Count Name
+----- ----
+    2 7
+    1 1
+    1 3
