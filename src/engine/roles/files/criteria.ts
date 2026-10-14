@@ -12,6 +12,26 @@ const PermSchema = z.enum(PERMS)
 
 export const filesCriteria = [
   defineCriterion(
+    z.object({
+      type: z.literal('fileExists'),
+      server: z.string(),
+      /** Chemin local du fichier (C:\Dossier\fichier.txt). */
+      path: z.string(),
+      /** Texte que le contenu doit comporter (insensible à la casse), optionnel. */
+      contains: z.string().optional()
+    }),
+    (state, check) => {
+      const server = serverByName(state, check.server)
+      const node = server ? findNode(server.storage, check.path) : undefined
+      if (!node || node.kind !== 'file') return false
+      return (
+        check.contains === undefined ||
+        (node.content ?? '').toLowerCase().includes(check.contains.toLowerCase())
+      )
+    },
+    'Fichier présent'
+  ),
+  defineCriterion(
     z.object({ type: z.literal('share'), server: z.string(), name: z.string(), path: z.string().optional() }),
     (state, check) => {
       const server = serverByName(state, check.server)

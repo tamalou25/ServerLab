@@ -83,6 +83,7 @@ const FIELD_LABELS: Record<string, string> = {
   kind: 'Type d’objet',
   parent: 'Conteneur parent',
   memberOf: 'Membre de',
+  contains: 'Doit contenir',
   domain: 'Domaine',
   site: 'Site',
   subnet: 'Sous-réseau',

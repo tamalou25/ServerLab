@@ -1,0 +1,68 @@
+{
+  "formatVersion": 1,
+  "id": "lab-39-cmd",
+  "title": "Administration en ligne de commande (CMD)",
+  "difficulty": "Intermédiaire",
+  "duration": "30 min",
+  "summary": "Créez des comptes du domaine, gérez un groupe, archivez un rapport réseau et contrôlez l'annuaire, uniquement avec l'invite de commandes.",
+  "statement": "## Contexte\n\nVous administrez le contrôleur de domaine SRV1 (domaine lab.local) et seule l'invite de commandes (cmd) est autorisée. Le groupe `Techniciens` et l'unité d'organisation `Informatique` existent déjà ; le dossier `C:\\Rapports` aussi.\n\n## Travail demandé\n\n1. Créez le compte `jdupont` dans le domaine avec `net user` (mot de passe conforme : `P@ssw0rd2024!`).\n2. Ajoutez `jdupont` au groupe `Techniciens` avec `net group`.\n3. Créez le compte `proux` (Paul Roux) dans l'OU `Informatique` avec `dsadd user`, activé.\n4. Enregistrez la configuration IP complète du serveur dans `C:\\Rapports\\ip.txt` par une redirection `>`.\n5. Contrôlez l'état de l'annuaire avec `dcdiag`, puis relisez le groupe avec `net group Techniciens /domain`.\n\nÀ rendre : les commandes saisies et leur sortie.",
+  "start": {
+    "devices": [
+      {
+        "kind": "server",
+        "name": "SRV1",
+        "x": 200,
+        "y": 150,
+        "ip": "192.168.10.1/24",
+        "dns": ["127.0.0.1"],
+        "files": [{ "path": "C:\\Rapports\\lisezmoi.txt", "content": "Rapports d'exploitation de SRV1.\n" }]
+      }
+    ],
+    "links": [],
+    "domain": {
+      "name": "lab.local",
+      "netbios": "LAB",
+      "dc": "SRV1",
+      "ous": ["Informatique"],
+      "groups": [{ "name": "Techniciens" }],
+      "users": []
+    }
+  },
+  "criteria": [
+    {
+      "id": "jdupont",
+      "label": "Le compte jdupont existe dans le domaine",
+      "hint": "Une commande net user, avec l'option qui vise le domaine plutôt que le compte local.",
+      "check": { "type": "adObject", "kind": "user", "name": "jdupont" }
+    },
+    {
+      "id": "jdupont-groupe",
+      "label": "jdupont est membre du groupe Techniciens",
+      "hint": "Le groupe se gère avec net group, toujours au niveau du domaine.",
+      "check": { "type": "adObject", "kind": "user", "name": "jdupont", "memberOf": "Techniciens" }
+    },
+    {
+      "id": "proux",
+      "label": "Paul Roux (proux) est créé dans l'OU Informatique et activé",
+      "hint": "Les outils DS en ligne de commande permettent de désigner le conteneur par son nom distinctif.",
+      "check": {
+        "type": "adObject",
+        "kind": "user",
+        "name": "proux",
+        "parent": "Informatique",
+        "enabled": true
+      }
+    },
+    {
+      "id": "rapport-ip",
+      "label": "C:\\Rapports\\ip.txt contient la configuration IP détaillée (adresses physiques comprises)",
+      "hint": "Redirigez la sortie de la commande de configuration IP en version détaillée vers le fichier.",
+      "check": {
+        "type": "fileExists",
+        "server": "SRV1",
+        "path": "C:\\Rapports\\ip.txt",
+        "contains": "Adresse physique"
+      }
+    }
+  ]
+}

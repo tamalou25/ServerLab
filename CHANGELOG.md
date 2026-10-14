@@ -29,6 +29,11 @@ Lot 1 de la v2.7 :
   évaluateur d'expressions PowerShell (#207) ; filtres de sortie IOS `| include`, `exclude`, `begin`, `section`, `count` (#206).
 - Lab 37 « Création d'utilisateurs par CSV » (fichiers de départ déclarables dans les labs via `files`).
 
+Lot 3 de la v2.7 :
+
+- Administration en ligne de commande CMD : `net user` / `localgroup` / `group`, `&&`, redirection `>`, `copy`, `dcdiag`, `dsadd`… (#211).
+- Lab 39 « Administration en ligne de commande (CMD) » et critère de lab `fileExists` (fichier présent, contenu facultatif).
+
 Lot 5 de la v2.7 :
 
 - Switch Catalyst 2960 : bases, STP, EtherChannel, VTP, CDP (#210) et `interface range` (#209).
