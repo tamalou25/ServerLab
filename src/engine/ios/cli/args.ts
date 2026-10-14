@@ -46,7 +46,8 @@ interface IfaceTypeInfo {
 const IFACE_TYPES: IfaceTypeInfo[] = [
   { long: 'FastEthernet', short: 'Fa', help: 'FastEthernet IEEE 802.3' },
   { long: 'GigabitEthernet', short: 'Gi', help: 'GigabitEthernet IEEE 802.3z' },
-  { long: 'Vlan', short: 'Vl', help: 'Catalyst Vlans' }
+  { long: 'Vlan', short: 'Vl', help: 'Catalyst Vlans' },
+  { long: 'Port-channel', short: 'Po', help: 'Ethernet Channel of interfaces' }
 ]
 
 export interface IfaceArgOptions {
@@ -54,6 +55,8 @@ export interface IfaceArgOptions {
   subinterfaces?: boolean
   /** Interfaces VLAN acceptées (interface vlan 10). */
   vlans?: boolean
+  /** Interfaces Port-channel acceptées (interface port-channel 1, groupes 1 à 6). */
+  portChannels?: boolean
 }
 
 /** Types d'interface présents sur l'équipement (Vlan : switchs). */
@@ -62,7 +65,10 @@ function deviceIfaceTypes(ctx: ArgContext, options: IfaceArgOptions): IfaceTypeI
   if (!device) return []
   const prefixes = new Set(device.interfaces.map((i) => i.name.replace(/[\d/.]+$/, '')))
   return IFACE_TYPES.filter(
-    (t) => prefixes.has(t.short) || (t.short === 'Vl' && !!options.vlans && device.kind === 'switch')
+    (t) =>
+      (t.short !== 'Po' && prefixes.has(t.short)) ||
+      (t.short === 'Vl' && !!options.vlans && device.kind === 'switch') ||
+      (t.short === 'Po' && !!options.portChannels && device.kind === 'switch')
   )
 }
 
@@ -83,7 +89,7 @@ export function iface(options: IfaceArgOptions = {}): ArgType {
     match: (tokens, index, ctx) => {
       const first = tokens[index]
       if (first === undefined) return null
-      const joined = /^([A-Za-z]+)(\d.*)$/.exec(first)
+      const joined = /^([A-Za-z][A-Za-z-]*)(\d.*)$/.exec(first)
       let prefix: string
       let num: string
       let consumed: number
@@ -93,7 +99,7 @@ export function iface(options: IfaceArgOptions = {}): ArgType {
         consumed = 1
       } else {
         const next = tokens[index + 1]
-        if (!/^[A-Za-z]+$/.test(first) || next === undefined || !/^\d/.test(next)) return null
+        if (!/^[A-Za-z][A-Za-z-]*$/.test(first) || next === undefined || !/^\d/.test(next)) return null
         prefix = first
         num = next
         consumed = 2
@@ -103,6 +109,10 @@ export function iface(options: IfaceArgOptions = {}): ArgType {
       if (type.short === 'Vl') {
         if (!options.vlans || !/^\d+$/.test(num) || Number(num) < 1 || Number(num) > 4094) return null
         return { consumed, value: `Vl${Number(num)}` }
+      }
+      if (type.short === 'Po') {
+        if (!/^\d+$/.test(num) || Number(num) < 1 || Number(num) > 6) return null
+        return { consumed, value: `Po${Number(num)}` }
       }
       const m = /^(\d+(?:\/\d+)+)(?:\.(\d+))?$/.exec(num)
       if (!m) return null

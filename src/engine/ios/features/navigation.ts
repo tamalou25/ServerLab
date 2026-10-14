@@ -9,6 +9,7 @@ import { createSubinterface, createSvi, removeSubinterfaceByName } from '../acti
 import { defineIosFeature } from '../feature'
 import { iosState } from '../config'
 import { isIos } from '../device'
+import { enterPortChannel, removePortChannel } from './etherchannel'
 import { unsimulatedIosMessage } from '../../shell/unsimulated'
 
 const kw = (keyword: string, help: string): SyntaxToken => ({ keyword, help })
@@ -39,6 +40,10 @@ function exit(ctx: IosRunContext): void {
 function enterInterface(ctx: IosRunContext, name: string): void {
   const device = ctx.state.devices[ctx.deviceId]
   if (!device) return
+  if (name.startsWith('Po')) {
+    enterPortChannel(ctx, name)
+    return
+  }
   let target = device.interfaces.find((i) => i.name === name)
   if (!target && name.includes('.')) {
     const parent = device.interfaces.find((i) => i.name === name.split('.')[0])
@@ -144,13 +149,21 @@ const commands: CliCommand[] = [
     modes: ['config'],
     syntax: [
       kw('interface', 'Select an interface to configure'),
-      { arg: 'iface', type: iface({ subinterfaces: true, vlans: true }), help: 'Interface' }
+      {
+        arg: 'iface',
+        type: iface({ subinterfaces: true, vlans: true, portChannels: true }),
+        help: 'Interface'
+      }
     ],
     run: (ctx, args) => enterInterface(ctx, args.iface ?? ''),
     // no interface Gi0/0.10 : supprime la sous-interface
     no: {
       run: (ctx, args) => {
         const name = args.iface ?? ''
+        if (name.startsWith('Po')) {
+          removePortChannel(ctx, name)
+          return
+        }
         if (name.startsWith('Vl')) {
           ctx.apply(removeSubinterfaceByName(ctx.state, ctx.deviceId, name))
           return

@@ -24,11 +24,30 @@ import { navigation } from './features/navigation'
 import { routing } from './features/routing'
 import { security } from './features/security'
 import { services } from './features/services'
+import { etherchannel } from './features/etherchannel'
+import { stp } from './features/stp'
+import { vtp } from './features/vtp'
+import { learnMacs, switching } from './features/switching'
 import { vlan } from './features/vlan'
 
 /** Fonctionnalités, dans l'ordre d'enregistrement. */
 export function iosFeatures(): readonly IosFeature[] {
-  return [navigation, base, vlan, routing, services, hsrp, acl, security, l2sec, logging]
+  return [
+    navigation,
+    base,
+    vlan,
+    switching,
+    stp,
+    etherchannel,
+    vtp,
+    routing,
+    services,
+    hsrp,
+    acl,
+    security,
+    l2sec,
+    logging
+  ]
 }
 
 /** Crochets d'acheminement des fonctionnalités (routage d'un switch, NAT, ACL…). */
@@ -52,9 +71,11 @@ export function iosInterfaceRoutes(state: LabState, device: Device, iface: NetIn
  * concernés ; l'état est inchangé s'il n'y en a pas.
  */
 export function applyTraceEffects(state: LabState, trace: PacketTrace | null): LabState {
-  const effects = trace?.effects ?? []
-  if (effects.length === 0) return state
+  if (!trace) return state
+  const effects = trace.effects ?? []
   return produce(state, (draft) => {
+    // Table d'adresses MAC des switchs IOS traversés
+    learnMacs(draft, trace)
     for (const effect of effects) {
       const device = draft.devices[effect.deviceId]
       if (!isIos(device as Device | undefined)) continue

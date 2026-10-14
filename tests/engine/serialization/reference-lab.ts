@@ -7,6 +7,9 @@
  * Depuis la v10 : sécurité L2 de CSW1 (DHCP snooping, inspection ARP, trunk sans DTP)
  * (VLAN 30, trunk, sous-interface, OSPF, DHCP, ACL, HSRP, enregistrement).
  * Depuis la v17 : fichier C:\Scripts\users.csv de SRV1 avec son contenu texte.
+ * Depuis la v18 : passerelle par défaut de CSW1 (ip default-gateway).
+ * Depuis la v20 : EtherChannel de CSW1 (Fa0/23-24 en LACP) et VTP (domaine SIO, transparent).
+ * Depuis la v19 : spanning-tree de CSW1 (rapid-pvst, priorité du VLAN 30, BPDU Guard).
  * Le même scénario a servi à produire chaque fichier vN.slab avec le code de la version N.
  */
 import {
@@ -187,6 +190,21 @@ export function buildReferenceLab(): LabState {
     'switchport nonegotiate',
     'ip dhcp snooping trust',
     'ip arp inspection trust',
+    // v18 : passerelle par défaut du switch
+    'exit',
+    'ip default-gateway 192.168.30.1',
+    // v19 : spanning-tree (mode, priorité, BPDU Guard sur le port d'accès)
+    'spanning-tree mode rapid-pvst',
+    'spanning-tree vlan 30 priority 24576',
+    'interface Fa0/2',
+    'spanning-tree bpduguard enable',
+    // v20 : EtherChannel LACP et VTP
+    'exit',
+    'interface range Fa0/23 - 24',
+    'channel-group 1 mode active',
+    'exit',
+    'vtp domain SIO',
+    'vtp mode transparent',
     'end',
     'write memory'
   ])

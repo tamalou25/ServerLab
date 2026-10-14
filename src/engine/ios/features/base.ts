@@ -214,6 +214,8 @@ function showIpInterfaceBrief(ctx: IosRunContext): void {
 }
 
 function hardwareName(device: IosDevice, iface: NetInterface): { hw: string; bw: number } {
+  // Interface VLAN (SVI) : https://www.cisco.com/c/en/us/support/docs/switches/catalyst-6000-series-switches/41263-catmac-41263.html
+  if (iface.svi) return { hw: 'EtherSVI', bw: 1000000 }
   const giga = iface.name.startsWith('Gi')
   if (device.kind === 'router')
     return giga ? { hw: 'CN Gigabit Ethernet', bw: 1000000 } : { hw: 'Gt96k FE', bw: 100000 }
@@ -529,7 +531,7 @@ const commands: CliCommand[] = [
     syntax: [
       SHOW,
       kw('interfaces', 'Interface status and configuration'),
-      { arg: 'iface', type: iface({ subinterfaces: true }), help: 'Interface' }
+      { arg: 'iface', type: iface({ subinterfaces: true, vlans: true }), help: 'Interface' }
     ],
     run: (ctx, args) => {
       const device = deviceOf(ctx)

@@ -684,7 +684,19 @@ export const IosInterfaceSchema = z.object({
   /** Port de confiance de l'inspection ARP (ip arp inspection trust). */
   arpInspectionTrust: z.boolean().default(false),
   /** Négociation DTP désactivée (switchport nonegotiate). */
-  nonegotiate: z.boolean().default(false)
+  nonegotiate: z.boolean().default(false),
+  /** Port d'extrémité spanning-tree (spanning-tree portfast). */
+  portfast: z.boolean().default(false),
+  /** BPDU Guard du port (spanning-tree bpduguard enable) : err-disabled si un BPDU est reçu. */
+  bpduGuard: z.boolean().default(false),
+  /** Groupe EtherChannel du port (channel-group N mode …) ; null : aucun. */
+  channelGroup: z
+    .object({
+      group: z.number().int().min(1).max(6),
+      mode: z.enum(['active', 'passive', 'desirable', 'auto', 'on'])
+    })
+    .nullable()
+    .default(null)
 })
 
 /** Entrée d'une liste d'accès IOS (standard : source seule ; étendue : protocole, destination, port). */
@@ -783,8 +795,30 @@ export const IosConfigSchema = z.object({
   dhcpSnoopingVlans: z.array(z.number().int().min(1).max(4094)).default([]),
   /** VLAN soumis à l'inspection ARP dynamique (ip arp inspection vlan). */
   arpInspectionVlans: z.array(z.number().int().min(1).max(4094)).default([]),
+  /** Passerelle par défaut d'un switch sans routage IP (ip default-gateway). */
+  defaultGateway: z.string().nullable().default(null),
+  /** Protocole spanning-tree (spanning-tree mode pvst | rapid-pvst). */
+  stpMode: z.enum(['pvst', 'rapid-pvst']).default('pvst'),
+  /** Priorités de pont par VLAN (clé : numéro de VLAN ; absente : 32768). */
+  stpPriorities: z.record(z.string(), z.number().int().min(0).max(61440)).default({}),
+  /** Interfaces Port-channel créées (numéros de groupe). */
+  portChannels: z.array(z.number().int().min(1).max(6)).default([]),
+  /** Mode VTP (vtp mode) et nom de domaine (vtp domain, vide par défaut). */
+  vtpMode: z.enum(['server', 'client', 'transparent']).default('server'),
+  vtpDomain: z.string().default(''),
+  /** CDP actif globalement (cdp run, actif par défaut). */
+  cdpRun: z.boolean().default(true),
   /** Données IOS par interface (clé : nom court Gi0/0). */
   interfaces: z.record(z.string(), IosInterfaceSchema).default({})
+})
+
+/** Adresse MAC apprise par un switch sur un port (table d'adresses MAC, état de fonctionnement). */
+export const MacEntrySchema = z.object({
+  vlan: z.number().int().min(1).max(4094),
+  /** Adresse au format du moteur (00-11-22-33-44-55). */
+  mac: z.string(),
+  /** Port d'apprentissage (nom court Fa0/1). */
+  port: z.string()
 })
 
 /** Interface dans une configuration enregistrée (repérée par son nom). */
@@ -822,7 +856,9 @@ export const IosStateSchema = IosConfigSchema.extend({
   /** État HSRP par groupe (clé « Gi0/0|1 ») : Active, Standby, Listen, Init. */
   hsrpStates: z.record(z.string(), z.enum(['Active', 'Standby', 'Listen', 'Init'])).default({}),
   /** Tampon de journalisation (show logging), perdu au redémarrage. */
-  syslog: z.array(z.string()).default([])
+  syslog: z.array(z.string()).default([]),
+  /** Table d'adresses MAC apprises par les trames simulées, perdue au redémarrage. */
+  macTable: z.array(MacEntrySchema).default([])
 })
 
 const deviceBase = {
