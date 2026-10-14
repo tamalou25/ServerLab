@@ -66,3 +66,8 @@ export function unsimulatedMessage(shell: 'cmd' | 'ps' | 'bash', name: string): 
 export function unsimulatedParameterMessage(command: string, parameter: string): string {
   return `Le paramètre « -${parameter} » de ${command} existe réellement mais n’est pas simulé dans ServerLab.`
 }
+
+/** Élément réel d'IOS non simulé (filtre `| tee`, `interface range macro`…). */
+export function unsimulatedIosMessage(name: string): string {
+  return `« ${name} » est une fonction réelle d’IOS qui n’est pas simulée dans ServerLab.`
+}
