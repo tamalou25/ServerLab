@@ -55,6 +55,16 @@ export const LabDeviceSchema = z.object({
   logon: z.object({ user: z.string(), password: z.string() }).optional(),
   /** Machines vers lesquelles les sessions de ce poste ont un accès administrateur (cyber). */
   adminAccess: z.array(z.string()).optional(),
+  /** État initial de services système : { name: "DNS", running: false, startType: "Manual" }. */
+  services: z
+    .array(
+      z.object({
+        name: z.string(),
+        running: z.boolean().default(true),
+        startType: z.enum(['Automatic', 'Manual', 'Disabled']).optional()
+      })
+    )
+    .optional(),
   /** Dossiers partagés (créés au besoin) : comptes par niveau d'autorisation. */
   shares: z
     .array(
@@ -410,6 +420,13 @@ function buildDeclarativeStart(start: LabDeclarativeStart): LabState {
         throw new Error(`Session de ${d.logon.user} sur ${d.name} impossible : ${logged.message}`)
     }
   }
+  // Services système : appliqués en dernier (rôles installés, redémarrages de jonction terminés)
+  for (const d of start.devices)
+    for (const svc of d.services ?? []) {
+      const id = idOf(d.name)
+      if (svc.startType) apply(command('service.setStartType', id, svc.name, svc.startType))
+      apply(command(svc.running ? 'service.start' : 'service.stop', id, svc.name))
+    }
   for (const d of start.devices)
     if (d.adminAccess?.length) apply(command('cyber.setAdminAccess', idOf(d.name), d.adminAccess.map(idOf)))
   if (start.cyber) apply(command('cyber.configure', start.cyber as CyberConfigPatch))
