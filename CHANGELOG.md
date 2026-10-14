@@ -4,9 +4,13 @@ Toutes les évolutions notables de ServerLab sont consignées ici.
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versions : [SemVer](https://semver.org/lang/fr/).
 La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
-## [Non publié]
+## [2.7.0] — 2026-10-14
 
-Lot 0 de la v2.7 (fidélité des consoles).
+Fidélité des consoles au caractère près (CMD, PowerShell, Cisco IOS 15.x) : chaque sortie est comparée à une
+référence sourcée (`docs/captures/`, tests « golden »). Formats `.slab` 15 à 25. Les sorties sans source publiée
+restent listées « à vérifier » dans `docs/fidelite.md`.
+
+Lot 0 de la v2.7 (bugs).
 
 ### Corrigé
 
@@ -333,7 +337,7 @@ Première release publique (installeur Windows NSIS et AppImage Linux).
 - Thèmes sombre et clair, interface compacte.
 - Mises à jour automatiques (electron-updater) et workflow de release sur tag.
 
-[Non publié]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.2...HEAD
+[2.7.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.2...v2.7.0
 [2.6.2]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.1...v2.6.2
 [2.6.1]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.5.0...v2.6.0
