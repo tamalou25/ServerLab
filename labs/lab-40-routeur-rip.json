@@ -1,0 +1,234 @@
+{
+  "formatVersion": 1,
+  "id": "lab-40-routeur-rip",
+  "title": "Routage dynamique RIPv2 et administration du routeur",
+  "difficulty": "Intermédiaire",
+  "duration": "40 min",
+  "summary": "Faites converger RIPv2 sur trois routeurs, protégez les interfaces LAN, réglez l'heure de R1 et enregistrez la configuration.",
+  "statement": "## Contexte\n\nTrois routeurs Cisco 1921 forment une chaîne R1 - R2 - R3. Les interfaces sont déjà adressées : le LAN 172.16.1.0/24 (PC1) est derrière R1, le LAN 192.168.3.0/24 (PC2) derrière R3, et deux liaisons /30 relient les routeurs (10.0.12.0/30 et 10.0.23.0/30). Aucune route n'est configurée : PC1 ne joint pas PC2.\n\n## Travail demandé\n\n1. Activez **RIP version 2** sur les trois routeurs, annoncez les réseaux connectés et désactivez le résumé automatique.\n2. Empêchez l'envoi de mises à jour RIP vers les LAN (interfaces **passives**) sur R1 et R3.\n3. Contrôlez avec `show ip route`, `show ip protocols` puis un ping de PC1 vers PC2.\n4. Sur R1, désignez le serveur de temps **192.168.100.10** et réglez le fuseau horaire sur **CET (UTC+1)** ; vérifiez avec `show clock`.\n5. Enregistrez la configuration de R1 (`write memory`).\n\nÀ rendre : les commandes saisies et les sorties de `show ip route` et `show ip protocols`.",
+  "start": {
+    "devices": [
+      {
+        "kind": "router",
+        "name": "R1",
+        "x": 100,
+        "y": 200,
+        "model": "c1921",
+        "ios": [
+          "enable",
+          "configure terminal",
+          "interface Gi0/0",
+          "ip address 172.16.1.1 255.255.255.0",
+          "no shutdown",
+          "interface Gi0/1",
+          "ip address 10.0.12.1 255.255.255.252",
+          "no shutdown",
+          "end"
+        ]
+      },
+      {
+        "kind": "router",
+        "name": "R2",
+        "x": 350,
+        "y": 200,
+        "model": "c1921",
+        "ios": [
+          "enable",
+          "configure terminal",
+          "interface Gi0/0",
+          "ip address 10.0.12.2 255.255.255.252",
+          "no shutdown",
+          "interface Gi0/1",
+          "ip address 10.0.23.1 255.255.255.252",
+          "no shutdown",
+          "end"
+        ]
+      },
+      {
+        "kind": "router",
+        "name": "R3",
+        "x": 600,
+        "y": 200,
+        "model": "c1921",
+        "ios": [
+          "enable",
+          "configure terminal",
+          "interface Gi0/0",
+          "ip address 10.0.23.2 255.255.255.252",
+          "no shutdown",
+          "interface Gi0/1",
+          "ip address 192.168.3.1 255.255.255.0",
+          "no shutdown",
+          "end"
+        ]
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 100,
+        "y": 380,
+        "ip": "172.16.1.10/24",
+        "gateway": "172.16.1.1"
+      },
+      {
+        "kind": "client",
+        "name": "PC2",
+        "x": 600,
+        "y": 380,
+        "ip": "192.168.3.10/24",
+        "gateway": "192.168.3.1"
+      }
+    ],
+    "links": [
+      ["PC1:Ethernet0", "R1:Gi0/0"],
+      ["R1:Gi0/1", "R2:Gi0/0"],
+      ["R2:Gi0/1", "R3:Gi0/0"],
+      ["R3:Gi0/1", "PC2:Ethernet0"]
+    ]
+  },
+  "criteria": [
+    {
+      "id": "ver-r1",
+      "label": "RIP version 2 activé sur R1",
+      "hint": "Le protocole se règle dans son mode de configuration dédié ; la version 1 est celle par défaut.",
+      "check": {
+        "type": "iosRunning",
+        "device": "R1",
+        "line": "version 2"
+      }
+    },
+    {
+      "id": "ver-r2",
+      "label": "RIP version 2 activé sur R2",
+      "hint": "Le protocole se règle dans son mode de configuration dédié ; la version 1 est celle par défaut.",
+      "check": {
+        "type": "iosRunning",
+        "device": "R2",
+        "line": "version 2"
+      }
+    },
+    {
+      "id": "ver-r3",
+      "label": "RIP version 2 activé sur R3",
+      "hint": "Le protocole se règle dans son mode de configuration dédié ; la version 1 est celle par défaut.",
+      "check": {
+        "type": "iosRunning",
+        "device": "R3",
+        "line": "version 2"
+      }
+    },
+    {
+      "id": "sum-r1",
+      "label": "Résumé automatique désactivé sur R1",
+      "hint": "Sans cela, les routes sont résumées à la frontière de leur classe d'adresses.",
+      "check": {
+        "type": "iosRunning",
+        "device": "R1",
+        "line": "no auto-summary"
+      }
+    },
+    {
+      "id": "sum-r2",
+      "label": "Résumé automatique désactivé sur R2",
+      "hint": "Sans cela, les routes sont résumées à la frontière de leur classe d'adresses.",
+      "check": {
+        "type": "iosRunning",
+        "device": "R2",
+        "line": "no auto-summary"
+      }
+    },
+    {
+      "id": "sum-r3",
+      "label": "Résumé automatique désactivé sur R3",
+      "hint": "Sans cela, les routes sont résumées à la frontière de leur classe d'adresses.",
+      "check": {
+        "type": "iosRunning",
+        "device": "R3",
+        "line": "no auto-summary"
+      }
+    },
+    {
+      "id": "pass-r1",
+      "label": "Interface LAN de R1 en passive-interface",
+      "hint": "Inutile d'envoyer des mises à jour de routage vers des postes : l'interface côté PC doit se taire.",
+      "check": {
+        "type": "iosRunning",
+        "device": "R1",
+        "line": "passive-interface GigabitEthernet0/0"
+      }
+    },
+    {
+      "id": "pass-r3",
+      "label": "Interface LAN de R3 en passive-interface",
+      "hint": "Même démarche que sur R1, sur l'interface qui mène au PC.",
+      "check": {
+        "type": "iosRunning",
+        "device": "R3",
+        "line": "passive-interface GigabitEthernet0/1"
+      }
+    },
+    {
+      "id": "rip-r1",
+      "label": "R1 apprend le LAN de R3 par RIP",
+      "hint": "Les routes apprises par RIP portent la lettre R dans la table de routage.",
+      "check": {
+        "type": "iosRoute",
+        "device": "R1",
+        "network": "192.168.3.0",
+        "prefixLength": 24,
+        "source": "rip"
+      }
+    },
+    {
+      "id": "rip-r3",
+      "label": "R3 apprend le LAN de R1 par RIP",
+      "hint": "Vérifiez que chaque réseau directement connecté est annoncé.",
+      "check": {
+        "type": "iosRoute",
+        "device": "R3",
+        "network": "172.16.1.0",
+        "prefixLength": 24,
+        "source": "rip"
+      }
+    },
+    {
+      "id": "ping",
+      "label": "PC1 joint PC2",
+      "hint": "Testez de bout en bout une fois les tables de routage converguées.",
+      "check": {
+        "type": "ping",
+        "from": "PC1",
+        "to": "192.168.3.10"
+      }
+    },
+    {
+      "id": "ntp",
+      "label": "R1 synchronise son horloge sur un serveur NTP",
+      "hint": "Une commande du mode de configuration globale désigne la source de temps par son adresse (192.168.100.10).",
+      "check": {
+        "type": "iosRunning",
+        "device": "R1",
+        "line": "ntp server 192.168.100.10"
+      }
+    },
+    {
+      "id": "tz",
+      "label": "Fuseau horaire de R1 réglé sur CET (UTC+1)",
+      "hint": "Le fuseau se déclare par un nom et un décalage en heures par rapport à UTC.",
+      "check": {
+        "type": "iosRunning",
+        "device": "R1",
+        "line": "clock timezone CET 1"
+      }
+    },
+    {
+      "id": "save-r1",
+      "label": "Configuration de R1 enregistrée",
+      "hint": "La startup-config doit être identique à la running-config à la fin du travail.",
+      "check": {
+        "type": "iosStartup",
+        "device": "R1"
+      }
+    }
+  ]
+}
