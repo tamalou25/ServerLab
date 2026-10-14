@@ -5,7 +5,7 @@
  */
 import { DEFAULT_DC_POLICY_ID, DEFAULT_DOMAIN_POLICY_ID, defaultDomainGpos } from '../roles/gpo/defaults'
 
-export const CURRENT_SCHEMA_VERSION = 23
+export const CURRENT_SCHEMA_VERSION = 25
 
 type RawDocument = Record<string, unknown>
 
@@ -233,6 +233,22 @@ function addV27RouterDiagnostics(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 23 }
 }
 
+/**
+ * Version 24 : état des services système des ordinateurs (`host.services` : démarré / arrêté, type de démarrage).
+ * Valeurs par défaut (vides) : seul le numéro de version change.
+ */
+function addV27Services(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 24 }
+}
+
+/**
+ * Version 25 : base de comptes locale des ordinateurs (`host.localUsers`, `host.localGroups`) et valeurs de registre des GPO (`registry`).
+ * Valeurs par défaut (vides) : seul le numéro de version change.
+ */
+function addV27LocalAccountsRegistry(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 25 }
+}
+
 /** migrations[n] migre un document de la version n vers n + 1. */
 export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   1: addDefaultGpos,
@@ -256,7 +272,9 @@ export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   19: addV27EtherChannelVtp,
   20: addV27SystemAdmin,
   21: addV27RipOspfDefault,
-  22: addV27RouterDiagnostics
+  22: addV27RouterDiagnostics,
+  23: addV27Services,
+  24: addV27LocalAccountsRegistry
 }
 
 export type MigrationResult = { ok: true; doc: RawDocument } | { ok: false; message: string }

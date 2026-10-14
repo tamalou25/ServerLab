@@ -4,7 +4,7 @@
 import { networkDeps } from '../../net/network-key'
 import { defineRole } from '../types'
 import { gpoAuditRules } from './audit'
-import { gpoCmdlets } from './cmdlets'
+import { gpoCmdlets, gpoRegistryCmdlets } from './cmdlets'
 import { gpoCommands } from './commands'
 import { gpoCriteria } from './criteria'
 import { autoGroupPolicy, GP_SOURCE } from './processing'
@@ -15,9 +15,10 @@ export const gpoRole = defineRole({
   displayName: 'Stratégies de groupe',
   feature: 'GPMC',
   dependencies: ['adds'],
+  uses: ['files'],
   features: [{ name: 'GPMC', displayName: 'Gestion des stratégies de groupe', role: false }],
   commands: gpoCommands,
-  cmdlets: gpoCmdlets,
+  cmdlets: [...gpoCmdlets, ...gpoRegistryCmdlets],
   tools: [gpupdateTool, gpresultTool],
   views: [
     {

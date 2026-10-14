@@ -8,6 +8,9 @@ import { coreCmdlets } from './ps/cmdlets/core'
 import { firewallCmdlets } from './ps/cmdlets/firewall'
 import { eventCmdlets } from './ps/cmdlets/events'
 import { netCmdlets } from './ps/cmdlets/net'
+import { serviceCmdlets } from './ps/cmdlets/services'
+import { localAccountCmdlets } from './ps/cmdlets/localaccounts'
+import { netSysCmdlets } from './ps/cmdlets/netsys'
 import { systemCmdlets } from './ps/cmdlets/system'
 import { hostnameTool, ipconfigTool, pingTool, tracertTool, whoamiTool } from './tools/net'
 import { netshTool } from './tools/netsh'
@@ -27,6 +30,9 @@ export function shellCatalog(): CommandCatalog {
       ...firewallCmdlets,
       ...eventCmdlets,
       ...systemCmdlets,
+      ...serviceCmdlets,
+      ...localAccountCmdlets,
+      ...netSysCmdlets,
       ...roles.flatMap((m) => m.cmdlets)
     ],
     tools: [

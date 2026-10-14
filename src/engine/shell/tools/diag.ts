@@ -7,19 +7,26 @@
  * arp, route_ws2008, netstat, systeminfo, sc-query, tasklist, shutdown. Les mises en page exactes
  * et libellés français ne sont pas publiés sur Learn : « à vérifier » (docs/fidelite.md, Lot 3).
  * Limites du modèle : pas de cache ARP alimenté par le trafic (les voisins joignables du segment
- * en tiennent lieu), pas de routes statiques sur les ordinateurs, pas d'état démarré / arrêté des
- * services, pas de processus réels (liste dérivée des services).
+ * en tiennent lieu), pas de routes statiques sur les ordinateurs, pas de processus réels (liste
+ * dérivée des services démarrés). sc query / start / stop / config : état des services du moteur
+ * (Lot 2a, services/hostservices.ts).
  */
 import { effectiveIpv4 } from '../../net/addressing'
 import { formatIpv4, networkInt, parseIpv4, prefixToMask, prefixToMaskInt } from '../../net/ipv4'
 import { routingTable } from '../../net/routing'
 import { carrierUp, l2Segment } from '../../net/segment'
 import type { NetInterface } from '../../model/schema'
-import { predefinedRules } from '../../services/firewall'
+import { listeningPorts } from '../../services/listening'
 import { restartComputer } from '../../services/system'
 import { setPower } from '../../topology/actions'
 import { LEARN_CMD } from '../cmd/help'
 import type { ExecContext } from '../context'
+import {
+  setServiceStartType,
+  startService,
+  stopService,
+  type ServiceStartType
+} from '../../services/hostservices'
 import { consoleServices, findService } from './services'
 import type { ToolDef } from './types'
 
@@ -45,6 +52,35 @@ const ifIndex = (ctx: ExecContext, iface: NetInterface) =>
 
 // ---------------------------------------------------------------------------------------------
 // arp
+
+/**
+ * Cache ARP simulé (arp -a, Get-NetNeighbor) : par carte active, voisins allumés du segment et
+ * du même sous-réseau (adresses MAC au format aa-bb-cc-dd-ee-ff), et adresse de diffusion.
+ */
+export function neighborCache(ctx: ExecContext): {
+  iface: NetInterface
+  address: string
+  prefix: number
+  broadcast: string
+  neighbors: { ip: string; mac: string }[]
+}[] {
+  return activeInterfaces(ctx).map(({ iface, address, prefix }) => {
+    const net = networkInt(parseIpv4(address) ?? 0, prefix)
+    const neighbors = l2Segment(ctx.state, { deviceId: ctx.host.id, ifaceId: iface.id })
+      .flatMap((m) => {
+        const d = ctx.state.devices[m.port.deviceId]
+        const i = d?.interfaces.find((x) => x.id === m.port.ifaceId)
+        const eff = i ? effectiveIpv4(i) : null
+        if (!d?.powered || !i || !eff || eff.address === address) return []
+        if (networkInt(parseIpv4(eff.address) ?? 0, prefix) !== net) return []
+        return [{ ip: eff.address, mac: i.mac.toLowerCase().replace(/[:.]/g, '-') }]
+      })
+      .filter((n, i, all) => all.findIndex((o) => o.ip === n.ip) === i)
+      .sort((a, b) => (parseIpv4(a.ip) ?? 0) - (parseIpv4(b.ip) ?? 0))
+    const broadcast = formatIpv4((net | ~prefixToMaskInt(prefix)) >>> 0)
+    return { iface, address, prefix, broadcast, neighbors }
+  })
+}
 
 export const arpTool: ToolDef = {
   name: 'arp',
@@ -73,22 +109,10 @@ export const arpTool: ToolDef = {
     const ifFilter = nIndex >= 0 ? rest[nIndex + 1] : undefined
     const inet = rest.find((a, i) => !a.startsWith('-') && !a.startsWith('/') && i !== nIndex + 1)
     const lines: string[] = []
-    for (const { iface, address, prefix } of activeInterfaces(ctx)) {
+    for (const entry of neighborCache(ctx)) {
+      const { iface, address, broadcast } = entry
       if (ifFilter && ifFilter !== address) continue
-      const net = networkInt(parseIpv4(address) ?? 0, prefix)
-      const neighbors = l2Segment(ctx.state, { deviceId: ctx.host.id, ifaceId: iface.id })
-        .flatMap((m) => {
-          const d = ctx.state.devices[m.port.deviceId]
-          const i = d?.interfaces.find((x) => x.id === m.port.ifaceId)
-          const eff = i ? effectiveIpv4(i) : null
-          if (!d?.powered || !i || !eff || eff.address === address) return []
-          if (networkInt(parseIpv4(eff.address) ?? 0, prefix) !== net) return []
-          return [{ ip: eff.address, mac: i.mac.toLowerCase().replace(/[:.]/g, '-') }]
-        })
-        .filter((n, i, all) => all.findIndex((o) => o.ip === n.ip) === i)
-        .filter((n) => !inet || n.ip === inet)
-        .sort((a, b) => (parseIpv4(a.ip) ?? 0) - (parseIpv4(b.ip) ?? 0))
-      const broadcast = formatIpv4((net | ~prefixToMaskInt(prefix)) >>> 0)
+      const neighbors = entry.neighbors.filter((n) => !inet || n.ip === inet)
       lines.push(
         '',
         `Interface : ${address} --- 0x${ifIndex(ctx, iface).toString(16)}`,
@@ -192,6 +216,7 @@ const SERVICE_IMAGES: Record<string, string> = {
 export function processes(ctx: ExecContext): Process[] {
   const base = ['smss.exe', 'csrss.exe', 'wininit.exe', 'services.exe', 'lsass.exe', 'svchost.exe']
   const roles = consoleServices(ctx)
+    .filter((s) => s.status === 'Running')
     .map((s) => SERVICE_IMAGES[s.name])
     .filter((x): x is string => !!x)
   const list: Process[] = [
@@ -263,7 +288,7 @@ export const tasklistTool: ToolDef = {
 }
 
 /** Processus propriétaire d'un port en écoute (PID cohérent avec tasklist). */
-function portOwner(ctx: ExecContext, port: number): number {
+export function portOwner(ctx: ExecContext, port: number): number {
   const procs = processes(ctx)
   const pid = (image: string) => procs.find((p) => p.image === image)?.pid ?? 4
   if (port === 53) return pid('dns.exe')
@@ -294,15 +319,9 @@ export const netstatTool: ToolDef = {
       return
     }
     const withPid = flags.has('o')
-    const host = ctx.host
-    // Ports d'écoute : règles prédéfinies des services présents (TCP / UDP) ; le pare-feu
-    // filtre le trafic mais ne ferme pas les ports en écoute.
-    const listen = predefinedRules(host)
-      .filter((r) => r.protocol === 'TCP' || r.protocol === 'UDP')
-      .filter((r) => r.id !== 'RemoteDesktop-UserMode-In-TCP' || host.host.remoteDesktop.enabled)
-      .flatMap((r) => r.localPorts.map((port) => ({ proto: r.protocol, port })))
-      .filter((e, i, all) => all.findIndex((o) => o.proto === e.proto && o.port === e.port) === i)
-      .sort((a, b) => (a.proto === b.proto ? a.port - b.port : a.proto === 'TCP' ? -1 : 1))
+    // Ports d'écoute : rôles installés dont le service est démarré (services/listening.ts) ; le
+    // pare-feu filtre le trafic mais ne ferme pas les ports en écoute.
+    const listen = listeningPorts(ctx.host).map((p) => ({ proto: p.protocol, port: p.port }))
     // Sans -a : connexions actives seulement (aucune connexion établie n'est simulée)
     const rows = flags.has('a')
       ? listen.map(({ proto, port }) => {
@@ -379,65 +398,117 @@ export const systeminfoTool: ToolDef = {
 
 export const scTool: ToolDef = {
   name: 'sc',
-  synopsis: 'Interroge les services (sc query) ; arrêt et démarrage non simulés.',
-  switches: ['query', 'start', 'stop'],
+  synopsis: 'Interroge et contrôle les services (query, start, stop, config start=).',
+  switches: ['query', 'start', 'stop', 'config'],
   help: help('sc-query', [
-    'sc.exe [<servername>] query [<servicename>] [type= {driver | service | all}] [type= {own | share | interact | kernel | filesys | rec | adapt}] [state= {active | inactive | all}] [bufsize= <Buffersize>] [ri= <Resumeindex>] [group= <groupname>]'
+    'sc.exe [<servername>] query [<servicename>] [type= {driver | service | all}] [type= {own | share | interact | kernel | filesys | rec | adapt}] [state= {active | inactive | all}] [bufsize= <Buffersize>] [ri= <Resumeindex>] [group= <groupname>]',
+    'sc.exe [<servername>] config [<servicename>] [start= {boot | system | auto | demand | disabled | delayed-auto}]'
   ]),
   run(ctx, args) {
-    const [op = '', name] = args
+    const [op = '', ...rest] = args
     const verb = op.toLowerCase()
+    // Options « nom= valeur » (Learn : le signe égal fait partie du nom, un espace avant la valeur)
+    const options = new Map<string, string>()
+    const positional: string[] = []
+    for (let i = 0; i < rest.length; i++) {
+      const a = rest[i] as string
+      if (a.endsWith('=')) {
+        options.set(a.slice(0, -1).toLowerCase(), (rest[i + 1] ?? '').toLowerCase())
+        i++
+      } else positional.push(a)
+    }
+    const name = positional[0]
+    const missing = (api: string) =>
+      ctx.writeLines(
+        [
+          `[SC] ${api} échec(s) 1060 :`,
+          '',
+          'Le service spécifié n’existe pas en tant que service installé.',
+          ''
+        ],
+        'error'
+      )
+    const state = (s: { status: string }) =>
+      s.status === 'Running'
+        ? '        ÉTAT               : 4  RUNNING'
+        : '        ÉTAT               : 1  STOPPED'
     if (verb === 'query') {
-      const list = name ? [findService(ctx, name)] : consoleServices(ctx)
-      if (name && !list[0]) {
-        ctx.writeLines(
-          [
-            '[SC] EnumQueryServicesStatus:OpenService échec(s) 1060 :',
-            '',
-            'Le service spécifié n’existe pas en tant que service installé.',
-            ''
-          ],
-          'error'
-        )
+      if (name) {
+        const s = findService(ctx, name)
+        if (!s) return missing('EnumQueryServicesStatus:OpenService')
+        ctx.writeLines(['', `NOM_SERVICE: ${s.name}`, `NOM_AFFICHAGE: ${s.display}`, state(s), ''])
         return
       }
+      // Learn : state= active (défaut), inactive (arrêtés) ou all
+      const filter = options.get('state') ?? 'active'
+      if (!['active', 'inactive', 'all'].includes(filter)) {
+        ctx.write(`[SC] Valeur non valide pour state= : ${filter} (active, inactive, all).`, 'error')
+        return
+      }
+      const list = consoleServices(ctx).filter((s) =>
+        filter === 'all' ? true : filter === 'active' ? s.status === 'Running' : s.status !== 'Running'
+      )
       ctx.writeLines(
-        list.flatMap((s) =>
-          s
-            ? [
-                '',
-                `NOM_SERVICE: ${s.name}`,
-                `NOM_AFFICHAGE: ${s.display}`,
-                '        ÉTAT               : 4  RUNNING',
-                ''
-              ]
-            : []
-        )
+        list.flatMap((s) => ['', `NOM_SERVICE: ${s.name}`, `NOM_AFFICHAGE: ${s.display}`, state(s), ''])
       )
       return
     }
     if (verb === 'start' || verb === 'stop') {
-      if (!name || !findService(ctx, name)) {
-        ctx.writeLines(
-          [
-            `[SC] OpenService échec(s) 1060 :`,
-            '',
-            'Le service spécifié n’existe pas en tant que service installé.',
-            ''
-          ],
+      const s = name ? findService(ctx, name) : undefined
+      if (!s) return missing('OpenService')
+      if (verb === 'start') {
+        if (s.status === 'Running')
+          return ctx.write(
+            '[SC] StartService échec(s) 1056 :\n\nUne instance du service s’exécute déjà.',
+            'error'
+          )
+        if (s.startType === 'Disabled')
+          return ctx.write(
+            '[SC] StartService échec(s) 1058 :\n\nLe service ne peut pas être démarré, soit parce qu’il a été désactivé, soit parce qu’il n’a pas de périphériques activés qui lui sont associés.',
+            'error'
+          )
+        ctx.apply(startService(ctx.state, ctx.deviceId, s.name))
+        ctx.writeLines(['', `NOM_SERVICE: ${s.name}`, '        ÉTAT               : 2  START_PENDING', ''])
+        return
+      }
+      if (s.status === 'Stopped')
+        return ctx.write('[SC] ControlService échec(s) 1062 :\n\nLe service n’a pas été démarré.', 'error')
+      if (!s.canStop)
+        return ctx.write(
+          '[SC] ControlService échec(s) 1052 :\n\nLe contrôle demandé n’est pas valide pour ce service.',
+          'error'
+        )
+      ctx.apply(stopService(ctx.state, ctx.deviceId, s.name))
+      ctx.writeLines(['', `NOM_SERVICE: ${s.name}`, '        ÉTAT               : 3  STOP_PENDING', ''])
+      return
+    }
+    if (verb === 'config') {
+      const s = name ? findService(ctx, name) : undefined
+      if (!s) return missing('OpenService')
+      const start = options.get('start')
+      // Learn (sc config) : auto, demand, disabled, delayed-auto ; boot et system : pilotes
+      const types: Record<string, ServiceStartType> = {
+        auto: 'Automatic',
+        'delayed-auto': 'Automatic',
+        demand: 'Manual',
+        disabled: 'Disabled'
+      }
+      const others = [...options.keys()].filter((k) => k !== 'start')
+      if (others.length > 0 || start === undefined || !types[start]) {
+        ctx.write(
+          `L’option « ${others[0] ?? `start= ${start ?? ''}`} » de sc config n’est pas simulée dans ServerLab (start= auto, demand, disabled ou delayed-auto).`,
           'error'
         )
         return
       }
-      ctx.write(
-        verb === 'start'
-          ? '[SC] StartService échec(s) 1056 :\n\nUne instance du service s’exécute déjà.'
-          : 'L’arrêt d’un service n’est pas simulé dans ServerLab (l’état démarré / arrêté des services n’est pas modélisé).',
-        'error'
-      )
+      ctx.apply(setServiceStartType(ctx.state, ctx.deviceId, s.name, types[start] as ServiceStartType))
+      ctx.writeLines(['[SC] ChangeServiceConfig réussite(s)', ''])
       return
     }
-    ctx.write(`La sous-commande « sc ${op} » n’est pas simulée dans ServerLab (query, start, stop).`, 'error')
+    ctx.write(
+      `La sous-commande « sc ${op} » n’est pas simulée dans ServerLab (query, start, stop, config).`,
+      'error'
+    )
   }
 }
 

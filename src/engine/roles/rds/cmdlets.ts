@@ -1,8 +1,7 @@
 /**
- * Cmdlets du module RemoteDesktop (collections, RemoteApp, sessions) et gestion du groupe local
- * Utilisateurs du Bureau à distance (Add/Remove/Get-LocalGroupMember).
+ * Cmdlets du module RemoteDesktop (collections, RemoteApp, sessions). Le groupe local Utilisateurs
+ * du Bureau à distance est géré par les cmdlets LocalAccounts (shell/ps/cmdlets/localaccounts.ts).
  */
-import { findPrincipal } from '../adds/directory'
 import { psError } from '../../shell/ps/errors'
 import type { CmdContext } from '../../shell/ps/interpreter'
 import type { CmdletDef, ParamDef } from '../../shell/ps/registry'
@@ -13,8 +12,7 @@ import {
   addSessionCollection,
   removeRemoteApp,
   removeSessionCollection,
-  setCollectionUserGroups,
-  setRemoteDesktop
+  setCollectionUserGroups
 } from './server'
 import { rdsServerOf } from './state'
 
@@ -35,29 +33,6 @@ const collectionParam: ParamDef = {
 const brokerParams: ParamDef[] = [
   { name: 'ConnectionBroker', type: 'string' },
   { name: 'Force', type: 'switch' }
-]
-
-/** Groupe local géré : « Utilisateurs du Bureau à distance » (nom anglais accepté). */
-const RDU = 'Utilisateurs du Bureau à distance'
-function requireRduGroup(name: string): void {
-  const n = name.trim().toLowerCase()
-  if (n !== RDU.toLowerCase() && n !== 'remote desktop users')
-    throw psError(
-      `Le groupe « ${name} » n’est pas géré par le simulateur : seul le groupe « ${RDU} » l’est.`,
-      'ObjectNotFound',
-      'GroupNotFound,Microsoft.PowerShell.Commands.AddLocalGroupMemberCommand',
-      name
-    )
-}
-
-function hostUsers(ctx: CmdContext): string[] {
-  const d = ctx.device
-  return d.kind === 'server' || d.kind === 'client' ? d.host.remoteDesktop.users : []
-}
-
-const groupParams: ParamDef[] = [
-  { name: 'Group', type: 'string', mandatory: true, position: 0, aliases: ['Name'] },
-  { name: 'Member', type: 'string[]', mandatory: true, position: 1 }
 ]
 
 export const rdsCmdlets: CmdletDef[] = [
@@ -228,57 +203,6 @@ export const rdsCmdlets: CmdletDef[] = [
             kind: 'table',
             props: ['UserName', 'DomainName', 'SessionId', 'ClientName', 'SessionState', 'ApplicationType']
           }
-        )
-      )
-    }
-  },
-  {
-    name: 'Add-LocalGroupMember',
-    module: 'Microsoft.PowerShell.LocalAccounts',
-    synopsis: 'Ajoute des membres à un groupe local.',
-    params: groupParams,
-    run(ctx, args) {
-      requireRduGroup(str(args['Group']))
-      ctx.apply(
-        setRemoteDesktop(ctx.state, ctx.deviceId, { users: [...hostUsers(ctx), ...list(args['Member'])] })
-      )
-    }
-  },
-  {
-    name: 'Remove-LocalGroupMember',
-    module: 'Microsoft.PowerShell.LocalAccounts',
-    synopsis: 'Retire des membres d’un groupe local.',
-    params: groupParams,
-    run(ctx, args) {
-      requireRduGroup(str(args['Group']))
-      const removed = list(args['Member']).map((m) => m.toLowerCase())
-      const keep = hostUsers(ctx).filter(
-        (u) => !removed.includes(u.toLowerCase()) && !removed.includes((u.split('\\')[1] ?? '').toLowerCase())
-      )
-      ctx.apply(setRemoteDesktop(ctx.state, ctx.deviceId, { users: keep }))
-    }
-  },
-  {
-    name: 'Get-LocalGroupMember',
-    module: 'Microsoft.PowerShell.LocalAccounts',
-    synopsis: 'Liste les membres d’un groupe local.',
-    params: [groupParams[0]!],
-    run(ctx, args) {
-      requireRduGroup(str(args['Group']))
-      const d = ctx.device
-      const domain =
-        (d.kind === 'server' || d.kind === 'client') && d.host.domain
-          ? ctx.state.domains[d.host.domain]
-          : undefined
-      return hostUsers(ctx).map((u) =>
-        psObject(
-          'Microsoft.PowerShell.Commands.LocalPrincipal',
-          {
-            ObjectClass: domain && findPrincipal(domain, u)?.kind === 'group' ? 'Groupe' : 'Utilisateur',
-            Name: u,
-            PrincipalSource: 'ActiveDirectory'
-          },
-          { kind: 'table', props: ['ObjectClass', 'Name', 'PrincipalSource'] }
         )
       )
     }

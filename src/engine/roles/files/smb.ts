@@ -5,6 +5,7 @@
  */
 import type { Draft } from 'immer'
 import { transact } from '../../core/result'
+import { serviceRunning } from '../../services/servicestate'
 import type { HostDevice, LabState, MappedDrive, ServerDevice, SmbShare } from '../../model/schema'
 import { effectiveIpv4 } from '../../net/addressing'
 import { l2Segment } from '../../net/segment'
@@ -126,6 +127,9 @@ export function openUnc(
   if (!located || located.device.kind !== 'server' || !located.device.powered)
     return fail(53, NETWORK_PATH_NOT_FOUND)
   const server = located.device
+  // Service « Serveur » (LanmanServer) arrêté : plus d'accès aux partages (Learn, net stop :
+  // « Stopping the Server service prevents users from gaining access to the computer's shared resources »)
+  if (!serviceRunning(server, 'LanmanServer')) return fail(53, NETWORK_PATH_NOT_FOUND)
   if (located.ip) {
     const smb = serverExchange(state, clientId, located.ip, {
       protocol: 'SMB',

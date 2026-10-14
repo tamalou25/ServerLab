@@ -215,8 +215,9 @@ describe('Bureau à distance', () => {
       "Remove-LocalGroupMember -Group 'Utilisateurs du Bureau à distance' -Member jdupont"
     ).state
     expect(host(s, 'SRV1').host.remoteDesktop.users).toEqual([])
+    // Contrôleur de domaine : pas de base de comptes locale (Lot 2b)
     expect(run(s, srv, 'Add-LocalGroupMember -Group Administrateurs -Member x').errors).toMatch(
-      /n’est pas géré/
+      /n’a pas de base de comptes locale/
     )
     s = run(s, srv, 'Remove-RDRemoteApp -CollectionName Bureautique -Alias notepad').state
     s = run(s, srv, 'Remove-RDSessionCollection -CollectionName Bureautique -Force').state

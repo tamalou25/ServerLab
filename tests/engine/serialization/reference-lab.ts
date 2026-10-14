@@ -36,6 +36,10 @@ import {
   runIosScript,
   setDhcpOptions,
   setInterfaceIpv4,
+  setServiceStartType,
+  newLocalUser,
+  setGpRegistryValue,
+  stopService,
   setSwitchport,
   unwrap,
   writeFileContent,
@@ -215,6 +219,19 @@ export function buildReferenceLab(): LabState {
   s = unwrap(createItem(s, id('SRV1'), 'C:\\Scripts', 'folder', admin)).state
   s = unwrap(
     writeFileContent(s, id('SRV1'), 'C:\\Scripts\\users.csv', 'Nom;Prenom\r\nDupont;Jean\r\n', admin)
+  ).state
+  // v24 : service Temps Windows arrêté, démarrage manuel
+  s = unwrap(setServiceStartType(s, id('SRV1'), 'W32Time', 'Manual')).state
+  s = unwrap(stopService(s, id('SRV1'), 'W32Time')).state
+  // v25 : utilisateur local de PC2 et valeur de registre de la Default Domain Policy
+  s = unwrap(newLocalUser(s, id('PC2'), { name: 'tech', password: 'T3ch!pass' })).state
+  s = unwrap(
+    setGpRegistryValue(s, 'lab.local', '{31B2F340-016D-11D2-945F-00C04FB984F9}', {
+      key: 'HKCU\\Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop',
+      valueNames: ['ScreenSaveTimeOut'],
+      values: [900],
+      type: 'DWord'
+    })
   ).state
   return runIosScript(s, id('CR1'), [
     'enable',

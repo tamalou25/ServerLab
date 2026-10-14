@@ -13,6 +13,7 @@ import { createContext, sendIp, sourceAddressFor, type SimContext } from '../../
 import { createRecorder, type PacketTrace, type PduLayer } from '../../sim/trace'
 import { findZoneFor, normalizeName, ptrQueryName, relativeName } from './server'
 import { dnsServerOf } from './state'
+import { serviceRunning } from '../../services/servicestate'
 
 export interface DnsAnswerRecord {
   name: string
@@ -71,7 +72,19 @@ function isDnsServer(device: Device | undefined): device is ServerDevice {
     device.kind === 'server' &&
     device.powered &&
     device.host.features.includes('DNS') &&
-    !!dnsServerOf(device)
+    !!dnsServerOf(device) &&
+    // Service « DNS » arrêté (Stop-Service DNS, net stop dns) : le serveur ne répond plus
+    serviceRunning(device, 'DNS')
+  )
+}
+
+/** Rôle DNS installé mais service arrêté (note de la trace). */
+function dnsServiceStopped(device: Device | undefined): boolean {
+  return (
+    !!device &&
+    device.kind === 'server' &&
+    device.host.features.includes('DNS') &&
+    !serviceRunning(device, 'DNS')
   )
 }
 
@@ -203,7 +216,9 @@ export function queryServer(
     const last = ctx.rec.events[ctx.rec.events.length - 1]
     if (last) {
       last.outcome = 'dropped'
-      last.note = `${responder?.name ?? '?'} n’exécute pas de service DNS : la requête reste sans réponse.`
+      last.note = dnsServiceStopped(responder)
+        ? `Le service Serveur DNS de ${responder?.name ?? '?'} est arrêté : la requête reste sans réponse.`
+        : `${responder?.name ?? '?'} n’exécute pas de service DNS : la requête reste sans réponse.`
     }
     return { kind: 'timeout', qname: name }
   }

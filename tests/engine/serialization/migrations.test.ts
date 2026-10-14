@@ -115,6 +115,44 @@ describe('fichiers .slab de référence', () => {
   }
 })
 
+describe('migration 24 → 25 (base locale et registre des GPO de la v2.7)', () => {
+  it('change seulement la version ; base locale et registre des GPO vides', () => {
+    const doc = JSON.parse(readFixture(24)) as Record<string, unknown>
+    expect(migrations[24]!(doc)).toEqual({ ...doc, schemaVersion: 25 })
+    const pc2 = Object.values(open(24).lab.devices).find((d) => d.name === 'PC2') as unknown as {
+      host: { localUsers: unknown[]; localGroups: unknown[] }
+    }
+    expect(pc2.host.localUsers).toEqual([])
+    expect(pc2.host.localGroups).toEqual([])
+  })
+
+  it('v25.slab : garde l’utilisateur local de PC2 et la valeur de registre de la GPO', () => {
+    const lab = open(25).lab
+    const pc2 = Object.values(lab.devices).find((d) => d.name === 'PC2') as unknown as {
+      host: { localUsers: { name: string }[] }
+    }
+    expect(pc2.host.localUsers.map((u) => u.name)).toEqual(['tech'])
+    const ddp = lab.domains['lab.local']?.gpos.find((g) => g.name === 'Default Domain Policy')
+    expect(ddp?.registry[0]).toMatchObject({ hive: 'HKCU', valueName: 'ScreenSaveTimeOut', value: 900 })
+  })
+})
+
+describe('migration 23 → 24 (état des services de la v2.7)', () => {
+  const services = (lab: ReturnType<typeof open>['lab']) =>
+    (Object.values(lab.devices).find((d) => d.name === 'SRV1') as { host: { services: unknown } }).host
+      .services
+
+  it('change seulement la version ; aucun service modifié', () => {
+    const doc = JSON.parse(readFixture(23)) as Record<string, unknown>
+    expect(migrations[23]!(doc)).toEqual({ ...doc, schemaVersion: 24 })
+    expect(services(open(23).lab)).toEqual({})
+  })
+
+  it('v24.slab : s’ouvre sans migration et garde le service W32Time arrêté (manuel)', () => {
+    expect(services(open(24).lab)).toEqual({ W32Time: { status: 'Stopped', startType: 'Manual' } })
+  })
+})
+
 describe('migration 1 → 2 (stratégies de groupe par défaut)', () => {
   const v1 = () => JSON.parse(readFixture(1)) as Record<string, unknown>
   const domainOf = (doc: Record<string, unknown>) =>

@@ -3,7 +3,7 @@
  * objets GPO, liaisons, héritage, filtrage de sécurité et actualisation.
  */
 import { formatShortDate } from '../../core/clock'
-import type { Domain, Gpo } from '../../model/schema'
+import type { Domain, Gpo, GpRegistryValue } from '../../model/schema'
 import { AUTHENTICATED_USERS_SID } from '../../model/schema'
 import { containerDn, isDomainAdmin, objectById, resolveContainerDn } from '../adds/directory'
 import {
@@ -18,11 +18,16 @@ import {
   updateGpoLink
 } from './objects'
 import { processGroupPolicy, GP_NO_DC_MESSAGE } from './processing'
-import { findGpo, gpoPrecedence, linksAt } from './scope'
+import { containerPath, findGpo, gpoPrecedence, linksAt, partEnabled } from './scope'
+import { findGpRegistryValues, gpoRegistryValues, setGpRegistryValue, type GpHive } from './registry'
+import { describeSettings } from './settings'
+import { writeTextFile } from '../files/content'
+import { CommandFailure } from '../../shell/context'
+import { unsimulatedParameterMessage } from '../../shell/unsimulated'
 import { psError } from '../../shell/ps/errors'
 import type { CmdContext } from '../../shell/ps/interpreter'
 import type { BoundArgs, CmdletDef, ParamDef } from '../../shell/ps/registry'
-import { psObject, psToString, type PsObject, type PsValue } from '../../shell/ps/values'
+import { flatten, psObject, psToString, type PsObject, type PsValue } from '../../shell/ps/values'
 import { hasFeature } from '../../shell/ps/cmdlets/helpers'
 
 const gpAvailable = (ctx: CmdContext) => hasFeature(ctx, 'GPMC')
@@ -482,6 +487,266 @@ export const gpoCmdlets: CmdletDef[] = [
       if (op.computer === 'failed' || op.user === 'failed')
         throw psError(op.error ?? GP_NO_DC_MESSAGE, 'OperationStopped', 'GpUpdateFailed', ctx.host.name)
       return []
+    }
+  }
+]
+
+// ---------------------------------------------------------------------------------------------
+// Valeurs de registre et rapports (v2.7, Lot 2b)
+
+const HIVE_LABEL: Record<GpHive, { full: string; name: string }> = {
+  HKLM: { full: 'HKEY_LOCAL_MACHINE', name: 'LocalMachine' },
+  HKCU: { full: 'HKEY_CURRENT_USER', name: 'CurrentUser' }
+}
+
+/** Objet PolicyRegistrySetting (Learn, Get-GPRegistryValue, exemple 1). */
+function registryObject(v: GpRegistryValue): PsObject {
+  const hive = HIVE_LABEL[v.hive]
+  return psObject(
+    'Microsoft.GroupPolicy.PolicyRegistrySetting',
+    {
+      KeyPath: v.key,
+      FullKeyPath: `${hive.full}\\${v.key}`,
+      Hive: hive.name,
+      PolicyState: v.state,
+      Value: v.state === 'Delete' ? '' : Array.isArray(v.value) ? v.value.join(', ') : v.value,
+      Type: v.type,
+      ValueName: v.valueName,
+      HasValue: true
+    },
+    {
+      kind: 'list',
+      props: ['KeyPath', 'FullKeyPath', 'Hive', 'PolicyState', 'Value', 'Type', 'ValueName', 'HasValue']
+    }
+  )
+}
+
+/** Erreur du moteur → erreur PowerShell (GroupPolicy). */
+function gpRun(fn: () => void, target: string): void {
+  try {
+    fn()
+  } catch (e) {
+    if (e instanceof CommandFailure)
+      throw psError(e.message, 'InvalidArgument', e.code, target, 'ArgumentException')
+    throw e
+  }
+}
+
+const xml = (text: string) =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
+/** Emplacements où la GPO est liée (racine du domaine puis OU). */
+function gpoLinks(
+  domain: Domain,
+  gpo: Gpo
+): { som: string; path: string; enabled: boolean; enforced: boolean }[] {
+  const out: { som: string; path: string; enabled: boolean; enforced: boolean }[] = []
+  for (const l of domain.gpLinks)
+    if (l.gpoId === gpo.id)
+      out.push({ som: domain.netbios, path: domain.name, enabled: l.enabled, enforced: l.enforced })
+  for (const c of domain.containers)
+    for (const l of c.gpLinks)
+      if (l.gpoId === gpo.id)
+        out.push({ som: c.name, path: containerPath(domain, c.id), enabled: l.enabled, enforced: l.enforced })
+  return out
+}
+
+/**
+ * Rapport d'une GPO (Get-GPOReport, Learn : « details, links, security filtering, WMI filtering,
+ * delegation, and computer and user configurations »). Sous-ensemble ServerLab : détails, liaisons,
+ * filtrage de sécurité, paramètres simulés et valeurs de registre (pas de filtre WMI ni de délégation).
+ */
+export function gpoReport(domain: Domain, gpo: Gpo, type: 'Html' | 'Xml'): string {
+  const links = gpoLinks(domain, gpo)
+  const filter = gpo.securityFilter.map((p) => trusteeName(domain, p).name)
+  const parts = (['computer', 'user'] as const).map((part) => ({
+    part,
+    title: part === 'computer' ? 'Configuration ordinateur' : 'Configuration utilisateur',
+    version: part === 'computer' ? gpo.computerVersion : gpo.userVersion,
+    enabled: partEnabled(gpo, part),
+    settings: describeSettings(part, gpo.computer, gpo.user),
+    registry: gpoRegistryValues(gpo).filter((v) => (v.hive === 'HKLM') === (part === 'computer'))
+  }))
+  if (type === 'Xml')
+    return [
+      '<?xml version="1.0" encoding="utf-16"?>',
+      '<GPO xmlns="http://www.microsoft.com/GroupPolicy/Settings">',
+      '  <Identifier>',
+      `    <Identifier>${gpo.id}</Identifier>`,
+      `    <Domain>${xml(domain.name)}</Domain>`,
+      '  </Identifier>',
+      `  <Name>${xml(gpo.name)}</Name>`,
+      `  <CreatedTime>${formatShortDate(gpo.createdAt)}</CreatedTime>`,
+      `  <ModifiedTime>${formatShortDate(gpo.modifiedAt)}</ModifiedTime>`,
+      `  <SecurityFiltering>${filter.map((f) => `<Trustee>${xml(f)}</Trustee>`).join('')}</SecurityFiltering>`,
+      ...parts.flatMap((p) => [
+        `  <${p.part === 'computer' ? 'Computer' : 'User'}>`,
+        `    <VersionDirectory>${p.version}</VersionDirectory>`,
+        `    <VersionSysvol>${p.version}</VersionSysvol>`,
+        `    <Enabled>${p.enabled}</Enabled>`,
+        ...p.settings.map(
+          (s) => `    <Setting Category="${xml(s.category)}" Name="${xml(s.label)}">${xml(s.value)}</Setting>`
+        ),
+        ...p.registry.map(
+          (r) =>
+            `    <RegistrySetting Key="${xml(`${HIVE_LABEL[r.hive].full}\\${r.key}`)}" ValueName="${xml(r.valueName)}" Type="${r.type}" State="${r.state}">${xml(String(r.value))}</RegistrySetting>`
+        ),
+        `  </${p.part === 'computer' ? 'Computer' : 'User'}>`
+      ]),
+      ...links.map(
+        (l) =>
+          `  <LinksTo><SOMName>${xml(l.som)}</SOMName><SOMPath>${xml(l.path)}</SOMPath><Enabled>${l.enabled}</Enabled><NoOverride>${l.enforced}</NoOverride></LinksTo>`
+      ),
+      '</GPO>'
+    ].join('\n')
+  const rows = (cells: string[][]) =>
+    cells.map((c) => `<tr>${c.map((x) => `<td>${xml(x)}</td>`).join('')}</tr>`).join('')
+  return [
+    '<html>',
+    `<head><title>${xml(gpo.name)}</title></head>`,
+    '<body>',
+    `<h1>${xml(gpo.name)}</h1>`,
+    '<h2>Détails</h2>',
+    `<table>${rows([
+      ['Domaine', domain.name],
+      ['Propriétaire', `${domain.netbios}\\Admins du domaine`],
+      ['Créé le', formatShortDate(gpo.createdAt)],
+      ['Modifié le', formatShortDate(gpo.modifiedAt)],
+      ['Révisions utilisateur', `${gpo.userVersion} (AD), ${gpo.userVersion} (SYSVOL)`],
+      ['Révisions ordinateur', `${gpo.computerVersion} (AD), ${gpo.computerVersion} (SYSVOL)`],
+      ['ID unique', gpo.id],
+      ['État de l’objet GPO', gpo.status]
+    ])}</table>`,
+    '<h2>Liaisons</h2>',
+    `<table>${rows([['Emplacement', 'Appliqué', 'État de la liaison'], ...links.map((l) => [l.path, l.enforced ? 'Oui' : 'Non', l.enabled ? 'Activé' : 'Désactivé'])])}</table>`,
+    '<h2>Filtrage de sécurité</h2>',
+    `<table>${rows(filter.map((f) => [f]))}</table>`,
+    ...parts.flatMap((p) => [
+      `<h2>${p.title} (${p.enabled ? 'Activée' : 'Désactivée'})</h2>`,
+      p.settings.length + p.registry.length === 0
+        ? '<p>Aucun paramètre défini.</p>'
+        : `<table>${rows([
+            ...p.settings.map((s) => [s.category, s.label, s.value]),
+            ...p.registry.map((r) => [
+              'Paramètres du Registre',
+              `${HIVE_LABEL[r.hive].full}\\${r.key}\\${r.valueName}`,
+              r.state === 'Delete' ? 'Supprimée' : `${r.type} : ${String(r.value)}`
+            ])
+          ])}</table>`
+    ]),
+    '</body>',
+    '</html>'
+  ].join('\n')
+}
+
+export const gpoRegistryCmdlets: CmdletDef[] = [
+  {
+    name: 'Set-GPRegistryValue',
+    module: 'GroupPolicy',
+    synopsis: 'Configure une valeur de registre dans une GPO (Configuration ordinateur ou utilisateur).',
+    available: gpAvailable,
+    params: [
+      nameParam,
+      guidParam,
+      { name: 'Key', type: 'string', mandatory: true },
+      { name: 'ValueName', type: 'string[]' },
+      { name: 'Value', type: 'any' },
+      { name: 'Type', type: 'string' },
+      { name: 'Domain', type: 'string' },
+      { name: 'Server', type: 'string' },
+      { name: 'Disable', type: 'switch' },
+      { name: 'Additive', type: 'switch' },
+      { name: 'ValuePrefix', type: 'string' }
+    ],
+    run(ctx, args) {
+      for (const p of ['Additive', 'ValuePrefix'])
+        if (args[p] !== undefined)
+          throw psError(
+            unsimulatedParameterMessage('Set-GPRegistryValue', p),
+            'NotImplemented',
+            'UnsimulatedParameter'
+          )
+      const domain = gpDomain(ctx, true)
+      const gpo = gpoArg(domain, args)
+      const values = args['Value'] === undefined ? [] : flatten([args['Value']])
+      gpRun(
+        () =>
+          ctx.apply(
+            setGpRegistryValue(ctx.state, domain.name, gpo.id, {
+              key: str(args['Key']),
+              valueNames: args['ValueName'] === undefined ? [] : flatten([args['ValueName']]).map(psToString),
+              values: values.map((v) => (typeof v === 'number' ? v : psToString(v))),
+              ...(args['Type'] !== undefined ? { type: str(args['Type']) } : {}),
+              disable: args['Disable'] === true
+            })
+          ),
+        gpo.name
+      )
+      // Learn, exemple 1 : la GPO modifiée est renvoyée
+      const updated = ctx.state.domains[domain.name]?.gpos.find((g) => g.id === gpo.id)
+      return updated ? [gpoObject(domain, updated)] : []
+    }
+  },
+  {
+    name: 'Get-GPRegistryValue',
+    module: 'GroupPolicy',
+    synopsis: 'Affiche les valeurs de registre configurées par une GPO.',
+    available: gpAvailable,
+    params: [
+      nameParam,
+      guidParam,
+      { name: 'Key', type: 'string', mandatory: true },
+      { name: 'ValueName', type: 'string' },
+      { name: 'Domain', type: 'string' },
+      { name: 'Server', type: 'string' }
+    ],
+    run(ctx, args) {
+      const domain = gpDomain(ctx)
+      const gpo = gpoArg(domain, args)
+      const key = str(args['Key'])
+      let found: GpRegistryValue[] = []
+      gpRun(() => {
+        found = findGpRegistryValues(
+          gpo,
+          key,
+          args['ValueName'] === undefined ? undefined : str(args['ValueName'])
+        )
+      }, gpo.name)
+      if (found.length === 0)
+        throw psError(
+          `La clé de registre « ${key}${args['ValueName'] !== undefined ? `\\${str(args['ValueName'])}` : ''} » n’est pas configurée dans l’objet de stratégie de groupe ${gpo.name}.`,
+          'ObjectNotFound',
+          'UnableToRetrievePolicyRegistryItem',
+          key,
+          'ArgumentException'
+        )
+      return found.map(registryObject)
+    }
+  },
+  {
+    name: 'Get-GPOReport',
+    module: 'GroupPolicy',
+    synopsis: 'Génère le rapport HTML ou XML d’une GPO (affiché ou écrit dans un fichier).',
+    available: gpAvailable,
+    params: [
+      nameParam,
+      guidParam,
+      { name: 'ReportType', type: 'string', mandatory: true, position: 1, validateSet: ['Html', 'Xml'] },
+      { name: 'Path', type: 'string', position: 2 },
+      { name: 'All', type: 'switch' },
+      { name: 'Domain', type: 'string' },
+      { name: 'Server', type: 'string' }
+    ],
+    run(ctx, args) {
+      const domain = gpDomain(ctx)
+      const type = str(args['ReportType']).toLowerCase() === 'xml' ? 'Xml' : 'Html'
+      const gpos = args['All'] === true ? domain.gpos : [gpoArg(domain, args)]
+      const text = gpos.map((g) => gpoReport(domain, g, type)).join('\n')
+      if (args['Path'] !== undefined) {
+        writeTextFile(ctx, str(args['Path']), text)
+        return []
+      }
+      return [text]
     }
   }
 ]

@@ -125,12 +125,14 @@ const SYSTEM_SERVICES: HostService[] = [
   { display: 'Client DNS', name: 'Dnscache' },
   { display: 'Journal d’événements', name: 'EventLog' },
   { display: 'Pare-feu', name: 'MpsSvc' },
-  { display: 'Station de travail', name: 'LanmanWorkstation' }
+  { display: 'Station de travail', name: 'LanmanWorkstation' },
+  { display: 'Temps Windows', name: 'W32Time' }
 ]
 
 /**
  * Services d'un ordinateur : ceux du système, puis ceux déclarés par les rôles installés
- * (`when`), triés par nom affiché. Tous sont considérés démarrés (état non simulé).
+ * (`when`), triés par nom affiché. Leur état (démarré, arrêté, type de démarrage) est lu par
+ * `services/hostservices.ts` (v2.7, Lot 2a).
  */
 export function hostServices(features: readonly string[], domainController: boolean): HostService[] {
   const fromRoles = roleModules().flatMap((m) =>

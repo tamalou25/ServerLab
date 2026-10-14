@@ -4,6 +4,7 @@
  */
 import type { Domain, HostDevice, LabState } from '../../model/schema'
 import { domainToken, localToken, type AccessToken } from '../files/acl'
+import { findLocalUser, isLocalAdmin } from '../../services/localaccounts'
 
 /** Compte saisi → domaine (NetBIOS ou FQDN) et nom. */
 export function splitAccount(user: string): { domain: string | null; sam: string } {
@@ -30,8 +31,12 @@ export function authenticate(
   const local = !domainName || domainName.toUpperCase() === target.name.toUpperCase() || domainName === '.'
   const domain: Domain | undefined = target.host.domain ? state.domains[target.host.domain] : undefined
   if (local && (!domain || domainName)) {
-    return sam.toLowerCase() === 'administrateur' && password === target.host.localAdminPassword
-      ? localToken(target.name, 'Administrateur')
+    if (sam.toLowerCase() === 'administrateur')
+      return password === target.host.localAdminPassword ? localToken(target.name, 'Administrateur') : null
+    // Compte de la base locale (New-LocalUser) : activé et mot de passe exact
+    const user = findLocalUser(state, target.id, sam)
+    return user && user.enabled && user.password === password
+      ? localToken(target.name, user.name, isLocalAdmin(state, target.id, user.name))
       : null
   }
   if (!domain) return null

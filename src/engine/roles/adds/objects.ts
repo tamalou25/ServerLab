@@ -620,3 +620,135 @@ export function unlockAccount(state: LabState, domainName: string, identity: str
     return undefined
   })
 }
+
+export interface GroupPatch {
+  description?: string
+  scope?: AdGroup['scope']
+  category?: AdGroup['category']
+  sam?: string
+}
+
+/**
+ * Modifie un groupe (Set-ADGroup). Conversions d'étendue d'après Microsoft Learn
+ * (« Understand security groups », Group scope) : Global → Universelle si le groupe n'est membre
+ * d'aucun autre groupe global ; Domaine local → Universelle s'il ne contient aucun groupe de
+ * domaine local ; Universelle → Globale s'il ne contient aucun groupe universel ; Universelle →
+ * Domaine local s'il n'est membre d'aucun groupe universel. Global ↔ Domaine local : impossible.
+ */
+export function setGroupProperties(
+  state: LabState,
+  domainName: string,
+  identity: string,
+  patch: GroupPatch
+): EngineResult {
+  return transact(state, (draft) => {
+    const domain = requireDomain(draft, domainName)
+    const found = findPrincipal(domain as Domain, identity)
+    if (!found || found.kind !== 'group') notFound(domain as Domain, identity)
+    const group = domain.groups.find((g) => g.id === found.obj.id) as Draft<AdGroup>
+    if (patch.scope && patch.scope !== group.scope) {
+      const from = group.scope
+      const to = patch.scope
+      const parents = domain.groups.filter((g) => g.members.includes(group.id))
+      const children = domain.groups.filter((g) => group.members.includes(g.id))
+      const refuse = (why: string) =>
+        raise('InvalidGroupScope', `Impossible de changer l’étendue du groupe « ${group.name} » : ${why}`)
+      if ((from === 'Global' && to === 'DomainLocal') || (from === 'DomainLocal' && to === 'Global'))
+        refuse('convertissez-le d’abord en groupe universel.')
+      if (from === 'Global' && parents.some((g) => g.scope === 'Global'))
+        refuse('il est membre d’un autre groupe global.')
+      if (from === 'DomainLocal' && children.some((g) => g.scope === 'DomainLocal'))
+        refuse('il contient un groupe de domaine local.')
+      if (from === 'Universal' && to === 'Global' && children.some((g) => g.scope === 'Universal'))
+        refuse('il contient un groupe universel.')
+      if (from === 'Universal' && to === 'DomainLocal' && parents.some((g) => g.scope === 'Universal'))
+        refuse('il est membre d’un groupe universel.')
+      group.scope = to
+    }
+    if (patch.description !== undefined) group.description = patch.description
+    if (patch.category) group.category = patch.category
+    if (patch.sam !== undefined && patch.sam.trim() !== group.sam) {
+      assertSamAvailable(domain, patch.sam.trim())
+      group.sam = patch.sam.trim()
+    }
+    return undefined
+  })
+}
+
+export interface ComputerInput {
+  name: string
+  path?: string
+  enabled?: boolean
+}
+
+/**
+ * Crée un compte d'ordinateur (New-ADComputer) sans joindre d'ordinateur au domaine (Learn) :
+ * compte pré-créé, repris par la jonction d'un ordinateur du même nom. Conteneur par défaut :
+ * CN=Computers.
+ */
+export function addComputer(state: LabState, domainName: string, input: ComputerInput): EngineResult<string> {
+  return transact(state, (draft) => {
+    const domain = requireDomain(draft, domainName)
+    const name = input.name.trim()
+    if (!name) raise('InvalidName', 'Le nom de l’ordinateur est obligatoire.')
+    if (domain.computers.some((c) => c.name.toLowerCase() === name.toLowerCase()))
+      raise('AlreadyExists', 'Le compte spécifié existe déjà.')
+    const parentId = targetContainer(domain, input.path, 'Computers')
+    if (parentId === null)
+      raise('InvalidPath', 'Un ordinateur doit être créé dans un conteneur ou une unité d’organisation.')
+    assertSamAvailable(domain, `${name}$`)
+    assertNameAvailable(domain, parentId, name)
+    const id = newAdId(draft)
+    domain.computers.push({
+      id,
+      name,
+      parentId,
+      deviceId: null,
+      enabled: input.enabled ?? true,
+      dnsHostName: ''
+    })
+    domain.groups.find((g) => g.name === 'Ordinateurs du domaine')?.members.push(id)
+    return id
+  })
+}
+
+/**
+ * Canal sécurisé d'un membre du domaine (Test-ComputerSecureChannel) : un contrôleur allumé et le
+ * compte d'ordinateur du même nom, activé et lié à cet ordinateur. Un compte recréé (New-ADComputer
+ * après suppression) n'est plus lié à l'ordinateur : le canal est rompu.
+ */
+export function secureChannelStatus(
+  state: LabState,
+  deviceId: string
+): 'ok' | 'notDomainMember' | 'noDc' | 'broken' {
+  const d = state.devices[deviceId]
+  if (!d || (d.kind !== 'server' && d.kind !== 'client') || !d.host.domain) return 'notDomainMember'
+  const domain = state.domains[d.host.domain]
+  if (!domain) return 'notDomainMember'
+  if (domain.controllers.includes(deviceId)) return 'ok'
+  if (!domain.controllers.some((id) => state.devices[id]?.powered)) return 'noDc'
+  const account = domain.computers.find((c) => c.name.toLowerCase() === d.name.toLowerCase())
+  return account && account.enabled && account.deviceId === deviceId ? 'ok' : 'broken'
+}
+
+/**
+ * Réparation du canal (Test-ComputerSecureChannel -Repair) : le compte d'ordinateur du même nom
+ * est de nouveau lié à l'ordinateur. Sans compte, la réparation échoue (il faut rejoindre le domaine).
+ */
+export function repairSecureChannel(state: LabState, deviceId: string): EngineResult {
+  return transact(state, (draft) => {
+    const d = draft.devices[deviceId]
+    if (!d || (d.kind !== 'server' && d.kind !== 'client') || !d.host.domain)
+      raise('NotDomainMember', 'Cet ordinateur n’est pas membre d’un domaine.')
+    const domain = requireDomain(draft, d.host.domain)
+    const account = domain.computers.find((c) => c.name.toLowerCase() === d.name.toLowerCase())
+    if (!account)
+      raise(
+        'ComputerAccountNotFound',
+        `Le compte d’ordinateur ${d.name} est introuvable dans le domaine ${domain.name} : joignez de nouveau l’ordinateur au domaine.`
+      )
+    if (!account.enabled) raise('ComputerAccountDisabled', `Le compte d’ordinateur ${d.name} est désactivé.`)
+    account.deviceId = deviceId
+    return undefined
+  })
+}

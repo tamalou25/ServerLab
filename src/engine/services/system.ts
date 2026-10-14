@@ -8,6 +8,7 @@ import { DEFAULT_LOCAL_USER } from '../model/factory'
 import type { HostDevice, LabState } from '../model/schema'
 import { deviceNameError, requireDevice } from '../topology/actions'
 import { registerHostDns } from '../roles/adds/join'
+import { bootServices } from './servicestate'
 
 /** Applique les opérations en attente d'un redémarrage (renommage…). */
 export function applyRestart(draft: Draft<LabState>, device: Draft<HostDevice>, reason?: string): void {
@@ -41,6 +42,8 @@ export function applyRestart(draft: Draft<LabState>, device: Draft<HostDevice>, 
   }
   device.host.pendingReboot = false
   device.host.bootedAt = draft.clock
+  // Services : démarrage automatique ou arrêt selon leur type de démarrage
+  bootServices(device)
   // Stratégie utilisateur déchargée ; la stratégie d'ordinateur (conservée) sera retraitée
   device.host.policy.user = null
   device.host.policy.attempt = null

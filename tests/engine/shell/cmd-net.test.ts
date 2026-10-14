@@ -131,7 +131,8 @@ describe('net accounts, net start, net stop', () => {
     expect(list).toContain('   Serveur DNS')
     expect(cmd.run('net start DNS').errors).toContain('déjà été démarré')
     expect(cmd.run('net start Inexistant').errors).toContain('NET HELPMSG 2185')
-    expect(cmd.run('net stop DNS').errors).toContain('n’est pas simulé')
+    expect(cmd.run('net stop DNS').text).toContain('Le service Serveur DNS a été arrêté.')
+    expect(cmd.run('net start').text).not.toContain('   Serveur DNS')
     expect(new Cmd(buildReferenceLab(), 'PC1').run('net start').text).not.toContain('Serveur DNS')
   })
   it('net /? : syntaxe Microsoft Learn', () => {

@@ -5,7 +5,7 @@
 import { defineRole } from '../types'
 import { addsAuditRules } from './audit'
 import { recycleBinCmdlets } from './recycle'
-import { adCmdlets } from './cmdlets'
+import { adCmdlets, adLot2Cmdlets } from './cmdlets'
 import { addsCommands } from './commands'
 import { addsCriteria } from './criteria'
 import { controlledDomain } from './directory'
@@ -40,7 +40,7 @@ export const addsRole = defineRole({
     { name: 'RSAT-ADDS', displayName: 'Outils AD DS', role: false, parent: 'RSAT-AD-Tools' }
   ],
   commands: addsCommands,
-  cmdlets: [...adCmdlets, ...recycleBinCmdlets, ...siteCmdlets],
+  cmdlets: [...adCmdlets, ...adLot2Cmdlets, ...recycleBinCmdlets, ...siteCmdlets],
   tools: [repadminTool, netdomTool, nltestTool, ...dsTools],
   bashTools: addsBashTools,
   views: [

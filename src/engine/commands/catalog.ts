@@ -36,6 +36,15 @@ import {
   setFirewallRuleEnabled,
   setNetworkCategory
 } from '../services/firewall'
+import { restartService, setServiceStartType, startService, stopService } from '../services/hostservices'
+import {
+  addLocalGroupMembers,
+  newLocalGroup,
+  newLocalUser,
+  removeLocalGroupMembers,
+  removeLocalUser,
+  setLocalUser
+} from '../services/localaccounts'
 import { renameComputer, restartComputer } from '../services/system'
 import { executeLine } from '../shell/exec'
 import type { ShellResult, ShellSession } from '../shell/types'
@@ -229,6 +238,28 @@ const CORE_COMMANDS = {
   'system.renameComputer': def(
     renameComputer,
     (s, id, name) => `Renommer l’ordinateur ${deviceName(s, id)} en ${name}`
+  ),
+  'service.start': def(startService, (s, id, name) => `Démarrer le service ${name}${on(s, id)}`),
+  'service.stop': def(stopService, (s, id, name) => `Arrêter le service ${name}${on(s, id)}`),
+  'service.restart': def(restartService, (s, id, name) => `Redémarrer le service ${name}${on(s, id)}`),
+  'service.setStartType': def(
+    setServiceStartType,
+    (s, id, name, type) => `Type de démarrage ${type} pour le service ${name}${on(s, id)}`
+  ),
+  'local.newUser': def(newLocalUser, (s, id, input) => `Créer l’utilisateur local ${input.name}${on(s, id)}`),
+  'local.setUser': def(setLocalUser, (s, id, name) => `Modifier l’utilisateur local ${name}${on(s, id)}`),
+  'local.removeUser': def(
+    removeLocalUser,
+    (s, id, name) => `Supprimer l’utilisateur local ${name}${on(s, id)}`
+  ),
+  'local.newGroup': def(newLocalGroup, (s, id, input) => `Créer le groupe local ${input.name}${on(s, id)}`),
+  'local.addGroupMembers': def(
+    addLocalGroupMembers,
+    (s, id, group, members) => `Ajouter ${members.join(', ')} au groupe local ${group}${on(s, id)}`
+  ),
+  'local.removeGroupMembers': def(
+    removeLocalGroupMembers,
+    (s, id, group, members) => `Retirer ${members.join(', ')} du groupe local ${group}${on(s, id)}`
   ),
   'system.clearEventLog': def(clearEventLog, (s, id, log) => `Effacer le journal ${log}${on(s, id)}`),
   'system.newSelfSignedCertificate': def(

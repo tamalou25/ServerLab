@@ -8,21 +8,7 @@
 const CMD = ['taskkill', 'wmic', 'getmac']
 
 /** Applets de commande PowerShell réelles non simulées (noms en minuscules). */
-const PS = [
-  'get-service',
-  'start-service',
-  'stop-service',
-  'restart-service',
-  'set-service',
-  'get-process',
-  'stop-process',
-  'get-nettcpconnection',
-  'get-netneighbor',
-  'get-netroute',
-  'get-hotfix',
-  'get-wmiobject',
-  'get-ciminstance'
-]
+const PS = ['get-process', 'stop-process', 'get-hotfix', 'get-wmiobject', 'get-ciminstance']
 
 /** Commandes Linux réelles non simulées sur le poste Linux. */
 const BASH = [
