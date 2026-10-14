@@ -110,3 +110,35 @@ export function roleBackgroundTasks(): BackgroundTask[] {
 export function roleViews(): (RoleView & { role: string })[] {
   return roleModules().flatMap((m) => m.views.map((v) => ({ ...v, role: m.id })))
 }
+
+/** Service système simulé d'un ordinateur (Gestionnaire de serveur > Services, net start, sc query). */
+export interface HostService {
+  display: string
+  name: string
+  /** Fonctionnalité du rôle qui apporte le service (absent : service du système). */
+  role?: string
+}
+
+/** Services du système toujours présents (comme dans le Gestionnaire de serveur). */
+const SYSTEM_SERVICES: HostService[] = [
+  { display: 'Client DHCP', name: 'Dhcp' },
+  { display: 'Client DNS', name: 'Dnscache' },
+  { display: 'Journal d’événements', name: 'EventLog' },
+  { display: 'Pare-feu', name: 'MpsSvc' },
+  { display: 'Station de travail', name: 'LanmanWorkstation' }
+]
+
+/**
+ * Services d'un ordinateur : ceux du système, puis ceux déclarés par les rôles installés
+ * (`when`), triés par nom affiché. Tous sont considérés démarrés (état non simulé).
+ */
+export function hostServices(features: readonly string[], domainController: boolean): HostService[] {
+  const fromRoles = roleModules().flatMap((m) =>
+    m.services
+      .filter((s) =>
+        s.when === 'always' ? true : s.when === 'installed' ? features.includes(m.feature) : domainController
+      )
+      .map((s) => ({ display: s.display, name: s.name, role: m.feature }))
+  )
+  return [...SYSTEM_SERVICES, ...fromRoles].sort((a, b) => a.display.localeCompare(b.display, 'fr'))
+}

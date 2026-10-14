@@ -87,7 +87,7 @@ describe('net', () => {
     expect(cmd.run('net share Inconnu').errors).toContain('Erreur système 2310.')
     expect(cmd.run('net share Inconnu /delete').errors).toContain('Ce partage n’existe pas.')
     expect(cmd.run('net').text).toContain('La syntaxe de cette commande est :')
-    expect(cmd.run('net user').errors).toContain('n’est pas simulée')
+    expect(cmd.run('net time').errors).toContain('n’est pas simulée')
   })
 
   it('outils sans argument : syntaxe incorrecte ; dossier introuvable', () => {

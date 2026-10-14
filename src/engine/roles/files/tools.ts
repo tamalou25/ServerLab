@@ -26,6 +26,8 @@ import {
 import { findNode, nodePath, parseUnc } from './paths'
 import { mapDrive, openUnc, sessionDrives, unmapDrive } from './smb'
 import { verifyCredentials } from '../adds/join'
+import { netAccounts, netGroup, netLocalGroup, netUser } from '../adds/net'
+import { netStart, netStop } from '../../shell/tools/services'
 import type { ExecContext } from '../../shell/context'
 import {
   absolutePath,
@@ -604,8 +606,41 @@ function netView(ctx: ExecContext, args: string[]): void {
 
 export const netTool: ToolDef = {
   name: 'net',
-  synopsis: 'Partages (net share), lecteurs réseau (net use), ressources d’un serveur (net view).',
-  switches: ['share', 'use', 'view', '/delete', '/persistent:yes', '/persistent:no', '/user:'],
+  synopsis:
+    'Partages (share), lecteurs (use, view), comptes (user, localgroup, group, accounts), services (start, stop).',
+  help: {
+    syntax: [
+      'net user [<UserName> {<Password> | *} [<Options>]] [/domain]',
+      'net user [<UserName> {<Password> | *} /add [<Options>] [/domain]]',
+      'net user [<UserName> [/delete] [/domain]]',
+      'net user username [/active: {yes | no}]',
+      'net localgroup [<GroupName> <Name> […] {/add |  /delete} [/domain]',
+      'net group [<GroupName> <UserName>[ ...] {/add | /delete} [/domain]]',
+      'net accounts [/forcelogoff:{minutes | no}] [/minpwlen:length] [/maxpwage:{days | unlimited}] [/minpwage:days] [/uniquepw:number] [/domain]',
+      'net start [service]',
+      'net stop service'
+    ],
+    url: 'https://learn.microsoft.com/fr-fr/windows-server/administration/windows-commands/net-user'
+  },
+  switches: [
+    'share',
+    'use',
+    'view',
+    'user',
+    'localgroup',
+    'group',
+    'accounts',
+    'start',
+    'stop',
+    '/add',
+    '/domain',
+    '/active:yes',
+    '/active:no',
+    '/delete',
+    '/persistent:yes',
+    '/persistent:no',
+    '/user:'
+  ],
   run(ctx, args) {
     const [sub = '', ...rest] = args
     switch (sub.toLowerCase()) {
@@ -619,11 +654,25 @@ export const netTool: ToolDef = {
         netView(ctx, rest)
         return
       case 'user':
+      case 'users':
+        netUser(ctx, rest)
+        return
       case 'localgroup':
+        netLocalGroup(ctx, rest)
+        return
       case 'group':
+      case 'groups':
+        netGroup(ctx, rest)
+        return
       case 'accounts':
+        netAccounts(ctx, rest)
+        return
       case 'start':
+        netStart(ctx, rest)
+        return
       case 'stop':
+        netStop(ctx, rest)
+        return
       case 'time':
         ctx.write(`La sous-commande NET ${sub.toUpperCase()} n’est pas simulée.`, 'error')
         return
