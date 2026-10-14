@@ -1,16 +1,84 @@
 /**
  * Analyse syntaxique : instructions, pipelines, commandes et arguments.
+ *
+ * Deux modes, comme PowerShell (about_Parsing) : une instruction qui commence par un nombre,
+ * une chaîne, une variable ou une parenthèse est lue en **mode expression** (opérateurs
+ * arithmétiques, de comparaison, logiques…) ; sinon c'est une commande en **mode argument**.
  */
-import { PsSyntaxError, tokenize, type Token } from './lexer'
+import { PsSyntaxError, splitExprWord, tokenize, type Token } from './lexer'
+
+/** Opérateurs de comparaison (about_Comparison_Operators) ; le préfixe « i » est accepté. */
+export const COMPARISON_OPS = new Set([
+  'eq',
+  'ne',
+  'gt',
+  'ge',
+  'lt',
+  'le',
+  'like',
+  'notlike',
+  'match',
+  'notmatch',
+  'contains',
+  'notcontains',
+  'in',
+  'notin'
+])
+
+/** Opérateurs réels de PowerShell que le simulateur n'évalue pas (message honnête). */
+const UNSIMULATED_OPS = new Set([
+  'band',
+  'bor',
+  'bxor',
+  'bnot',
+  'shl',
+  'shr',
+  'replace',
+  'split',
+  'join',
+  'is',
+  'isnot',
+  'as'
+])
+
+/** Opérateurs unaires écrits « -nom ». */
+const UNARY_PARAMS = new Set(['not', 'bnot', 'split', 'join'])
+
+/** Nom d'opérateur d'un jeton « -nom » (« -ieq » → « eq ») ; `null` si ce n'en est pas un. */
+function operatorName(t: Token): string | null {
+  if (t.type !== 'param') return null
+  const name = t.value.toLowerCase()
+  if (name.startsWith('i') && COMPARISON_OPS.has(name.slice(1))) return name.slice(1)
+  return name
+}
 
 export type Expr =
   | { kind: 'number'; value: number; start: number; end: number }
   | { kind: 'string'; value: string; expandable: boolean; bare: boolean; start: number; end: number }
   | { kind: 'variable'; name: string; members: string[]; start: number; end: number }
   | { kind: 'array'; items: Expr[]; start: number; end: number }
-  | { kind: 'sub'; statements: Statement[]; members: string[]; start: number; end: number }
-  | { kind: 'script'; source: string; start: number; end: number }
+  | {
+      kind: 'sub'
+      statements: Statement[]
+      members: string[]
+      /** @( … ) : le résultat est toujours un tableau. */
+      array?: boolean
+      /** ( … ) : une expression seule y est évaluée comme expression (« ($i++) » renvoie une valeur). */
+      paren?: boolean
+      start: number
+      end: number
+    }
+  /** Bloc de script : source brute et position de son début dans la ligne. */
+  | { kind: 'script'; source: string; offset?: number; start: number; end: number }
   | { kind: 'hash'; entries: { key: string; value: Expr }[]; start: number; end: number }
+  | { kind: 'binary'; op: string; left: Expr; right: Expr; start: number; end: number }
+  | { kind: 'unary'; op: '-' | '+' | 'not'; operand: Expr; start: number; end: number }
+  | { kind: 'index'; target: Expr; index: Expr; start: number; end: number }
+  | { kind: 'member'; target: Expr; name: string; start: number; end: number }
+  /** ++ / -- sur une variable (about_Assignment_Operators). */
+  | { kind: 'incr'; name: string; delta: 1 | -1; prefix: boolean; start: number; end: number }
+  /** Construction réelle non simulée : son évaluation affiche un message honnête. */
+  | { kind: 'unsupported'; what: string; start: number; end: number }
 
 export type Arg =
   | { kind: 'param'; name: string; inline: Expr | null; text: string; start: number; end: number }
@@ -30,8 +98,50 @@ export interface Statement {
   pipeline: Pipeline
   /** Affectation `$nom = …`. */
   assign: string | null
+  /** Opérateur d'affectation composé (+= -= *= /= %=, about_Assignment_Operators). */
+  assignOp?: string
+  /** Instruction de contrôle (foreach, for, while, if, switch, break, continue). */
+  control?: Control
   start: number
   end: number
+}
+
+/** Clause d'un switch : valeur à comparer (`null` pour default) et bloc d'action. */
+export interface SwitchClause {
+  match: Expr | null
+  body: Statement[]
+}
+
+/** Instructions du langage (about_Foreach, about_For, about_While, about_If, about_Switch). */
+export type Control =
+  | { kind: 'foreach'; variable: string; collection: Statement; body: Statement[] }
+  | {
+      kind: 'for'
+      init: Statement | null
+      condition: Statement | null
+      repeat: Statement | null
+      body: Statement[]
+    }
+  | { kind: 'while'; condition: Statement; body: Statement[] }
+  | { kind: 'if'; clauses: { condition: Statement; body: Statement[] }[]; otherwise: Statement[] | null }
+  | {
+      kind: 'switch'
+      mode: 'exact' | 'wildcard' | 'regex'
+      caseSensitive: boolean
+      subject: Statement
+      clauses: SwitchClause[]
+    }
+  | { kind: 'break' }
+  | { kind: 'continue' }
+
+/** Mots clés qui commencent une instruction de contrôle. */
+const KEYWORDS = new Set(['foreach', 'for', 'while', 'if', 'switch', 'break', 'continue'])
+
+const ASSIGN_OPS = new Set(['=', '+=', '-=', '*=', '/=', '%='])
+
+/** Jetons qui terminent une expression. */
+function isTerminator(t: Token): boolean {
+  return t.type === 'eof' || t.type === 'semi' || t.type === 'pipe' || t.type === 'rparen'
 }
 
 class Parser {
@@ -39,13 +149,27 @@ class Parser {
   constructor(private readonly tokens: Token[]) {}
 
   private peek(offset = 0): Token {
-    return this.tokens[Math.min(this.pos + offset, this.tokens.length - 1)] as Token
+    return this.tokens[Math.max(0, Math.min(this.pos + offset, this.tokens.length - 1))] as Token
   }
 
   private next(): Token {
     const t = this.peek()
     this.pos++
     return t
+  }
+
+  /** Jeton courant en mode expression : un mot est redécoupé en opérateurs et opérandes. */
+  private epeek(offset = 0): Token {
+    for (let k = 0; k <= offset; k++) {
+      const index = this.pos + k
+      const t = this.tokens[index]
+      if (t && t.type === 'word' && !t.split) this.tokens.splice(index, 1, ...splitExprWord(t))
+    }
+    return this.peek(offset)
+  }
+
+  private isOp(t: Token, text: string): boolean {
+    return t.type === 'op' && t.text === text
   }
 
   parseStatements(stop: 'eof' | 'rparen'): Statement[] {
@@ -67,25 +191,243 @@ class Parser {
     return statements
   }
 
+  /** Ignore les retours à la ligne (là où PowerShell les autorise : avant « { », « else »…). */
+  private skipNewlines(): void {
+    while (this.peek().type === 'semi' && this.peek().text === '\n') this.next()
+  }
+
+  private keywordError(message: string, at: Token, errorId: string): PsSyntaxError {
+    return new PsSyntaxError(message, at.start, errorId)
+  }
+
+  /** « ( instruction ) » après un mot clé. */
+  private parseCondition(keyword: Token): Statement {
+    this.skipNewlines()
+    const open = this.next()
+    if (open.type !== 'lparen')
+      throw this.keywordError(
+        `Parenthèse ouvrante « ( » manquante après le mot clé « ${keyword.value.toLowerCase()} ».`,
+        open,
+        'MissingOpenParenthesisAfterKeyword'
+      )
+    this.skipNewlines()
+    const st = this.parseStatement()
+    this.skipNewlines()
+    this.expectClose()
+    return st
+  }
+
+  private expectClose(): Token {
+    const close = this.peek()
+    if (close.type !== 'rparen')
+      throw new PsSyntaxError(
+        'Parenthèse fermante « ) » manquante dans l’expression.',
+        close.start,
+        'MissingEndParenthesisInExpression'
+      )
+    return this.next()
+  }
+
+  /** Bloc « { … } » d'une instruction : ses instructions sont analysées avec leur position réelle. */
+  private parseBlock(keyword: Token, errorId: string): { statements: Statement[]; end: number } {
+    this.skipNewlines()
+    const t = this.peek()
+    if (t.type !== 'script')
+      throw this.keywordError(
+        `Accolade ouvrante « { » manquante dans l’instruction « ${keyword.value.toLowerCase()} ».`,
+        t,
+        errorId
+      )
+    this.next()
+    return { statements: parse(t.value, t.valueStart ?? t.start + 1), end: t.end }
+  }
+
+  private parseControl(first: Token): Statement {
+    const keyword = first.value.toLowerCase()
+    this.next()
+    const make = (control: Control, end: number): Statement => ({
+      pipeline: { elements: [], start: first.start, end },
+      assign: null,
+      control,
+      start: first.start,
+      end
+    })
+    switch (keyword) {
+      case 'break':
+      case 'continue':
+        return make({ kind: keyword }, first.end)
+      case 'foreach': {
+        this.skipNewlines()
+        const open = this.next()
+        if (open.type !== 'lparen')
+          throw this.keywordError(
+            'Parenthèse ouvrante « ( » manquante après le mot clé « foreach ».',
+            open,
+            'MissingOpenParenthesisAfterKeyword'
+          )
+        const v = this.next()
+        if (v.type !== 'variable')
+          throw this.keywordError(
+            'Nom de variable manquant après « foreach ( ».',
+            v,
+            'MissingVariableNameAfterForeach'
+          )
+        const kw = this.next()
+        if (kw.type !== 'word' || kw.value.toLowerCase() !== 'in')
+          throw this.keywordError(
+            'Mot clé « in » manquant dans l’instruction foreach.',
+            kw,
+            'MissingInInForeach'
+          )
+        const collection = this.parseStatement()
+        this.expectClose()
+        const body = this.parseBlock(first, 'MissingForeachStatement')
+        return make({ kind: 'foreach', variable: v.value, collection, body: body.statements }, body.end)
+      }
+      case 'for': {
+        this.skipNewlines()
+        const open = this.next()
+        if (open.type !== 'lparen')
+          throw this.keywordError(
+            'Parenthèse ouvrante « ( » manquante après le mot clé « for ».',
+            open,
+            'MissingOpenParenthesisAfterKeyword'
+          )
+        // for (<Init>; <Condition>; <Repeat>) : chaque partie est facultative (about_For)
+        const part = (last: boolean): Statement | null => {
+          const t = this.peek()
+          const st = (last ? t.type === 'rparen' : t.type === 'semi') ? null : this.parseStatement()
+          if (!last) {
+            const sep = this.next()
+            if (sep.type !== 'semi')
+              throw this.keywordError(
+                'Point-virgule « ; » manquant dans l’instruction for.',
+                sep,
+                'MissingSemicolonInForLoop'
+              )
+          }
+          return st
+        }
+        const init = part(false)
+        const condition = part(false)
+        this.skipNewlines()
+        const repeat = part(true)
+        this.expectClose()
+        const body = this.parseBlock(first, 'MissingLoopStatement')
+        return make({ kind: 'for', init, condition, repeat, body: body.statements }, body.end)
+      }
+      case 'while': {
+        const condition = this.parseCondition(first)
+        const body = this.parseBlock(first, 'MissingLoopStatement')
+        return make({ kind: 'while', condition, body: body.statements }, body.end)
+      }
+      case 'if': {
+        const clauses: { condition: Statement; body: Statement[] }[] = []
+        const condition = this.parseCondition(first)
+        let block = this.parseBlock(first, 'MissingStatementBlock')
+        clauses.push({ condition, body: block.statements })
+        let otherwise: Statement[] | null = null
+        let end = block.end
+        for (;;) {
+          const save = this.pos
+          this.skipNewlines()
+          const t = this.peek()
+          const word = t.type === 'word' ? t.value.toLowerCase() : ''
+          if (word === 'elseif') {
+            this.next()
+            const c = this.parseCondition(t)
+            block = this.parseBlock(t, 'MissingStatementBlock')
+            clauses.push({ condition: c, body: block.statements })
+            end = block.end
+            continue
+          }
+          if (word === 'else') {
+            this.next()
+            block = this.parseBlock(t, 'MissingStatementBlockAfterElse')
+            otherwise = block.statements
+            end = block.end
+            break
+          }
+          this.pos = save
+          break
+        }
+        return make({ kind: 'if', clauses, otherwise }, end)
+      }
+      default: {
+        // switch [-Regex | -Wildcard | -Exact] [-CaseSensitive] (<test-expression>) { … }
+        let mode: 'exact' | 'wildcard' | 'regex' = 'exact'
+        let caseSensitive = false
+        while (this.peek().type === 'param') {
+          const p = this.next()
+          const name = p.value.toLowerCase()
+          if (name === 'regex' || name === 'wildcard' || name === 'exact') mode = name
+          else if (name === 'casesensitive') caseSensitive = true
+          else if (name === 'file')
+            throw this.keywordError(
+              'Le paramètre -File de switch n’est pas simulé dans ServerLab.',
+              p,
+              'SwitchFileNotSimulated'
+            )
+          else throw this.keywordError(`Paramètre « ${p.text} » de switch inconnu.`, p, 'InvalidSwitchFlag')
+        }
+        const subject = this.parseCondition(first)
+        this.skipNewlines()
+        const t = this.peek()
+        if (t.type !== 'script')
+          throw this.keywordError(
+            'Accolade ouvrante « { » manquante dans l’instruction « switch ».',
+            t,
+            'MissingCurlyBraceInSwitchStatement'
+          )
+        this.next()
+        const clauses = parseSwitchClauses(t.value, t.valueStart ?? t.start + 1)
+        return make({ kind: 'switch', mode, caseSensitive, subject, clauses }, t.end)
+      }
+    }
+  }
+
   private parseStatement(): Statement {
     const first = this.peek()
+    if (first.type === 'word' && KEYWORDS.has(first.value.toLowerCase())) {
+      const kw = first.value.toLowerCase()
+      // « foreach » sans parenthèse est l'alias de ForEach-Object
+      const next = this.peek(1)
+      if (kw !== 'foreach' || next.type === 'lparen') return this.parseControl(first)
+    }
     let assign: string | null = null
-    if (first.type === 'variable' && this.peek(1).type === 'assign' && (first.members ?? []).length === 0) {
-      assign = first.value
-      this.next()
-      this.next()
-      const t = this.peek()
-      if (t.type === 'eof' || t.type === 'semi')
-        throw new PsSyntaxError('Expression manquante après « = ».', t.start, 'ExpectedValueExpression')
+    let assignOp = '='
+    if (first.type === 'variable' && (first.members ?? []).length === 0) {
+      const op = this.peek(1).type === 'assign' ? this.peek(1) : this.epeek(1)
+      const opText = op.type === 'assign' ? '=' : op.type === 'op' ? op.text : ''
+      if (ASSIGN_OPS.has(opText)) {
+        assign = first.value
+        assignOp = opText
+        this.next()
+        this.next()
+        const t = this.peek()
+        if (t.type === 'eof' || t.type === 'semi')
+          throw new PsSyntaxError(
+            `Expression manquante après « ${opText} ».`,
+            t.start,
+            'ExpectedValueExpression'
+          )
+      }
     }
     const pipeline = this.parsePipeline()
-    return { pipeline, assign, start: first.start, end: pipeline.end }
+    return {
+      pipeline,
+      assign,
+      ...(assign && assignOp !== '=' ? { assignOp } : {}),
+      start: first.start,
+      end: pipeline.end
+    }
   }
 
   private parsePipeline(): Pipeline {
     const elements: Element[] = [this.parseElement()]
     while (this.peek().type === 'pipe') {
       const pipe = this.next()
+      this.skipNewlines()
       const t = this.peek()
       if (t.type === 'eof' || t.type === 'semi' || t.type === 'rparen')
         throw new PsSyntaxError(
@@ -100,15 +442,33 @@ class Parser {
     return { elements, start: first.start, end: last.end }
   }
 
+  /** Vrai si l'instruction commence en mode expression (« 2+3 », « 1..5 », « !$x », « -not »). */
+  private startsExpression(t: Token): boolean {
+    if (t.type === 'param') return UNARY_PARAMS.has(operatorName(t) ?? '')
+    if (t.type !== 'word') return true
+    return /^[0-9!+[]/.test(t.text) || /^-[^A-Za-z]/.test(t.text) || t.text === '-'
+  }
+
   private parseElement(): Element {
     const t = this.peek()
+    if (this.startsExpression(t)) {
+      const expr = this.parseExpression()
+      const after = this.epeek()
+      if (!isTerminator(after))
+        throw new PsSyntaxError(
+          `Jeton inattendu « ${after.text} » dans l’expression ou l’instruction.`,
+          after.start,
+          'UnexpectedToken'
+        )
+      return { kind: 'expr', expr, start: expr.start, end: expr.end }
+    }
     if (t.type === 'word') {
       this.next()
       const args: Arg[] = []
       let end = t.end
       while (true) {
         const a = this.peek()
-        if (a.type === 'eof' || a.type === 'pipe' || a.type === 'semi' || a.type === 'rparen') break
+        if (isTerminator(a)) break
         if (a.type === 'param') {
           this.next()
           let inline: Expr | null = null
@@ -146,16 +506,278 @@ class Parser {
       }
       return { kind: 'command', name: t.value, args, start: t.start, end }
     }
-    if (t.type === 'param') {
+    throw new PsSyntaxError(
+      `Jeton inattendu « ${t.text} » dans l’expression ou l’instruction.`,
+      t.start,
+      'UnexpectedToken'
+    )
+  }
+
+  // -------------------------------------------------------------------------
+  // Mode expression, du moins au plus prioritaire (about_Operator_Precedence) :
+  // -and -or -xor · comparaisons · + - · * / % · - unaire · -f · .. · ! -not · , · [ ] . ++ --
+  // Opérateurs de même priorité : évalués de gauche à droite.
+  // -------------------------------------------------------------------------
+
+  parseExpression(): Expr {
+    let left = this.parseComparison()
+    for (;;) {
+      const t = this.epeek()
+      const name = operatorName(t)
+      if (name !== 'and' && name !== 'or' && name !== 'xor') return left
+      this.next()
+      const right = this.operand(t, () => this.parseComparison())
+      left = { kind: 'binary', op: name, left, right, start: left.start, end: right.end }
+    }
+  }
+
+  /** Opérande obligatoire après un opérateur. */
+  private operand(op: Token, parse: () => Expr): Expr {
+    // Un retour à la ligne après un opérateur continue l'expression
+    this.skipNewlines()
+    const t = this.epeek()
+    if (
+      isTerminator(t) ||
+      t.type === 'comma' ||
+      (t.type === 'param' && !UNARY_PARAMS.has(operatorName(t) ?? ''))
+    )
+      throw new PsSyntaxError(
+        `Expression manquante après l’opérateur « ${op.text} ».`,
+        t.start,
+        'ExpectedValueExpression'
+      )
+    return parse()
+  }
+
+  private parseComparison(): Expr {
+    let left = this.parseAdditive()
+    for (;;) {
+      const t = this.epeek()
+      const name = operatorName(t)
+      if (name === null) return left
+      if (UNSIMULATED_OPS.has(name)) {
+        this.next()
+        const right = this.operand(t, () => this.parseAdditive())
+        left = { kind: 'unsupported', what: `L’opérateur « ${t.text} »`, start: left.start, end: right.end }
+        continue
+      }
+      if (!COMPARISON_OPS.has(name)) return left
+      this.next()
+      const right = this.operand(t, () => this.parseAdditive())
+      left = { kind: 'binary', op: name, left, right, start: left.start, end: right.end }
+    }
+  }
+
+  private parseAdditive(): Expr {
+    let left = this.parseMultiplicative()
+    for (;;) {
+      const t = this.epeek()
+      if (this.isOp(t, '+') || this.isOp(t, '-')) {
+        this.next()
+        const right = this.operand(t, () => this.parseMultiplicative())
+        left = { kind: 'binary', op: t.text, left, right, start: left.start, end: right.end }
+        continue
+      }
+      // « 5 -3 » : le lexeur a lu un nombre négatif ; après un opérande, c'est une soustraction
+      if (t.type === 'number' && t.text.startsWith('-')) {
+        this.next()
+        const value: Expr = { kind: 'number', value: -Number(t.value), start: t.start + 1, end: t.end }
+        const right = this.parseMultiplicativeFrom(value)
+        left = { kind: 'binary', op: '-', left, right, start: left.start, end: right.end }
+        continue
+      }
+      return left
+    }
+  }
+
+  private parseMultiplicative(): Expr {
+    return this.parseMultiplicativeFrom(this.parseUnary())
+  }
+
+  private parseMultiplicativeFrom(first: Expr): Expr {
+    let left = first
+    for (;;) {
+      const t = this.epeek()
+      if (!this.isOp(t, '*') && !this.isOp(t, '/') && !this.isOp(t, '%')) return left
+      this.next()
+      const right = this.operand(t, () => this.parseUnary())
+      left = { kind: 'binary', op: t.text, left, right, start: left.start, end: right.end }
+    }
+  }
+
+  private parseUnary(): Expr {
+    const t = this.epeek()
+    if (this.isOp(t, '-') || this.isOp(t, '+')) {
+      this.next()
+      const operand = this.operand(t, () => this.parseUnary())
+      return { kind: 'unary', op: t.text as '-' | '+', operand, start: t.start, end: operand.end }
+    }
+    return this.parseFormat()
+  }
+
+  private parseFormat(): Expr {
+    let left = this.parseRange()
+    for (;;) {
+      const t = this.epeek()
+      if (operatorName(t) !== 'f') return left
+      this.next()
+      const right = this.operand(t, () => this.parseRange())
+      left = { kind: 'binary', op: 'f', left, right, start: left.start, end: right.end }
+    }
+  }
+
+  private parseRange(): Expr {
+    const left = this.parseNot()
+    const t = this.epeek()
+    if (!this.isOp(t, '..')) return left
+    this.next()
+    const right = this.operand(t, () => this.parseNot())
+    return { kind: 'binary', op: '..', left, right, start: left.start, end: right.end }
+  }
+
+  private parseNot(): Expr {
+    const t = this.epeek()
+    const name = operatorName(t)
+    if (this.isOp(t, '!') || name === 'not') {
+      this.next()
+      const operand = this.operand(t, () => this.parseNot())
+      return { kind: 'unary', op: 'not', operand, start: t.start, end: operand.end }
+    }
+    if (name !== null && UNARY_PARAMS.has(name)) {
+      this.next()
+      const operand = this.operand(t, () => this.parseNot())
+      return { kind: 'unsupported', what: `L’opérateur « ${t.text} »`, start: t.start, end: operand.end }
+    }
+    return this.parseComma()
+  }
+
+  /** Opérateur virgule : construit un tableau (plus prioritaire que l'arithmétique). */
+  private parseComma(): Expr {
+    const first = this.parsePostfix()
+    if (this.epeek().type !== 'comma') return first
+    const items = [first]
+    while (this.epeek().type === 'comma') {
+      const comma = this.next()
+      items.push(this.operand(comma, () => this.parsePostfix()))
+    }
+    const last = items[items.length - 1] as Expr
+    return { kind: 'array', items, start: first.start, end: last.end }
+  }
+
+  /** Opérande suivi d'accès collés : [index], .Membre, ++ / --. */
+  private parsePostfix(): Expr {
+    let expr = this.parseExprPrimary()
+    for (;;) {
+      const t = this.epeek()
+      if (t.start !== expr.end) return expr
+      if (this.isOp(t, '[')) {
+        this.next()
+        const index = this.parseExpression()
+        const close = this.epeek()
+        if (!this.isOp(close, ']'))
+          throw new PsSyntaxError(
+            'Crochet fermant « ] » manquant dans l’expression d’index.',
+            close.start,
+            'MissingEndSquareBracket'
+          )
+        this.next()
+        expr = { kind: 'index', target: expr, index, start: expr.start, end: close.end }
+        continue
+      }
+      if (this.isOp(t, '.') && this.epeek(1).type === 'word') {
+        this.next()
+        const name = this.next()
+        expr = { kind: 'member', target: expr, name: name.text, start: expr.start, end: name.end }
+        continue
+      }
+      if (
+        t.type === 'lparen' &&
+        (expr.kind === 'member' || (expr.kind === 'variable' && expr.members.length > 0))
+      ) {
+        // Appel de méthode .NET ($s.ToUpper()) : non simulé
+        const name = expr.kind === 'member' ? expr.name : (expr.members[expr.members.length - 1] as string)
+        const call = this.parseExprPrimary()
+        expr = {
+          kind: 'unsupported',
+          what: `L’appel de méthode « ${name}() »`,
+          start: expr.start,
+          end: call.end
+        }
+        continue
+      }
+      if (
+        (this.isOp(t, '++') || this.isOp(t, '--')) &&
+        expr.kind === 'variable' &&
+        expr.members.length === 0
+      ) {
+        this.next()
+        const delta = t.text === '++' ? 1 : -1
+        expr = { kind: 'incr', name: expr.name, delta, prefix: false, start: expr.start, end: t.end }
+        continue
+      }
+      return expr
+    }
+  }
+
+  private parseExprPrimary(): Expr {
+    const t = this.epeek()
+    if (this.isOp(t, '++') || this.isOp(t, '--')) {
+      this.next()
+      const v = this.epeek()
+      if (v.type !== 'variable')
+        throw new PsSyntaxError(
+          `Expression manquante après l’opérateur « ${t.text} ».`,
+          v.start,
+          'ExpectedValueExpression'
+        )
+      this.next()
+      const delta = t.text === '++' ? 1 : -1
+      return { kind: 'incr', name: v.value, delta, prefix: true, start: t.start, end: v.end }
+    }
+    if (this.isOp(t, '[')) {
+      // Littéral de type ([int], [datetime]…) : conversions non simulées
+      this.next()
+      let end = t.end
+      while (this.epeek().type !== 'eof' && !this.isOp(this.peek(), ']')) end = this.next().end
+      if (this.isOp(this.peek(), ']')) end = this.next().end
+      // Opérande converti collé au type ([int]"5")
+      if (this.epeek().start === end && !isTerminator(this.peek())) end = this.parsePostfix().end
+      return { kind: 'unsupported', what: 'La conversion de type « [type] »', start: t.start, end }
+    }
+    if (t.type === 'lparen' || t.type === 'atparen' || t.type === 'dollarparen') {
+      this.next()
+      const statements = this.parseStatements('rparen')
+      const close = this.peek()
+      if (close.type !== 'rparen')
+        throw new PsSyntaxError(
+          'Parenthèse fermante « ) » manquante dans l’expression.',
+          close.start,
+          'MissingEndParenthesisInExpression'
+        )
+      this.next()
+      if (t.type === 'atparen' && statements.length === 0)
+        return { kind: 'array', items: [], start: t.start, end: close.end }
+      return {
+        kind: 'sub',
+        statements,
+        members: [],
+        ...(t.type === 'atparen' ? { array: true } : t.type === 'lparen' ? { paren: true } : {}),
+        start: t.start,
+        end: close.end
+      }
+    }
+    if (t.type === 'word' || t.type === 'op' || t.type === 'param' || t.type === 'assign')
       throw new PsSyntaxError(
         `Jeton inattendu « ${t.text} » dans l’expression ou l’instruction.`,
         t.start,
         'UnexpectedToken'
       )
-    }
-    const expr = this.parseValue()
-    return { kind: 'expr', expr, start: expr.start, end: expr.end }
+    return this.parsePrimary()
   }
+
+  // -------------------------------------------------------------------------
+  // Mode argument
+  // -------------------------------------------------------------------------
 
   /** Valeur éventuellement suivie de virgules (tableau). */
   private parseValue(): Expr {
@@ -165,7 +787,7 @@ class Parser {
     while (this.peek().type === 'comma') {
       const comma = this.next()
       const t = this.peek()
-      if (t.type === 'eof' || t.type === 'pipe' || t.type === 'semi' || t.type === 'rparen')
+      if (isTerminator(t))
         throw new PsSyntaxError(
           'Expression manquante après « , » dans la liste de paramètres.',
           comma.start,
@@ -192,14 +814,22 @@ class Parser {
           end: t.end
         }
       case 'word':
+      case 'op':
         return { kind: 'string', value: t.value, expandable: false, bare: true, start: t.start, end: t.end }
       case 'variable':
         return { kind: 'variable', name: t.value, members: t.members ?? [], start: t.start, end: t.end }
       case 'script':
-        return { kind: 'script', source: t.value, start: t.start, end: t.end }
+        return {
+          kind: 'script',
+          source: t.value,
+          offset: t.valueStart ?? t.start + 1,
+          start: t.start,
+          end: t.end
+        }
       case 'hash':
         return { kind: 'hash', entries: parseHashEntries(t.value, t.start), start: t.start, end: t.end }
       case 'lparen':
+      case 'dollarparen':
       case 'atparen': {
         const statements = this.parseStatements('rparen')
         const close = this.peek()
@@ -220,7 +850,14 @@ class Parser {
         }
         if (t.type === 'atparen' && statements.length === 0)
           return { kind: 'array', items: [], start: t.start, end }
-        return { kind: 'sub', statements, members, start: t.start, end }
+        return {
+          kind: 'sub',
+          statements,
+          members,
+          ...(t.type === 'atparen' ? { array: true } : t.type === 'lparen' ? { paren: true } : {}),
+          start: t.start,
+          end
+        }
       }
       default:
         throw new PsSyntaxError(
@@ -281,7 +918,82 @@ function parseHashEntries(source: string, offset: number): { key: string; value:
     })
 }
 
-export function parse(source: string): Statement[] {
-  const parser = new Parser(tokenize(source))
+/** Jetons d'une source qui commence à la position `offset` de la ligne. */
+function tokensAt(source: string, offset: number): Token[] {
+  const tokens = tokenize(source)
+  if (offset === 0) return tokens
+  return tokens.map((t) => ({
+    ...t,
+    start: t.start + offset,
+    end: t.end + offset,
+    ...(t.valueStart !== undefined ? { valueStart: t.valueStart + offset } : {})
+  }))
+}
+
+/** Clauses « valeur { action } » du corps d'un switch (about_Switch). */
+function parseSwitchClauses(source: string, offset: number): SwitchClause[] {
+  const tokens = tokensAt(source, offset)
+  const clauses: SwitchClause[] = []
+  let i = 0
+  const at = () => tokens[Math.min(i, tokens.length - 1)] as Token
+  for (;;) {
+    while (at().type === 'semi') i++
+    const t = at()
+    if (t.type === 'eof') break
+    let match: Expr | null
+    if (t.type === 'word' && t.value.toLowerCase() === 'default') match = null
+    else if (t.type === 'script')
+      match = {
+        kind: 'script',
+        source: t.value,
+        offset: t.valueStart ?? t.start + 1,
+        start: t.start,
+        end: t.end
+      }
+    else if (t.type === 'number')
+      match = { kind: 'number', value: Number(t.value), start: t.start, end: t.end }
+    else if (t.type === 'string')
+      match = {
+        kind: 'string',
+        value: t.value,
+        expandable: !!t.expandable,
+        bare: false,
+        start: t.start,
+        end: t.end
+      }
+    else if (t.type === 'variable')
+      match = { kind: 'variable', name: t.value, members: t.members ?? [], start: t.start, end: t.end }
+    else if (t.type === 'word')
+      match = { kind: 'string', value: t.value, expandable: false, bare: true, start: t.start, end: t.end }
+    else
+      throw new PsSyntaxError(
+        `Jeton inattendu « ${t.text} » dans l’instruction switch.`,
+        t.start,
+        'UnexpectedToken'
+      )
+    i++
+    while (at().type === 'semi' && at().text === '\n') i++
+    const body = at()
+    if (body.type !== 'script')
+      throw new PsSyntaxError(
+        'Bloc d’action « { } » manquant après la condition du switch.',
+        body.start,
+        'MissingSwitchStatementClause'
+      )
+    i++
+    clauses.push({ match, body: parse(body.value, body.valueStart ?? body.start + 1) })
+  }
+  if (clauses.length === 0)
+    throw new PsSyntaxError(
+      'L’instruction switch doit comporter au moins une condition.',
+      offset,
+      'MissingSwitchConditionExpression'
+    )
+  return clauses
+}
+
+/** Analyse une ligne (ou un bloc de script commençant à la position `offset`). */
+export function parse(source: string, offset = 0): Statement[] {
+  const parser = new Parser(tokensAt(source, offset))
   return parser.parseStatements('eof')
 }

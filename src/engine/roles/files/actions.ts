@@ -20,6 +20,7 @@ import type {
 } from '../../model/schema'
 import { MAX_FILE_CONTENT, WELL_KNOWN_SIDS } from '../../model/schema'
 import { requireDevice } from '../../topology/actions'
+import { encodedSize, type FileEncoding } from './encoding'
 import { accessPerms, effectiveAcl, resolvePrincipal, type AccessToken, type Perm } from './acl'
 import { findNode, isWithin, normalizeItemName, splitLocalPath, validItemName } from './paths'
 
@@ -106,6 +107,8 @@ export interface CreateOptions {
   /** Opération au travers de ce partage (accès réseau). */
   share?: string
   size?: number
+  /** Contenu texte initial d'un fichier (New-Item -Value). */
+  content?: string
 }
 
 /** Crée un dossier ou un fichier ; renvoie son identifiant. */
@@ -145,7 +148,11 @@ export function createItem(
       raise('ItemExists', `Un élément nommé « ${name} » existe déjà.`)
     demand(storage as Storage, parentId, token, 'write', share)
     const id = `fs${nextSeq(draft)}`
-    storage.nodes.push({ ...newNode(id, name, parentId, kind, token, draft.clock), size: options.size ?? 0 })
+    storage.nodes.push({
+      ...newNode(id, name, parentId, kind, token, draft.clock),
+      size: options.size ?? 0,
+      ...(kind === 'file' && options.content !== undefined ? { content: options.content } : {})
+    })
     return id
   })
 }
@@ -243,59 +250,7 @@ export function removeItem(
   })
 }
 
-/**
- * Encodages des cmdlets de contenu de Windows PowerShell 5.1 (paramètre -Encoding de Set-Content,
- * Add-Content, Out-File, Export-Csv) :
- * https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/set-content?view=powershell-5.1
- */
-export const FILE_ENCODINGS = [
-  'ASCII',
-  'BigEndianUnicode',
-  'BigEndianUTF32',
-  'Default',
-  'OEM',
-  'String',
-  'Unicode',
-  'Unknown',
-  'UTF7',
-  'UTF8',
-  'UTF32'
-] as const
-export type FileEncoding = (typeof FILE_ENCODINGS)[number]
-
-/** Octets d'un texte en UTF-8. */
-function utf8Bytes(text: string): number {
-  let n = 0
-  for (const ch of text) {
-    const c = ch.codePointAt(0) ?? 0
-    n += c < 0x80 ? 1 : c < 0x800 ? 2 : c < 0x10000 ? 3 : 4
-  }
-  return n
-}
-
-/**
- * Taille en octets d'un texte encodé : UTF-16 (Unicode, BigEndianUnicode), UTF-32 et UTF-8 de
- * Windows PowerShell 5.1 précédés de leur marque d'ordre des octets (BOM) ; ASCII, Default (ANSI),
- * OEM : un octet par caractère. `bom` = faux pour un ajout à un fichier existant.
- */
-export function encodedSize(text: string, encoding: FileEncoding, bom = true): number {
-  switch (encoding) {
-    case 'Unicode':
-    case 'BigEndianUnicode':
-    case 'String':
-    case 'Unknown':
-      return (bom ? 2 : 0) + text.length * 2
-    case 'UTF32':
-    case 'BigEndianUTF32':
-      return (bom ? 4 : 0) + [...text].length * 4
-    case 'UTF8':
-      return (bom ? 3 : 0) + utf8Bytes(text)
-    case 'UTF7':
-      return utf8Bytes(text)
-    default:
-      return [...text].length
-  }
-}
+export { encodedSize, FILE_ENCODINGS, type FileEncoding } from './encoding'
 
 export interface WriteContentOptions {
   /** Ajoute à la fin du contenu existant (Add-Content, Out-File -Append). */
@@ -354,6 +309,114 @@ export function writeFileContent(
     target.size = append ? target.size + encodedSize(text, encoding, false) : encodedSize(text, encoding)
     target.modifiedAt = draft.clock
     return target.id
+  })
+}
+
+/**
+ * Renomme un élément dans son dossier (Rename-Item) : droit de suppression sur l'élément et
+ * d'écriture sur le dossier parent. Un élément du système n'est pas renommable.
+ */
+export function renameItem(
+  state: LabState,
+  serverId: string,
+  path: string,
+  newName: string,
+  token: AccessToken,
+  options: { share?: string } = {}
+): EngineResult {
+  return transact(state, (draft) => {
+    const server = requireServer(draft, serverId)
+    const storage = server.storage
+    const share = shareOf(server as ServerDevice, options.share)
+    const node = requireNode(storage as Storage, path)
+    if (!node || node.system) raise('AccessDenied', ACCESS_DENIED)
+    const name = normalizeItemName(newName)
+    if (!validItemName(name) || /[\\/]/.test(newName)) raise('InvalidName', BAD_PATH)
+    if (
+      storage.nodes.some(
+        (n) => n.id !== node.id && n.parentId === node.parentId && n.name.toLowerCase() === name.toLowerCase()
+      )
+    )
+      raise('ItemExists', `Un élément nommé « ${name} » existe déjà.`)
+    demand(storage as Storage, node.id, token, 'delete', share)
+    demand(storage as Storage, node.parentId, token, 'write', share)
+    const target = storage.nodes.find((n) => n.id === node.id) as Draft<FsNode>
+    target.name = name
+    return undefined
+  })
+}
+
+/**
+ * Copie un élément (Copy-Item). Destination = dossier existant (copie sous le même nom) ou nouveau
+ * chemin dans un dossier existant ; un fichier existant est remplacé. Sans `recurse`, un dossier est
+ * copié sans son contenu. Lecture sur la source, écriture sur le dossier de destination.
+ * Les autorisations explicites ne sont pas copiées : la copie hérite de sa destination.
+ */
+export function copyItem(
+  state: LabState,
+  serverId: string,
+  source: string,
+  destination: string,
+  token: AccessToken,
+  options: { recurse?: boolean; share?: string; destinationShare?: string } = {}
+): EngineResult<string> {
+  return transact(state, (draft) => {
+    const server = requireServer(draft, serverId)
+    const storage = server.storage
+    const share = shareOf(server as ServerDevice, options.share)
+    const destShare = shareOf(server as ServerDevice, options.destinationShare)
+    const node = requireNode(storage as Storage, source)
+    if (!node) raise('AccessDenied', ACCESS_DENIED)
+    const parts = splitLocalPath(destination)
+    if (!parts) raise('InvalidPath', BAD_PATH)
+    const dest = findNode(storage as Storage, destination)
+    let parentId: string | null
+    let name: string
+    if (dest === null || dest?.kind === 'folder') {
+      parentId = dest?.id ?? null
+      name = node.name
+    } else {
+      if (parts.length === 0) raise('InvalidPath', BAD_PATH)
+      const parent = findNode(storage as Storage, `C:\\${parts.slice(0, -1).join('\\')}`)
+      if (parent === undefined || parent?.kind === 'file') raise('PathNotFound', PATH_NOT_FOUND)
+      parentId = parent?.id ?? null
+      name = normalizeItemName(parts[parts.length - 1] as string)
+      if (!validItemName(name)) raise('InvalidName', BAD_PATH)
+    }
+    if (isWithin(storage as Storage, parentId, node.id)) raise('InvalidOperation', BAD_PATH)
+    demand(storage as Storage, node.id, token, 'read', share)
+    demand(storage as Storage, parentId, token, 'write', destShare ?? share)
+    const copyInto = (src: FsNode, into: string | null, as: string): string => {
+      const existing = storage.nodes.find(
+        (n) => n.parentId === into && n.name.toLowerCase() === as.toLowerCase()
+      )
+      if (existing && (existing.kind !== src.kind || existing.system))
+        raise('ItemExists', `Un élément nommé « ${as} » existe déjà.`)
+      let id: string
+      if (existing) {
+        id = existing.id
+        if (src.kind === 'file') {
+          existing.size = src.size
+          existing.modifiedAt = draft.clock
+          if (src.content !== undefined) existing.content = src.content
+          else delete existing.content
+        }
+      } else {
+        id = `fs${nextSeq(draft)}`
+        storage.nodes.push({
+          ...newNode(id, as, into, src.kind, token, draft.clock),
+          size: src.size,
+          ...(src.content !== undefined ? { content: src.content } : {})
+        })
+      }
+      if (src.kind === 'folder' && options.recurse)
+        for (const child of storage.nodes.filter((n) => n.parentId === src.id)) {
+          demand(storage as Storage, child.id, token, 'read', share)
+          copyInto(child as FsNode, id, child.name)
+        }
+      return id
+    }
+    return copyInto(node, parentId, name)
   })
 }
 
