@@ -22,6 +22,8 @@ import { l2sec } from './features/l2sec'
 import { logging } from './features/logging'
 import { navigation } from './features/navigation'
 import { routing } from './features/routing'
+import { rip } from './features/rip'
+import { ospfShow } from './features/ospf-show'
 import { security } from './features/security'
 import { services } from './features/services'
 import { etherchannel } from './features/etherchannel'
@@ -42,6 +44,8 @@ export function iosFeatures(): readonly IosFeature[] {
     etherchannel,
     vtp,
     routing,
+    rip,
+    ospfShow,
     services,
     hsrp,
     acl,

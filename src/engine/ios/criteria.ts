@@ -113,7 +113,7 @@ export const IOS_CRITERIA: CriterionType[] = [
       network: z.string(),
       prefixLength: z.number().int().min(0).max(32),
       /** Origine de la route : connectée, statique, par défaut ou OSPF. */
-      source: z.enum(['connected', 'static', 'default', 'ospf']).optional(),
+      source: z.enum(['connected', 'static', 'default', 'ospf', 'rip']).optional(),
       /** Prochain saut attendu. */
       via: z.string().optional()
     }),

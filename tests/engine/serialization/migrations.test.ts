@@ -360,6 +360,31 @@ describe('migration 9 → 10 (cybersécurité défensive de la v2.6)', () => {
   })
 })
 
+describe('migration 21 → 22 (RIP et default-information originate de la v2.7)', () => {
+  const startup = (lab: ReturnType<typeof open>['lab'], line: string) =>
+    evaluateCheck(lab, { type: 'iosStartup', device: 'CR1', line })
+
+  it('change seulement la version ; aucun RIP ni route par défaut annoncée', () => {
+    const doc = JSON.parse(readFixture(21)) as Record<string, unknown>
+    expect(migrations[21]!(doc)).toEqual({ ...doc, schemaVersion: 22 })
+    const lab = open(21).lab
+    expect(startup(lab, 'router rip')).toBe(false)
+    expect(startup(lab, 'default-information originate always')).toBe(false)
+  })
+
+  it('v22.slab : s’ouvre sans migration et garde RIP et la route par défaut OSPF', () => {
+    const lab = open(22).lab
+    for (const line of [
+      'router rip',
+      'version 2',
+      'network 192.168.30.0',
+      'no auto-summary',
+      'default-information originate always'
+    ])
+      expect(startup(lab, line)).toBe(true)
+  })
+})
+
 describe('migration 20 → 21 (administration du système IOS de la v2.7)', () => {
   const startup = (lab: ReturnType<typeof open>['lab'], line: string) =>
     evaluateCheck(lab, { type: 'iosStartup', device: 'CR1', line })

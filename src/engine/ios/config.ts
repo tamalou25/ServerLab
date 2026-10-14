@@ -16,6 +16,7 @@ export function defaultIosState(): IosState {
     domainLookup: true,
     ipRouting: false,
     ospf: [],
+    rip: null,
     dhcpServer: null,
     dhcpExcluded: [],
     acls: [],

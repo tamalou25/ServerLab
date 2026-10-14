@@ -60,7 +60,7 @@ export interface IosSession {
   /** VLAN en cours de configuration, en config-vlan. */
   vlans?: number[]
   /** Processus de routage en cours de configuration, en config-router. */
-  router?: { protocol: 'ospf'; process: number }
+  router?: { protocol: 'ospf' | 'rip'; process: number }
   /** Commandes saisies en mode utilisateur ou privilégié (show history, 10 au plus). */
   history?: string[]
   /** Lignes par écran (terminal length) ; absente : 24. */

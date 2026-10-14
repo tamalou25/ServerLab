@@ -759,7 +759,26 @@ export const OspfProcessSchema = z.object({
   passive: z.array(z.string()).default([]),
   passiveDefault: z.boolean().default(false),
   /** Exceptions à passive-interface default (no passive-interface Gi0/0). */
-  active: z.array(z.string()).default([])
+  active: z.array(z.string()).default([]),
+  /** default-information originate [always] (v22) ; null : aucune route par défaut annoncée. */
+  defaultOriginate: z.enum(['on', 'always']).nullable().default(null)
+})
+
+/** Processus RIP d'un équipement IOS (router rip, v22). */
+export const RipProcessSchema = z.object({
+  /** version 1 | 2 ; null : envoi en version 1, réception des versions 1 et 2. */
+  version: z
+    .union([z.literal(1), z.literal(2)])
+    .nullable()
+    .default(null),
+  /** Réseaux de classe annoncés (network 10.0.0.0). */
+  networks: z.array(z.string()).default([]),
+  /** Résumé automatique aux frontières de classe (auto-summary, actif par défaut). */
+  autoSummary: z.boolean().default(true),
+  /** Interfaces passives (noms courts) : aucune mise à jour émise. */
+  passive: z.array(z.string()).default([]),
+  /** default-information originate : annonce de 0.0.0.0/0. */
+  defaultOriginate: z.boolean().default(false)
 })
 
 /** Configuration IOS globale (running-config, hors interfaces du moteur). */
@@ -774,6 +793,8 @@ export const IosConfigSchema = z.object({
   ipRouting: z.boolean().default(false),
   /** Processus OSPF (router ospf N). */
   ospf: z.array(OspfProcessSchema).default([]),
+  /** Processus RIP (router rip, v22) ; null : non configuré. */
+  rip: RipProcessSchema.nullable().default(null),
   /** Serveur DHCP IOS : pools (ip dhcp pool), une étendue par pool. */
   dhcpServer: DhcpServerSchema.nullable().default(null),
   /** Adresses exclues de tous les pools (ip dhcp excluded-address). */
@@ -1263,6 +1284,7 @@ export type ClientDevice = z.infer<typeof ClientDeviceSchema>
 export type SwitchDevice = z.infer<typeof SwitchDeviceSchema>
 export type IosConfig = z.infer<typeof IosConfigSchema>
 export type OspfProcess = z.infer<typeof OspfProcessSchema>
+export type RipProcess = z.infer<typeof RipProcessSchema>
 export type IosAcl = z.infer<typeof AclSchema>
 export type IosAclEntry = z.infer<typeof AclEntrySchema>
 export type NatRule = z.infer<typeof NatRuleSchema>

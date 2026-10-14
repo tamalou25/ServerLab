@@ -10,7 +10,7 @@ import { runCommand } from '../../../lib/run'
 import { Button, Section, inputClass } from '../../common/ui'
 import { t } from '../../../lib/i18n'
 
-const SOURCE_LABEL = { connected: 'C', static: 'S', default: 'S*', ospf: 'O' } as const
+const SOURCE_LABEL = { connected: 'C', static: 'S', default: 'S*', ospf: 'O', rip: 'R' } as const
 
 export function RoutesPanel({ device }: { device: RouterDevice }) {
   const lab = useLabStore((s) => s.lab)
