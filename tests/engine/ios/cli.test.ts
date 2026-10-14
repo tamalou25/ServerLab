@@ -176,6 +176,7 @@ describe('aide ? et complétion Tab', () => {
     const c = router()
     c.lines('en', 'conf t')
     expect(iosHelp(c.state, c.session, 'interface ')).toEqual([
+      '  range            interface range command',
       '  GigabitEthernet  GigabitEthernet IEEE 802.3z'
     ])
     expect(iosHelp(c.state, c.session, 'router ospf ')).toEqual(['  <1-65535>  Process ID'])

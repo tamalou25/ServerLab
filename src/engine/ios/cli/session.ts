@@ -11,6 +11,7 @@ const MODE_PROMPT: Record<IosMode, string> = {
   exec: '#',
   config: '(config)#',
   'config-if': '(config-if)#',
+  'config-if-range': '(config-if-range)#',
   'config-subif': '(config-subif)#',
   'config-line': '(config-line)#',
   'config-router': '(config-router)#',
