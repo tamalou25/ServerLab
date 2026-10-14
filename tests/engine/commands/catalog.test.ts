@@ -412,6 +412,12 @@ describe('catalogue des commandes', () => {
     const token = r.admin()
     r.run(command('files.createItem', srv, 'C:\\Partages', 'folder', token, {}))
     r.run(command('files.createItem', srv, 'C:\\Partages\\lisezmoi.txt', 'file', token, {}))
+    r.run(command('files.writeContent', srv, 'C:\\Partages\\lisezmoi.txt', 'Bonjour\r\n', token, {}))
+    r.run(
+      command('files.writeContent', srv, 'C:\\Partages\\lisezmoi.txt', 'Suite\r\n', token, { append: true })
+    )
+    r.run(command('files.copyItem', srv, 'C:\\Partages\\lisezmoi.txt', 'C:\\Partages\\copie.txt', token, {}))
+    r.run(command('files.renameItem', srv, 'C:\\Partages\\copie.txt', 'renomme.txt', token, {}))
     r.run(command('files.createShare', srv, { name: 'Partages', path: 'C:\\Partages' }, token))
     r.run(
       command(

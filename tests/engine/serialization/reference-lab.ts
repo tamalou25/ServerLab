@@ -6,6 +6,7 @@
  * Depuis la v9 : routeur Cisco CR1 (1921) et switch Cisco CSW1 (2960) configurés en IOS
  * Depuis la v10 : sécurité L2 de CSW1 (DHCP snooping, inspection ARP, trunk sans DTP)
  * (VLAN 30, trunk, sous-interface, OSPF, DHCP, ACL, HSRP, enregistrement).
+ * Depuis la v17 : fichier C:\Scripts\users.csv de SRV1 avec son contenu texte.
  * Le même scénario a servi à produire chaque fichier vN.slab avec le code de la version N.
  */
 import {
@@ -21,6 +22,7 @@ import {
   authorizeDhcpServer,
   autoConfigureDhcp,
   connect,
+  createItem,
   createLab,
   installFeatures,
   installForest,
@@ -31,6 +33,8 @@ import {
   setInterfaceIpv4,
   setSwitchport,
   unwrap,
+  writeFileContent,
+  WELL_KNOWN_SIDS,
   type DeviceKind,
   type IosModel,
   type LabState
@@ -186,6 +190,12 @@ export function buildReferenceLab(): LabState {
     'end',
     'write memory'
   ])
+  // v17 : fichier texte avec contenu (CSV d'import d'utilisateurs)
+  const admin = { account: 'BUILTIN\\Administrateurs', sids: [WELL_KNOWN_SIDS.administrators], admin: true }
+  s = unwrap(createItem(s, id('SRV1'), 'C:\\Scripts', 'folder', admin)).state
+  s = unwrap(
+    writeFileContent(s, id('SRV1'), 'C:\\Scripts\\users.csv', 'Nom;Prenom\r\nDupont;Jean\r\n', admin)
+  ).state
   return runIosScript(s, id('CR1'), [
     'enable',
     'configure terminal',

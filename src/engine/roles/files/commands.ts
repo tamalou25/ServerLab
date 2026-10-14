@@ -8,14 +8,17 @@ import type { LabState } from '../../model/schema'
 import type { PacketTrace } from '../../sim/trace'
 import type { AccessToken } from './acl'
 import {
+  copyItem,
   createItem,
   createShare,
   removeItem,
   removeNtfs,
   removeShare,
+  renameItem,
   setNtfsEntry,
   setNtfsInheritance,
-  setShareAcl
+  setShareAcl,
+  writeFileContent
 } from './actions'
 import { findNode } from './paths'
 import { mapDrive, unmapDrive, type DriveOperation } from './smb'
@@ -49,6 +52,16 @@ export const filesCommands = {
     createItem,
     (s, id, path, kind) => `Créer ${kind === 'folder' ? 'le dossier' : 'le fichier'} ${path}${on(s, id)}`
   ),
+  'files.writeContent': def(
+    writeFileContent,
+    (s, id, path, _text, _token, options) =>
+      `${options?.append ? 'Ajouter au fichier' : 'Écrire le fichier'} ${path}${on(s, id)}`
+  ),
+  'files.copyItem': def(
+    copyItem,
+    (s, id, source, destination) => `Copier ${source} vers ${destination}${on(s, id)}`
+  ),
+  'files.renameItem': def(renameItem, (s, id, path, newName) => `Renommer ${path} en ${newName}${on(s, id)}`),
   'files.removeItem': def(removeItem, (s, id, path) => `Supprimer ${path}${on(s, id)}`),
   'files.createShare': def(
     createShare,

@@ -511,6 +511,12 @@ export const NtfsAceSchema = z.object({
   rights: z.enum(NTFS_RIGHTS)
 })
 
+/**
+ * Taille maximale du contenu texte d'un fichier simulé (caractères) : de quoi tenir un script ou un
+ * CSV d'exercice sans alourdir le fichier .slab (limite propre au simulateur).
+ */
+export const MAX_FILE_CONTENT = 65536
+
 /** Dossier ou fichier du volume C: d'un serveur. */
 export const FsNodeSchema = z.object({
   id: z.string(),
@@ -520,6 +526,11 @@ export const FsNodeSchema = z.object({
   kind: z.enum(['folder', 'file']),
   /** Taille en octets (fichiers). */
   size: z.number().int().nonnegative().default(0),
+  /**
+   * Contenu texte d'un fichier (format .slab v17) : absent = fichier dont le contenu n'est pas
+   * simulé (taille seule). Écrit par Set-Content, Add-Content, Out-File…
+   */
+  content: z.string().max(MAX_FILE_CONTENT).optional(),
   /** Autorisations explicites ; les autorisations héritées sont calculées depuis les parents. */
   acl: z.array(NtfsAceSchema).default([]),
   /** Hérite des autorisations du dossier parent. */
