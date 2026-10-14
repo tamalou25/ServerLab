@@ -6,6 +6,7 @@ import { defineRole } from '../types'
 import { filesAuditRules } from './audit'
 import { fileCmdlets } from './cmdlets'
 import { contentCmdlets } from './content'
+import { csvCmdlets } from './csv'
 import { filesCommands } from './commands'
 import { filesCriteria } from './criteria'
 import { fileTools } from './tools'
@@ -27,7 +28,7 @@ export const filesRole = defineRole({
     }
   ],
   commands: filesCommands,
-  cmdlets: [...fileCmdlets, ...contentCmdlets],
+  cmdlets: [...fileCmdlets, ...contentCmdlets, ...csvCmdlets],
   tools: fileTools,
   bashTools: filesBashTools,
   views: [
