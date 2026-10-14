@@ -1,0 +1,91 @@
+{
+  "formatVersion": 1,
+  "id": "lab-38-stp-etherchannel",
+  "title": "STP et EtherChannel",
+  "difficulty": "Intermédiaire",
+  "duration": "40 min",
+  "summary": "Placez le pont racine, protégez les ports d'accès et agrégez deux liens entre deux switchs.",
+  "statement": "## Contexte\n\nTrois switchs Catalyst 2960 forment un triangle. SW1 et SW2 sont reliés par **deux** câbles (Gi0/1 et Gi0/2) : l'un des deux est actuellement bloqué par le spanning-tree. SW3 a été configuré avec une priorité plus basse que celle de SW1 et joue le pont racine, ce qui n'est pas souhaité : le coeur du réseau est SW1.\n\n## Travail demandé\n\n1. Faites de **SW1** le pont racine du VLAN 1, avec la commande dédiée (pas de priorité saisie à la main).\n2. Sur SW2 et SW3, protégez les ports d'accès des PC : passage immédiat en transfert (**portfast**) et arrêt du port si une BPDU est reçue (**BPDU Guard**). Utilisez `interface range`.\n3. Agrégez les deux liens SW1-SW2 en un **EtherChannel LACP**, avec le mode actif des deux côtés.\n4. Contrôlez avec `show spanning-tree` et `show etherchannel summary`.\n\nÀ rendre : les commandes saisies et les sorties des commandes de contrôle.",
+  "start": {
+    "devices": [
+      { "kind": "switch", "name": "SW1", "x": 300, "y": 80, "model": "c2960" },
+      { "kind": "switch", "name": "SW2", "x": 150, "y": 250, "model": "c2960" },
+      {
+        "kind": "switch",
+        "name": "SW3",
+        "x": 450,
+        "y": 250,
+        "model": "c2960",
+        "ios": ["enable", "configure terminal", "spanning-tree vlan 1 priority 28672", "end"]
+      },
+      { "kind": "client", "name": "PC1", "x": 60, "y": 400, "ip": "192.168.1.11/24" },
+      { "kind": "client", "name": "PC2", "x": 200, "y": 400, "ip": "192.168.1.12/24" },
+      { "kind": "client", "name": "PC3", "x": 450, "y": 400, "ip": "192.168.1.13/24" }
+    ],
+    "links": [
+      ["SW1:Gi0/1", "SW2:Gi0/1"],
+      ["SW1:Gi0/2", "SW2:Gi0/2"],
+      ["SW1:Fa0/24", "SW3:Fa0/24"],
+      ["SW2:Fa0/24", "SW3:Fa0/23"],
+      ["PC1:Ethernet0", "SW2:Fa0/1"],
+      ["PC2:Ethernet0", "SW2:Fa0/2"],
+      ["PC3:Ethernet0", "SW3:Fa0/1"]
+    ]
+  },
+  "criteria": [
+    {
+      "id": "root",
+      "label": "SW1 est le pont racine du VLAN 1",
+      "hint": "Une commande spanning-tree propre à un VLAN calcule seule la priorité nécessaire pour devenir racine.",
+      "check": { "type": "iosStpRoot", "device": "SW1", "vlan": 1 }
+    },
+    {
+      "id": "portfast-sw2",
+      "label": "Portfast activé sur les ports d'accès de SW2",
+      "hint": "Une option spanning-tree du mode interface, à appliquer à une plage de ports.",
+      "check": { "type": "iosRunning", "device": "SW2", "line": "spanning-tree portfast" }
+    },
+    {
+      "id": "guard-sw2",
+      "label": "BPDU Guard activé sur les ports d'accès de SW2",
+      "hint": "Une seconde option spanning-tree protège le port contre les BPDU reçues.",
+      "check": { "type": "iosRunning", "device": "SW2", "line": "spanning-tree bpduguard enable" }
+    },
+    {
+      "id": "portfast-sw3",
+      "label": "Portfast activé sur le port d'accès de SW3",
+      "hint": "Même démarche que sur SW2 ; la plage peut ne contenir qu'un port.",
+      "check": { "type": "iosRunning", "device": "SW3", "line": "spanning-tree portfast" }
+    },
+    {
+      "id": "guard-sw3",
+      "label": "BPDU Guard activé sur le port d'accès de SW3",
+      "hint": "Même démarche que sur SW2.",
+      "check": { "type": "iosRunning", "device": "SW3", "line": "spanning-tree bpduguard enable" }
+    },
+    {
+      "id": "po-sw1",
+      "label": "EtherChannel LACP monté côté SW1",
+      "hint": "Les deux ports doivent rejoindre un même groupe avec un mode de négociation ouvert (norme IEEE).",
+      "check": { "type": "iosEtherchannel", "device": "SW1", "group": 1, "minPorts": 2, "protocol": "LACP" }
+    },
+    {
+      "id": "po-sw2",
+      "label": "EtherChannel LACP monté côté SW2",
+      "hint": "La configuration doit être faite des deux côtés du lien.",
+      "check": { "type": "iosEtherchannel", "device": "SW2", "group": 1, "minPorts": 2, "protocol": "LACP" }
+    },
+    {
+      "id": "active-sw1",
+      "label": "SW1 négocie en mode actif",
+      "hint": "Le mode choisi lance la négociation sans attendre l'autre extrémité.",
+      "check": { "type": "iosRunning", "device": "SW1", "line": "channel-group 1 mode active" }
+    },
+    {
+      "id": "active-sw2",
+      "label": "SW2 négocie en mode actif",
+      "hint": "Le même mode que sur SW1.",
+      "check": { "type": "iosRunning", "device": "SW2", "line": "channel-group 1 mode active" }
+    }
+  ]
+}

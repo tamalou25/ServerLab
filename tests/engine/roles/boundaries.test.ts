@@ -32,7 +32,8 @@ const ALLOWED_CORE_TO_ROLE = [
   'serialization/migrations.ts', // migration 1 → 2 : GPO par défaut
   'services/system.ts', // redémarrage : inscription DNS du poste joint
   'shell/bash/core.ts', // console bash : dhclient, résolution de noms (comme shell/tools/net.ts)
-  'shell/cmd/interpreter.ts', // cd (système de fichiers du serveur)
+  'shell/cmd/builtins.ts', // copy, move, ren, type, cd (système de fichiers du serveur)
+  'shell/cmd/interpreter.ts', // redirections > et >> (contenu des fichiers)
   'shell/filesystem.ts', // chemins, partages et jetons d'accès
   'shell/tools/net.ts' // ipconfig /renew, résolution de noms, whoami /groups
 ]

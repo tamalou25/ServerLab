@@ -20,6 +20,7 @@ import {
   effectiveIpv4,
   featureInfo,
   nodePath,
+  hostServices,
   roleModules,
   type EventLogEntry,
   type ServerDevice
@@ -55,28 +56,8 @@ const ROLES: RoleDef[] = roleModules()
   }))
   .sort((a, b) => a.feature.localeCompare(b.feature))
 
-interface ServiceRow {
-  display: string
-  name: string
-}
-
 /** Services système simulés : ceux du système, puis ceux déclarés par les rôles installés. */
-function servicesOf(device: ServerDevice, dc: boolean): (ServiceRow & { role?: string })[] {
-  const has = (f: string) => device.host.features.includes(f)
-  const fromRoles = roleModules().flatMap((m) =>
-    m.services
-      .filter((s) => s.when === 'always' || (s.when === 'installed' ? has(m.feature) : dc))
-      .map((s) => ({ display: s.display, name: s.name, role: m.feature }))
-  )
-  return [
-    { display: 'Client DHCP', name: 'Dhcp' },
-    { display: 'Client DNS', name: 'Dnscache' },
-    { display: 'Journal d’événements', name: 'EventLog' },
-    { display: 'Pare-feu', name: 'MpsSvc' },
-    { display: 'Station de travail', name: 'LanmanWorkstation' },
-    ...fromRoles
-  ].sort((a, b) => a.display.localeCompare(b.display, 'fr'))
-}
+const servicesOf = (device: ServerDevice, dc: boolean) => hostServices(device.host.features, dc)
 
 interface Notification {
   id: string

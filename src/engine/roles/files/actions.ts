@@ -22,7 +22,7 @@ import { MAX_FILE_CONTENT, WELL_KNOWN_SIDS } from '../../model/schema'
 import { requireDevice } from '../../topology/actions'
 import { encodedSize, type FileEncoding } from './encoding'
 import { accessPerms, effectiveAcl, resolvePrincipal, type AccessToken, type Perm } from './acl'
-import { findNode, isWithin, normalizeItemName, splitLocalPath, validItemName } from './paths'
+import { findNode, isWithin, nodePath, normalizeItemName, splitLocalPath, validItemName } from './paths'
 
 export const ACCESS_DENIED = 'Accès refusé.'
 export const PATH_NOT_FOUND = 'Le chemin d’accès spécifié est introuvable.'
@@ -417,6 +417,64 @@ export function copyItem(
       return id
     }
     return copyInto(node, parentId, name)
+  })
+}
+
+/**
+ * Déplace un élément dans le même volume (move de l'invite de commandes) : destination = dossier
+ * existant (même nom) ou nouveau chemin dans un dossier existant (déplacement et renommage).
+ * Avec `replace`, un fichier existant à la destination est remplacé. Suppression sur la source,
+ * écriture sur le dossier de destination ; les autorisations héritées suivent la destination.
+ * Renvoie le chemin local final de l'élément.
+ */
+export function moveItem(
+  state: LabState,
+  serverId: string,
+  source: string,
+  destination: string,
+  token: AccessToken,
+  options: { replace?: boolean; share?: string; destinationShare?: string } = {}
+): EngineResult<string> {
+  return transact(state, (draft) => {
+    const server = requireServer(draft, serverId)
+    const storage = server.storage
+    const share = shareOf(server as ServerDevice, options.share)
+    const destShare = shareOf(server as ServerDevice, options.destinationShare)
+    const node = requireNode(storage as Storage, source)
+    if (!node || node.system) raise('AccessDenied', ACCESS_DENIED)
+    const parts = splitLocalPath(destination)
+    if (!parts) raise('InvalidPath', BAD_PATH)
+    const dest = findNode(storage as Storage, destination)
+    let parentId: string | null
+    let name: string
+    if (dest === null || dest?.kind === 'folder') {
+      parentId = dest?.id ?? null
+      name = node.name
+    } else {
+      if (parts.length === 0) raise('InvalidPath', BAD_PATH)
+      const parent = findNode(storage as Storage, `C:\\${parts.slice(0, -1).join('\\')}`)
+      if (parent === undefined || parent?.kind === 'file') raise('PathNotFound', PATH_NOT_FOUND)
+      parentId = parent?.id ?? null
+      name = normalizeItemName(parts[parts.length - 1] as string)
+      if (!validItemName(name)) raise('InvalidName', BAD_PATH)
+    }
+    if (isWithin(storage as Storage, parentId, node.id)) raise('InvalidOperation', BAD_PATH)
+    demand(storage as Storage, node.id, token, 'delete', share)
+    demand(storage as Storage, parentId, token, 'write', destShare ?? share)
+    const existing = storage.nodes.find(
+      (n) => n.id !== node.id && n.parentId === parentId && n.name.toLowerCase() === name.toLowerCase()
+    )
+    if (existing) {
+      if (existing.kind !== 'file' || node.kind !== 'file' || existing.system || !options.replace)
+        raise('ItemExists', `Un élément nommé « ${name} » existe déjà.`)
+      demand(storage as Storage, existing.id, token, 'delete', destShare ?? share)
+      storage.nodes = storage.nodes.filter((n) => n.id !== existing.id)
+    }
+    const target = storage.nodes.find((n) => n.id === node.id) as Draft<FsNode>
+    target.parentId = parentId
+    target.name = name
+    target.modifiedAt = draft.clock
+    return nodePath(storage as Storage, node.id)
   })
 }
 

@@ -29,6 +29,13 @@ Lot 1 de la v2.7 :
   évaluateur d'expressions PowerShell (#207) ; filtres de sortie IOS `| include`, `exclude`, `begin`, `section`, `count` (#206).
 - Lab 37 « Création d'utilisateurs par CSV » (fichiers de départ déclarables dans les labs via `files`).
 
+Lot 5 de la v2.7 :
+
+- Switch Catalyst 2960 : bases, STP, EtherChannel, VTP, CDP (#210) et `interface range` (#209).
+- Critères IOS `iosStpRoot` (pont racine calculé) et `iosEtherchannel` (canal monté, SU/P).
+- Lab 38 « STP et EtherChannel ».
+- Formats `.slab` 18, 19 et 20 (état des switchs : STP, EtherChannel, VTP).
+
 ## [2.6.2] — 2026-10-13
 
 Version de stabilisation issue de l'audit complet du code (`docs/audit-v2.6.2.md`, label `audit-v2.6.2`).
