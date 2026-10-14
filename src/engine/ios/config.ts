@@ -34,7 +34,15 @@ export function defaultIosState(): IosState {
     dhcpSnooping: false,
     dhcpSnoopingVlans: [],
     arpInspectionVlans: [],
-    syslog: []
+    syslog: [],
+    defaultGateway: null,
+    cdpRun: true,
+    stpMode: 'pvst',
+    stpPriorities: {},
+    portChannels: [],
+    vtpMode: 'server',
+    vtpDomain: '',
+    macTable: []
   }
 }
 
@@ -58,6 +66,7 @@ export function snapshotOf(device: IosDevice): IosSnapshot {
     hsrpStates: _hsrp,
     aclCounters: _acl,
     syslog: _syslog,
+    macTable: _mac,
     ...running
   } = iosState(device)
   const config = clone(running)
@@ -129,7 +138,8 @@ export function applyStartup(device: Draft<IosDevice>, nextId: () => number): vo
     natTranslations: [],
     hsrpStates: {},
     aclCounters: {},
-    syslog: []
+    syslog: [],
+    macTable: []
   }
   if (!startup) return
   device.name = startup.hostname
@@ -223,6 +233,9 @@ export function draftIfaceEntry(ios: Draft<IosState>, name: string): Draft<IosSt
     errDisabled: false,
     dhcpSnoopingTrust: false,
     arpInspectionTrust: false,
-    nonegotiate: false
+    nonegotiate: false,
+    portfast: false,
+    bpduGuard: false,
+    channelGroup: null
   })
 }

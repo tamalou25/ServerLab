@@ -66,7 +66,13 @@ function walk(
   for (const arg of node.args) {
     if (!available(arg, ctx)) continue
     const m = arg.type.match(tokens, index, ctx)
-    if (!m) continue
+    if (!m) {
+      // Argument sur plusieurs jetons (interface range) : erreur sous le jeton fautif
+      const at = arg.type.failure?.(tokens, index, ctx)
+      if (at !== undefined && best.kind === 'invalid' && at > best.index)
+        best = { kind: 'invalid', index: at }
+      continue
+    }
     const outcome = walk(arg, tokens, index + m.consumed, { ...args, [arg.name]: m.value }, ctx)
     if (outcome.kind === 'run') return outcome
     if (best.kind === 'invalid' && (outcome.kind !== 'invalid' || outcome.index > best.index)) best = outcome

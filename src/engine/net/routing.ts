@@ -70,7 +70,7 @@ export function routingTable(state: LabState, device: Device): Route[] {
       })
       break
     }
-  } else if (device.kind === 'router' || (device.kind === 'switch' && device.routes)) {
+  } else if (device.kind === 'router' || device.kind === 'switch') {
     // Une route statique n'est active que si son prochain saut est directement joignable
     for (const r of device.routes ?? []) {
       const via = onLink(r.nextHop)

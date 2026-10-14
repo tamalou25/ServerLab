@@ -360,6 +360,78 @@ describe('migration 9 → 10 (cybersécurité défensive de la v2.6)', () => {
   })
 })
 
+describe('migration 19 → 20 (EtherChannel et VTP de la v2.7)', () => {
+  const ios = (lab: ReturnType<typeof open>['lab']) =>
+    (
+      Object.values(lab.devices).find((d) => d.name === 'CSW1') as {
+        ios?: { vtpMode: string; vtpDomain: string; portChannels: number[] }
+      }
+    ).ios
+
+  it('change seulement la version ; VTP serveur sans domaine, aucun canal', () => {
+    const doc = JSON.parse(readFixture(19)) as Record<string, unknown>
+    expect(migrations[19]!(doc)).toEqual({ ...doc, schemaVersion: 20 })
+    expect(ios(open(19).lab)).toMatchObject({ vtpMode: 'server', vtpDomain: '', portChannels: [] })
+  })
+
+  it('v20.slab : s’ouvre sans migration et garde EtherChannel et VTP', () => {
+    const lab = open(20).lab
+    expect(ios(lab)).toMatchObject({ vtpMode: 'transparent', vtpDomain: 'SIO', portChannels: [1] })
+    expect(
+      evaluateCheck(lab, { type: 'iosStartup', device: 'CSW1', line: 'channel-group 1 mode active' })
+    ).toBe(true)
+  })
+})
+
+describe('migration 18 → 19 (spanning-tree de la v2.7)', () => {
+  const running = (lab: ReturnType<typeof open>['lab'], line: string) =>
+    evaluateCheck(lab, { type: 'iosStartup', device: 'CSW1', line })
+
+  it('change seulement la version ; PVST et priorités par défaut', () => {
+    const doc = JSON.parse(readFixture(18)) as Record<string, unknown>
+    expect(migrations[18]!(doc)).toEqual({ ...doc, schemaVersion: 19 })
+    expect(running(open(18).lab, 'spanning-tree mode rapid-pvst')).toBe(false)
+  })
+
+  it('v19.slab : s’ouvre sans migration et garde le spanning-tree', () => {
+    const lab = open(19).lab
+    for (const line of [
+      'spanning-tree mode rapid-pvst',
+      'spanning-tree vlan 30 priority 24576',
+      'spanning-tree bpduguard enable'
+    ])
+      expect(running(lab, line), line).toBe(true)
+  })
+})
+
+describe('migration 17 → 18 (switch 2960 de la v2.7)', () => {
+  const csw1 = (lab: ReturnType<typeof open>['lab']) =>
+    Object.values(lab.devices).find((d) => d.name === 'CSW1') as {
+      ios?: { defaultGateway: string | null; cdpRun: boolean; macTable: unknown[] }
+    }
+
+  it('change seulement la version ; passerelle absente, CDP actif, table MAC vide', () => {
+    const doc = JSON.parse(readFixture(17)) as Record<string, unknown>
+    expect(migrations[17]!(doc)).toEqual({ ...doc, schemaVersion: 18 })
+    const ios = csw1(open(17).lab).ios
+    expect(ios?.defaultGateway).toBeNull()
+    expect(ios?.cdpRun).toBe(true)
+    expect(ios?.macTable).toEqual([])
+  })
+
+  it('v18.slab : s’ouvre sans migration et garde ip default-gateway', () => {
+    const lab = open(18).lab
+    expect(csw1(lab).ios?.defaultGateway).toBe('192.168.30.1')
+    expect(
+      evaluateCheck(lab, {
+        type: 'iosStartup',
+        device: 'CSW1',
+        line: 'ip default-gateway 192.168.30.1'
+      })
+    ).toBe(true)
+  })
+})
+
 describe('migration 16 → 17 (contenu des fichiers de la v2.7)', () => {
   type Node = { name: string; content?: string; size: number }
   const file = (lab: ReturnType<typeof open>['lab']) =>

@@ -55,11 +55,18 @@ function setRun(node: CliNode, run: CommandHandler, guard: Guard | null): void {
   node.runGuard = guard
 }
 
+/**
+ * Commande disponible dans ce mode : config-if-range reprend toutes les commandes de config-if,
+ * appliquées à chaque interface de la plage (les actions parcourent session.ifaces).
+ */
+const inMode = (c: CliCommand, mode: IosMode): boolean =>
+  c.modes.includes(mode) || (mode === 'config-if-range' && c.modes.includes('config-if'))
+
 /** Arbre des commandes d'un mode (sans `no` ni `do`). */
 function plainTree(commands: readonly CliCommand[], mode: IosMode): CliNode {
   const root = emptyNode()
   for (const c of commands) {
-    if (!c.modes.includes(mode) || !c.run) continue
+    if (!inMode(c, mode) || !c.run) continue
     const run = c.run
     const guard = c.available ?? null
     insert(root, c.syntax, guard, (node, depth) => {
@@ -74,7 +81,7 @@ function noTree(commands: readonly CliCommand[], mode: IosMode): CliNode | null 
   const root = emptyNode()
   let any = false
   for (const c of commands) {
-    if (!c.modes.includes(mode) || !c.no) continue
+    if (!inMode(c, mode) || !c.no) continue
     any = true
     const { run, min = c.syntax.length } = c.no
     const guard = c.available ?? null

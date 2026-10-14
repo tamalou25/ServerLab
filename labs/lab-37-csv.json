@@ -1,0 +1,97 @@
+{
+  "formatVersion": 1,
+  "id": "lab-37-csv",
+  "title": "Création d'utilisateurs par CSV",
+  "difficulty": "Intermédiaire",
+  "duration": "30 min",
+  "summary": "Créez cinq comptes Active Directory d'un seul coup à partir d'un fichier CSV, en une ligne PowerShell.",
+  "statement": "## Contexte\n\nL'entreprise accueille cinq nouveaux collaborateurs. Le service RH a déposé le fichier `C:\\Scripts\\nouveaux.csv` sur le contrôleur de domaine SRV1 (domaine lab.local). Il est au format CSV avec le délimiteur `;` et les colonnes `Prenom;Nom;Login;Service`. Une unité d'organisation existe pour chaque service.\n\n## Travail demandé\n\n1. Sur SRV1 (PowerShell), affichez le contenu du fichier avec `Get-Content`, puis importez-le avec `Import-Csv` en précisant le délimiteur.\n2. En **une seule ligne**, enchaînez l'import et `ForEach-Object` pour créer chaque compte : nom complet (prénom et nom), identifiant de connexion tiré de la colonne `Login`, rangé dans l'unité d'organisation correspondant à son service, avec un mot de passe conforme à la stratégie du domaine (initial : `P@ssw0rd2024!`, converti en chaîne sécurisée), et activé.\n3. Contrôlez le résultat avec `Get-ADUser -Filter *`.\n\nÀ rendre : la ligne de commande et sa sortie.",
+  "start": {
+    "devices": [
+      {
+        "kind": "server",
+        "name": "SRV1",
+        "x": 200,
+        "y": 150,
+        "ip": "192.168.10.1/24",
+        "dns": ["127.0.0.1"],
+        "files": [
+          {
+            "path": "C:\\Scripts\\nouveaux.csv",
+            "content": "Prenom;Nom;Login;Service\nCamille;Martin;cmartin;Comptabilite\nLucas;Bernard;lbernard;Informatique\nEmma;Petit;epetit;Commercial\nHugo;Durand;hdurand;Informatique\nLea;Moreau;lmoreau;Comptabilite\n"
+          }
+        ]
+      }
+    ],
+    "links": [],
+    "domain": {
+      "name": "lab.local",
+      "netbios": "LAB",
+      "dc": "SRV1",
+      "ous": ["Comptabilite", "Informatique", "Commercial"],
+      "users": []
+    }
+  },
+  "criteria": [
+    {
+      "id": "cmartin",
+      "label": "Camille Martin (cmartin) est créée dans l'OU Comptabilite et activée",
+      "hint": "Le compte doit exister, être rangé dans l'unité d'organisation de son service et être activé.",
+      "check": {
+        "type": "adObject",
+        "kind": "user",
+        "name": "cmartin",
+        "parent": "Comptabilite",
+        "enabled": true
+      }
+    },
+    {
+      "id": "lbernard",
+      "label": "Lucas Bernard (lbernard) est créé dans l'OU Informatique et activé",
+      "hint": "Le compte doit exister, être rangé dans l'unité d'organisation de son service et être activé.",
+      "check": {
+        "type": "adObject",
+        "kind": "user",
+        "name": "lbernard",
+        "parent": "Informatique",
+        "enabled": true
+      }
+    },
+    {
+      "id": "epetit",
+      "label": "Emma Petit (epetit) est créée dans l'OU Commercial et activée",
+      "hint": "Le compte doit exister, être rangé dans l'unité d'organisation de son service et être activé.",
+      "check": {
+        "type": "adObject",
+        "kind": "user",
+        "name": "epetit",
+        "parent": "Commercial",
+        "enabled": true
+      }
+    },
+    {
+      "id": "hdurand",
+      "label": "Hugo Durand (hdurand) est créé dans l'OU Informatique et activé",
+      "hint": "Le compte doit exister, être rangé dans l'unité d'organisation de son service et être activé.",
+      "check": {
+        "type": "adObject",
+        "kind": "user",
+        "name": "hdurand",
+        "parent": "Informatique",
+        "enabled": true
+      }
+    },
+    {
+      "id": "lmoreau",
+      "label": "Léa Moreau (lmoreau) est créée dans l'OU Comptabilite et activée",
+      "hint": "Le compte doit exister, être rangé dans l'unité d'organisation de son service et être activé.",
+      "check": {
+        "type": "adObject",
+        "kind": "user",
+        "name": "lmoreau",
+        "parent": "Comptabilite",
+        "enabled": true
+      }
+    }
+  ]
+}

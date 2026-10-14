@@ -2,13 +2,15 @@
  * Navigation entre les modes IOS : enable, disable, configure terminal, interface, line, router,
  * exit, end. Textes d'aide repris d'IOS 15.
  */
-import { iface, number } from '../cli/args'
+import { WORD, iface, ifaceRange, number } from '../cli/args'
 import type { CliCommand, IosMode, IosRunContext, SyntaxToken } from '../cli/types'
 import { CONFIG_SUBMODES } from '../cli/types'
 import { createSubinterface, createSvi, removeSubinterfaceByName } from '../actions'
 import { defineIosFeature } from '../feature'
 import { iosState } from '../config'
 import { isIos } from '../device'
+import { enterPortChannel, removePortChannel } from './etherchannel'
+import { unsimulatedIosMessage } from '../../shell/unsimulated'
 
 const kw = (keyword: string, help: string): SyntaxToken => ({ keyword, help })
 
@@ -38,6 +40,10 @@ function exit(ctx: IosRunContext): void {
 function enterInterface(ctx: IosRunContext, name: string): void {
   const device = ctx.state.devices[ctx.deviceId]
   if (!device) return
+  if (name.startsWith('Po')) {
+    enterPortChannel(ctx, name)
+    return
+  }
   let target = device.interfaces.find((i) => i.name === name)
   if (!target && name.includes('.')) {
     const parent = device.interfaces.find((i) => i.name === name.split('.')[0])
@@ -51,6 +57,23 @@ function enterInterface(ctx: IosRunContext, name: string): void {
   }
   if (!target) return
   ctx.setMode(target.subinterface ? 'config-subif' : 'config-if', { ifaces: [target.id] })
+}
+
+/**
+ * interface range : mode config-if-range sur tous les ports de la plage ; chaque commande saisie
+ * s'applique aussitôt à chacun (guide de configuration 2960, IOS 15.0(2)SE).
+ */
+function enterRange(ctx: IosRunContext, value: string): void {
+  if (value.startsWith('unsimulated:')) {
+    ctx.print(`% ${unsimulatedIosMessage(value.slice('unsimulated:'.length))}`)
+    return
+  }
+  const names = value.slice('ok:'.length).split(',')
+  const device = ctx.state.devices[ctx.deviceId]
+  const ids = names
+    .map((n) => device?.interfaces.find((i) => i.name === n)?.id)
+    .filter((id) => id !== undefined)
+  ctx.setMode('config-if-range', { ifaces: ids })
 }
 
 function enterConfig(ctx: IosRunContext): void {
@@ -126,13 +149,21 @@ const commands: CliCommand[] = [
     modes: ['config'],
     syntax: [
       kw('interface', 'Select an interface to configure'),
-      { arg: 'iface', type: iface({ subinterfaces: true, vlans: true }), help: 'Interface' }
+      {
+        arg: 'iface',
+        type: iface({ subinterfaces: true, vlans: true, portChannels: true }),
+        help: 'Interface'
+      }
     ],
     run: (ctx, args) => enterInterface(ctx, args.iface ?? ''),
     // no interface Gi0/0.10 : supprime la sous-interface
     no: {
       run: (ctx, args) => {
         const name = args.iface ?? ''
+        if (name.startsWith('Po')) {
+          removePortChannel(ctx, name)
+          return
+        }
         if (name.startsWith('Vl')) {
           ctx.apply(removeSubinterfaceByName(ctx.state, ctx.deviceId, name))
           return
@@ -144,6 +175,26 @@ const commands: CliCommand[] = [
         ctx.apply(removeSubinterfaceByName(ctx.state, ctx.deviceId, name))
       }
     }
+  },
+  {
+    modes: ['config'],
+    syntax: [
+      kw('interface', 'Select an interface to configure'),
+      kw('range', 'interface range command'),
+      { arg: 'range', type: ifaceRange(), help: 'Interface' }
+    ],
+    run: (ctx, args) => enterRange(ctx, args.range ?? '')
+  },
+  {
+    // Macros (define interface-range) : non simulées
+    modes: ['config'],
+    syntax: [
+      kw('interface', 'Select an interface to configure'),
+      kw('range', 'interface range command'),
+      kw('macro', 'macro keyword'),
+      { arg: 'name', type: WORD, help: 'WORD' }
+    ],
+    run: (ctx) => ctx.print(`% ${unsimulatedIosMessage('interface range macro')}`)
   },
   {
     modes: ['config'],
