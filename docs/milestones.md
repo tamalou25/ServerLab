@@ -448,3 +448,26 @@ migration.
   `tests/engine/cyber/labs-attaque.test.ts` (solution à 100 %, examen, éditeur) et E2E `cyber-attack-labs.spec.ts`.
 - Documentation : récapitulatif du garde-fou et écarts avec les vraies techniques (`docs/fidelite.md`),
   README (Cybersécurité), ROADMAP, CHANGELOG [2.6.1].
+
+## v2.8 — Services à état et mode panne
+
+Les issues (n° GitHub) sont créées par le workflow « Roadmap sync » ; ce tableau est complété à chaque PR.
+
+| Issue | Sujet                                                | Branche | PR  | État    |
+| ----- | ---------------------------------------------------- | ------- | --- | ------- |
+| —     | Chantier A : services à état (8 issues, lab 42)      | —       | —   | à faire |
+| —     | Chantier D : mode panne (6 issues, 3 labs d'exemple) | —       | —   | à faire |
+
+Format `.slab` : migrations à partir du 26. Découpage validé par Gary : A + D en 2.8, B en 2.9, C en 2.10.
+
+## v2.9 — Serveurs Linux
+
+| Issue | Sujet                                                        | Branche | PR  | État    |
+| ----- | ------------------------------------------------------------ | ------- | --- | ------- |
+| —     | Chantier B : serveur Linux, 7 services, 9 labs, pannes Linux | —       | —   | à faire |
+
+## v2.10 — Pare-feu pfSense
+
+| Issue | Sujet                                                            | Branche | PR  | État    |
+| ----- | ---------------------------------------------------------------- | ------- | --- | ------- |
+| —     | Chantier C : pfSense (règles, NAT, interface web, console, labs) | —       | —   | à faire |
