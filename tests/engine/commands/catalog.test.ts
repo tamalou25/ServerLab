@@ -144,6 +144,9 @@ describe('catalogue des commandes', () => {
     r.run(command('service.start', r.id('SRV1'), 'DNS'))
     r.run(command('service.setStartType', r.id('SRV1'), 'Kdc', 'Manual'))
     r.run(command('service.restart', r.id('SRV1'), 'Kdc'))
+    // Horloge par ordinateur (v2.8) : le service Temps Windows de PC2 est démarré par défaut
+    r.run(command('host.setClock', r.id('POSTE2'), 600))
+    r.run(command('host.resyncClock', r.id('POSTE2')))
     // Base de comptes locale de PC2 (Lot 2b)
     r.run(command('local.newUser', r.id('POSTE2'), { name: 'u1', password: 'x' }))
     r.run(command('local.setUser', r.id('POSTE2'), 'u1', { description: 'd' }))

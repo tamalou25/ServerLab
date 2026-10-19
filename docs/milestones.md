@@ -453,12 +453,13 @@ migration.
 
 Les issues (n° GitHub) sont créées par le workflow « Roadmap sync » ; ce tableau est complété à chaque PR.
 
-| Issue | Sujet                                                | Branche | PR  | État    |
-| ----- | ---------------------------------------------------- | ------- | --- | ------- |
-| —     | Chantier A : services à état (8 issues, lab 42)      | —       | —   | à faire |
-| —     | Chantier D : mode panne (6 issues, 3 labs d'exemple) | —       | —   | à faire |
+| Issue | Sujet                                                | Branche                   | PR  | État     |
+| ----- | ---------------------------------------------------- | ------------------------- | --- | -------- |
+| #219  | Chantier A : horloge par poste, W32Time et Kerberos  | feat/219-horloge-kerberos | —   | en cours |
+| —     | Chantier A : autres issues (7 issues, lab 42)        | —                         | —   | à faire  |
+| —     | Chantier D : mode panne (6 issues, 3 labs d'exemple) | —                         | —   | à faire  |
 
-Format `.slab` : migrations à partir du 26. Découpage validé par Gary : A + D en 2.8, B en 2.9, C en 2.10.
+Format `.slab` : v2.8 → format 26 (migration écrite par l'issue #219, horloge par ordinateur) ; les autres issues de la v2.8 ajoutent des champs facultatifs sans nouvelle version. Migrations suivantes à partir du 27. Découpage validé par Gary : A + D en 2.8, B en 2.9, C en 2.10.
 
 ## v2.9 — Serveurs Linux
 

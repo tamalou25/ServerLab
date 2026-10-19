@@ -36,6 +36,7 @@ import {
   runIosScript,
   setDhcpOptions,
   setInterfaceIpv4,
+  setHostClock,
   setServiceStartType,
   newLocalUser,
   setGpRegistryValue,
@@ -233,6 +234,8 @@ export function buildReferenceLab(): LabState {
       type: 'DWord'
     })
   ).state
+  // v26 : horloge de PC2 en avance de 90 secondes (sous la tolérance Kerberos de 5 minutes)
+  s = unwrap(setHostClock(s, id('PC2'), 90)).state
   return runIosScript(s, id('CR1'), [
     'enable',
     'configure terminal',

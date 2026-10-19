@@ -4,6 +4,19 @@ Toutes les évolutions notables de ServerLab sont consignées ici.
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versions : [SemVer](https://semver.org/lang/fr/).
 La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
+## [Non publié]
+
+### Chantier A de la v2.8 : services à état (format `.slab` 26)
+
+- Horloge par ordinateur (`host.clockOffsetSeconds`, format 26, migration 25 → 26) : `Get-Date`, `Set-Date -Date` / `-Adjust`,
+  commandes nommées `host.setClock` et `host.resyncClock` (annulables) (#219).
+- `w32tm /query /status [/verbose]`, `w32tm /resync` et `net time \\serveur [/set /y]`, sorties sourcées (`docs/captures/cmd/`).
+- Kerberos : un écart d'horloge de plus de 5 minutes avec le contrôleur de domaine refuse la session de domaine
+  (événements 4771 et 4625) et l'accès aux partages du domaine (erreur 1398) ; `w32tm /resync` (service Temps Windows
+  démarré) ou `Set-Date` le répare.
+- Critère de lab `clockOffset` (ordinateur, écart maximal en secondes).
+- Les issues suivantes de la v2.8 n'ajoutent que des champs facultatifs, sans nouvelle version du format.
+
 ## [2.7.0] — 2026-10-14
 
 Fidélité des consoles au caractère près (CMD, PowerShell, Cisco IOS 15.x) : chaque sortie est comparée à une

@@ -65,3 +65,8 @@ export function unsimulatedParameterMessage(command: string, parameter: string):
 export function unsimulatedIosMessage(name: string): string {
   return `« ${name} » est une fonction réelle d’IOS qui n’est pas simulée dans ServerLab.`
 }
+
+/** Option réelle d'un outil de la console (`w32tm /config`, `net time /rtsdomain`…) non simulée. */
+export function unsimulatedOptionMessage(tool: string, option: string): string {
+  return `L’option « ${option} » de ${tool} existe réellement mais n’est pas simulée dans ServerLab.`
+}

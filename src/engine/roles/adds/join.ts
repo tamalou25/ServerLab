@@ -7,6 +7,7 @@ import type { Draft } from 'immer'
 import { logEvent } from '../../core/eventlog'
 import { logAudited } from '../gpo/auditpolicy'
 import { transact } from '../../core/result'
+import { clockOffset, KERBEROS_MAX_SKEW_SECONDS, TIME_SKEW_MESSAGE } from '../../services/hostclock'
 import type { Domain, HostDevice, LabState } from '../../model/schema'
 import { effectiveIpv4 } from '../../net/addressing'
 import { isApipa } from '../../net/ipv4'
@@ -267,6 +268,37 @@ export function logon(state: LabState, deviceId: string, input: LogonInput): Log
       message:
         'Il n’y a actuellement aucun serveur d’accès disponible pour traiter la demande d’ouverture de session.'
     }
+  // Horloge : au-delà de la tolérance Kerberos (5 minutes), le KDC refuse l'authentification
+  // (KRB_AP_ERR_SKEW) avant même d'évaluer le mot de passe (v2.8)
+  const skew = Math.abs(clockOffset(state, deviceId) - clockOffset(state, located.dcId))
+  if (skew > KERBEROS_MAX_SKEW_SECONDS) {
+    const account = `${domain.netbios}\\${sam}`
+    const refused = transact(state, (draft) => {
+      logEvent(draft, located.dcId, {
+        level: 'warning',
+        source: 'Security-Auditing',
+        eventId: 4771,
+        log: 'Sécurité',
+        account,
+        message: `La pré-authentification Kerberos a échoué pour ${account} depuis ${host.name}. Code d’échec : 0x25 (KRB_AP_ERR_SKEW : écart d’horloge trop important).`
+      })
+      logAudited(draft, deviceId, 'logon', 'failure', {
+        level: 'warning',
+        source: 'Security-Auditing',
+        eventId: 4625,
+        log: 'Sécurité',
+        account,
+        message: `Échec d’ouverture de session pour ${account}. Type d’ouverture de session : 2 (Interactive). État : 0xC0000133 (STATUS_TIME_DIFFERENCE_AT_DC).`
+      })
+      return undefined
+    })
+    return {
+      state: refused.ok ? refused.state : state,
+      trace: concatTraces('Ouverture de session', traces),
+      ok: false,
+      message: TIME_SKEW_MESSAGE
+    }
+  }
   const principal = findPrincipal(domain, sam)
   const user = principal?.kind === 'user' ? principal.obj : null
   // Verrouillage : un compte verrouillé est refusé tant que la durée n'est pas écoulée

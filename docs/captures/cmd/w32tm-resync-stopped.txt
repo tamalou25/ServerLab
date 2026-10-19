@@ -1,0 +1,4 @@
+# Source: https://learn.microsoft.com/en-us/windows-server/networking/windows-time-service/windows-time-service-tools-and-settings (paramètre /resync) ; erreur 0x80070426 (service non démarré) non publiée sur Learn, voir docs/fidelite.md v2.8
+# Commande: w32tm /resync
+Sending resync command to local computer
+The following error occurred: Le service n’a pas été démarré. (0x80070426)

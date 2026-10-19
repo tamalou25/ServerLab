@@ -115,6 +115,26 @@ describe('fichiers .slab de référence', () => {
   }
 })
 
+describe('migration 25 → 26 (horloge par ordinateur de la v2.8)', () => {
+  it('change seulement la version ; tous les ordinateurs sont à l’heure du lab (écart nul)', () => {
+    const doc = JSON.parse(readFixture(25)) as Record<string, unknown>
+    expect(migrations[25]!(doc)).toEqual({ ...doc, schemaVersion: 26 })
+    const hosts = Object.values(open(25).lab.devices).filter(
+      (d) => d.kind === 'server' || d.kind === 'client'
+    )
+    expect(hosts.length).toBeGreaterThan(0)
+    for (const d of hosts)
+      expect((d as unknown as { host: { clockOffsetSeconds: number } }).host.clockOffsetSeconds).toBe(0)
+  })
+
+  it('v26.slab : garde l’écart d’horloge de PC2', () => {
+    const pc2 = Object.values(open(26).lab.devices).find((d) => d.name === 'PC2') as unknown as {
+      host: { clockOffsetSeconds: number }
+    }
+    expect(pc2.host.clockOffsetSeconds).toBe(90)
+  })
+})
+
 describe('migration 24 → 25 (base locale et registre des GPO de la v2.7)', () => {
   it('change seulement la version ; base locale et registre des GPO vides', () => {
     const doc = JSON.parse(readFixture(24)) as Record<string, unknown>
