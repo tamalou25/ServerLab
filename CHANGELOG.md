@@ -21,6 +21,10 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   `ping`, `ipconfig`, `show vlan`, `show interfaces trunk`, `show spanning-tree`, `show etherchannel summary`…
   Injection et réparation par commandes nommées (dont `shell.exec` pour la configuration IOS) ; test de réparabilité
   sur 100 graines et sept labs sains de référence.
+- Tirage contrôlé (#231) : audit de `startTroubleshooting` (déterministe : PRNG seedé, ordre stable), règle de compatibilité
+  des pannes tirées (même cible ou symptôme masqué : candidate écartée), message d'erreur FR précis quand le nombre de pannes
+  demandé est impossible. Tests : réparabilité de tout tirage valide (labs de base × graines × 1 à 3 pannes × domaines, deux
+  ordres de réparation), même graine = même tirage, diversité, erreurs métier.
 
 ### Chantier A de la v2.8 (services à état)
 
