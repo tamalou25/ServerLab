@@ -27,6 +27,7 @@ import { domainLockoutPolicy, domainPasswordPolicy } from '../gpo/scope'
 import { fsmoHolder } from './fsmo'
 import { isLockedOut, lockoutExpired } from './lockout'
 import { computerPolicyStale, processGroupPolicy } from '../gpo/processing'
+import { NO_LOGON_SERVERS_MESSAGE } from './dcservices'
 import { exchange, locateDc } from './locator'
 import { dnsServerOf } from '../dns/state'
 
@@ -260,14 +261,25 @@ export function logon(state: LabState, deviceId: string, input: LogonInput): Log
     }
   const traces: PacketTrace[] = []
   const located = locateDc(state, deviceId, domain.name, traces)
-  if (!located)
+  if (!located) {
+    // Aucun contrôleur ne répond (éteint, injoignable, NTDS ou Netlogon arrêté) : ERROR_NO_LOGON_SERVERS
+    // et événement 5719 de Netlogon sur le poste (v2.8, services)
+    const unreachable = transact(state, (draft) => {
+      logEvent(draft, deviceId, {
+        level: 'error',
+        source: 'NETLOGON',
+        eventId: 5719,
+        message: `Cet ordinateur n’a pas pu établir de session sécurisée avec un contrôleur de domaine du domaine ${domain.netbios} pour la raison suivante : ${NO_LOGON_SERVERS_MESSAGE}`
+      })
+      return undefined
+    })
     return {
-      state,
+      state: unreachable.ok ? unreachable.state : state,
       trace: concatTraces('Ouverture de session', traces),
       ok: false,
-      message:
-        'Il n’y a actuellement aucun serveur d’accès disponible pour traiter la demande d’ouverture de session.'
+      message: NO_LOGON_SERVERS_MESSAGE
     }
+  }
   // Horloge : au-delà de la tolérance Kerberos (5 minutes), le KDC refuse l'authentification
   // (KRB_AP_ERR_SKEW) avant même d'évaluer le mot de passe (v2.8)
   const skew = Math.abs(clockOffset(state, deviceId) - clockOffset(state, located.dcId))

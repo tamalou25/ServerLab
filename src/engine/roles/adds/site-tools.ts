@@ -133,7 +133,15 @@ export const nltestTool: ToolDef = {
     const located = locateDc(ctx.state, ctx.deviceId, m[1], traces)
     for (const t of traces) ctx.addTrace(t)
     if (!located) {
-      ctx.write('Échec de la commande : erreur 1355 ERROR_NO_SUCH_DOMAIN', 'error')
+      // Aucun contrôleur ne répond (domaine inconnu, éteint, NTDS ou Netlogon arrêté) : 1355
+      // (docs/captures/cmd/nltest-dsgetdc-echec.txt)
+      ctx.writeLines(
+        [
+          'Échec de l’obtention du nom du DC : état = 1355 0x54b ERROR_NO_SUCH_DOMAIN',
+          'Le domaine spécifié n’existe pas ou n’a pas pu être contacté.'
+        ],
+        'error'
+      )
       return
     }
     const domain = located.domain

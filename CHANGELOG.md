@@ -20,6 +20,10 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   (événements 4771 et 4625) et l'accès aux partages du domaine (erreur 1398) ; `w32tm /resync` (service Temps Windows
   démarré) ou `Set-Date` le répare.
 - Critère de lab `clockOffset` (ordinateur, écart maximal en secondes).
+- NTDS et Netlogon (#220) : un contrôleur de domaine dont l'un des deux services est arrêté ne répond plus aux clients.
+  Session de domaine refusée (erreur 1311, événement NETLOGON 5719 sur le poste), `gpupdate` en échec, `nltest /dsgetdc`
+  en erreur 1355 (golden), jonction au domaine impossible. Avec plusieurs contrôleurs, le client utilise celui qui répond ;
+  redémarrer le service (`service.start`) rétablit tout.
 - Les issues suivantes de la v2.8 n'ajoutent que des champs facultatifs, sans nouvelle version du format.
 
 ## [2.7.0] — 2026-10-14
