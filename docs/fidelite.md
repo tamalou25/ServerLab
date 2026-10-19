@@ -434,6 +434,28 @@ Aucune sortie de console nouvelle : les symptômes sont ceux des commandes exist
 | D-05 | Panne `net.wrong-mask`                                           | Ajouté : masque trop long sur une carte statique, un voisin du même réseau n'est plus joint (sortie `ping` existante) ; réparation = masque d'origine                                                               |
 | D-06 | Test de réparabilité                                             | Ajouté : chaque panne du registre, 100 graines : symptôme visible, non guérie, puis guérie par la réparation officielle                                                                                             |
 
+### Pannes Windows (#230)
+
+Toujours aucune sortie de console nouvelle : chaque symptôme est lu par une fonction du moteur déjà
+utilisée par une console sourcée (références A-nn ci-dessus). Une panne dont le symptôme n'a pas de sortie
+sourcée n'est pas ajoutée.
+
+| ID   | Élément                                                                                     | Statut                                                                                                                                                                                                                                                                                    |
+| ---- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D-20 | `windows.service-stopped` : sondes DHCPServer, LanmanServer, W3SVC, Netlogon en plus de DNS | Ajouté : bail refusé (`ipconfig /renew`, A-12 à A-14 pour les messages de service), erreur 53 (`net use`, A-30 à A-34), site muet (`Invoke-WebRequest`), plus de contrôleur (A-20 à A-25). Arrêt avec `-Force` ; les dépendants arrêtés avec le service sont redémarrés par la réparation |
+| D-21 | `win.service-disabled`, `win.service-failed`                                                | Ajouté : type Disabled (démarrage refusé), échec 1066 ou 1053 (A-12, A-13) ; réparation = type Automatic / `service.clearFailure` puis `service.start`                                                                                                                                    |
+| D-22 | `win.dependency-stopped`                                                                    | Ajouté : dépendances de la table `servicedeps.ts` seulement (`WAS` pour `W3SVC`, `LanmanServer` et `LanmanWorkstation` pour `Netlogon`, A-01) ; le dépendant tombe avec elle (A-02), `Start-Service` du dépendant relance la dépendance (A-03)                                            |
+| D-23 | `win.dns-wrong-a`                                                                           | Ajouté : A pointant vers une autre adresse du réseau ; symptôme = résolution (sortie `nslookup` existante) et ping du nom sans réponse                                                                                                                                                    |
+| D-24 | `win.dhcp-scope-disabled`, `win.dhcp-scope-exhausted`                                       | Ajouté : étendue désactivée ; épuisement modélisé par une exclusion qui couvre toute la plage (pas par saturation de baux). Le client libère son bail avant la panne ; la réparation le renouvelle                                                                                        |
+| D-25 | `win.trust-broken`                                                                          | Ajouté : compte d'ordinateur supprimé puis recréé (non lié au poste) ; symptôme = `Test-ComputerSecureChannel` renvoie False ; réparation `-Repair`. La session de domaine n'est pas affectée par un canal rompu (non modélisé)                                                           |
+| D-26 | `win.account-locked`, `win.account-disabled`                                                | Ajouté : verrouillage par N échecs de session (seuil de la stratégie, 4740 / 4768 0x12 existants), compte désactivé ; refus de session aux messages existants                                                                                                                             |
+| D-27 | Compte « expiré »                                                                           | Non ajouté : le modèle n'a ni date d'expiration de compte ni expiration de mot de passe à l'ouverture de session (seul `mustChangePassword` existe) ; aucune sortie sourcée n'est possible                                                                                                |
+| D-28 | `win.gpo-unlinked`, `win.gpo-filtered`                                                      | Ajouté : liaison supprimée ; « Utilisateurs authentifiés » retiré du filtrage ; symptôme = stratégie résultante de l'utilisateur (`gpresult`), observable seulement si un contrôleur répond (`gpupdate`, A-22)                                                                            |
+| D-29 | `win.ntfs-rights`, `win.share-acl`                                                          | Ajouté : entrée NTFS du groupe supprimée ; autorisations du partage rabaissées à Lecture ; symptôme = écriture refusée (droit effectif partage ∩ NTFS), l'erreur 53 du service Serveur arrêté passe avant                                                                                 |
+| D-30 | `win.clock-skew`                                                                            | Ajouté : décalage de 10 à 60 minutes d'un poste du domaine (A-06 à A-09) ; session refusée par Kerberos ; réparation `w32tm /resync`                                                                                                                                                      |
+| D-31 | Pannes composées (6, `win.combo.*`)                                                         | Ajouté : `defineComposite` (`troubleshoot/composite.ts`), voir `docs/depannage.md`. Une seule entrée `ActiveFault` ; aucun champ nouveau dans le `.slab` (format 26)                                                                                                                      |
+| D-32 | Tirage de plusieurs pannes                                                                  | Ajouté : une panne tirée en plus n'est retenue que si toutes restent réparables sur l'état cassé complet (deux pannes qui se bloquent ne sont pas tirées ensemble)                                                                                                                        |
+
 Format `.slab` : le chantier A ouvre le format 26 ; les issues suivantes de la v2.8 n'ajoutent que des champs
 facultatifs (valeurs par défaut), sans nouvelle version. #224 : `failure` et `recovery` sur l'état d'un service
 (`host.services`), absents de `v26.slab` (fichier de référence inchangé, test d'ouverture dans `failure.test.ts`).
@@ -464,6 +486,23 @@ Aucune capture ni page de documentation n'a pu être trouvée pour ces points : 
 - A-26 : libellés de `sc qc` en anglais comme dans l'exemple Learn (seul l'en-tête `[SC] QueryServiceConfig réussite(s)` et `NOM_SERVICE:` suivent les autres sorties de `sc`) ; DISPLAY_NAME est le nom français du modèle (l'exemple Learn est en anglais) ; `START_TYPE` sans `(DELAYED)` (démarrage différé non stocké) ; sortie à relever sur Windows Server 2022 FR.
 - A-27 : BINARY_PATH_NAME, TYPE, ERROR_CONTROL, SERVICE_START_NAME des autres services (`svchost.exe -k …` ou exécutable propre) à relever par `sc qc <service>` sur Windows Server 2022 FR ; `sc qc` à distance (`\\serveur`) et `BufferSize` non simulés.
 - A-28 : mise en page de `tasklist /svc` (colonne `Services`, `N/A`) et regroupement des services par processus (`svchost.exe`, `lsass.exe` pour NTDS / Kdc / Netlogon) à relever sur Windows Server 2022 FR.
+
+### À vérifier (v2.8 — pannes Windows)
+
+- D-20 : sortie de `ipconfig /renew` d'un client sans serveur DHCP qui répond (texte et délai réels) : seule la
+  sortie déjà simulée est utilisée ; l'adresse APIPA 169.254.x.x évoquée dans les tickets et indices n'est pas
+  contrôlée par la panne.
+- D-21 : choix du code d'échec (1066 ou 1053) arbitraire entre les deux (voir A-12).
+- D-24 : l'épuisement réel (tous les baux pris) produit un évènement DHCP et un état « 100 % utilisé » dans la
+  console ; l'exclusion qui couvre la plage n'est pas identique (pas de baux) : à vérifier sur un serveur réel.
+- D-25 : le message réel « La relation d'approbation entre cette station de travail et le domaine principal a
+  échoué » n'est affiché par aucune console de ServerLab (le ticket ne le cite donc pas) ; l'effet d'un canal rompu
+  sur l'ouverture de session n'est pas modélisé.
+- D-27 : compte expiré (`Search-ADAccount -AccountExpired`, `AccountExpirationDate`) et mot de passe expiré à
+  l'ouverture de session : propriété et message à ajouter au modèle avant de pouvoir en faire une panne.
+- D-28 : mise en page de `gpresult` pour une GPO « refusée (sécurité) » : celle de ServerLab est reprise
+  telle quelle.
+- D-31 : textes des tickets et indices des pannes composées (français rédigé pour ServerLab, hors consoles).
 
 Sources utilisées : pages Microsoft Learn « Windows Time Service Tools and Settings » (paramètres de `w32tm`,
 `MaxAllowedPhaseOffset` = 300 s, exemple `/query /status /verbose`), « Maximum tolerance for computer clock

@@ -13,6 +13,7 @@ import {
 } from '@engine/index'
 import lab1 from '../../../labs/lab-01-adressage.json'
 import lab3 from '../../../labs/lab-03-dns.json'
+import { WINDOWS_BASES } from './bases-windows'
 
 function start(raw: unknown): LabState {
   const parsed = parseLab(raw)
@@ -65,5 +66,6 @@ export function healthyLab03(): LabState {
 
 export const BASES: { name: string; build: () => LabState }[] = [
   { name: 'lab-01-adressage', build: healthyLab01 },
-  { name: 'lab-03-dns', build: healthyLab03 }
+  { name: 'lab-03-dns', build: healthyLab03 },
+  ...WINDOWS_BASES
 ]

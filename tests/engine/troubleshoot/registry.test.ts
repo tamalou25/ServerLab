@@ -14,7 +14,9 @@ describe('registre des pannes', () => {
     expect(getFault('inconnue')).toBeUndefined()
   })
 
-  it('catalogue initial : windows.service-stopped et net.wrong-mask', () => {
-    expect(FAULTS.map((f) => f.id).sort()).toEqual(['net.wrong-mask', 'windows.service-stopped'])
+  it('catalogue : les pannes du socle (#228) sont présentes', () => {
+    const ids = FAULTS.map((f) => f.id)
+    expect(ids).toContain('net.wrong-mask')
+    expect(ids).toContain('windows.service-stopped')
   })
 })

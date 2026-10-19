@@ -32,7 +32,8 @@ describe('startTroubleshooting', () => {
     const b = start(42)
     expect(a.value.faults).toEqual(b.value.faults)
     expect(JSON.stringify(a.state)).toBe(JSON.stringify(b.state))
-    expect(a.value.faults.map((f) => f.id).sort()).toEqual(['net.wrong-mask', 'windows.service-stopped'])
+    expect(a.value.faults).toHaveLength(2)
+    expect(new Set(a.value.faults.map((f) => f.id)).size).toBe(2)
   })
 
   it('des graines différentes peuvent tirer des cibles différentes', () => {
@@ -58,9 +59,9 @@ describe('startTroubleshooting', () => {
   it('filtre par domaine, refuse une demande impossible', () => {
     const base = healthyLab03()
     const net = unwrap(startTroubleshooting(base, { seed: 1, domain: 'reseau' }))
-    expect(net.value.faults.map((f) => f.id)).toEqual(['net.wrong-mask'])
+    expect(net.value.faults.every((f) => getFault(f.id)?.domain === 'reseau')).toBe(true)
     expect(startTroubleshooting(base, { seed: 1, domain: 'linux' }).ok).toBe(false)
-    expect(startTroubleshooting(base, { seed: 1, count: 3 }).ok).toBe(false)
+    expect(startTroubleshooting(base, { seed: 1, count: 99 }).ok).toBe(false)
     expect(startTroubleshooting(base, { seed: 1, faults: [{ id: 'x.y' }] }).ok).toBe(false)
   })
 
