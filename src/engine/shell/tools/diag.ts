@@ -32,6 +32,7 @@ import {
   type ServiceStartType
 } from '../../services/hostservices'
 import { scFailure, scQfailure } from './scfailure'
+import { scQc } from './scqc'
 import { consoleServices, findService } from './services'
 import type { ToolDef } from './types'
 
@@ -241,7 +242,21 @@ export const tasklistTool: ToolDef = {
   ]),
   run(ctx, args) {
     const opts = lower(args)
-    const unsupported = opts.find((a) => ['/s', '/m', '/svc', '/v', '/fi'].includes(a))
+    // /svc : Learn (tasklist) ne publie aucune sortie d'exemple, et la table de processus de ServerLab
+    // (un seul svchost.exe, PID dérivés) ne sait pas quels services chaque processus héberge : rien
+    // n'est inventé (docs/fidelite.md, A-28 et « À vérifier »).
+    if (opts.includes('/svc')) {
+      ctx.writeLines(
+        [
+          'L’option /svc de tasklist n’est pas simulée dans ServerLab : la liste des services hébergés par chaque processus (groupes svchost.exe, services de lsass.exe) n’est pas modélisée et aucune sortie de référence n’est publiée.',
+          'Services et états : sc query, Get-Service. Fichier binaire d’un service : sc qc (Netlogon seulement).',
+          ''
+        ],
+        'error'
+      )
+      return
+    }
+    const unsupported = opts.find((a) => ['/s', '/m', '/v', '/fi'].includes(a))
     if (unsupported) {
       ctx.write(`L’option ${unsupported} de tasklist n’est pas simulée dans ServerLab.`, 'error')
       return
@@ -403,8 +418,8 @@ export const systeminfoTool: ToolDef = {
 
 export const scTool: ToolDef = {
   name: 'sc',
-  synopsis: 'Interroge et contrôle les services (query, start, stop, config start=, failure, qfailure).',
-  switches: ['query', 'start', 'stop', 'config', 'failure', 'qfailure'],
+  synopsis: 'Interroge et contrôle les services (query, start, stop, config start=, qc, failure, qfailure).',
+  switches: ['query', 'start', 'stop', 'config', 'qc', 'failure', 'qfailure'],
   help: help('sc-query', [
     'sc.exe [<servername>] query [<servicename>] [type= {driver | service | all}] [type= {own | share | interact | kernel | filesys | rec | adapt}] [state= {active | inactive | all}] [bufsize= <Buffersize>] [ri= <Resumeindex>] [group= <groupname>]',
     'sc.exe [<servername>] config [<servicename>] [start= {boot | system | auto | demand | disabled | delayed-auto}]'
@@ -507,6 +522,11 @@ export const scTool: ToolDef = {
       ctx.apply(stopService(ctx.state, ctx.deviceId, s.name))
       ctx.writeLines(['', `NOM_SERVICE: ${s.name}`, '        ÉTAT               : 3  STOP_PENDING', ''])
       return
+    }
+    if (verb === 'qc') {
+      const s = name ? findService(ctx, name) : undefined
+      if (!s) return missing('OpenService')
+      return scQc(ctx, s, name as string)
     }
     if (verb === 'failure' || verb === 'qfailure') {
       const s = name ? findService(ctx, name) : undefined

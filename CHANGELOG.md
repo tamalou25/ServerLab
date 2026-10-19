@@ -43,6 +43,7 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   en erreur 1355 (golden), jonction au domaine impossible. Avec plusieurs contrôleurs, le client utilise celui qui répond ;
   redémarrer le service (`service.start`) rétablit tout.
 - Les issues suivantes de la v2.8 n'ajoutent que des champs facultatifs, sans nouvelle version du format.
+- `sc qc <service>` (#225) : START_TYPE, DISPLAY_NAME et DEPENDENCIES calculés depuis l'état, disposition de l'exemple Learn (Netlogon, golden) ; autres services : message honnête, aucune valeur inventée. `tasklist /svc` : message honnête dédié (services par processus non modélisés). `net stop` avec dépendants : inchangé (invite exacte introuvable).
 - Interface (#226) : Snap-in Services (`services.msc`) : liste des services (Nom, État, Type de démarrage), démarrer, arrêter, redémarrer par les commandes `service.*` (annulables), propriétés
   (type de démarrage modifiable, onglet Dépendances calculé depuis le modèle ; pas de pause) (#226).
 - Gestionnaire de serveur : les services arrêtés dont le démarrage est automatique sont signalés en rouge et
