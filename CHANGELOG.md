@@ -41,6 +41,11 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   des pannes tirées (même cible ou symptôme masqué : candidate écartée), message d'erreur FR précis quand le nombre de pannes
   demandé est impossible. Tests : réparabilité de tout tirage valide (labs de base × graines × 1 à 3 pannes × domaines, deux
   ordres de réparation), même graine = même tirage, diversité, erreurs métier.
+- Trois labs de dépannage d'exemple (#233), lancés directement depuis la bibliothèque (départ sain, pannes fixées par
+  `troubleshooting.faults` et une graine, injectées par `buildLabState`) : lab 43 « Dépannage réseau : Internet ne répond
+  plus » (`net.wrong-vlan` + `net.wrong-gateway`), lab 44 « Dépannage Windows : les postes n'ouvrent plus de session »
+  (`win.clock-skew` + `windows.service-stopped`), lab 45 « Dépannage composé : deux causes qui se masquent »
+  (`win.combo.dns-stopped-wrong-a`). L'ouverture, la reprise et le mode examen d'un lab passent par `buildLabState`.
 
 ### Chantier A de la v2.8 (services à état)
 

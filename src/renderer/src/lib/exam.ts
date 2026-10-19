@@ -5,7 +5,7 @@
  */
 import { useEffect } from 'react'
 import {
-  buildLabStart,
+  buildLabState,
   durationMinutes,
   examResultText,
   finishExam,
@@ -33,7 +33,7 @@ export function askStartExam(): void {
     confirmLabel: t('exam.start.confirm'),
     onConfirm: () => {
       resetDocumentUi()
-      useLabStore.getState().load(buildLabStart(lab.start), { path: null, name: `${lab.id}.slab` })
+      useLabStore.getState().load(buildLabState(lab), { path: null, name: `${lab.id}.slab` })
       useLabsStore.getState().setActive(lab)
       useUiStore.getState().setRightTab('lab')
       useExamStore.getState().set({

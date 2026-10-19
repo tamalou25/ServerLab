@@ -1,12 +1,12 @@
 /**
- * Départ de chaque lab fourni (labs/*.json, lus sur le disque comme le fait l'application) : chaque
- * critère doit échouer avant toute action de l'élève, sauf exception justifiée ci-dessous. Un
+ * Départ de chaque lab fourni (labs/*.json, lus sur le disque comme le fait l'application ; un lab de
+ * dépannage démarre cassé, par buildLabState) : chaque critère doit échouer avant toute action de l'élève, sauf exception justifiée ci-dessous. Un
  * évaluateur qui renverrait toujours « vrai » serait ainsi détecté (audit T-01).
  */
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { buildLabStart, checkLab, parseLabText } from '@engine/index'
+import { buildLabState, checkLab, parseLabText } from '@engine/index'
 
 /** Critères déjà satisfaits au départ, et pourquoi. */
 const ALREADY_MET: Record<string, Record<string, string>> = {
@@ -42,7 +42,7 @@ describe('départ des labs : chaque critère échoue', () => {
       if (!parsed.ok) return
       const lab = parsed.lab
       const allowed = ALREADY_MET[lab.id] ?? {}
-      const met = checkLab(buildLabStart(lab.start), lab)
+      const met = checkLab(buildLabState(lab), lab)
         .results.filter((r) => r.ok)
         .map((r) => r.id)
       // Aucun critère inattendu n'est validé au départ, et chaque exception est encore d'actualité

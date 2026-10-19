@@ -1,0 +1,129 @@
+{
+  "formatVersion": 1,
+  "id": "lab-45-depannage-compose",
+  "title": "Dépannage composé : deux causes qui se masquent",
+  "difficulty": "Avancé",
+  "duration": "40 min",
+  "summary": "Une panne composée : la première cause cache la seconde, qui n'apparaît qu'une fois la première corrigée. Retrouvez-les dans l'ordre, puis réparez.",
+  "statement": "## Ticket utilisateur\n\n> « Depuis ce matin, je n'arrive plus à ouvrir le dossier partagé **\\\\srv1.lab.local\\Docs** depuis **PC1**. Le serveur est allumé et son adresse IP répond au ping, mais dès que j'utilise son nom, rien ne fonctionne. »\n\n## L'environnement\n\nLe domaine **lab.local** est hébergé par **SRV1** (contrôleur de domaine, serveur DNS et serveur de fichiers, 192.168.10.1/24), qui publie le partage **Docs**. **PC1** (192.168.10.10/24) est un poste du domaine, utilisé par **jdupont**, et n'a que SRV1 comme serveur DNS. Tout fonctionnait hier : c'est la configuration **attendue**.\n\n## Travail demandé\n\n1. Reproduisez le symptôme depuis PC1 (`nslookup srv1.lab.local`, `ping`, accès au partage) et notez ce que vous observez.\n2. Cherchez la cause, corrigez-la, puis **recommencez vos tests depuis le début** : une correction peut faire apparaître un autre problème qu'elle masquait.\n3. Contrôlez que PC1 résout srv1.lab.local vers la bonne adresse et ouvre le partage.\n\nÀ rendre : la chaîne des causes dans l'ordre où vous les avez trouvées, avec pour chacune le symptôme, l'outil de diagnostic et la correction.",
+  "start": {
+    "devices": [
+      {
+        "kind": "server",
+        "name": "SRV1",
+        "x": 220,
+        "y": 100,
+        "ip": "192.168.10.1/24",
+        "dns": ["127.0.0.1"],
+        "shares": [
+          {
+            "name": "Docs",
+            "path": "C:\\Docs",
+            "read": ["Tout le monde"]
+          }
+        ]
+      },
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 330,
+        "y": 300
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 330,
+        "y": 470,
+        "ip": "192.168.10.10/24",
+        "dns": ["192.168.10.1"],
+        "logon": {
+          "user": "jdupont",
+          "password": "Azerty123!"
+        }
+      }
+    ],
+    "links": [
+      ["SRV1:Ethernet0", "SW1:Fa0/1"],
+      ["PC1:Ethernet0", "SW1:Fa0/2"]
+    ],
+    "domain": {
+      "name": "lab.local",
+      "netbios": "LAB",
+      "dc": "SRV1",
+      "ous": ["Societe"],
+      "users": [
+        {
+          "name": "Jean Dupont",
+          "sam": "jdupont",
+          "ou": "Societe",
+          "password": "Azerty123!"
+        }
+      ],
+      "join": ["PC1"]
+    }
+  },
+  "troubleshooting": {
+    "seed": 2,
+    "faults": [
+      {
+        "id": "win.combo.dns-stopped-wrong-a"
+      }
+    ]
+  },
+  "criteria": [
+    {
+      "id": "panne-composee",
+      "label": "Les deux causes du problème sont réparées",
+      "hint": "Quand une correction ne suffit pas, refaites tous vos tests : le résultat a-t-il changé, et en quoi ?",
+      "check": {
+        "type": "faultRepaired",
+        "faultId": "win.combo.dns-stopped-wrong-a"
+      }
+    },
+    {
+      "id": "dns-demarre",
+      "label": "Le service DNS de SRV1 est en cours d'exécution",
+      "hint": "Comparez la liste des services de SRV1 avec ce que fournit normalement un serveur DNS.",
+      "check": {
+        "type": "serviceState",
+        "device": "SRV1",
+        "name": "DNS",
+        "running": true
+      }
+    },
+    {
+      "id": "enregistrement",
+      "label": "L'enregistrement srv1 de la zone lab.local contient la vraie adresse de SRV1",
+      "hint": "Une fois le service rétabli, comparez l'adresse renvoyée pour le nom avec l'adresse réellement portée par la carte du serveur.",
+      "check": {
+        "type": "dnsRecord",
+        "server": "SRV1",
+        "zone": "lab.local",
+        "name": "srv1",
+        "recordType": "A",
+        "data": "192.168.10.1"
+      }
+    },
+    {
+      "id": "resolution",
+      "label": "PC1 résout srv1.lab.local en 192.168.10.1",
+      "hint": "Le test de résolution depuis le poste doit aboutir ET donner la bonne adresse.",
+      "check": {
+        "type": "nslookup",
+        "client": "PC1",
+        "name": "srv1.lab.local",
+        "address": "192.168.10.1"
+      }
+    },
+    {
+      "id": "partage",
+      "label": "jdupont ouvre \\\\srv1.lab.local\\Docs depuis PC1",
+      "hint": "L'accès demande à la fois un nom correctement résolu, une session valide et un service qui publie le partage.",
+      "check": {
+        "type": "uncReachable",
+        "from": "PC1",
+        "path": "\\\\srv1.lab.local\\Docs"
+      }
+    }
+  ]
+}
