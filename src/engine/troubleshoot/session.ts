@@ -42,6 +42,39 @@ function inject(
 }
 
 /**
+ * Cible agie d'une panne : équipement acteur et, s'il y en a un, objet précis (interface, port,
+ * groupe, réseau). Les paramètres de sonde (`host`, `peer`…) ne comptent pas : ils ne sont pas modifiés.
+ */
+function actedOn(p: FaultTargetParams): { actor: string; detail: string } {
+  const pick = (keys: string[]): string => {
+    for (const k of keys) if (p[k] !== undefined) return String(p[k])
+    return ''
+  }
+  return {
+    actor: pick(['device', 'switch', 'router', 'aDevice']),
+    detail: pick(['iface', 'portName', 'port', 'group', 'network', 'service'])
+  }
+}
+
+/** Deux pannes agissent-elles sur la même cible ? (équipement entier si l'un des deux n'a pas de détail) */
+function sameTarget(a: FaultTargetParams, b: FaultTargetParams): boolean {
+  const x = actedOn(a)
+  const y = actedOn(b)
+  if (x.actor === '' || y.actor === '' || x.actor !== y.actor) return false
+  return x.detail === '' || y.detail === '' || x.detail === y.detail
+}
+
+/**
+ * Règle de compatibilité du tirage (déterministe) : une panne candidate est écartée si elle agit sur
+ * la même cible qu'une panne déjà active, ou si son injection masque le symptôme d'une panne active.
+ */
+function compatible(candidate: FaultTargetParams, active: ActiveFault[], after: LabState): boolean {
+  return active.every(
+    (a) => !sameTarget(a.params, candidate) && (getFault(a.id)?.symptomVisible(after, a.params) ?? false)
+  )
+}
+
+/**
  * Chaque panne se répare quel que soit l'ordre : ses commandes de réparation sont acceptées sur l'état
  * cassé complet (deux pannes qui se bloquent, p. ex. un service en échec et ce même service arrêté,
  * ne sont pas tirées ensemble).
@@ -99,13 +132,19 @@ export function startTroubleshooting(
       if (!params) continue
       const r = inject(state, fault.id, params)
       if ('error' in r || !fault.symptomVisible(r.state, params)) continue
+      if (!compatible(params, active, r.state)) continue
       const candidate: ActiveFault = { id: fault.id, params, hintsUsed: 0 }
       if (active.length > 0 && !independentlyRepairable(r.state, [...active, candidate])) continue
       state = r.state
       active.push(candidate)
     }
     if (active.length < count)
-      return fail('NoFaultAvailable', 'Aucune panne du catalogue ne s’applique à ce lab avec ces critères.')
+      return fail(
+        'NoFaultAvailable',
+        active.length === 0
+          ? 'Aucune panne du catalogue ne s’applique à ce lab avec ces critères.'
+          : `Impossible de tirer ${count} pannes compatibles sur ce lab avec ces critères : ${active.length} seulement ${active.length > 1 ? 'sont applicables' : 'est applicable'} sans se recouvrir. Réduisez le nombre de pannes ou élargissez les filtres.`
+      )
   }
 
   const withMode: LabState = { ...state, troubleshooting: { seed: spec.seed, faults: active } }

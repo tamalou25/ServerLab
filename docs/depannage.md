@@ -40,6 +40,25 @@ Code : `src/engine/troubleshoot/`.
 - **Jamais de sortie inventée**, ni de panne matérielle (disque, carte, alimentation). Le câble débranché est admis : c’est un état du lien de la topologie, observable par les consoles déjà sourcées.
 - Le titre et la cause ne sont montrés qu'à l'abandon ou au bilan ; le ticket ne cite ni la cause ni l'identifiant.
 
+## Tirage contrôlé (graine)
+
+`startTroubleshooting` tire les pannes avec le PRNG `mulberry32(seed)` : aucun `Math.random()` ni `Date.now()`,
+catalogue parcouru dans l'ordre mélangé (Fisher-Yates) d'un tableau ordonné, jamais d'itération sur un objet.
+Même graine = mêmes pannes, mêmes cibles, même ordre (sérialisation JSON identique, testée sur 100 graines).
+
+Règle de compatibilité des pannes tirées (écartement déterministe, avant d'accepter une candidate) :
+
+1. la candidate doit avoir un symptôme visible une fois injectée (comme pour une panne seule) ;
+2. elle ne doit pas agir sur la même cible qu'une panne déjà active (même équipement et même interface,
+   port, groupe, réseau ou service ; un équipement entier si l'une des deux n'a pas de détail) ;
+3. son injection ne doit pas masquer le symptôme d'une panne déjà active.
+
+Une candidate incompatible est ignorée et le tirage passe à la suivante. Si le nombre demandé ne peut être
+atteint, l'erreur `NoFaultAvailable` est renvoyée (« Aucune panne du catalogue ne s’applique à ce lab avec ces
+critères. » ou « Impossible de tirer N pannes compatibles… »). Garantie testée (`tests/engine/troubleshoot/draw.test.ts`) :
+pour chaque lab sain de référence, 1 à 3 pannes et les domaines `reseau` / `windows`, tout tirage valide est
+entièrement réparé par la réparation officielle appliquée dans l'ordre inverse puis dans l'ordre d'injection.
+
 ## Catalogue
 
 Pannes simples (symptômes lus par des consoles déjà sourcées, rien de nouveau n'est affiché) :
