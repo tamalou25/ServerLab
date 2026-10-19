@@ -4,6 +4,19 @@ Toutes les évolutions notables de ServerLab sont consignées ici.
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versions : [SemVer](https://semver.org/lang/fr/).
 La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
+## [Non publié]
+
+Chantier A de la v2.8 (services à état).
+
+### Ajouté
+
+- Snap-in Services (`services.msc`) : liste des services (Nom, Description, État, Type de démarrage, Ouvrir une
+  session en tant que), démarrer, arrêter, redémarrer par les commandes `service.*` (annulables), propriétés
+  (type de démarrage modifiable, onglet Dépendances en lecture seule : le moteur ne modélise ni pause ni
+  dépendances) (#226).
+- Gestionnaire de serveur : les services arrêtés dont le démarrage est automatique sont signalés en rouge et
+  rendent l'indicateur « Services » des vignettes rouge (#226).
+
 ## [2.7.0] — 2026-10-14
 
 Fidélité des consoles au caractère près (CMD, PowerShell, Cisco IOS 15.x) : chaque sortie est comparée à une
