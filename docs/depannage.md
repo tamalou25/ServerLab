@@ -37,7 +37,7 @@ Code : `src/engine/troubleshoot/`.
 - **Réparable** avec les commandes disponibles : le test de réparabilité l'exige pour chaque panne.
 - **Symptômes sourcés** : le symptôme est la sortie d'une commande déjà simulée et sourcée ; une panne
   n'ajoute jamais de sortie de console. Pas de source, pas de panne.
-- **Jamais de sortie inventée**, ni de panne physique ou matérielle.
+- **Jamais de sortie inventée**, ni de panne matérielle (disque, carte, alimentation). Le câble débranché est admis : c’est un état du lien de la topologie, observable par les consoles déjà sourcées.
 - Le titre et la cause ne sont montrés qu'à l'abandon ou au bilan ; le ticket ne cite ni la cause ni l'identifiant.
 
 ## Catalogue
