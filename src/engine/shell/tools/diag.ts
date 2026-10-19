@@ -22,6 +22,8 @@ import { setPower } from '../../topology/actions'
 import { LEARN_CMD } from '../cmd/help'
 import type { ExecContext } from '../context'
 import {
+  disabledDependency,
+  runningDependents,
   setServiceStartType,
   startService,
   stopService,
@@ -467,6 +469,12 @@ export const scTool: ToolDef = {
             '[SC] StartService échec(s) 1058 :\n\nLe service ne peut pas être démarré, soit parce qu’il a été désactivé, soit parce qu’il n’a pas de périphériques activés qui lui sont associés.',
             'error'
           )
+        // 1068 (Learn, codes d'erreur système) : une dépendance désactivée
+        if (disabledDependency(ctx.state, ctx.deviceId, s.name))
+          return ctx.write(
+            '[SC] StartService échec(s) 1068 :\n\nLe service ou le groupe de dépendances n’a pas pu démarrer.',
+            'error'
+          )
         ctx.apply(startService(ctx.state, ctx.deviceId, s.name))
         ctx.writeLines(['', `NOM_SERVICE: ${s.name}`, '        ÉTAT               : 2  START_PENDING', ''])
         return
@@ -476,6 +484,12 @@ export const scTool: ToolDef = {
       if (!s.canStop)
         return ctx.write(
           '[SC] ControlService échec(s) 1052 :\n\nLe contrôle demandé n’est pas valide pour ce service.',
+          'error'
+        )
+      // 1051 (Learn, codes d'erreur système) : des services en cours d'exécution en dépendent
+      if (runningDependents(ctx.state, ctx.deviceId, s.name).length > 0)
+        return ctx.write(
+          '[SC] ControlService échec(s) 1051 :\n\nUn contrôle d’arrêt a été envoyé à un service dont dépendent d’autres services en cours d’exécution.',
           'error'
         )
       ctx.apply(stopService(ctx.state, ctx.deviceId, s.name))

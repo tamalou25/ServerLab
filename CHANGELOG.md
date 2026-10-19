@@ -4,6 +4,16 @@ Toutes les évolutions notables de ServerLab sont consignées ici.
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versions : [SemVer](https://semver.org/lang/fr/).
 La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
+## [Non publié]
+
+### Chantier A de la v2.8 (services à état)
+
+- Dépendances entre services (#223) : table sourcée dans le moteur (`W3SVC` → `WAS`, `Netlogon` → `LanmanWorkstation` et `LanmanServer`), sans changement du format `.slab`.
+- `Stop-Service` / `Restart-Service` refusés sans `-Force` si des dépendants tournent, avec `-Force` les dépendants sont arrêtés d'abord ; `sc stop` : erreur 1051 ; `net stop` : message honnête (invite non simulée).
+- `Start-Service`, `net start` et `sc start` démarrent d'abord les dépendances ; une dépendance désactivée fait échouer le démarrage (erreur 1068).
+- `Get-Service -DependentServices` / `-RequiredServices` et propriétés `DependentServices` / `ServicesDependedOn` calculées depuis le modèle (plus de « non simulé »).
+- Commandes `service.stop` et `service.restart` : argument optionnel `force`.
+
 ## [2.7.0] — 2026-10-14
 
 Fidélité des consoles au caractère près (CMD, PowerShell, Cisco IOS 15.x) : chaque sortie est comparée à une

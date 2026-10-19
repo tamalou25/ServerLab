@@ -12,7 +12,9 @@
  */
 import {
   computerServices,
+  disabledDependency,
   findComputerService,
+  runningDependents,
   startService,
   stopService,
   type ServiceInfo
@@ -69,6 +71,14 @@ export function netStart(ctx: ExecContext, args: string[]): void {
     )
     return
   }
+  // Win32 1068 (Learn, codes d'erreur système) : une dépendance désactivée empêche le démarrage
+  if (disabledDependency(ctx.state, ctx.deviceId, s.name)) {
+    ctx.writeLines(
+      ['Erreur système 1068.', '', 'Le service ou le groupe de dépendances n’a pas pu démarrer.', ''],
+      'error'
+    )
+    return
+  }
   ctx.apply(startService(ctx.state, ctx.deviceId, s.name))
   ctx.writeLines([`Le service ${s.display} démarre.`, `Le service ${s.display} a démarré.`, ''])
 }
@@ -85,6 +95,20 @@ export function netStop(ctx: ExecContext, args: string[]): void {
   // Learn (net stop) : le service Client DHCP ne peut pas être arrêté
   if (!s.canStop)
     return helpMsg(ctx, 'Le service demandé ne peut pas être contrôlé dans son état actuel.', 2191)
+  // Learn (IIS 8, « net stop WAS ») : net stop demande de confirmer l'arrêt des services
+  // dépendants (« Y »). Cette invite n'est pas simulée : message honnête, rien n'est arrêté.
+  const dependents = runningDependents(ctx.state, ctx.deviceId, s.name)
+  if (dependents.length > 0) {
+    ctx.writeLines(
+      [
+        `L’invite de confirmation de « net stop » (arrêt des services dépendants) n’est pas simulée dans ServerLab. Services en cours d’exécution qui dépendent de ${s.display} : ${dependents.map((d) => d.display).join(', ')}.`,
+        'Arrêtez d’abord ces services, ou utilisez Stop-Service -Force dans PowerShell.',
+        ''
+      ],
+      'error'
+    )
+    return
+  }
   ctx.apply(stopService(ctx.state, ctx.deviceId, s.name))
   ctx.writeLines([`Le service ${s.display} s’arrête.`, `Le service ${s.display} a été arrêté.`, ''])
 }
