@@ -52,6 +52,9 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   (type de démarrage modifiable, onglet Dépendances calculé depuis le modèle ; pas de pause) (#226).
 - Gestionnaire de serveur : les services arrêtés dont le démarrage est automatique sont signalés en rouge et
   rendent l'indicateur « Services » des vignettes rouge (#226).
+- Lab 42 « Diagnostic de services Windows » (#227) : départ cassé (DNS arrêté en démarrage manuel, service Serveur arrêté sur un
+  serveur membre, horloge d'un poste décalée de 15 minutes), causes non données dans l'énoncé. Champ facultatif `clockOffsetSeconds`
+  des équipements de départ des labs (format `.slab` inchangé).
 
 ## [2.7.0] — 2026-10-14
 
