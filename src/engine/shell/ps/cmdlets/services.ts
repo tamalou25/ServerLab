@@ -13,10 +13,13 @@
  *   (Running, Stopped, Paused) ; exemple « Set-Service -Name WinRM -Status Running -PassThru ».
  * - Start-Service, exemple 4 : un service désactivé ne démarre pas.
  * Messages d'erreur français : docs/fidelite.md, « À vérifier (Lot 2) ».
+ * Dépendances (v2.8, #223) : -DependentServices, -RequiredServices, -Force (services/servicedeps.ts).
  */
 import {
   computerServices,
+  dependentServices,
   findComputerService,
+  requiredServices,
   restartService,
   serviceLabel,
   setServiceStartType,
@@ -66,8 +69,15 @@ function renderServices(objects: PsObject[]): string[] {
   ]
 }
 
-/** Objet ServiceController d'un service. */
-export function serviceObject(s: ServiceInfo): PsObject {
+/**
+ * Objet ServiceController d'un service. `relations` ajoute DependentServices et ServicesDependedOn
+ * (calculées depuis le modèle de dépendances, Learn Get-Service exemple 7) ; les objets imbriqués
+ * n'en portent pas, pour éviter une récursion sans fin.
+ */
+export function serviceObject(
+  s: ServiceInfo,
+  relations?: { dependents: ServiceInfo[]; required: ServiceInfo[] }
+): PsObject {
   return psObject(
     TYPE,
     {
@@ -78,10 +88,24 @@ export function serviceObject(s: ServiceInfo): PsObject {
       StartType: psEnum('System.ServiceProcess.ServiceStartMode', s.startType, START_VALUE[s.startType]),
       CanStop: s.status === 'Running' && s.canStop,
       CanPauseAndContinue: false,
-      MachineName: '.'
+      MachineName: '.',
+      ...(relations
+        ? {
+            DependentServices: relations.dependents.map((d) => serviceObject(d)),
+            ServicesDependedOn: relations.required.map((d) => serviceObject(d))
+          }
+        : {})
     },
     { kind: 'table', props: ['Status', 'Name', 'DisplayName'], render: renderServices }
   )
+}
+
+/** Objet ServiceController complet (avec ses dépendances) d'un service de l'ordinateur de la console. */
+function fullObject(ctx: CmdContext, s: ServiceInfo): PsObject {
+  return serviceObject(s, {
+    dependents: dependentServices(ctx.state, ctx.deviceId, s.name),
+    required: requiredServices(ctx.state, ctx.deviceId, s.name)
+  })
 }
 
 const strings = (v: PsValue | undefined) => (v === undefined ? [] : flatten([v]).map(psToString))
@@ -163,11 +187,25 @@ function apply(run: () => void, s: ServiceInfo): void {
     run()
   } catch (e) {
     if (!(e instanceof CommandFailure)) throw e
-    if (e.code === 'ServiceDisabled' || e.code === 'ServiceCannotStop')
+    if (e.code === 'ServiceHasDependents')
+      // Stop-Service sans -Force : Learn, paramètre -Force ; identifiant PowerShell
+      // ServiceHasDependentServices
+      throw psError(
+        e.message,
+        'InvalidOperation',
+        'ServiceHasDependentServices',
+        serviceLabel(s),
+        'ServiceCommandException'
+      )
+    if (
+      e.code === 'ServiceDisabled' ||
+      e.code === 'ServiceDependencyFailed' ||
+      e.code === 'ServiceCannotStop'
+    )
       throw psError(
         e.message,
         'OpenError',
-        e.code === 'ServiceDisabled' ? 'CouldNotStartService' : 'CouldNotStopService',
+        e.code === 'ServiceCannotStop' ? 'CouldNotStopService' : 'CouldNotStartService',
         serviceLabel(s),
         'ServiceCommandException'
       )
@@ -177,7 +215,7 @@ function apply(run: () => void, s: ServiceInfo): void {
 
 /** Service relu après l'opération (sortie -PassThru). */
 function reread(ctx: CmdContext, s: ServiceInfo): PsObject {
-  return serviceObject(findComputerService(ctx.state, ctx.deviceId, s.name) ?? s)
+  return fullObject(ctx, findComputerService(ctx.state, ctx.deviceId, s.name) ?? s)
 }
 
 const completeNames = (ctx: CmdContext) => computerServices(ctx.state, ctx.deviceId).map((s) => s.name)
@@ -200,11 +238,16 @@ const selectorParams: ParamDef[] = [
 
 /** Démarre, arrête ou redémarre les services désignés. */
 function control(op: 'start' | 'stop' | 'restart') {
-  const action = { start: startService, stop: stopService, restart: restartService }[op]
   return (ctx: CmdContext, args: BoundArgs, input: PsValue[]): PsValue[] => {
     const out: PsValue[] = []
+    // -Force : arrête d'abord les services dépendants (Learn, Stop-Service -Force)
+    const force = args['Force'] === true
     for (const s of selectServices(ctx, args, input, false)) {
-      apply(() => ctx.apply(action(ctx.state, ctx.deviceId, s.name)), s)
+      apply(() => {
+        if (op === 'start') ctx.apply(startService(ctx.state, ctx.deviceId, s.name))
+        else if (op === 'stop') ctx.apply(stopService(ctx.state, ctx.deviceId, s.name, force))
+        else ctx.apply(restartService(ctx.state, ctx.deviceId, s.name, force))
+      }, s)
       if (args['PassThru'] === true) out.push(reread(ctx, s))
     }
     return out
@@ -235,14 +278,20 @@ export const serviceCmdlets: CmdletDef[] = [
       { name: 'RequiredServices', type: 'switch', aliases: ['SDO', 'ServicesDependedOn'] }
     ],
     run(ctx, args, input) {
-      for (const p of ['DependentServices', 'RequiredServices'])
-        if (args[p] === true)
-          throw psError(
-            unsimulatedParameterMessage('Get-Service', p),
-            'NotImplemented',
-            'UnsimulatedParameter'
-          )
-      return selectServices(ctx, args, input, true).map(serviceObject)
+      const selected = selectServices(ctx, args, input, true)
+      // Learn : -DependentServices « gets only the services that depend upon the specified
+      // service » ; -RequiredServices « gets the value of the ServicesDependedOn property »
+      if (args['DependentServices'] === true || args['RequiredServices'] === true) {
+        const related: ServiceInfo[] = []
+        for (const s of selected)
+          for (const r of [
+            ...(args['DependentServices'] === true ? dependentServices(ctx.state, ctx.deviceId, s.name) : []),
+            ...(args['RequiredServices'] === true ? requiredServices(ctx.state, ctx.deviceId, s.name) : [])
+          ])
+            if (!related.some((o) => o.name === r.name)) related.push(r)
+        return related.map((r) => fullObject(ctx, r))
+      }
+      return selected.map((s) => fullObject(ctx, s))
     }
   },
   {
