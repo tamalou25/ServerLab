@@ -9,6 +9,7 @@ import { createContext, sendIp, sourceAddressFor } from '../../sim/forward'
 import { createRecorder, type PacketTrace, type PduLayer, type Protocol } from '../../sim/trace'
 import { normalizeName } from '../dns/server'
 import { firstAddress, resolveName } from '../dns/resolver'
+import { dcAnswersClients } from './dcservices'
 import { dcSite, siteControllers, siteOfAddress } from './sites'
 
 /** Contrôleur de domaine localisé par le client. */
@@ -108,8 +109,26 @@ function contactDc(
   const srv = resolveName(state, clientId, srvName, 'SRV')
   traces.push(srv.trace)
   if (srv.result.kind !== 'answer') return null
-  const target = srv.result.records.find((r) => r.type === 'SRV')?.data.split(' ')[3]
-  if (!target) return null
+  // Plusieurs contrôleurs : le client essaie chaque cible SRV jusqu'à ce qu'un contrôleur réponde
+  // (NTDS et Netlogon démarrés, sinon il ne répond pas au « ping » de localisation)
+  const targets = [
+    ...new Set(srv.result.records.filter((r) => r.type === 'SRV').map((r) => r.data.split(' ')[3] ?? ''))
+  ].filter((t) => t)
+  for (const target of targets) {
+    const found = pingTarget(state, clientId, domain, target, traces)
+    if (found) return found
+  }
+  return null
+}
+
+/** Résout une cible SRV puis « ping » LDAP du contrôleur, qui indique le site du client. */
+function pingTarget(
+  state: LabState,
+  clientId: string,
+  domain: Domain,
+  target: string,
+  traces: PacketTrace[]
+): (LocatedDc & { clientSite: string | null }) | null {
   const a = resolveName(state, clientId, normalizeName(target), 'A')
   traces.push(a.trace)
   const dcIp = firstAddress(a)
@@ -117,7 +136,7 @@ function contactDc(
   const dc = Object.values(state.devices).find(
     (d) => d.powered && d.interfaces.some((i) => effectiveIpv4(i)?.address === dcIp)
   )
-  if (!dc || !domain.controllers.includes(dc.id)) return null
+  if (!dc || !domain.controllers.includes(dc.id) || !dcAnswersClients(dc)) return null
   // Le contrôleur indique au client son site, d'après le sous-réseau de son adresse
   const from = state.devices[clientId]
   const clientIp = from ? sourceAddressFor(state, from, dcIp) : null

@@ -1,0 +1,4 @@
+# Source: https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--1300-1699- (ERROR_NO_SUCH_DOMAIN, 1355 = 0x54B : « The specified domain either does not exist or could not be contacted. », traduit) ; mise en page « Getting DC name failed: Status = … » issue de la sortie connue de nltest, non publiée sur Learn, voir docs/fidelite.md v2.8 (A-23)
+# Commande: nltest /dsgetdc:lab.local
+Échec de l’obtention du nom du DC : état = 1355 0x54b ERROR_NO_SUCH_DOMAIN
+Le domaine spécifié n’existe pas ou n’a pas pu être contacté.
