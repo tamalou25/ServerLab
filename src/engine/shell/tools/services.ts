@@ -14,7 +14,9 @@ import {
   computerServices,
   disabledDependency,
   findComputerService,
+  recordStartFailure,
   runningDependents,
+  startFailureOf,
   startService,
   stopService,
   type ServiceInfo
@@ -77,6 +79,13 @@ export function netStart(ctx: ExecContext, args: string[]): void {
       ['Erreur système 1068.', '', 'Le service ou le groupe de dépendances n’a pas pu démarrer.', ''],
       'error'
     )
+    return
+  }
+  // Service en échec au démarrage (v2.8) : erreur 1066 ou 1053, évènement 7000 journalisé
+  const failure = startFailureOf(s)
+  if (failure) {
+    ctx.state = recordStartFailure(ctx.state, ctx.deviceId, s.name)
+    ctx.writeLines([`Erreur système ${failure.number}.`, '', failure.text, ''], 'error')
     return
   }
   ctx.apply(startService(ctx.state, ctx.deviceId, s.name))

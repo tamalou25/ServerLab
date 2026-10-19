@@ -1,0 +1,5 @@
+# Source: https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--1000-1299- (1066 ERROR_SERVICE_SPECIFIC_ERROR : « The service has returned a service-specific error code. ») ; traduction française et format « Erreur système » de net start non publiés, voir docs/fidelite.md v2.8
+# Commande: net start W3SVC
+Erreur système 1066.
+
+Le service a renvoyé un code d’erreur spécifique au service.

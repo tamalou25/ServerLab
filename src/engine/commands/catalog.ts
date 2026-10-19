@@ -37,7 +37,15 @@ import {
   setNetworkCategory
 } from '../services/firewall'
 import { resyncClock, setHostClock } from '../services/hostclock'
-import { restartService, setServiceStartType, startService, stopService } from '../services/hostservices'
+import {
+  clearServiceFailure,
+  restartService,
+  setServiceFailure,
+  setServiceRecovery,
+  setServiceStartType,
+  startService,
+  stopService
+} from '../services/hostservices'
 import {
   addLocalGroupMembers,
   newLocalGroup,
@@ -252,6 +260,18 @@ const CORE_COMMANDS = {
   'service.setStartType': def(
     setServiceStartType,
     (s, id, name, type) => `Type de démarrage ${type} pour le service ${name}${on(s, id)}`
+  ),
+  'service.setFailure': def(
+    setServiceFailure,
+    (s, id, name) => `Mettre le service ${name} en échec au démarrage${on(s, id)}`
+  ),
+  'service.clearFailure': def(
+    clearServiceFailure,
+    (s, id, name) => `Réparer la configuration du service ${name}${on(s, id)}`
+  ),
+  'service.setRecovery': def(
+    setServiceRecovery,
+    (s, id, name) => `Options de récupération du service ${name}${on(s, id)}`
   ),
   'local.newUser': def(newLocalUser, (s, id, input) => `Créer l’utilisateur local ${input.name}${on(s, id)}`),
   'local.setUser': def(setLocalUser, (s, id, name) => `Modifier l’utilisateur local ${name}${on(s, id)}`),

@@ -440,9 +440,45 @@ export const RemoteSessionSchema = z.object({
  */
 export const SERVICE_STATUSES = ['Running', 'Stopped'] as const
 export const SERVICE_START_TYPES = ['Automatic', 'Manual', 'Disabled'] as const
+/**
+ * Causes d'échec au démarrage d'un service (v2.8, #224) : configuration invalide (erreur 1066,
+ * « service-specific error code ») ou délai dépassé (erreur 1053). Absent = le service démarre.
+ */
+export const SERVICE_FAILURE_REASONS = ['invalidConfig', 'timeout'] as const
+export const ServiceFailureSchema = z.object({ reason: z.enum(SERVICE_FAILURE_REASONS) })
+export type ServiceFailure = z.infer<typeof ServiceFailureSchema>
+
+/** Actions de récupération (`sc failure actions=` : restart, reboot, run). */
+export const SERVICE_RECOVERY_ACTIONS = ['restart', 'reboot', 'run'] as const
+export type ServiceRecoveryActionType = (typeof SERVICE_RECOVERY_ACTIONS)[number]
+
+/**
+ * Options de récupération d'un service (`sc failure` / `sc qfailure`, v2.8, #224) : délai de remise à
+ * zéro du compteur d'échecs (s), message de redémarrage, commande à exécuter, actions successives
+ * (1er, 2e puis échecs suivants) avec leur délai (ms). Absent = aucune action configurée.
+ */
+export const ServiceRecoverySchema = z.object({
+  resetSeconds: z.number().int().min(0).default(0),
+  rebootMessage: z.string().default(''),
+  command: z.string().default(''),
+  actions: z
+    .array(
+      z.object({
+        type: z.enum(SERVICE_RECOVERY_ACTIONS),
+        delayMs: z.number().int().min(0).default(0)
+      })
+    )
+    .default([])
+})
+export type ServiceRecovery = z.infer<typeof ServiceRecoverySchema>
+
 export const ServiceStateSchema = z.object({
   status: z.enum(SERVICE_STATUSES).default('Running'),
-  startType: z.enum(SERVICE_START_TYPES).default('Automatic')
+  startType: z.enum(SERVICE_START_TYPES).default('Automatic'),
+  /** Échec au démarrage (champ facultatif du format 26, v2.8). */
+  failure: ServiceFailureSchema.optional(),
+  /** Options de récupération (champ facultatif du format 26, v2.8). */
+  recovery: ServiceRecoverySchema.optional()
 })
 export type ServiceState = z.infer<typeof ServiceStateSchema>
 

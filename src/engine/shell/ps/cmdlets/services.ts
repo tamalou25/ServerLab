@@ -15,11 +15,13 @@
  * Messages d'erreur français : docs/fidelite.md, « À vérifier (Lot 2) ».
  * Dépendances (v2.8, #223) : -DependentServices, -RequiredServices, -Force (services/servicedeps.ts).
  */
+import type { EngineResult } from '../../../core/result'
 import {
   computerServices,
   dependentServices,
   findComputerService,
   requiredServices,
+  recordStartFailure,
   restartService,
   serviceLabel,
   setServiceStartType,
@@ -181,6 +183,16 @@ function applyFilters(list: ServiceInfo[], args: BoundArgs): ServiceInfo[] {
   )
 }
 
+/**
+ * Applique le résultat d'un démarrage ; le refus d'un service en échec (v2.8) est journalisé
+ * (évènement 7000) même si la commande échoue.
+ */
+function applyStart(ctx: CmdContext, name: string, result: EngineResult<ServiceInfo>): void {
+  if (!result.ok && result.error.code === 'ServiceStartFailed')
+    ctx.state = recordStartFailure(ctx.state, ctx.deviceId, name)
+  ctx.apply(result)
+}
+
 /** Erreurs du moteur traduites en erreurs PowerShell. */
 function apply(run: () => void, s: ServiceInfo): void {
   try {
@@ -199,6 +211,7 @@ function apply(run: () => void, s: ServiceInfo): void {
       )
     if (
       e.code === 'ServiceDisabled' ||
+      e.code === 'ServiceStartFailed' ||
       e.code === 'ServiceDependencyFailed' ||
       e.code === 'ServiceCannotStop'
     )
@@ -244,9 +257,9 @@ function control(op: 'start' | 'stop' | 'restart') {
     const force = args['Force'] === true
     for (const s of selectServices(ctx, args, input, false)) {
       apply(() => {
-        if (op === 'start') ctx.apply(startService(ctx.state, ctx.deviceId, s.name))
+        if (op === 'start') applyStart(ctx, s.name, startService(ctx.state, ctx.deviceId, s.name))
         else if (op === 'stop') ctx.apply(stopService(ctx.state, ctx.deviceId, s.name, force))
-        else ctx.apply(restartService(ctx.state, ctx.deviceId, s.name, force))
+        else applyStart(ctx, s.name, restartService(ctx.state, ctx.deviceId, s.name, force))
       }, s)
       if (args['PassThru'] === true) out.push(reread(ctx, s))
     }
@@ -371,7 +384,8 @@ export const serviceCmdlets: CmdletDef[] = [
       for (const s of targets) {
         if (startup)
           ctx.apply(setServiceStartType(ctx.state, ctx.deviceId, s.name, startup as ServiceStartType))
-        if (status === 'Running') apply(() => ctx.apply(startService(ctx.state, ctx.deviceId, s.name)), s)
+        if (status === 'Running')
+          apply(() => applyStart(ctx, s.name, startService(ctx.state, ctx.deviceId, s.name)), s)
         if (status === 'Stopped') apply(() => ctx.apply(stopService(ctx.state, ctx.deviceId, s.name)), s)
         if (args['PassThru'] === true) out.push(reread(ctx, s))
       }
