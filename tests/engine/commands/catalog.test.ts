@@ -152,6 +152,12 @@ describe('catalogue des commandes', () => {
         actions: [{ type: 'restart', delayMs: 60000 }]
       })
     )
+    // Mode panne (v2.8) : indice d'un dépannage en cours (champ facultatif posé pour le test)
+    r.state = {
+      ...r.state,
+      troubleshooting: { seed: 1, faults: [{ id: 'net.wrong-mask', params: {}, hintsUsed: 0 }] }
+    }
+    r.run(command('troubleshoot.useHint', 'net.wrong-mask'))
     // Horloge par ordinateur (v2.8) : le service Temps Windows de PC2 est démarré par défaut
     r.run(command('host.setClock', r.id('POSTE2'), 600))
     r.run(command('host.resyncClock', r.id('POSTE2')))

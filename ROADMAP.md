@@ -186,6 +186,8 @@ commande non simulée : message honnête de `unsimulated.ts` ; tout est calculé
 
 Les symptômes affichés en console sont ceux du vrai système (mêmes messages, sourcés).
 
+Modèle, recette d'ajout d'une panne et catalogue : [docs/depannage.md](docs/depannage.md).
+
 Hors périmètre : pannes physiques réelles, matériel, tout contenu non sourcé.
 
 ## v2.9 — Serveurs Linux
