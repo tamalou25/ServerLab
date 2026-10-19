@@ -37,6 +37,10 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   comparées à celles jouées par l'élève (« chemin le plus court »), indices, durée, score sur 100.
 - Dépannage chronométré : réutilise la session et la note du mode examen (durée imposée, indices désactivés,
   vérification unique) ; le bilan affiche aussi la note d'examen. Annuler ne revient jamais avant l'injection.
+- Tirage contrôlé (#231) : audit de `startTroubleshooting` (déterministe : PRNG seedé, ordre stable), règle de compatibilité
+  des pannes tirées (même cible ou symptôme masqué : candidate écartée), message d'erreur FR précis quand le nombre de pannes
+  demandé est impossible. Tests : réparabilité de tout tirage valide (labs de base × graines × 1 à 3 pannes × domaines, deux
+  ordres de réparation), même graine = même tirage, diversité, erreurs métier.
 
 ### Chantier A de la v2.8 (services à état)
 
