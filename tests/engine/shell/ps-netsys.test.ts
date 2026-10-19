@@ -84,7 +84,7 @@ describe('Get-NetTCPConnection, Test-NetConnection -Port', () => {
     expect(closed.text).toMatch(/PingSucceeded\s+: True/)
     expect(closed.text).toContain('Échec de la connexion TCP à (192.168.10.1 : 8080)')
     // Service arrêté
-    ps.run('Stop-Service LanmanServer')
+    ps.run('Stop-Service LanmanServer -Force')
     expect(ps.run('Test-NetConnection 192.168.10.1 -Port 445', 'PC2').text).toMatch(
       /TcpTestSucceeded\s+: False/
     )

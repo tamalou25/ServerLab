@@ -83,7 +83,7 @@ describe('Get-Service', () => {
       /^Stopped\s+W32Time\s/m
     )
   })
-  it('erreurs : service introuvable, -ComputerName distant et -RequiredServices non simulés', () => {
+  it('erreurs : service introuvable, -ComputerName distant non simulé', () => {
     const ps = new Console(buildReferenceLab())
     const err = ps.run('Get-Service Inexistant').errors
     expect(err).toContain('Impossible de trouver un service assorti du nom « Inexistant »')
@@ -92,7 +92,8 @@ describe('Get-Service', () => {
     expect(ps.run('Get-Service Zz*').errors).toBe('')
     expect(ps.run('Get-Service -ComputerName SRV9').errors).toContain('n’est pas simulé')
     expect(ps.run('Get-Service -ComputerName localhost DNS').errors).toBe('')
-    expect(ps.run('Get-Service WinRM -RequiredServices').errors).toContain('n’est pas simulé')
+    // -RequiredServices est calculé (v2.8) ; un service absent du modèle reste introuvable
+    expect(ps.run('Get-Service WinRM -RequiredServices').errors).toContain('Impossible de trouver un service')
   })
 })
 
@@ -132,9 +133,9 @@ describe('Start-Service, Stop-Service, Restart-Service, Set-Service', () => {
   })
   it('Set-Service -Status Stopped / Running -PassThru ; Paused et Boot refusés', () => {
     const ps = new Console(buildReferenceLab())
-    expect(ps.run('Set-Service -Name LanmanServer -Status Stopped -PassThru').text).toMatch(
-      /^Stopped\s+LanmanServer\s+Serveur$/m
-    )
+    expect(
+      ps.run('Stop-Service Netlogon; Set-Service -Name LanmanServer -Status Stopped -PassThru').text
+    ).toMatch(/^Stopped\s+LanmanServer\s+Serveur$/m)
     expect(ps.run('Set-Service LanmanServer -Status Running').errors).toBe('')
     expect(ps.run('Set-Service DNS -Status Paused').errors).toContain('n’est pas simulée')
     expect(ps.run('Set-Service DNS -StartupType Boot').errors).toContain('pilotes')
@@ -231,6 +232,7 @@ describe('effets de l’arrêt des services sur la simulation (bout en bout)', (
     lab.run('New-Item -Path C:\\Compta -ItemType Directory')
     lab.run("New-SmbShare -Name Compta -Path C:\\Compta -FullAccess 'Tout le monde'")
     expect(lab.run('dir \\\\SRV1\\Compta', 'SRV1', 'cmd').errors).toBe('')
+    lab.run('net stop Netlogon', 'SRV1', 'cmd')
     lab.run('net stop LanmanServer', 'SRV1', 'cmd')
     expect(services(lab.state)['LanmanServer']?.status).toBe('Stopped')
     expect(lab.run('dir \\\\SRV1\\Compta', 'SRV1', 'cmd').errors).toContain('chemin réseau')
