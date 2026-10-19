@@ -28,6 +28,10 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   redémarrage.
 - Journal Système : évènements 7000 (démarrage refusé), 7034 (arrêt inattendu) et 7031 (arrêt inattendu avec action corrective).
 - `sc failure` et `sc qfailure` (reset, reboot, command, actions), sorties calculées depuis l'état, captures et tests golden.
+- NTDS et Netlogon (#220) : un contrôleur de domaine dont l'un des deux services est arrêté ne répond plus aux clients.
+  Session de domaine refusée (erreur 1311, événement NETLOGON 5719 sur le poste), `gpupdate` en échec, `nltest /dsgetdc`
+  en erreur 1355 (golden), jonction au domaine impossible. Avec plusieurs contrôleurs, le client utilise celui qui répond ;
+  redémarrer le service (`service.start`) rétablit tout.
 - Les issues suivantes de la v2.8 n'ajoutent que des champs facultatifs, sans nouvelle version du format.
 - Interface (#226) : Snap-in Services (`services.msc`) : liste des services (Nom, État, Type de démarrage), démarrer, arrêter, redémarrer par les commandes `service.*` (annulables), propriétés
   (type de démarrage modifiable, onglet Dépendances calculé depuis le modèle ; pas de pause) (#226).

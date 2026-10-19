@@ -299,7 +299,7 @@ describe('AD DS : jonction et ouverture de session', () => {
     }
     expect(
       logon(off, j.ids.PC1!, { user: 'Administrateur', password: 'P@ssw0rd', domain: 'LAB' }).message
-    ).toContain('aucun serveur d’accès disponible')
+    ).toContain('aucun serveur d’ouverture de session disponible')
   })
 })
 
