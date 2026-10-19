@@ -65,6 +65,8 @@ export const LabDeviceSchema = z.object({
       })
     )
     .optional(),
+  /** Écart de l'horloge du poste avec celle du lab, en secondes (appliqué en dernier ; labs de diagnostic Kerberos). */
+  clockOffsetSeconds: z.number().int().optional(),
   /** Dossiers partagés (créés au besoin) : comptes par niveau d'autorisation. */
   shares: z
     .array(
@@ -427,6 +429,9 @@ function buildDeclarativeStart(start: LabDeclarativeStart): LabState {
       if (svc.startType) apply(command('service.setStartType', id, svc.name, svc.startType))
       apply(command(svc.running ? 'service.start' : 'service.stop', id, svc.name))
     }
+  // Horloges décalées : après la jonction, qui exige des horloges à l'heure
+  for (const d of start.devices)
+    if (d.clockOffsetSeconds) apply(command('host.setClock', idOf(d.name), d.clockOffsetSeconds))
   for (const d of start.devices)
     if (d.adminAccess?.length) apply(command('cyber.setAdminAccess', idOf(d.name), d.adminAccess.map(idOf)))
   if (start.cyber) apply(command('cyber.configure', start.cyber as CyberConfigPatch))
