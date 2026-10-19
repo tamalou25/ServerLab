@@ -3,7 +3,15 @@
  * démarre cassé (symptôme visible, panne non guérie), la réparation officielle le guérit.
  */
 import { describe, expect, it } from 'vitest'
-import { dispatch, FAULTS, mulberry32, startTroubleshooting, type LabState } from '@engine/index'
+import {
+  dispatch,
+  emptyHistory,
+  FAULTS,
+  mulberry32,
+  startTroubleshooting,
+  undoStep,
+  type LabState
+} from '@engine/index'
 import { BASES } from './bases'
 
 const SEEDS = Array.from({ length: 100 }, (_, i) => i + 1)
@@ -27,6 +35,14 @@ describe.each(FAULTS.map((f) => [f.id, f] as const))('panne %s', (_id, fault) =>
       for (const h of fault.hints(r.state, f.params)) expect(h.trim()).not.toBe('')
       expect(fault.cause(r.state, f.params).trim()).not.toBe('')
       expect(fault.ticket(r.state, f.params)).not.toContain(fault.id)
+    }
+  })
+
+  it('ne se répare pas par annulation : l’état cassé est le point de départ', () => {
+    for (const base of applicable) {
+      const r = startTroubleshooting(base.healthy, { seed: 3, faults: [{ id: fault.id }] })
+      if (!r.ok) throw new Error(r.error.message)
+      expect(undoStep(r.state, emptyHistory()).ok).toBe(false)
     }
   })
 
