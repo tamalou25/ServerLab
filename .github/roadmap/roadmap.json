@@ -54,6 +54,21 @@
       "name": "cyber",
       "color": "5319e7",
       "description": "Cybersécurité simulée (scénarios d’attaque abstraits, détection, durcissement)"
+    },
+    {
+      "name": "linux",
+      "color": "e99695",
+      "description": "Serveurs et services Linux simulés"
+    },
+    {
+      "name": "firewall",
+      "color": "d93f0b",
+      "description": "Pare-feu pfSense simulé"
+    },
+    {
+      "name": "troubleshooting",
+      "color": "bfd4f2",
+      "description": "Mode panne (dépannage)"
     }
   ],
   "milestones": [
@@ -88,6 +103,18 @@
     {
       "title": "v2.6.1",
       "description": "Cybersécurité, volet attaque : scénarios d'attaque abstraits sur l'état simulé, attaques sur l'annuaire et L2, mode Red/Blue, labs d'attaque."
+    },
+    {
+      "title": "v2.8",
+      "description": "Services Windows à état (effets réels, dépendances, échec, horloge, snap-in Services) et mode panne : un lab démarre cassé, l'élève diagnostique puis répare."
+    },
+    {
+      "title": "v2.9",
+      "description": "Serveurs Linux (Debian 12 / Ubuntu Server 24.04) : système, paquets, systemd, SSH, Apache2, Samba, Bind9, DHCP, fail2ban, rsyslog, interopérabilité avec Windows."
+    },
+    {
+      "title": "v2.10",
+      "description": "Pare-feu pfSense CE 2.7 : règles par interface avec état des connexions, NAT, DHCP/DNS, interface web et console fidèles, labs DMZ."
     }
   ],
   "issues": [
@@ -408,6 +435,180 @@
       "milestone": "v2.6.1",
       "labels": ["feature", "cyber", "pedagogy"],
       "body": "## Objectif\n\nLabs notés du volet attaque.\n\n## Critères d'acceptation\n\n- [ ] Un lab par type d'attaque (annuaire et L2), un sujet Red / Blue\n- [ ] Labs disponibles dans le mode examen et l'éditeur de labs\n- [ ] Migration `.slab` si le format évolue, CHANGELOG, ROADMAP, `docs/milestones.md`\n- [ ] Tests Vitest du moteur et test de bout en bout, CI verte\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Services : horloge par poste, W32Time et Kerberos",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine", "role"],
+      "body": "## Objectif\n\nIntroduire un décalage d'horloge par poste Windows (aujourd'hui une seule horloge globale) et faire échouer Kerberos au-delà de 5 minutes d'écart avec le contrôleur de domaine. Format `.slab` 26.\n\n## Critères d'acceptation\n\n- [ ] Décalage d'horloge par poste (schéma + migration 26 + fichier de référence `v26.slab`), réglable pour créer une panne d'horloge\n- [ ] `w32tm /query /status` et `/resync`, `net time`, `Get-Date`, `Set-Date` calqués sur la documentation Microsoft\n- [ ] Écart > 5 min : ouverture de session de domaine et accès aux partages du domaine refusés avec les vrais messages et évènements\n- [ ] `W32Time` arrêté : la resynchronisation échoue\n- [ ] Nouveau critère de lab d'horloge ; tests golden et tests du moteur\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Services : NTDS et Netlogon (session, gpupdate, nltest, jonction)",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine", "role"],
+      "body": "## Objectif\n\nBrancher l'arrêt de `NTDS` et `Netlogon` sur le moteur : ouverture de session de domaine, `gpupdate`, `nltest /dsgetdc` et jonction au domaine.\n\n## Critères d'acceptation\n\n- [ ] Service arrêté : sessions de domaine refusées sur les clients avec le vrai message\n- [ ] `gpupdate` en échec, `nltest /dsgetdc` en échec, jonction au domaine impossible\n- [ ] Évènements correspondants journalisés\n- [ ] Test par service (effet sur le reste du lab) ; tests golden\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Services : CertSvc, TermService, WsusService, MpsSvc, Spooler",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine", "role", "security"],
+      "body": "## Objectif\n\nDonner un effet réel aux autres services et ajouter `Spooler`.\n\n## Critères d'acceptation\n\n- [ ] `CertSvc` arrêté : plus de délivrance de certificats\n- [ ] `TermService` arrêté : Bureau à distance refusé\n- [ ] `WsusService` arrêté : les clients ne remontent plus\n- [ ] `MpsSvc` arrêté : les ports sont réellement ouverts (mise en garde de Microsoft reprise si elle est sourcée)\n- [ ] `Spooler` existe sans effet de rôle\n- [ ] Un test par service vérifie l'effet sur le reste du lab\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Services : dépendances réelles, démarrage Disabled, -Force",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine"],
+      "body": "## Objectif\n\nModéliser les dépendances entre services : arrêt refusé sans `-Force`, démarrage en cascade, `-DependentServices` et `-RequiredServices`.\n\n## Critères d'acceptation\n\n- [ ] Arrêter un service dont d'autres dépendent échoue sans `-Force`, avec le vrai message\n- [ ] Démarrer un service démarre d'abord ses dépendances\n- [ ] `Get-Service -DependentServices` et `-RequiredServices` reflètent le modèle (plus de « non simulé »)\n- [ ] Type de démarrage `Disabled` : `Start-Service` échoue avec le vrai message\n- [ ] Tests golden et tests du moteur\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Services : échec au démarrage et options de récupération",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine"],
+      "body": "## Objectif\n\nUn service peut être en échec au démarrage (configuration invalide) : point d'accroche du mode panne. Évolution du schéma (migration `.slab`).\n\n## Critères d'acceptation\n\n- [ ] Évènements 7000, 7031 et 7034 avec les vrais libellés\n- [ ] `sc qfailure` et `sc failure` affichent les options de récupération\n- [ ] Service en échec : démarrage refusé tant que la configuration est invalide\n- [ ] Migration `.slab`, fichier de référence, tests golden\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "CMD : sc, net start/stop et tasklist /svc cohérents avec le modèle",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine"],
+      "body": "## Objectif\n\nCompléter `sc query|qc|start|stop|config|qfailure`, `net start`, `net stop` et `tasklist /svc` (vérifier d'abord ce que la v2.7 a déjà fait).\n\n## Critères d'acceptation\n\n- [ ] `sc qc` et `sc qfailure` ajoutés ; `tasklist /svc` retiré de la liste des options refusées\n- [ ] Sorties calculées depuis l'état du lab, jamais figées\n- [ ] Tests golden par commande\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Interface : snap-in Services (services.msc) et alertes du Gestionnaire de serveur",
+      "milestone": "v2.8",
+      "labels": ["feature", "ui", "role"],
+      "body": "## Objectif\n\nSnap-in **Services** dans la MMC existante et signalement des services arrêtés dans le Gestionnaire de serveur.\n\n## Critères d'acceptation\n\n- [ ] Liste, état, type de démarrage ; démarrer, arrêter, redémarrer ; fenêtre de propriétés avec onglet Dépendances\n- [ ] Toutes les actions passent par des commandes nommées (annulables)\n- [ ] Gestionnaire de serveur : services arrêtés en rouge (design tokens)\n- [ ] Test de bout en bout\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Lab 42 : Diagnostic de services Windows",
+      "milestone": "v2.8",
+      "labels": ["feature", "pedagogy"],
+      "body": "## Objectif\n\nPremier lab du chantier A.\n\n## Critères d'acceptation\n\n- [ ] Lab 42 avec le critère `serviceState` existant et le nouveau critère d'horloge\n- [ ] Test de lab : la solution valide 100 % des critères\n- [ ] Disponible dans le mode examen et l'éditeur de labs\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Dépannage : modèle de panne et catalogue",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine", "troubleshooting"],
+      "body": "## Objectif\n\nUne panne est une transformation déterministe de l'état appliquée via les commandes existantes (annulable, sérialisable) : identifiant, symptôme visible, cause cachée. S'appuie sur `labs/criteria.ts` et la structure de `cyber/scenario.ts`. Migration `.slab`.\n\n## Critères d'acceptation\n\n- [ ] Un lab de dépannage contient état sain, pannes injectées, symptômes et critères de réparation\n- [ ] Une panne ne se répare pas par simple annulation\n- [ ] Tests « injecter, vérifier le symptôme, réparer, vérifier la guérison » pour chaque panne\n- [ ] Migration `.slab`, fichier de référence\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Dépannage : pannes réseau (12 pannes)",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine", "network", "troubleshooting"],
+      "body": "## Objectif\n\nMauvais masque, passerelle erronée, IP en doublon, câble débranché, VLAN erroné, trunk sans le VLAN, port err-disabled, ACL bloquante, NAT erroné, route manquante, mauvais pont racine STP, EtherChannel non monté.\n\n## Critères d'acceptation\n\n- [ ] 12 pannes simples, chacune avec son test complet\n- [ ] Symptômes en console identiques à ceux du vrai système (messages sourcés)\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Dépannage : pannes Windows (9 familles) et pannes composées",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine", "role", "troubleshooting"],
+      "body": "## Objectif\n\nService arrêté, désactivé ou en échec, dépendance arrêtée, enregistrement DNS erroné, étendue DHCP épuisée ou désactivée, relation d'approbation rompue, compte verrouillé ou expiré, GPO non liée ou filtrée, droits NTFS ou partage incohérents, horloge décalée. Plus 6 pannes composées (deux causes qui se masquent).\n\n## Critères d'acceptation\n\n- [ ] Au moins 20 pannes simples au total avec le chantier réseau\n- [ ] 6 pannes composées\n- [ ] Symptômes en console sourcés\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Dépannage : génération contrôlée (graine) et réparabilité",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine", "troubleshooting"],
+      "body": "## Objectif\n\nTirage aléatoire reproductible par graine ; une panne est toujours réparable avec les commandes disponibles.\n\n## Critères d'acceptation\n\n- [ ] Un test exécute la réparation officielle sur 100 graines\n- [ ] Même graine = même panne\n- [ ] Aucun tirage ne produit une panne irréparable\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Dépannage : interface « Lancer un dépannage », indices, bilan, mode examen",
+      "milestone": "v2.8",
+      "labels": ["feature", "ui", "pedagogy", "troubleshooting"],
+      "body": "## Objectif\n\nParcours élève complet.\n\n## Critères d'acceptation\n\n- [ ] Lancement par difficulté et par domaine, ou aléatoire avec graine\n- [ ] Énoncé sous forme de ticket utilisateur sans révéler la cause\n- [ ] 3 niveaux d'indices comptés dans le résultat\n- [ ] Boutons « J'ai réparé » (critères) et « Abandonner » (révèle cause et correction)\n- [ ] Journal des commandes de l'élève : nombre, indices, durée\n- [ ] Bilan : cause, symptôme, chemin le plus court comparé à la démarche de l'élève\n- [ ] Intégration au mode examen existant ; test de bout en bout\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Dépannage : 3 labs d'exemple et clôture de la v2.8",
+      "milestone": "v2.8",
+      "labels": ["feature", "pedagogy", "troubleshooting"],
+      "body": "## Objectif\n\nLabs de dépannage d'exemple, documentation et release.\n\n## Critères d'acceptation\n\n- [ ] 3 labs de dépannage avec tests\n- [ ] CHANGELOG, `ROADMAP.md`, `docs/milestones.md`, `docs/fidelite.md`, rapport des points « à vérifier »\n- [ ] Version 2.8.0 et tag après validation de Gary\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Linux : serveur Linux (modèle, migration, palette)",
+      "milestone": "v2.9",
+      "labels": ["feature", "engine", "linux"],
+      "body": "## Objectif\n\nAutoriser `host.os = 'linux'` sur le type `server` (aujourd'hui un poste Linux est un `client`), en réutilisant bash, `ip`, montage SMB et `realm`. Migration `.slab`.\n\n## Critères d'acceptation\n\n- [ ] Serveur Linux posable depuis la palette, câblable, enregistrable\n- [ ] Tout le code testant `kind === 'client' && os === 'linux'` est généralisé\n- [ ] Migration `.slab` et fichier de référence\n- [ ] Champ `os` dans les labs déclaratifs\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Linux : système de fichiers, utilisateurs et droits",
+      "milestone": "v2.9",
+      "labels": ["feature", "engine", "linux"],
+      "body": "## Objectif\n\nArborescence `/etc`, `/var/www`, `/var/log`, `/home` sur le contenu de fichiers simulés ; `cat`, `echo >>`, `tee`, `sed -i`, `nano` minimal ; `useradd`, `usermod`, `passwd`, `groupadd`, `chmod`, `chown`, `sudo`, `id`, `su`.\n\n## Critères d'acceptation\n\n- [ ] Dossier `docs/captures/bash/` et console `bash` ajoutés à l'infrastructure golden\n- [ ] Chaque commande a sa capture sourcée (man pages Debian/Ubuntu) et son test golden\n- [ ] Droits effectivement appliqués aux accès simulés\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Linux : apt, systemctl et diagnostic",
+      "milestone": "v2.9",
+      "labels": ["feature", "engine", "linux"],
+      "body": "## Objectif\n\n`apt update|install|remove|search|list --installed` sur catalogue local ; `systemctl` ; `journalctl -u`, `ss -tulpn`, `ps aux`, `df -h`, `free -h`, `uname -a`, `hostnamectl`, `ip a|r|neigh`, `ping`, `traceroute`, `curl`, `dig`, `nslookup`, `resolvectl`.\n\n## Critères d'acceptation\n\n- [ ] Services Linux sur le modèle d'état du chantier A\n- [ ] Noms retirés de la liste Linux de `unsimulated.ts` au fur et à mesure\n- [ ] Tests golden ; sans source : « à vérifier »\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Linux : SSH, fail2ban et rsyslog",
+      "milestone": "v2.9",
+      "labels": ["feature", "engine", "linux", "security"],
+      "body": "## Objectif\n\n`sshd_config`, `ssh`, `scp`, `ssh-keygen`, `ssh-copy-id`, `fail2ban-client status sshd`, `/var/log/auth.log`.\n\n## Critères d'acceptation\n\n- [ ] Connexion depuis Windows ou Linux refusée selon `PermitRootLogin`, `PasswordAuthentication`, `Port`\n- [ ] Bannissement après N échecs SSH\n- [ ] Journaux alimentés par les actions simulées\n- [ ] Modules `src/engine/roles-linux/<service>` sur le contrat `RoleModule`, tests golden\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Linux : Apache2",
+      "milestone": "v2.9",
+      "labels": ["feature", "engine", "linux"],
+      "body": "## Objectif\n\n`sites-available`, `a2ensite`, `a2dissite`, `a2enmod`, `apache2ctl configtest`, `/var/www/html`.\n\n## Critères d'acceptation\n\n- [ ] Navigateur simulé, virtual hosts, HTTPS\n- [ ] Erreur de syntaxe détectée par `configtest` avec le vrai message\n- [ ] Tests golden\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Linux : Samba et interopérabilité Windows",
+      "milestone": "v2.9",
+      "labels": ["feature", "engine", "linux", "role"],
+      "body": "## Objectif\n\n`smb.conf`, `smbpasswd`, `testparm`, `smbclient -L`.\n\n## Critères d'acceptation\n\n- [ ] Partage accessible depuis Windows (`net use`, Explorateur)\n- [ ] Client Linux joint au domaine (vérifier l'existant `realm`)\n- [ ] Tests golden\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Linux : Bind9 et isc-dhcp-server",
+      "milestone": "v2.9",
+      "labels": ["feature", "engine", "linux", "network"],
+      "body": "## Objectif\n\n`named.conf.local`, zones, `named-checkconf`, `named-checkzone`, `rndc reload`, `dhcpd.conf`, `dhcpd.leases`.\n\n## Critères d'acceptation\n\n- [ ] Résolution pour les clients et délégation depuis le DNS Windows\n- [ ] Baux distribués aux clients\n- [ ] Tests golden\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Linux : labs (un par service, 2 mixtes Windows et Linux) et pannes Linux",
+      "milestone": "v2.9",
+      "labels": ["feature", "pedagogy", "linux", "troubleshooting"],
+      "body": "## Objectif\n\nLabs à partir du lab 43 et enrichissement du mode panne.\n\n## Critères d'acceptation\n\n- [ ] Un lab par service (7) et 2 labs mixtes\n- [ ] Pannes Linux : service arrêté, virtual host erroné, droit insuffisant, erreur de syntaxe, `PermitRootLogin` refusé\n- [ ] CHANGELOG, ROADMAP, `docs/milestones.md`, version 2.9.0 après validation de Gary\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "pfSense : équipement pare-feu (modèle, migration, palette)",
+      "milestone": "v2.10",
+      "labels": ["feature", "engine", "firewall"],
+      "body": "## Objectif\n\nNouvel équipement `firewall` (WAN, LAN, OPT1/DMZ), référence pfSense CE 2.7, libellés tirés de la documentation officielle. Migration `.slab`.\n\n## Critères d'acceptation\n\n- [ ] Posable, câblable, enregistrable\n- [ ] Migration `.slab`, fichier de référence\n- [ ] Libellés sourcés (documentation pfSense)\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "pfSense : moteur de règles et état des connexions",
+      "milestone": "v2.10",
+      "labels": ["feature", "engine", "firewall", "security"],
+      "body": "## Objectif\n\nÉvaluation par interface dans l'ordre (première règle qui correspond, refus implicite en entrée), branchée sur `sim/forward.ts`.\n\n## Critères d'acceptation\n\n- [ ] Pass/Block/Reject, protocole, source/destination (adresse, réseau, alias, `any`), ports, journalisation\n- [ ] Paquet bloqué visible dans la trace et dans le journal du pare-feu\n- [ ] Les réponses aux connexions autorisées passent (table d'états)\n- [ ] Le même ping ou la même requête web réussit ou échoue selon la règle, règle appliquée visible dans la trace\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "pfSense : NAT sortant et redirections de port",
+      "milestone": "v2.10",
+      "labels": ["feature", "engine", "firewall", "network"],
+      "body": "## Objectif\n\nNAT sortant automatique et manuel, redirections de port.\n\n## Critères d'acceptation\n\n- [ ] NAT sortant visible en mode Simulation\n- [ ] Redirection de port vers un serveur de la DMZ\n- [ ] Tests du moteur\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "pfSense : DHCP, résolveur DNS, passerelles, routes statiques, alias",
+      "milestone": "v2.10",
+      "labels": ["feature", "engine", "firewall", "network"],
+      "body": "## Objectif\n\nServices du pare-feu.\n\n## Critères d'acceptation\n\n- [ ] DHCP par interface, résolveur DNS, passerelles, routes statiques, alias\n- [ ] Tests du moteur\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "pfSense : interface web fidèle",
+      "milestone": "v2.10",
+      "labels": ["feature", "ui", "firewall"],
+      "body": "## Objectif\n\nTableau de bord, Interfaces, Pare-feu > Règles / NAT / Alias, Services > DHCP / Résolveur DNS, Diagnostics > Journaux / États / Ping.\n\n## Critères d'acceptation\n\n- [ ] Toutes les actions passent par des commandes nommées\n- [ ] Libellés conformes à la documentation pfSense\n- [ ] Test de bout en bout\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "pfSense : console (menu numéroté et shell FreeBSD limité)",
+      "milestone": "v2.10",
+      "labels": ["feature", "engine", "firewall"],
+      "body": "## Objectif\n\nMenu numéroté (1 Assign interfaces, 2 Set interface IP, 8 Shell…) ; `ifconfig`, `pfctl -sr`, `pfctl -ss`, `netstat -rn`, `ping`.\n\n## Critères d'acceptation\n\n- [ ] Captures sourcées et tests golden\n- [ ] Commande non simulée : message honnête de `unsimulated.ts`\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "pfSense : labs, pannes pare-feu et clôture de la v2.10",
+      "milestone": "v2.10",
+      "labels": ["feature", "pedagogy", "firewall", "troubleshooting"],
+      "body": "## Objectif\n\nLabs « DMZ avec serveur web publié », « NAT sortant », « Règles LAN vers DMZ » et pannes pare-feu (règle manquante, ordre des règles, NAT sortant absent).\n\n## Critères d'acceptation\n\n- [ ] 3 labs avec tests\n- [ ] 3 pannes pare-feu ajoutées au mode panne\n- [ ] CHANGELOG, ROADMAP, `docs/milestones.md`, version 2.10.0 après validation de Gary\n\n## Règles de fiabilité\n\n- [ ] Sortie de référence sourcée (`docs/captures/<console>/<commande>.txt`) avant tout code ; sans source : rien n'est codé, ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests golden par commande ; commande ou option non simulée : message honnête de `unsimulated.ts`\n- [ ] `npm run lint`, `typecheck`, `test` et `perf:measure` au vert ; CHANGELOG et `docs/fidelite.md` à jour\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
     }
   ]
 }
