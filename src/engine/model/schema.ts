@@ -510,6 +510,11 @@ export const HostSchema = z.object({
   session: HostSessionSchema.nullable().default(null),
   /** Horloge du lab au dernier démarrage (redémarrage, mise sous tension). */
   bootedAt: z.number().default(0),
+  /**
+   * Écart, en secondes, entre l'heure locale de l'ordinateur et l'horloge du lab (0 = synchronisé).
+   * Heure locale = horloge du lab + écart (v2.8, Set-Date / w32tm /resync).
+   */
+  clockOffsetSeconds: z.number().int().default(0),
   /** Stratégies de groupe appliquées (ordinateur et utilisateur de la session). */
   policy: HostPolicySchema.default(() => ({ computer: null, user: null, attempt: null })),
   /** Lecteurs réseau connectés (net use). */

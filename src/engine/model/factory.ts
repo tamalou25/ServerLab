@@ -73,6 +73,7 @@ export function createHost(kind: 'server' | 'client', os: HostOs = 'windows'): H
     localAdminPassword: 'P@ssw0rd',
     session: { user: os === 'linux' ? LINUX_USER : DEFAULT_LOCAL_USER[kind], domain: null },
     bootedAt: 0,
+    clockOffsetSeconds: 0,
     policy: { computer: null, user: null, attempt: null },
     drives: [],
     certificates: [],

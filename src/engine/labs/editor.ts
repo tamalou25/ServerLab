@@ -35,6 +35,7 @@ export interface CriterionTypeInfo {
 /** Libellés des champs, communs à tous les types (même clé = même sens). */
 const FIELD_LABELS: Record<string, string> = {
   min: 'Score minimal',
+  maxSeconds: 'Écart maximal (secondes)',
   line: 'Ligne de configuration',
   present: 'Présente',
   state: 'État',

@@ -36,6 +36,7 @@ import {
   setFirewallRuleEnabled,
   setNetworkCategory
 } from '../services/firewall'
+import { resyncClock, setHostClock } from '../services/hostclock'
 import { restartService, setServiceStartType, startService, stopService } from '../services/hostservices'
 import {
   addLocalGroupMembers,
@@ -239,6 +240,12 @@ const CORE_COMMANDS = {
     renameComputer,
     (s, id, name) => `Renommer l’ordinateur ${deviceName(s, id)} en ${name}`
   ),
+  'host.setClock': def(
+    setHostClock,
+    (s, id, offsetSeconds) =>
+      `Régler l’horloge de ${deviceName(s, id)} (écart de ${offsetSeconds} s avec l’horloge du lab)`
+  ),
+  'host.resyncClock': def(resyncClock, (s, id) => `Resynchroniser l’horloge de ${deviceName(s, id)}`),
   'service.start': def(startService, (s, id, name) => `Démarrer le service ${name}${on(s, id)}`),
   'service.stop': def(stopService, (s, id, name) => `Arrêter le service ${name}${on(s, id)}`),
   'service.restart': def(restartService, (s, id, name) => `Redémarrer le service ${name}${on(s, id)}`),

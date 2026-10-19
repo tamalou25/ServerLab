@@ -12,6 +12,7 @@ import { effectiveIpv4 } from '../net/addressing'
 import { ping } from '../net/diagnostics'
 import { switchportOf } from '../net/switchport'
 import { findComputerService } from '../services/hostservices'
+import { clockOffset } from '../services/hostclock'
 import { findLocalGroup, findLocalUser } from '../services/localaccounts'
 import { effectiveRules, profileEnabled } from '../services/firewall'
 import { auditLab } from '../audit/audit'
@@ -184,6 +185,14 @@ const CORE_CRITERIA: CriterionType[] = [
       )
     },
     'Compte local (existence, état, groupe local)'
+  ),
+  defineCriterion(
+    z.object({ type: z.literal('clockOffset'), device: z.string(), maxSeconds: z.number().int().min(0) }),
+    (state, check) => {
+      const id = hostByName(state, check.device)?.id
+      return !!id && Math.abs(clockOffset(state, id)) <= check.maxSeconds
+    },
+    'Écart d’horloge d’un ordinateur'
   )
 ]
 
