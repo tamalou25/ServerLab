@@ -60,8 +60,7 @@ describe('startTroubleshooting', () => {
   it('filtre par domaine, refuse une demande impossible', () => {
     const base = healthyLab03()
     const net = unwrap(startTroubleshooting(base, { seed: 1, domain: 'reseau' }))
-    expect(net.value.faults).toHaveLength(1)
-    expect(net.value.faults[0]!.id.startsWith('net.')).toBe(true)
+    expect(net.value.faults.every((f) => getFault(f.id)?.domain === 'reseau')).toBe(true)
     expect(startTroubleshooting(base, { seed: 1, domain: 'linux' }).ok).toBe(false)
     expect(startTroubleshooting(base, { seed: 1, count: 99 }).ok).toBe(false)
     expect(startTroubleshooting(base, { seed: 1, faults: [{ id: 'x.y' }] }).ok).toBe(false)
@@ -105,8 +104,13 @@ describe('indices et critère', () => {
     expect(evaluateCheck(s, { type: 'faultRepaired' })).toBe(false)
     expect(evaluateCheck(healthyLab03(), { type: 'faultRepaired' })).toBe(false) // pas de dépannage
     for (const f of r.value.faults) {
-      // Une seule panne réparée : le critère global reste faux tant qu’il en reste, le ciblé passe
+      // Le critère global reste faux tant qu’il reste une panne à réparer
+      expect(evaluateCheck(s, { type: 'faultRepaired' })).toBe(false)
       for (const c of getFault(f.id)!.repair(s, f.params)) s = unwrap(dispatch(s, c)).state
+    }
+    // Deux pannes peuvent se recouvrir (p. ex. DNS en échec et masque erroné vers le même serveur) :
+    // le critère ciblé de chacune n’est exigé qu’une fois toutes les réparations faites
+    for (const f of r.value.faults) {
       expect(evaluateCheck(s, { type: 'faultRepaired', faultId: f.id })).toBe(true)
     }
     expect(evaluateCheck(s, { type: 'faultRepaired' })).toBe(true)

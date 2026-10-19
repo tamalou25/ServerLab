@@ -74,6 +74,25 @@ function compatible(candidate: FaultTargetParams, active: ActiveFault[], after: 
   )
 }
 
+/**
+ * Chaque panne se répare quel que soit l'ordre : ses commandes de réparation sont acceptées sur l'état
+ * cassé complet (deux pannes qui se bloquent, p. ex. un service en échec et ce même service arrêté,
+ * ne sont pas tirées ensemble).
+ */
+function independentlyRepairable(state: LabState, faults: ActiveFault[]): boolean {
+  for (const f of faults) {
+    const def = getFault(f.id)
+    if (!def) return false
+    let next = state
+    for (const c of def.repair(state, f.params)) {
+      const r = dispatch(next, c)
+      if (!r.ok) return false
+      next = r.state
+    }
+  }
+  return true
+}
+
 export function startTroubleshooting(
   healthy: LabState,
   spec: TroubleshootingSpec
@@ -114,8 +133,10 @@ export function startTroubleshooting(
       const r = inject(state, fault.id, params)
       if ('error' in r || !fault.symptomVisible(r.state, params)) continue
       if (!compatible(params, active, r.state)) continue
+      const candidate: ActiveFault = { id: fault.id, params, hintsUsed: 0 }
+      if (active.length > 0 && !independentlyRepairable(r.state, [...active, candidate])) continue
       state = r.state
-      active.push({ id: fault.id, params, hintsUsed: 0 })
+      active.push(candidate)
     }
     if (active.length < count)
       return fail(
