@@ -55,6 +55,7 @@ import {
   setLocalUser
 } from '../services/localaccounts'
 import { renameComputer, restartComputer } from '../services/system'
+import { useHint } from '../troubleshoot/hints'
 import { executeLine } from '../shell/exec'
 import type { ShellResult, ShellSession } from '../shell/types'
 import type { PacketTrace } from '../sim/trace'
@@ -301,6 +302,9 @@ const CORE_COMMANDS = {
     uninstallFeatures,
     (s, id, names) => `Supprimer ${names.join(', ')}${on(s, id)}`
   ),
+
+  // Mode panne : un indice de plus (le compteur sert au bilan)
+  'troubleshoot.useHint': def(useHint, () => 'Demander un indice'),
 
   // Consoles, tâches de fond, lots
   'shell.exec': def(shellExec, (s, session, line) => `${line}${on(s, session.deviceId)}`),

@@ -16,6 +16,7 @@
  */
 import { command, type Command } from '../commands/catalog'
 import { dispatch } from '../commands/dispatch'
+import { mulberry32 as prng, shuffle } from '../core/prng'
 import type { LabState } from '../model/schema'
 import { availableCountermeasures, getCountermeasure } from './countermeasures'
 import { getScenario, scenariosOf } from './registry'
@@ -77,29 +78,6 @@ export interface GameState {
   launches: Launch[]
   timeline: TimelineEntry[]
   endReason: EndReason | null
-}
-
-// --- PRNG déterministe ---------------------------------------------------------------------------
-
-/** mulberry32 : générateur seedé, suffisant pour tirer les choix de l'IA. */
-function prng(seed: number): () => number {
-  let a = seed >>> 0
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0
-    let t = a
-    t = Math.imul(t ^ (t >>> 15), t | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-function shuffle<T>(items: readonly T[], rand: () => number): T[] {
-  const out = [...items]
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1))
-    ;[out[i], out[j]] = [out[j]!, out[i]!]
-  }
-  return out
 }
 
 // --- Création et préparation ---------------------------------------------------------------------
