@@ -29,6 +29,14 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 - Pannes composées (`win.combo.*`, 6) : deux causes dont la première masque la seconde (`troubleshoot/composite.ts`) ;
   tirage de plusieurs pannes limité aux pannes qui restent réparables ensemble.
 - Compte « expiré » non ajouté (non modélisé) : voir `docs/fidelite.md`, D-27. Format `.slab` 26 inchangé.
+- Interface du dépannage (#232) : Fichier > « Lancer un dépannage… » (ou bouton du sélecteur de labs) sur le lab ouvert —
+  difficulté maximale, domaine (réseau, Windows, aléatoire), nombre de pannes (1 ou 2), graine affichée pour rejouer.
+  Ticket utilisateur sans la cause, trois niveaux d'indices (commande `troubleshoot.useHint`, comptés dans le bilan),
+  « J'ai réparé » (« Le problème persiste. » sans dire quoi) et « Abandonner » (cause et correction officielle).
+- Bilan calculé par le moteur (`troubleshoot/summary.ts`) : cause, symptôme, commandes de la réparation officielle
+  comparées à celles jouées par l'élève (« chemin le plus court »), indices, durée, score sur 100.
+- Dépannage chronométré : réutilise la session et la note du mode examen (durée imposée, indices désactivés,
+  vérification unique) ; le bilan affiche aussi la note d'examen. Annuler ne revient jamais avant l'injection.
 - Tirage contrôlé (#231) : audit de `startTroubleshooting` (déterministe : PRNG seedé, ordre stable), règle de compatibilité
   des pannes tirées (même cible ou symptôme masqué : candidate écartée), message d'erreur FR précis quand le nombre de pannes
   demandé est impossible. Tests : réparabilité de tout tirage valide (labs de base × graines × 1 à 3 pannes × domaines, deux

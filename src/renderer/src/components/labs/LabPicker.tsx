@@ -4,10 +4,11 @@
  */
 import { useState } from 'react'
 import { useDialog } from '../../hooks/useDialog'
-import { FlaskConical, GraduationCap, Upload, X } from 'lucide-react'
+import { FlaskConical, GraduationCap, Upload, Wrench, X } from 'lucide-react'
 import { LABS } from '../../lib/labCatalog'
 import { importAndOpenLab, openLabEditor } from '../../lib/labEditor'
 import { openLab } from '../../lib/labs'
+import { openTroubleshootDialog } from '../../lib/troubleshoot'
 import { useLabsStore } from '../../store/labs'
 import { Button } from '../common/ui'
 import { DifficultyBadge } from './DifficultyBadge'
@@ -111,6 +112,9 @@ export function LabPicker() {
           </Button>
           <Button onClick={openLabEditor} data-testid="lab-create">
             <FlaskConical size={14} /> Créer un lab…
+          </Button>
+          <Button onClick={openTroubleshootDialog} data-testid="lab-troubleshoot">
+            <Wrench size={14} /> Lancer un dépannage…
           </Button>
         </div>
       </div>

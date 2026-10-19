@@ -4,11 +4,13 @@
 import { AuditPanel } from './audit/AuditPanel'
 import { ExamResultPanel } from './labs/Exam'
 import { LabPanel } from './labs/LabPanel'
+import { TroubleshootPanel, TroubleshootSummaryPanel } from './labs/Troubleshoot'
 import { SimulationPanel } from './simulation/SimulationPanel'
 import { PropertiesPanel } from './properties/PropertiesPanel'
 import { useT } from '../lib/i18n'
 import { useExamStore } from '../store/exam'
 import { useLabsStore } from '../store/labs'
+import { useTroubleshootStore } from '../store/troubleshoot'
 import { useUiStore, type RightTab } from '../store/ui'
 
 export function RightPanel() {
@@ -16,6 +18,8 @@ export function RightPanel() {
   const setTab = useUiStore((s) => s.setRightTab)
   const active = useLabsStore((s) => s.active)
   const examResult = useExamStore((s) => s.result)
+  const tshoot = useTroubleshootStore((s) => s.session)
+  const tshootSummary = useTroubleshootStore((s) => s.summary)
   const { t } = useT()
   // Le résultat d'un examen reste consultable même si le lab a été fermé
   const lab = active ?? examResult
@@ -52,7 +56,11 @@ export function RightPanel() {
         ))}
       </div>
       {tab === 'lab' ? (
-        examResult ? (
+        tshootSummary ? (
+          <TroubleshootSummaryPanel />
+        ) : tshoot ? (
+          <TroubleshootPanel />
+        ) : examResult ? (
           <ExamResultPanel result={examResult} />
         ) : (
           <LabPanel />

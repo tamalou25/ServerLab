@@ -18,8 +18,10 @@ import { StatusBar } from './components/StatusBar'
 import { useDocumentLifecycle } from './hooks/useDocumentLifecycle'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { LabPicker } from './components/labs/LabPicker'
+import { TroubleshootDialog } from './components/labs/Troubleshoot'
 import { LabEditor } from './components/labs/LabEditor'
 import { useExamGuards } from './lib/exam'
+import { openTroubleshootDialog, useTroubleshootTracking } from './lib/troubleshoot'
 import { useLabsStore } from './store/labs'
 import { useConsoleSessionSync } from './hooks/useConsoleSessionSync'
 import { useMenuBridge } from './hooks/useMenuBridge'
@@ -57,6 +59,9 @@ function handleMenuCommand(msg: MenuCommandMessage): void {
       break
     case 'file:openLab':
       useLabsStore.getState().setPickerOpen(true)
+      break
+    case 'file:troubleshoot':
+      openTroubleshootDialog()
       break
     // Menu « Annuler : … » : toujours la commande annoncée, même si le focus est dans un champ
     case 'edit:undo':
@@ -142,6 +147,7 @@ export function App() {
   useSimulationPlayback()
   useConsoleSessionSync()
   useExamGuards()
+  useTroubleshootTracking()
 
   return (
     <ReactFlowProvider>
@@ -160,6 +166,7 @@ export function App() {
         <TutorialCoach />
         <DeviceWindows />
         <LabPicker />
+        <TroubleshootDialog />
         <LabEditor />
         <RedBlueGame />
         <Toasts />

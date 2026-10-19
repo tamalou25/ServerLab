@@ -138,3 +138,31 @@ Tests : `tests/engine/troubleshoot/composite.test.ts` (100 graines par composée
 tant que la première n'est pas réparée, visible ensuite, guérison complète) en plus du test de
 réparabilité commun (`faults.test.ts`). Labs sains de référence : `tests/engine/troubleshoot/bases-windows.ts`
 (labs 2, 4, 5 et 7 résolus, domaine avec verrouillage à 3 échecs).
+
+## Interface
+
+Code : `src/renderer/src/components/labs/Troubleshoot.tsx`, `lib/troubleshoot.ts`, `store/troubleshoot.ts`. Le
+moteur reste seul juge : l'interface orchestre `startTroubleshooting`, `troubleshoot.useHint`, `allRepaired` et
+`summarizeTroubleshooting` (`src/engine/troubleshoot/summary.ts`, pur et testé).
+
+1. **Lancer** : Fichier > « Lancer un dépannage… » (ou le bouton du sélecteur de labs). Le lab de base est le
+   document ouvert : il doit fonctionner (état sain). Choix de la difficulté maximale (1 à 3), du domaine
+   (réseau, Windows, aléatoire), du nombre de pannes (1 ou 2) et de la graine (tirée et affichée, modifiable pour
+   rejouer). Si aucune panne ne s'applique, le message du moteur (`NoFaultAvailable`…) est affiché dans la boîte.
+2. **Ticket** : l'onglet Lab affiche le ticket de l'utilisateur (`FaultDef.ticket`), jamais la cause.
+3. **Indices** : bouton « Indice » (symptôme, zone, piste) ; chaque clic est la commande nommée
+   `troubleshoot.useHint`. Le compteur est affiché et pénalise le score (10 points par indice).
+4. **« J'ai réparé »** : vérifie `allRepaired` ; sinon « Le problème persiste. » sans dire quoi.
+   **« Abandonner »** révèle la cause et la correction officielle (libellés des commandes de `FaultDef.repair`).
+5. **Journal** : nombre de commandes nommées jouées depuis le départ (annuler puis rétablir ne recompte pas),
+   liste des libellés, indices et durée réelle (fournie par le renderer, le moteur ne lit pas l'horloge).
+6. **Bilan** : symptôme, cause, correction officielle, « chemin le plus court » (commandes de la réparation
+   officielle) comparé à la démarche de l'élève. Score sur 100 = `100 × officielles / max(jouées, officielles)`
+   moins 10 par indice ; 0 sans réparation.
+7. **Chronométré** : case « Dépannage chronométré » : session et résultat du mode examen (`labs/exam.ts`),
+   durée imposée, indices désactivés, vérification unique ; un critère `faultRepaired` par panne donne la note
+   sur 20, affichée avec le bilan.
+8. **Annuler** : le départ du dépannage est chargé comme un nouveau document (historique vide) : « Annuler » ne
+   revient jamais avant l'injection de la panne, seules les actions de l'élève (et les indices) sont annulables.
+
+Test de bout en bout : `tests/e2e/troubleshoot.spec.ts`.

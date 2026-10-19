@@ -13,6 +13,7 @@ export const fr = {
   'menu.file.save': 'Enregistrer',
   'menu.file.saveAs': 'Enregistrer sous…',
   'menu.file.openLab': 'Ouvrir un lab…',
+  'menu.file.troubleshoot': 'Lancer un dépannage…',
   'menu.file.quit': 'Quitter',
   'menu.edit': '&Édition',
   'menu.edit.undo': 'Annuler',
