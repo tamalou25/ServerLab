@@ -1,7 +1,8 @@
 /**
  * Cmdlets de base : aide, affichage, pipeline (Format-*, Select, Where, Sort, Measure), saisie.
  */
-import { formatShortDate } from '../../../core/clock'
+import { clockParts, formatShortDate, LAB_EPOCH_MS, parseLabDate } from '../../../core/clock'
+import { clockOffset, localClock, setHostClock } from '../../../services/hostclock'
 import { psError } from '../errors'
 import { formatLabDate } from '../dateformat'
 import { formatList, formatTable } from '../format'
@@ -21,6 +22,22 @@ import {
   type PsValue
 } from '../values'
 import { compare } from '../expression'
+
+/** Intervalle « [-][j.]hh:mm[:ss] » (TimeSpan) en secondes, ou null. */
+function parseTimeSpan(text: string): number | null {
+  const m = /^(-)?(?:(\d+)\.)?(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/.exec(text.trim())
+  if (!m) return null
+  const seconds = Number(m[2] ?? 0) * 86400 + Number(m[3]) * 3600 + Number(m[4]) * 60 + Number(m[5] ?? 0)
+  return m[1] ? -seconds : seconds
+}
+
+/** Heure seule (« 10:30 », « 10:30:15 ») : ce jour-là, sur l'échelle de l'horloge du lab. */
+function parseTimeOfDay(text: string, local: number): number | null {
+  const m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(text.trim())
+  if (!m) return null
+  const t = clockParts(local)
+  return Date.UTC(t.year, t.month, t.date, Number(m[1]), Number(m[2]), Number(m[3] ?? 0)) - LAB_EPOCH_MS
+}
 
 function asObjects(values: PsValue[]): PsObject[] {
   return flatten(values).map((v) => (isPsObject(v) ? v : psObject('System.String', { Value: v })))
@@ -568,15 +585,57 @@ export const coreCmdlets: CmdletDef[] = [
     }
   },
   {
-    // Get-Date -Format : chaîne de format .NET (culture fr-FR), temps = horloge du lab
+    // Get-Date -Format : chaîne de format .NET (culture fr-FR), temps = horloge locale de l'ordinateur
+    // (horloge du lab + écart du poste, v2.8)
     name: 'Get-Date',
     module: 'Core',
-    synopsis: 'Affiche la date et l’heure (horloge du lab).',
+    synopsis: 'Affiche la date et l’heure de l’ordinateur.',
     params: [{ name: 'Format', type: 'string' }],
     run(ctx, args) {
       const format = args['Format']
-      if (typeof format === 'string' && format !== '') return [formatLabDate(ctx.state.clock, format)]
-      return [formatShortDate(ctx.state.clock)]
+      const now = localClock(ctx.state, ctx.deviceId)
+      if (typeof format === 'string' && format !== '') return [formatLabDate(now, format)]
+      return [formatShortDate(now)]
+    }
+  },
+  {
+    // Set-Date (Learn, Microsoft.PowerShell.Management) : -Date fixe l'heure, -Adjust l'avance ou la recule
+    name: 'Set-Date',
+    module: 'Core',
+    synopsis: 'Règle la date et l’heure de l’ordinateur.',
+    params: [
+      { name: 'Date', type: 'string', position: 0 },
+      { name: 'Adjust', type: 'string' }
+    ],
+    run(ctx, args) {
+      const date = args['Date']
+      const adjust = args['Adjust']
+      if ((date === undefined) === (adjust === undefined))
+        throw psError('Indiquez soit -Date, soit -Adjust.', 'InvalidArgument', 'ParameterSetNotResolved')
+      const current = clockOffset(ctx.state, ctx.deviceId)
+      let offset: number
+      if (adjust !== undefined) {
+        const seconds = parseTimeSpan(psToString(adjust))
+        if (seconds === null)
+          throw psError(
+            `Impossible de convertir la valeur « ${psToString(adjust)} » en intervalle de temps.`,
+            'InvalidArgument',
+            'ParameterBindingFailed'
+          )
+        offset = current + seconds
+      } else {
+        const text = psToString(date)
+        const target = parseLabDate(text) ?? parseTimeOfDay(text, localClock(ctx.state, ctx.deviceId))
+        if (target === null)
+          throw psError(
+            `Impossible de convertir la valeur « ${text} » en date.`,
+            'InvalidArgument',
+            'ParameterBindingFailed'
+          )
+        offset = Math.round((target - ctx.state.clock) / 1000)
+      }
+      ctx.apply(setHostClock(ctx.state, ctx.deviceId, offset))
+      return [formatShortDate(localClock(ctx.state, ctx.deviceId))]
     }
   },
   {

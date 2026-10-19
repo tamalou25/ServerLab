@@ -29,6 +29,7 @@ import { verifyCredentials } from '../adds/join'
 import { authenticate } from '../adds/credentials'
 import { netAccounts, netGroup, netLocalGroup, netUser } from '../adds/net'
 import { netStart, netStop } from '../../shell/tools/services'
+import { netTime } from '../../shell/tools/time'
 import type { ExecContext } from '../../shell/context'
 import {
   absolutePath,
@@ -622,7 +623,7 @@ function netView(ctx: ExecContext, args: string[]): void {
 export const netTool: ToolDef = {
   name: 'net',
   synopsis:
-    'Partages (share), lecteurs (use, view), comptes (user, localgroup, group, accounts), services (start, stop).',
+    'Partages (share), lecteurs (use, view), comptes (user, localgroup, group, accounts), services (start, stop), heure (time).',
   help: {
     syntax: [
       'net user [<UserName> {<Password> | *} [<Options>]] [/domain]',
@@ -633,7 +634,8 @@ export const netTool: ToolDef = {
       'net group [<GroupName> <UserName>[ ...] {/add | /delete} [/domain]]',
       'net accounts [/forcelogoff:{minutes | no}] [/minpwlen:length] [/maxpwage:{days | unlimited}] [/minpwage:days] [/uniquepw:number] [/domain]',
       'net start [service]',
-      'net stop service'
+      'net stop service',
+      'net time [\\<ComputerName> | /domain[:<DomainName>]] [/set]'
     ],
     url: 'https://learn.microsoft.com/fr-fr/windows-server/administration/windows-commands/net-user'
   },
@@ -647,6 +649,7 @@ export const netTool: ToolDef = {
     'accounts',
     'start',
     'stop',
+    'time',
     '/add',
     '/domain',
     '/active:yes',
@@ -689,7 +692,7 @@ export const netTool: ToolDef = {
         netStop(ctx, rest)
         return
       case 'time':
-        ctx.write(`La sous-commande NET ${sub.toUpperCase()} n’est pas simulée.`, 'error')
+        netTime(ctx, rest)
         return
       default:
         ctx.writeLines([

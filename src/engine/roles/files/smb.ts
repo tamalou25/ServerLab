@@ -5,6 +5,7 @@
  */
 import type { Draft } from 'immer'
 import { transact } from '../../core/result'
+import { kerberosSkewExceeded, TIME_SKEW_MESSAGE } from '../../services/hostclock'
 import { serviceRunning } from '../../services/servicestate'
 import type { HostDevice, LabState, MappedDrive, ServerDevice, SmbShare } from '../../model/schema'
 import { effectiveIpv4 } from '../../net/addressing'
@@ -144,6 +145,13 @@ export function openUnc(
   const share = unc.share ? findShare(server, unc.share) : undefined
   if (!share) return fail(67, NETWORK_NAME_NOT_FOUND)
   if (!token || !tokenValidOn(state, server, token)) return fail(5, 'Accès refusé.')
+  // Jeton de domaine (Kerberos) : un poste ou un serveur dont l'horloge s'écarte de plus de 5 minutes
+  // de celle du contrôleur de domaine n'obtient pas de ticket de service (erreur 1398, v2.8)
+  if (
+    !token.sids.some((s) => s.startsWith('local:')) &&
+    (kerberosSkewExceeded(state, clientId) || kerberosSkewExceeded(state, server.id))
+  )
+    return fail(1398, TIME_SKEW_MESSAGE)
   const viaShare = sharePerms(share, token)
   if (viaShare.size === 0) return fail(5, 'Accès refusé.')
   const base = nodePath(server.storage, shareFolderId(share))

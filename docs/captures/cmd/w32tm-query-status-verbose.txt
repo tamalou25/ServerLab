@@ -1,0 +1,19 @@
+# Source: https://learn.microsoft.com/en-us/windows-server/networking/windows-time-service/windows-time-service-tools-and-settings (exemple « w32tm /query /status /verbose » : disposition et libellés ; valeurs du poste simulé, voir docs/fidelite.md v2.8)
+# Commande: w32tm /query /status /verbose
+Leap Indicator: 0(no warning)
+Stratum: 2 (secondary reference - syncd by (S)NTP)
+Precision: -23 (119.209ns per tick)
+Root Delay: 0.0003538s
+Root Dispersion: 0.0100002s
+ReferenceId: 0x00000000 (unspecified)
+Last Successful Sync Time: 1/5/2026 8:00:00 AM
+Source: SRV1.lab.local
+Poll Interval: 6 (64s)
+
+Phase Offset: 0.0000000s
+ClockRate: 0.0156250s
+State Machine: 2 (Sync)
+Time Source Flags: 0 (None)
+Server Role: 0 (None)
+Last Sync Error: 0 (The command completed successfully.)
+Time since Last Good Sync Time: 15.7344985s
