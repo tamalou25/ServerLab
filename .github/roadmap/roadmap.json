@@ -54,6 +54,11 @@
       "name": "cyber",
       "color": "5319e7",
       "description": "Cybersécurité simulée (scénarios d’attaque abstraits, détection, durcissement)"
+    },
+    {
+      "name": "linux",
+      "color": "e0a100",
+      "description": "Serveurs et postes Linux simulés (bash, services, fichiers de configuration)"
     }
   ],
   "milestones": [
@@ -88,6 +93,10 @@
     {
       "title": "v2.6.1",
       "description": "Cybersécurité, volet attaque : scénarios d'attaque abstraits sur l'état simulé, attaques sur l'annuaire et L2, mode Red/Blue, labs d'attaque."
+    },
+    {
+      "title": "v2.8",
+      "description": "Révision E6 (suivi de progression, sujets chronométrés, fiche de recette PDF) et serveurs Linux simulés (Samba, messagerie, DNS/DHCP, web, SSH, pare-feu)."
     }
   ],
   "issues": [
@@ -408,6 +417,66 @@
       "milestone": "v2.6.1",
       "labels": ["feature", "cyber", "pedagogy"],
       "body": "## Objectif\n\nLabs notés du volet attaque.\n\n## Critères d'acceptation\n\n- [ ] Un lab par type d'attaque (annuaire et L2), un sujet Red / Blue\n- [ ] Labs disponibles dans le mode examen et l'éditeur de labs\n- [ ] Migration `.slab` si le format évolue, CHANGELOG, ROADMAP, `docs/milestones.md`\n- [ ] Tests Vitest du moteur et test de bout en bout, CI verte\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Suivi de progression par lab",
+      "milestone": "v2.8",
+      "labels": ["feature", "pedagogy", "ui"],
+      "body": "## Objectif\n\nGarder l'historique des tentatives de chaque lab pour mesurer la progression de la révision E6.\n\n## Critères d'acceptation\n\n- [ ] Chaque vérification de lab et chaque examen enregistre date, score, durée et critères manqués\n- [ ] Écran « Progression » : par lab, meilleure note, nombre de tentatives, évolution ; par domaine (AD, DNS, DHCP, GPO, partages, réseau, Linux)\n- [ ] Données stockées côté main, arguments IPC validés, aucun accès disque générique exposé\n- [ ] Remise à zéro et export JSON de l'historique\n- [ ] Tests Vitest du moteur (golden pour toute sortie de console, `docs/captures/`), CI verte\n- [ ] Migration `.slab` si le format évolue, CHANGELOG, ROADMAP, `docs/milestones.md`\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Sujets E6 chronométrés",
+      "milestone": "v2.8",
+      "labels": ["feature", "pedagogy"],
+      "body": "## Objectif\n\nSujets complets façon épreuve E6, jouables en mode examen, avec barème par compétence.\n\n## Critères d'acceptation\n\n- [ ] 5 sujets minimum (AD + DNS + DHCP, GPO + partages, haute disponibilité, interconnexion de sites, services Linux) avec énoncé, topologie de départ et critères\n- [ ] Barème par compétence du référentiel (source citée dans `docs/fidelite.md`, sinon ligne « à vérifier »)\n- [ ] Indices désactivés, durée imposée, note détaillée par compétence\n- [ ] Sujets disponibles dans l'éditeur de labs et la bibliothèque\n- [ ] Tests Vitest du moteur (golden pour toute sortie de console, `docs/captures/`), CI verte\n- [ ] Migration `.slab` si le format évolue, CHANGELOG, ROADMAP, `docs/milestones.md`\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Fiche de recette PDF",
+      "milestone": "v2.8",
+      "labels": ["feature", "pedagogy"],
+      "body": "## Objectif\n\nExporter une fiche de recette (tests réalisés, résultats attendus et obtenus) à joindre au dossier d'épreuve.\n\n## Critères d'acceptation\n\n- [ ] Génération depuis l'état du lab et le résultat de la vérification, réutilise le rapport PDF (v2.3)\n- [ ] Contenu : topologie, adressage, services en place, tests réalisés (ping, nslookup, accès aux partages…) avec résultat\n- [ ] Identité et date saisies par l'étudiant, aucune donnée inventée\n- [ ] Disponible depuis le mode Labs et le mode examen\n- [ ] Tests Vitest du moteur (golden pour toute sortie de console, `docs/captures/`), CI verte\n- [ ] Migration `.slab` si le format évolue, CHANGELOG, ROADMAP, `docs/milestones.md`\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Serveur Linux : type d'équipement, systemd, apt et comptes",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine", "linux"],
+      "body": "## Objectif\n\nUn serveur Linux (Debian/Ubuntu simulé) distinct du poste Linux, base commune des services Linux.\n\n## Critères d'acceptation\n\n- [ ] Nouveau type « Serveur Linux » dans la palette, canvas et fenêtre d'équipement (Config / Console)\n- [ ] bash : `systemctl` (status, start, stop, restart, enable, disable), `journalctl`, `apt` (install, remove, update) sur un catalogue de paquets simulé\n- [ ] Comptes et groupes (`useradd`, `usermod`, `passwd`, `groupadd`, `id`), droits `chmod` / `chown`, éditeur `nano` minimal sur `/etc`\n- [ ] Un service arrêté a un effet réel sur la simulation (port fermé, résolution, partage inaccessible)\n- [ ] Les rôles existants peuvent exposer un second front-end bash (recette « Ajouter un rôle »)\n- [ ] Tests Vitest du moteur (golden pour toute sortie de console, `docs/captures/`), CI verte\n- [ ] Migration `.slab` si le format évolue, CHANGELOG, ROADMAP, `docs/milestones.md`\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Samba : serveur de fichiers et contrôleur de domaine membre",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine", "linux", "role"],
+      "body": "## Objectif\n\nPartager des dossiers depuis Linux et les utiliser depuis les postes Windows et Linux.\n\n## Critères d'acceptation\n\n- [ ] `smb.conf` (global, partages, `valid users`, `read only`, `browseable`), `smbpasswd`, `testparm`, `smbstatus`, `smbclient -L`\n- [ ] Accès depuis `net use` / `\\\\srv\\partage` et `mount -t cifs`, droits partage + droits Unix combinés\n- [ ] Jonction à un domaine AD (`net ads join`, `realm join`) : erreurs réalistes (DNS, horloge, droits)\n- [ ] Critères de lab `smbShare` et `linuxFileAccess`\n- [ ] Tests Vitest du moteur (golden pour toute sortie de console, `docs/captures/`), CI verte\n- [ ] Migration `.slab` si le format évolue, CHANGELOG, ROADMAP, `docs/milestones.md`\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Messagerie : Postfix et Dovecot",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine", "linux", "role"],
+      "body": "## Objectif\n\nUn serveur de messagerie complet à partir du DNS (MX) jusqu'à la boîte aux lettres.\n\n## Critères d'acceptation\n\n- [ ] `main.cf` (`myhostname`, `mydomain`, `mydestination`, `mynetworks`), `postfix reload`, `postconf`, `mailq`, `postqueue -f`\n- [ ] Envoi `mail` / `sendmail` local et entre serveurs via enregistrement MX ; échec réaliste sans MX ou sans résolution (message de rebond)\n- [ ] Dovecot : IMAP/POP3 abstraits, comptes virtuels ou système, `doveadm`, boîtes aux lettres lisibles côté client\n- [ ] Journal `/var/log/mail.log` calculé depuis l'état, jamais saisi à la main\n- [ ] Tests Vitest du moteur (golden pour toute sortie de console, `docs/captures/`), CI verte\n- [ ] Migration `.slab` si le format évolue, CHANGELOG, ROADMAP, `docs/milestones.md`\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "DNS BIND9 et DHCP ISC sur Linux",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine", "linux", "role"],
+      "body": "## Objectif\n\nSecond front-end Linux des rôles DNS et DHCP déjà simulés.\n\n## Critères d'acceptation\n\n- [ ] BIND9 : `named.conf.local`, fichiers de zone, `named-checkconf`, `named-checkzone`, `rndc reload`, `dig` / `host`\n- [ ] ISC DHCP : `dhcpd.conf` (subnet, range, options, host fixe), `dhcpd -t`, baux `dhcpd.leases`\n- [ ] Même moteur que les rôles Windows : un client reçoit bail et résolution, quel que soit le serveur\n- [ ] Erreurs de syntaxe signalées avec ligne et fichier, comme les vrais outils\n- [ ] Tests Vitest du moteur (golden pour toute sortie de console, `docs/captures/`), CI verte\n- [ ] Migration `.slab` si le format évolue, CHANGELOG, ROADMAP, `docs/milestones.md`\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Web, SSH et pare-feu Linux",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine", "linux", "role", "security"],
+      "body": "## Objectif\n\nLes services d'administration et d'exposition usuels d'un serveur Linux.\n\n## Critères d'acceptation\n\n- [ ] Apache/Nginx : sites (`sites-available` / `sites-enabled`), `a2ensite`, `nginx -t`, page servie à un client (navigateur / `curl`)\n- [ ] OpenSSH : `sshd_config` (`PermitRootLogin`, `PasswordAuthentication`, `Port`), connexion `ssh` entre équipements, clés `ssh-keygen` / `ssh-copy-id`\n- [ ] `ufw` et `iptables` : règles filtrant réellement le trafic simulé, intégrées à l'audit de configuration (ANSSI / CIS Linux)\n- [ ] Tests Vitest du moteur (golden pour toute sortie de console, `docs/captures/`), CI verte\n- [ ] Migration `.slab` si le format évolue, CHANGELOG, ROADMAP, `docs/milestones.md`\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Labs Linux et sujets de révision",
+      "milestone": "v2.8",
+      "labels": ["feature", "pedagogy", "linux"],
+      "body": "## Objectif\n\nLabs notés pour les services Linux, jouables en mode examen.\n\n## Critères d'acceptation\n\n- [ ] Un lab par service (Samba, messagerie, BIND/DHCP, web + SSH + pare-feu) et un sujet mixte Windows + Linux\n- [ ] Critères vérifiables et indices sans solution, labs dans la bibliothèque et l'éditeur\n- [ ] Intégration à l'écran de progression\n- [ ] Tests Vitest du moteur (golden pour toute sortie de console, `docs/captures/`), CI verte\n- [ ] Migration `.slab` si le format évolue, CHANGELOG, ROADMAP, `docs/milestones.md`\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+    },
+    {
+      "title": "Fidélité des sorties Linux",
+      "milestone": "v2.8",
+      "labels": ["feature", "engine", "linux"],
+      "body": "## Objectif\n\nAppliquer les règles de la v2.7 (sortie de référence sourcée avant tout code, tests golden) à la console bash.\n\n## Critères d'acceptation\n\n- [ ] Captures `docs/captures/bash/<commande>.txt` avec source (pages man, documentation officielle ou capture de Gary)\n- [ ] Cas d'erreur identiques (fichier absent, droits refusés, option invalide)\n- [ ] Toute sortie sans source : message honnête dans `unsimulated.ts` et ligne « à vérifier » dans `docs/fidelite.md`\n- [ ] Tests Vitest du moteur (golden pour toute sortie de console, `docs/captures/`), CI verte\n- [ ] Migration `.slab` si le format évolue, CHANGELOG, ROADMAP, `docs/milestones.md`\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
     }
   ]
 }

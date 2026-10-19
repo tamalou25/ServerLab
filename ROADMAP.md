@@ -15,6 +15,7 @@ avec GitHub par le workflow **Roadmap sync** (ne crée que ce qui manque).
 | v2.5    | Équipements Cisco IOS                                         | [v2.5](https://github.com/tamalou25/packetracer-windows/milestone/6)           |
 | v2.6    | Cybersécurité défensive                                       | [v2.6](https://github.com/tamalou25/packetracer-windows/milestones?q=v2.6)     |
 | v2.6.1  | Cybersécurité, volet attaque                                  | [v2.6.1](https://github.com/tamalou25/packetracer-windows/milestones?q=v2.6.1) |
+| v2.8    | Révision E6 et serveurs Linux                                 | [v2.8](https://github.com/tamalou25/packetracer-windows/milestones?q=v2.8)     |
 
 > Le milestone v1.1 est sorti sous le numéro de version **2.0.0** (choix de Gary), suivi de la 2.0.1
 > (stabilisation). Les milestones suivants ajoutent des fonctionnalités sans casser les fichiers
@@ -144,6 +145,28 @@ Scénarios d'attaque simulés de façon **abstraite** : on modélise leur résul
 
 Hors périmètre (v2.6 et v2.6.1) : tout exploit réel ou code offensif utilisable hors du simulateur,
 attaques web (OWASP), reverse engineering, forensic disque, EDR, SIEM réel (pistes v2.7).
+
+## v2.8 — Révision E6 et serveurs Linux
+
+Deux volets. **Révision E6** : mesurer la progression, s'entraîner sur des sujets complets chronométrés
+et produire la fiche de recette du dossier d'épreuve. **Serveurs Linux** : un serveur Debian/Ubuntu
+simulé avec ses services usuels (Samba, messagerie, DNS/DHCP, web, SSH, pare-feu), interopérable avec
+les rôles Windows. Les règles de fidélité de la v2.7 s'appliquent (sortie de référence sourcée, tests golden).
+
+| Fonctionnalité     | Critère d'acceptation                                                                          |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| Progression        | Historique des tentatives et scores par lab et par domaine, export JSON                        |
+| Sujets E6          | 5 sujets chronométrés en mode examen, barème par compétence                                    |
+| Fiche de recette   | PDF des tests réalisés et de leurs résultats, joint au dossier d'épreuve                       |
+| Serveur Linux      | Nouveau type d'équipement : `systemctl`, `apt`, comptes, droits ; un service arrêté a un effet |
+| Samba              | Partages utilisables depuis Windows et Linux, jonction au domaine AD                           |
+| Messagerie         | Postfix + Dovecot, envoi entre serveurs via MX, rebonds réalistes                              |
+| DNS / DHCP Linux   | BIND9 et ISC DHCP sur le même moteur que les rôles Windows                                     |
+| Web, SSH, pare-feu | Apache/Nginx, OpenSSH, `ufw` / `iptables` filtrant le trafic simulé, audit CIS / ANSSI Linux   |
+| Labs et fidélité   | Labs Linux, sujet mixte Windows + Linux, captures `docs/captures/bash/`, tests golden          |
+
+Hors périmètre : conteneurs (Docker), orchestration, serveurs de bases de données, tout service
+nécessitant l'exécution réelle de code.
 
 ## Points d'attention (audit v1.0)
 
