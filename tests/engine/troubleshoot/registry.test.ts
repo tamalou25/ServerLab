@@ -14,9 +14,28 @@ describe('registre des pannes', () => {
     expect(getFault('inconnue')).toBeUndefined()
   })
 
-  it('catalogue : les pannes du socle (#228) sont présentes', () => {
-    const ids = FAULTS.map((f) => f.id)
-    expect(ids).toContain('net.wrong-mask')
-    expect(ids).toContain('windows.service-stopped')
+  it('catalogue : service-stopped, les 12 pannes réseau (net.*) et les pannes Windows', () => {
+    expect(FAULTS.map((f) => f.id)).toEqual(
+      expect.arrayContaining([
+        'net.acl-blocking',
+        'net.cable-unplugged',
+        'net.duplicate-ip',
+        'net.etherchannel-down',
+        'net.missing-route',
+        'net.port-err-disabled',
+        'net.trunk-missing-vlan',
+        'net.wrong-gateway',
+        'net.wrong-mask',
+        'net.wrong-nat',
+        'net.wrong-stp-root',
+        'net.wrong-vlan',
+        'windows.service-stopped'
+      ])
+    )
+    expect(FAULTS.filter((f) => f.domain === 'reseau')).toHaveLength(12)
+    // Difficulté : câble, passerelle, masque, doublon = 1 ; VLAN, route, ACL, err-disabled = 2 ; STP, EtherChannel, NAT = 3
+    const level = (id: string) => FAULTS.find((f) => f.id === id)?.difficulty
+    expect(['net.cable-unplugged', 'net.wrong-gateway', 'net.wrong-mask'].map(level)).toEqual([1, 1, 1])
+    expect(['net.wrong-stp-root', 'net.etherchannel-down', 'net.wrong-nat'].map(level)).toEqual([3, 3, 3])
   })
 })

@@ -15,6 +15,12 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   commande nommée annulable `troubleshoot.useHint`, critère de lab `faultRepaired`, `buildLabState`.
 - Catalogue initial : `windows.service-stopped` (DNS) et `net.wrong-mask` ; test de réparabilité sur 100 graines.
 - Documentation : [docs/depannage.md](docs/depannage.md).
+- Pannes réseau (#229) : onze pannes `net.*` s'ajoutent à `net.wrong-mask` (12 au total) — `wrong-gateway`, `duplicate-ip`,
+  `cable-unplugged`, `wrong-vlan`, `trunk-missing-vlan`, `port-err-disabled`, `acl-blocking`, `wrong-nat`,
+  `missing-route`, `wrong-stp-root`, `etherchannel-down`. Aucune sortie de console nouvelle : symptômes observés avec
+  `ping`, `ipconfig`, `show vlan`, `show interfaces trunk`, `show spanning-tree`, `show etherchannel summary`…
+  Injection et réparation par commandes nommées (dont `shell.exec` pour la configuration IOS) ; test de réparabilité
+  sur 100 graines et sept labs sains de référence.
 - Pannes Windows (#230), domaine `windows`, aucune sortie de console nouvelle (symptômes des consoles déjà sourcées) :
   `windows.service-stopped` étendue (DNS, DHCPServer, LanmanServer, W3SVC, Netlogon), `win.service-disabled`,
   `win.service-failed`, `win.dependency-stopped`, `win.dns-wrong-a`, `win.dhcp-scope-disabled`,

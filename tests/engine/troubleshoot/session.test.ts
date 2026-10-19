@@ -32,8 +32,9 @@ describe('startTroubleshooting', () => {
     const b = start(42)
     expect(a.value.faults).toEqual(b.value.faults)
     expect(JSON.stringify(a.state)).toBe(JSON.stringify(b.state))
-    expect(a.value.faults).toHaveLength(2)
-    expect(new Set(a.value.faults.map((f) => f.id)).size).toBe(2)
+    const ids = a.value.faults.map((f) => f.id)
+    expect(ids).toHaveLength(2)
+    expect(new Set(ids).size).toBe(2)
   })
 
   it('des graines différentes peuvent tirer des cibles différentes', () => {
