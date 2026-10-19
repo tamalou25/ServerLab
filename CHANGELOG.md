@@ -6,14 +6,15 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
-Chantier A de la v2.8 (services à état).
+### Chantier A de la v2.8 (services à état)
 
-### Ajouté
-
-- Snap-in Services (`services.msc`) : liste des services (Nom, Description, État, Type de démarrage, Ouvrir une
-  session en tant que), démarrer, arrêter, redémarrer par les commandes `service.*` (annulables), propriétés
-  (type de démarrage modifiable, onglet Dépendances en lecture seule : le moteur ne modélise ni pause ni
-  dépendances) (#226).
+- Dépendances entre services (#223) : table sourcée dans le moteur (`W3SVC` → `WAS`, `Netlogon` → `LanmanWorkstation` et `LanmanServer`), sans changement du format `.slab`.
+- `Stop-Service` / `Restart-Service` refusés sans `-Force` si des dépendants tournent, avec `-Force` les dépendants sont arrêtés d'abord ; `sc stop` : erreur 1051 ; `net stop` : message honnête (invite non simulée).
+- `Start-Service`, `net start` et `sc start` démarrent d'abord les dépendances ; une dépendance désactivée fait échouer le démarrage (erreur 1068).
+- `Get-Service -DependentServices` / `-RequiredServices` et propriétés `DependentServices` / `ServicesDependedOn` calculées depuis le modèle (plus de « non simulé »).
+- Commandes `service.stop` et `service.restart` : argument optionnel `force`.
+- Interface (#226) : Snap-in Services (`services.msc`) : liste des services (Nom, État, Type de démarrage), démarrer, arrêter, redémarrer par les commandes `service.*` (annulables), propriétés
+  (type de démarrage modifiable, onglet Dépendances calculé depuis le modèle ; pas de pause) (#226).
 - Gestionnaire de serveur : les services arrêtés dont le démarrage est automatique sont signalés en rouge et
   rendent l'indicateur « Services » des vignettes rouge (#226).
 

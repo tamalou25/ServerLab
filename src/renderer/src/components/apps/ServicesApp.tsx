@@ -7,7 +7,14 @@
  */
 import { useState } from 'react'
 import { Cog } from 'lucide-react'
-import { command, computerServices, type HostDevice, type ServiceStartType } from '@engine/index'
+import {
+  command,
+  computerServices,
+  dependentNames,
+  requiredNames,
+  type HostDevice,
+  type ServiceStartType
+} from '@engine/index'
 import { runCommandOk } from '../../lib/run'
 import { START_TYPE_LABELS, statusLabel } from '../../lib/services'
 import { useLabStore } from '../../store/lab'
@@ -92,6 +99,11 @@ function ServiceProperties({
   const [tab, setTab] = useState<Tab>('general')
   const [startType, setStartType] = useState<ServiceStartType | null>(null)
   if (!svc) return null
+  const all = computerServices(lab, deviceId)
+  const present = all.map((x) => x.name)
+  const label = (n: string) => all.find((x) => x.name === n)?.display ?? n
+  const requires = requiredNames(svc.name, present).map(label)
+  const dependents = dependentNames(svc.name, present).map(label)
   const chosen = startType ?? svc.startType
   const apply = () =>
     chosen === svc.startType || runCommandOk(command('service.setStartType', deviceId, svc.name, chosen))
@@ -139,9 +151,13 @@ function ServiceProperties({
           ) : (
             <div className="flex flex-col gap-2" data-testid="svc-deps">
               <p>Ce service dépend des composants système suivants :</p>
-              <div className="border border-[#7a7a7a] px-2 py-1 text-[#6d6d6d]">aucune</div>
+              <div className="border border-[#7a7a7a] px-2 py-1 text-[#6d6d6d]">
+                {requires.length > 0 ? requires.join(', ') : 'aucune'}
+              </div>
               <p>Les composants système suivants dépendent de ce service :</p>
-              <div className="border border-[#7a7a7a] px-2 py-1 text-[#6d6d6d]">aucune</div>
+              <div className="border border-[#7a7a7a] px-2 py-1 text-[#6d6d6d]">
+                {dependents.length > 0 ? dependents.join(', ') : 'aucune'}
+              </div>
             </div>
           )}
         </DialogBody>
