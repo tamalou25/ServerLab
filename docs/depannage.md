@@ -47,4 +47,21 @@ Code : `src/engine/troubleshoot/`.
 | `windows.service-stopped` | windows | 1          | Service DNS arrêté (`service.stop`)                              | Un nom de la zone ne se résout plus (`nslookup`) | `service.start`              |
 | `net.wrong-mask`          | reseau  | 1          | Masque trop long sur une carte statique (`net.setInterfaceIpv4`) | Un voisin du même réseau ne répond plus (`ping`) | Remettre le masque d'origine |
 
-Les autres pannes réseau viennent avec l'issue #229.
+Pannes réseau de l'issue #229 (domaine `reseau`) :
+
+| Identifiant              | Difficulté | Panne                                                           | Symptôme observé                                              | Réparation                                   |
+| ------------------------ | ---------- | --------------------------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------- |
+| `net.wrong-gateway`      | 1          | Passerelle erronée sur une carte statique                       | Hôte d'un autre réseau injoignable (`ping`)                   | Remettre la passerelle d'origine             |
+| `net.duplicate-ip`       | 1          | Adresse d'un autre poste du même réseau                         | Adresse « Dupliqué(e) » (`ipconfig`)                          | Remettre l'adresse d'origine                 |
+| `net.cable-unplugged`    | 1          | Câble d'un poste débranché (`topology.disconnect`)              | « Média déconnecté » (`ipconfig`), `ping` sans réponse        | Rebrancher aux mêmes ports                   |
+| `net.wrong-vlan`         | 2          | Port d'accès dans un autre VLAN (`net.setSwitchport`)           | `ping` sans réponse, `show vlan`                              | Remettre le VLAN d'origine                   |
+| `net.trunk-missing-vlan` | 2          | VLAN absent de la liste autorisée d'un trunk                    | `ping` sans réponse, `show interfaces trunk`                  | Remettre la liste d'origine                  |
+| `net.port-err-disabled`  | 2          | Port err-disabled (violation de port-security, IOS)             | `show interfaces status`, `show port-security interface`      | Retirer la cause, `shutdown` / `no shutdown` |
+| `net.acl-blocking`       | 2          | ACL étendue bloquante en entrée d'une interface de routeur      | `ping` sans réponse, `show access-lists`, `show ip interface` | Retirer l'ACL de l'interface                 |
+| `net.missing-route`      | 2          | Route statique supprimée (`net.removeStaticRoute`)              | `ping`, `tracert`, `show ip route`                            | `net.addStaticRoute`                         |
+| `net.wrong-nat`          | 3          | NAT : liste d'accès, interface de sortie ou rôles inversés      | `ping` vers l'extérieur, `show ip nat translations`           | Remettre la configuration d'origine          |
+| `net.wrong-stp-root`     | 3          | Priorité STP plus basse sur un switch d'accès (mauvaise racine) | `show spanning-tree`                                          | Remettre la priorité d'origine               |
+| `net.etherchannel-down`  | 3          | Mode `channel-group` incompatible avec le voisin                | `show etherchannel summary` (ports `I`)                       | Remettre le mode d'origine                   |
+
+Les pannes IOS passent par des lignes de console rejouées en commandes `shell.exec` (`iosCommands`,
+`faults/net-common.ts`). Labs sains de référence : lab 1, 3, 13, 23, 24 (routes statiques), 25 (NAT), 38.
