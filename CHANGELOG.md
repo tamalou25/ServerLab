@@ -29,6 +29,10 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 - Journal Système : évènements 7000 (démarrage refusé), 7034 (arrêt inattendu) et 7031 (arrêt inattendu avec action corrective).
 - `sc failure` et `sc qfailure` (reset, reboot, command, actions), sorties calculées depuis l'état, captures et tests golden.
 - Les issues suivantes de la v2.8 n'ajoutent que des champs facultatifs, sans nouvelle version du format.
+- Interface (#226) : Snap-in Services (`services.msc`) : liste des services (Nom, État, Type de démarrage), démarrer, arrêter, redémarrer par les commandes `service.*` (annulables), propriétés
+  (type de démarrage modifiable, onglet Dépendances calculé depuis le modèle ; pas de pause) (#226).
+- Gestionnaire de serveur : les services arrêtés dont le démarrage est automatique sont signalés en rouge et
+  rendent l'indicateur « Services » des vignettes rouge (#226).
 
 ## [2.7.0] — 2026-10-14
 
