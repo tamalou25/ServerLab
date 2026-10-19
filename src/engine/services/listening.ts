@@ -14,14 +14,15 @@ import { serviceRunning } from './servicestate'
 export interface ListeningPort {
   protocol: 'TCP' | 'UDP'
   port: number
-  /** Service qui écoute (nom court), null : système (Bureau à distance). */
+  /** Service qui écoute (nom court), null : système. */
   service: string | null
 }
 
-/** Service propriétaire de chaque règle prédéfinie. */
+/** Service propriétaire de chaque règle prédéfinie (null : aucun service ne conditionne l'écoute). */
 const RULE_SERVICE: Record<string, string | null> = {
   'FPS-SMB-In-TCP': 'LanmanServer',
-  'RemoteDesktop-UserMode-In-TCP': null,
+  // Services Bureau à distance : arrêtés, le port 3389 n'écoute plus (v2.8, #222)
+  'RemoteDesktop-UserMode-In-TCP': 'TermService',
   'DNSSrv-TCP-In': 'DNS',
   'DNSSrv-UDP-In': 'DNS',
   'ADDS-LDAP-TCP-In': 'NTDS',
