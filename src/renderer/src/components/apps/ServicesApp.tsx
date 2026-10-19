@@ -9,7 +9,7 @@ import { useState } from 'react'
 import { Cog } from 'lucide-react'
 import { command, computerServices, type HostDevice, type ServiceStartType } from '@engine/index'
 import { runCommandOk } from '../../lib/run'
-import { logonAccount, START_TYPE_LABELS, statusLabel } from '../../lib/services'
+import { START_TYPE_LABELS, statusLabel } from '../../lib/services'
 import { useLabStore } from '../../store/lab'
 import { DialogBody, DialogFooter, TabStrip, WinButton } from '../desktop/shell/classic'
 import { Mmc, MmcAction, MmcTable, type MmcNode } from '../mmc/Mmc'
@@ -51,7 +51,7 @@ export function ServicesApp({ device }: { device: HostDevice }) {
     <Mmc nodes={NODES} selected="root" onSelect={() => undefined} actions={actions} testId="services-mmc">
       <MmcTable
         testId="svc-table"
-        columns={['Nom', 'Description', 'État', 'Type de démarrage', 'Ouvrir une session en tant que']}
+        columns={['Nom', 'Description', 'État', 'Type de démarrage']}
         empty="Aucun service."
         rows={services.map((s) => [
           <span
@@ -69,8 +69,7 @@ export function ServicesApp({ device }: { device: HostDevice }) {
           </span>,
           <span key="t" data-testid={`svc-start-${s.name}`}>
             {START_TYPE_LABELS[s.startType]}
-          </span>,
-          logonAccount(s.name)
+          </span>
         ])}
       />
       {props && <ServiceProperties deviceId={device.id} name={props} onClose={() => setProps(null)} />}

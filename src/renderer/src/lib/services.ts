@@ -20,17 +20,3 @@ export function statusLabel(s: Pick<ServiceInfo, 'status'>): string {
 export function isAlert(s: Pick<ServiceInfo, 'status' | 'startType'>): boolean {
   return s.status !== 'Running' && s.startType === 'Automatic'
 }
-
-/** Compte d'ouverture de session des services du système (valeurs usuelles de Windows Server). */
-const LOGON_ACCOUNTS: Record<string, string> = {
-  dhcp: 'Service local',
-  dnscache: 'Service réseau',
-  eventlog: 'Service local',
-  mpssvc: 'Service local',
-  lanmanworkstation: 'Service réseau',
-  w32time: 'Service local'
-}
-
-export function logonAccount(name: string): string {
-  return LOGON_ACCOUNTS[name.toLowerCase()] ?? 'Système local'
-}
