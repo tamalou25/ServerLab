@@ -23,12 +23,15 @@ import { LEARN_CMD } from '../cmd/help'
 import type { ExecContext } from '../context'
 import {
   disabledDependency,
+  recordStartFailure,
   runningDependents,
   setServiceStartType,
+  startFailureOf,
   startService,
   stopService,
   type ServiceStartType
 } from '../../services/hostservices'
+import { scFailure, scQfailure } from './scfailure'
 import { consoleServices, findService } from './services'
 import type { ToolDef } from './types'
 
@@ -400,8 +403,8 @@ export const systeminfoTool: ToolDef = {
 
 export const scTool: ToolDef = {
   name: 'sc',
-  synopsis: 'Interroge et contrôle les services (query, start, stop, config start=).',
-  switches: ['query', 'start', 'stop', 'config'],
+  synopsis: 'Interroge et contrôle les services (query, start, stop, config start=, failure, qfailure).',
+  switches: ['query', 'start', 'stop', 'config', 'failure', 'qfailure'],
   help: help('sc-query', [
     'sc.exe [<servername>] query [<servicename>] [type= {driver | service | all}] [type= {own | share | interact | kernel | filesys | rec | adapt}] [state= {active | inactive | all}] [bufsize= <Buffersize>] [ri= <Resumeindex>] [group= <groupname>]',
     'sc.exe [<servername>] config [<servicename>] [start= {boot | system | auto | demand | disabled | delayed-auto}]'
@@ -411,11 +414,14 @@ export const scTool: ToolDef = {
     const verb = op.toLowerCase()
     // Options « nom= valeur » (Learn : le signe égal fait partie du nom, un espace avant la valeur)
     const options = new Map<string, string>()
+    // Mêmes options, valeurs avec la casse saisie (message et commande de `sc failure`)
+    const raw = new Map<string, string>()
     const positional: string[] = []
     for (let i = 0; i < rest.length; i++) {
       const a = rest[i] as string
       if (a.endsWith('=')) {
         options.set(a.slice(0, -1).toLowerCase(), (rest[i + 1] ?? '').toLowerCase())
+        raw.set(a.slice(0, -1).toLowerCase(), rest[i + 1] ?? '')
         i++
       } else positional.push(a)
     }
@@ -475,6 +481,12 @@ export const scTool: ToolDef = {
             '[SC] StartService échec(s) 1068 :\n\nLe service ou le groupe de dépendances n’a pas pu démarrer.',
             'error'
           )
+        // Service en échec au démarrage (v2.8) : 1066 ou 1053, évènement 7000 journalisé
+        const failure = startFailureOf(s)
+        if (failure) {
+          ctx.state = recordStartFailure(ctx.state, ctx.deviceId, s.name)
+          return ctx.write(`[SC] StartService échec(s) ${failure.number} :\n\n${failure.text}`, 'error')
+        }
         ctx.apply(startService(ctx.state, ctx.deviceId, s.name))
         ctx.writeLines(['', `NOM_SERVICE: ${s.name}`, '        ÉTAT               : 2  START_PENDING', ''])
         return
@@ -495,6 +507,12 @@ export const scTool: ToolDef = {
       ctx.apply(stopService(ctx.state, ctx.deviceId, s.name))
       ctx.writeLines(['', `NOM_SERVICE: ${s.name}`, '        ÉTAT               : 3  STOP_PENDING', ''])
       return
+    }
+    if (verb === 'failure' || verb === 'qfailure') {
+      const s = name ? findService(ctx, name) : undefined
+      if (!s) return missing('OpenService')
+      if (verb === 'qfailure') return scQfailure(ctx, s)
+      return scFailure(ctx, s, raw, positional.length - 1)
     }
     if (verb === 'config') {
       const s = name ? findService(ctx, name) : undefined

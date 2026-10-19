@@ -1,0 +1,5 @@
+# Source: https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--1000-1299- (1053 ERROR_SERVICE_REQUEST_TIMEOUT : « The service did not respond to the start or control request in a timely fashion. ») ; traduction française et format « [SC] StartService échec(s) » non publiés, voir docs/fidelite.md v2.8
+# Commande: sc start W3SVC
+[SC] StartService échec(s) 1053 :
+
+Le service n’a pas répondu assez rapidement à la demande de démarrage ou de contrôle.

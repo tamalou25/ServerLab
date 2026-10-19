@@ -34,14 +34,31 @@ export function serviceRunning(device: WithServices, name: string): boolean {
   return serviceState(device, name).status === 'Running'
 }
 
+/** L'état est-il celui d'une installation neuve (rien à stocker dans le .slab) ? */
+export function isDefaultServiceState(s: ServiceState): boolean {
+  return (
+    s.status === DEFAULT_SERVICE_STATE.status &&
+    s.startType === DEFAULT_SERVICE_STATE.startType &&
+    s.failure === undefined &&
+    s.recovery === undefined
+  )
+}
+
 /**
  * Démarrage de l'ordinateur : les services en démarrage automatique démarrent, les autres
  * restent arrêtés (Learn, Set-Service -StartupType : « Manual - The service is started only
- * manually »). L'état par défaut (démarré, automatique) n'est pas stocké.
+ * manually »). Un service en échec au démarrage (v2.8) reste arrêté quel que soit son type ; ses
+ * options de récupération sont conservées. L'état par défaut (démarré, automatique) n'est pas stocké.
+ * Renvoie les noms des services en démarrage automatique qui ont échoué (évènement 7000).
  */
-export function bootServices(device: { host: { services: Record<string, ServiceState> } }): void {
+export function bootServices(device: { host: { services: Record<string, ServiceState> } }): string[] {
+  const failed: string[] = []
   for (const [name, s] of Object.entries(device.host.services)) {
-    if (s.startType === 'Automatic') delete device.host.services[name]
-    else device.host.services[name] = { status: 'Stopped', startType: s.startType }
+    const fails = s.failure !== undefined
+    if (fails && s.startType === 'Automatic') failed.push(name)
+    const next: ServiceState = { ...s, status: !fails && s.startType === 'Automatic' ? 'Running' : 'Stopped' }
+    if (isDefaultServiceState(next)) delete device.host.services[name]
+    else device.host.services[name] = next
   }
+  return failed
 }
