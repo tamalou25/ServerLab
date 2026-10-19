@@ -1,0 +1,15 @@
+# Source: https://learn.microsoft.com/en-us/troubleshoot/windows-server/windows-security/troubleshoot-netlogon-service-startup-failures (« sc qc netlogon » d'un contrôleur de domaine ; le nom affiché (DISPLAY_NAME) est celui du modèle en français (Get-Service) ; l’en-tête « [SC] QueryServiceConfig SUCCESS » est traduit comme les autres sorties de sc, voir docs/fidelite.md v2.8)
+# Commande: sc qc netlogon
+[SC] QueryServiceConfig réussite(s)
+
+NOM_SERVICE: netlogon
+   TYPE               : 20 WIN32_SHARE_PROCESS
+   START_TYPE         : 2 AUTO_START
+   ERROR_CONTROL      : 1 NORMAL
+   BINARY_PATH_NAME   : C:\Windows\system32\lsass.exe
+   LOAD_ORDER_GROUP   : MS_WindowsRemoteValidation
+   TAG                : 0
+   DISPLAY_NAME       : Ouverture de session réseau
+   DEPENDENCIES       : LanmanWorkstation
+                      : LanmanServer
+   SERVICE_START_NAME : LocalSystem
