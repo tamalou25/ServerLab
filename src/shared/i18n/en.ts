@@ -14,6 +14,7 @@ export const en: Record<MessageKey, string> = {
   'menu.file.save': 'Save',
   'menu.file.saveAs': 'Save as…',
   'menu.file.openLab': 'Open a lab…',
+  'menu.file.troubleshoot': 'Start a troubleshooting exercise…',
   'menu.file.quit': 'Quit',
   'menu.edit': '&Edit',
   'menu.edit.undo': 'Undo',

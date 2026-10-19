@@ -21,6 +21,14 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   `ping`, `ipconfig`, `show vlan`, `show interfaces trunk`, `show spanning-tree`, `show etherchannel summary`…
   Injection et réparation par commandes nommées (dont `shell.exec` pour la configuration IOS) ; test de réparabilité
   sur 100 graines et sept labs sains de référence.
+- Interface du dépannage (#232) : Fichier > « Lancer un dépannage… » (ou bouton du sélecteur de labs) sur le lab ouvert —
+  difficulté maximale, domaine (réseau, Windows, aléatoire), nombre de pannes (1 ou 2), graine affichée pour rejouer.
+  Ticket utilisateur sans la cause, trois niveaux d'indices (commande `troubleshoot.useHint`, comptés dans le bilan),
+  « J'ai réparé » (« Le problème persiste. » sans dire quoi) et « Abandonner » (cause et correction officielle).
+- Bilan calculé par le moteur (`troubleshoot/summary.ts`) : cause, symptôme, commandes de la réparation officielle
+  comparées à celles jouées par l'élève (« chemin le plus court »), indices, durée, score sur 100.
+- Dépannage chronométré : réutilise la session et la note du mode examen (durée imposée, indices désactivés,
+  vérification unique) ; le bilan affiche aussi la note d'examen. Annuler ne revient jamais avant l'injection.
 
 ### Chantier A de la v2.8 (services à état)
 

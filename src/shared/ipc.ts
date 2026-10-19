@@ -13,6 +13,7 @@ export type MenuCommand =
   | 'file:saveAs'
   | 'file:openRecent'
   | 'file:openLab'
+  | 'file:troubleshoot'
   | 'edit:undo'
   | 'edit:redo'
   | 'edit:copy'
