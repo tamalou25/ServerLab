@@ -130,7 +130,8 @@ const FIELD_LABELS: Record<string, string> = {
   access: 'Accès',
   user: 'Utilisateur',
   granted: 'Accordé',
-  startType: 'Type de démarrage'
+  startType: 'Type de démarrage',
+  faultId: 'Panne (identifiant du catalogue, vide : toutes)'
 }
 
 /** Champs dont la valeur désigne un objet du lab : suggestions proposées. */

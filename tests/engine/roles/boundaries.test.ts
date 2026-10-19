@@ -38,7 +38,8 @@ const ALLOWED_CORE_TO_ROLE = [
   'shell/ps/cmdlets/net.ts', // Test-NetConnection -Port : échange TCP tracé (serverExchange)
   'shell/ps/cmdlets/netsys.ts', // Test-ComputerSecureChannel : compte d'ordinateur du domaine
   'shell/ps/cmdlets/system.ts', // Restart-Computer -ComputerName : administrateur du domaine
-  'shell/tools/net.ts' // ipconfig /renew, résolution de noms, whoami /groups
+  'shell/tools/net.ts', // ipconfig /renew, résolution de noms, whoami /groups
+  'troubleshoot/faults/service-stopped.ts' // panne de service : sonde DNS (symptôme = résolution de noms)
 ]
 
 describe('frontière cœur / rôles', () => {

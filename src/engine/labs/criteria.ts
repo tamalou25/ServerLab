@@ -15,6 +15,7 @@ import { findComputerService } from '../services/hostservices'
 import { clockOffset } from '../services/hostclock'
 import { findLocalGroup, findLocalUser } from '../services/localaccounts'
 import { effectiveRules, profileEnabled } from '../services/firewall'
+import { allRepaired } from '../troubleshoot/session'
 import { auditLab } from '../audit/audit'
 import { CYBER_CRITERIA } from '../cyber/criteria'
 import { IOS_CRITERIA } from '../ios/criteria'
@@ -193,6 +194,12 @@ const CORE_CRITERIA: CriterionType[] = [
       return !!id && Math.abs(clockOffset(state, id)) <= check.maxSeconds
     },
     'Écart d’horloge d’un ordinateur'
+  ),
+  defineCriterion(
+    z.object({ type: z.literal('faultRepaired'), faultId: z.string().optional() }),
+    // Dépannage (mode panne) : toutes les pannes actives, ou celle d'identifiant `faultId`, sont guéries
+    (state, check) => allRepaired(state, check.faultId),
+    'Panne du mode dépannage réparée'
   )
 ]
 

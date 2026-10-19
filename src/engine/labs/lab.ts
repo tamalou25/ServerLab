@@ -11,10 +11,11 @@ import { IOS_MODELS } from '../ios/models'
 import { createLab } from '../model/factory'
 import { DEVICE_KINDS } from '../model/kinds'
 import type { LabState } from '../model/schema'
-import { FIREWALL_PROFILES } from '../model/schema'
+import { FaultParamsSchema, FIREWALL_PROFILES } from '../model/schema'
 import { localToken } from '../roles/files/acl'
 import { DEFAULT_DOMAIN_POLICY_ID } from '../roles/gpo/defaults'
 import { parseSlabValue } from '../serialization/slab'
+import { startTroubleshooting } from '../troubleshoot/session'
 import { CriterionSchema, evaluateCriteria, type CriterionResult } from './criteria'
 
 export const LAB_FORMAT_VERSION = 1
@@ -152,6 +153,18 @@ export const LabSnapshotStartSchema = z.object({ snapshot: z.record(z.string(), 
 
 export const LabStartSchema = z.union([LabDeclarativeStartSchema, LabSnapshotStartSchema])
 
+/**
+ * Dépannage (mode panne) : le lab démarre cassé. `start` décrit le lab SAIN ; les pannes sont
+ * tirées de la graine (filtres facultatifs) ou imposées par `faults`.
+ */
+export const LabTroubleshootingSchema = z.object({
+  seed: z.number().int(),
+  domain: z.enum(['reseau', 'windows', 'linux', 'pare-feu']).optional(),
+  difficulty: z.number().int().min(1).max(3).optional(),
+  count: z.number().int().min(1).max(5).optional(),
+  faults: z.array(z.object({ id: z.string(), params: FaultParamsSchema.optional() })).optional()
+})
+
 export const LabDefinitionSchema = z.object({
   formatVersion: z.literal(LAB_FORMAT_VERSION),
   id: z.string(),
@@ -163,7 +176,9 @@ export const LabDefinitionSchema = z.object({
   /** Énoncé en Markdown (titres, listes, gras, code). */
   statement: z.string(),
   start: LabStartSchema,
-  criteria: z.array(CriterionSchema).min(1)
+  criteria: z.array(CriterionSchema).min(1),
+  /** Mode panne : facultatif (absent = lab ordinaire). */
+  troubleshooting: LabTroubleshootingSchema.optional()
 })
 
 export type LabDefinition = z.infer<typeof LabDefinitionSchema>
@@ -221,6 +236,18 @@ export function buildLabStart(start: LabStart): LabState {
     return parsed.doc.lab
   }
   return buildDeclarativeStart(start)
+}
+
+/**
+ * État de départ complet d'un lab : `buildLabStart`, puis l'injection des pannes si le lab est un
+ * lab de dépannage (le résultat est le point de départ : rien n'est annulable).
+ */
+export function buildLabState(lab: LabDefinition): LabState {
+  const healthy = buildLabStart(lab.start)
+  if (!lab.troubleshooting) return healthy
+  const r = startTroubleshooting(healthy, lab.troubleshooting)
+  if (!r.ok) throw new Error(`Dépannage impossible : ${r.error.message}`)
+  return r.state
 }
 
 function buildDeclarativeStart(start: LabDeclarativeStart): LabState {

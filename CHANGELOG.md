@@ -6,6 +6,16 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+### Chantier D de la v2.8 (mode panne)
+
+- Modèle de panne (#228) : `src/engine/troubleshoot/` (`FaultDef`, registre, `startTroubleshooting`, PRNG partagé `core/prng.ts`).
+  Une panne est une transformation déterministe de l'état par commandes nommées ; l'état cassé est le point de départ
+  (rien à annuler), même graine = mêmes pannes.
+- Champ facultatif `troubleshooting` sur `LabState` et sur la définition d'un lab (format `.slab` 26 inchangé),
+  commande nommée annulable `troubleshoot.useHint`, critère de lab `faultRepaired`, `buildLabState`.
+- Catalogue initial : `windows.service-stopped` (DNS) et `net.wrong-mask` ; test de réparabilité sur 100 graines.
+- Documentation : [docs/depannage.md](docs/depannage.md).
+
 ### Chantier A de la v2.8 (services à état)
 
 - Dépendances entre services (#223) : table sourcée dans le moteur (`W3SVC` → `WAS`, `Netlogon` → `LanmanWorkstation` et `LanmanServer`), sans changement du format `.slab`.

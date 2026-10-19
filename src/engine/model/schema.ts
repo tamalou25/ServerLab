@@ -1378,6 +1378,22 @@ export const CyberConfigSchema = z.object({
   intercepts: z.array(z.object({ a: z.string(), b: z.string(), by: z.string() })).default([])
 })
 
+/** Paramètres d'une panne (ids d'équipements, noms, valeurs) : sérialisables. */
+export const FaultParamsSchema = z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+
+/** Panne active d'un dépannage (mode panne, v2.8) : identifiant du catalogue, cibles tirées, indices utilisés. */
+export const ActiveFaultSchema = z.object({
+  id: z.string(),
+  params: FaultParamsSchema,
+  hintsUsed: z.number().int().min(0).max(3).default(0)
+})
+
+/** Dépannage en cours : graine du tirage et pannes actives (absent : lab ordinaire). */
+export const TroubleshootingSchema = z.object({
+  seed: z.number().int(),
+  faults: z.array(ActiveFaultSchema)
+})
+
 export const LabStateSchema = z.object({
   devices: z.record(z.string(), DeviceSchema),
   links: z.record(z.string(), LinkSchema),
@@ -1388,11 +1404,15 @@ export const LabStateSchema = z.object({
   /** Domaines Active Directory (clé : nom DNS du domaine). */
   domains: z.record(z.string(), DomainSchema).default({}),
   /** Paramètres des scénarios de cybersécurité. */
-  cyber: CyberConfigSchema.default(() => CyberConfigSchema.parse({}))
+  cyber: CyberConfigSchema.default(() => CyberConfigSchema.parse({})),
+  /** Mode panne (v2.8) : facultatif, absent d'un lab ordinaire (format 26 inchangé). */
+  troubleshooting: TroubleshootingSchema.optional()
 })
 
 export const DeviceKindSchema = z.enum(DEVICE_KINDS)
 
+export type ActiveFault = z.infer<typeof ActiveFaultSchema>
+export type Troubleshooting = z.infer<typeof TroubleshootingSchema>
 export type CyberConfig = z.infer<typeof CyberConfigSchema>
 export type Position = z.infer<typeof PositionSchema>
 export type DhcpClientLease = z.infer<typeof DhcpClientLeaseSchema>
