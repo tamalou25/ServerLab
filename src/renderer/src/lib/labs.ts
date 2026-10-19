@@ -2,7 +2,7 @@
  * Labs pédagogiques : ouverture (état de départ construit par le moteur), vérification des
  * critères, reprise depuis le départ.
  */
-import { buildLabStart, checkLab, type LabDefinition } from '@engine/index'
+import { buildLabState, checkLab, type LabDefinition } from '@engine/index'
 import { useExamStore } from '../store/exam'
 import { useLabStore } from '../store/lab'
 import { useLabsStore } from '../store/labs'
@@ -15,7 +15,7 @@ export async function openLab(lab: LabDefinition): Promise<boolean> {
   if (!(await confirmDiscard())) return false
   let start
   try {
-    start = buildLabStart(lab.start)
+    start = buildLabState(lab)
   } catch (e) {
     useUiStore.getState().showModal({
       title: t('labs.openFailed'),
@@ -54,7 +54,7 @@ export function restartLab(): void {
     confirmLabel: t('labs.restart.confirm'),
     onConfirm: () => {
       resetDocumentUi()
-      useLabStore.getState().load(buildLabStart(lab.start), { path: null, name: `${lab.id}.slab` })
+      useLabStore.getState().load(buildLabState(lab), { path: null, name: `${lab.id}.slab` })
       useLabsStore.getState().setActive(lab)
       useUiStore.getState().setRightTab('lab')
     }

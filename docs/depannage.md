@@ -120,6 +120,19 @@ tant que la première n'est pas réparée, visible ensuite, guérison complète)
 réparabilité commun (`faults.test.ts`). Labs sains de référence : `tests/engine/troubleshoot/bases-windows.ts`
 (labs 2, 4, 5 et 7 résolus, domaine avec verrouillage à 3 échecs).
 
+## Labs de dépannage fournis
+
+Fichiers `labs/lab-43-…`, `lab-44-…`, `lab-45-…` : le `start` est un état **sain**, le champ `troubleshooting`
+(graine et pannes fixées) casse le lab au chargement (`buildLabState` : ouverture, reprise et examen). L'énoncé est
+un ticket sans la cause ; les critères combinent `faultRepaired` et des critères ordinaires. Tests :
+`tests/engine/labs/lab-4[345]-*.test.ts` (départ cassé, réparation officielle à 100 %, cas partiels).
+
+| Lab                           | Pannes (graine 2)                                          | Symptômes                                                    | Ce que le lab montre                      |
+| ----------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------- |
+| 43 `lab-43-depannage-reseau`  | `net.wrong-vlan` (port de PC2) + `net.wrong-gateway` (WEB) | PC2 isolé, WEB injoignable de PC1                            | deux causes indépendantes, niveaux 2 et 3 |
+| 44 `lab-44-depannage-windows` | `win.clock-skew` (PC1) + `windows.service-stopped` (DNS)   | « aucun serveur d'ouverture de session », puis écart d'heure | le DNS arrêté cache l'écart d'horloge     |
+| 45 `lab-45-depannage-compose` | `win.combo.dns-stopped-wrong-a`                            | nom non résolu, puis résolu vers une mauvaise adresse        | panne composée, partage inaccessible      |
+
 ## Interface
 
 Code : `src/renderer/src/components/labs/Troubleshoot.tsx`, `lib/troubleshoot.ts`, `store/troubleshoot.ts`. Le

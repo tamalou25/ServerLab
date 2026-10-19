@@ -37,6 +37,11 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   comparées à celles jouées par l'élève (« chemin le plus court »), indices, durée, score sur 100.
 - Dépannage chronométré : réutilise la session et la note du mode examen (durée imposée, indices désactivés,
   vérification unique) ; le bilan affiche aussi la note d'examen. Annuler ne revient jamais avant l'injection.
+- Trois labs de dépannage d'exemple (#233), lancés directement depuis la bibliothèque (départ sain, pannes fixées par
+  `troubleshooting.faults` et une graine, injectées par `buildLabState`) : lab 43 « Dépannage réseau : Internet ne répond
+  plus » (`net.wrong-vlan` + `net.wrong-gateway`), lab 44 « Dépannage Windows : les postes n'ouvrent plus de session »
+  (`win.clock-skew` + `windows.service-stopped`), lab 45 « Dépannage composé : deux causes qui se masquent »
+  (`win.combo.dns-stopped-wrong-a`). L'ouverture, la reprise et le mode examen d'un lab passent par `buildLabState`.
 
 ### Chantier A de la v2.8 (services à état)
 

@@ -1,0 +1,121 @@
+{
+  "formatVersion": 1,
+  "id": "lab-44-depannage-windows",
+  "title": "Dépannage Windows : les postes n'ouvrent plus de session",
+  "difficulty": "Intermédiaire",
+  "duration": "30 min",
+  "summary": "Les utilisateurs du domaine ne peuvent plus ouvrir de session : diagnostiquez deux causes indépendantes (service, horloge) à partir du ticket, puis réparez.",
+  "statement": "## Ticket utilisateur\n\n> « Depuis ce matin, je n'arrive plus à ouvrir ma session sur **PC1** : Windows répond qu'aucun serveur d'ouverture de session n'est disponible, alors que mon mot de passe est le bon. Même le nom du serveur **srv1.lab.local** ne répond plus. »\n\n## L'environnement\n\nLe domaine **lab.local** est hébergé par **SRV1** (contrôleur de domaine et serveur DNS, 192.168.10.1/24). **PC1** (192.168.10.10/24) est un poste du domaine, utilisé par **jdupont**. Tout fonctionnait hier soir : c'est la configuration **attendue**.\n\n## Travail demandé\n\n1. Reproduisez les symptômes depuis PC1 (ouverture de session, `nslookup srv1.lab.local`, `w32tm /query /status`) et notez ce que vous observez.\n2. Identifiez chaque cause à l'aide des consoles, de l'observateur d'évènements et de la liste des services. Il y a plusieurs causes, et une cause peut en cacher une autre : relisez les messages après chaque correction.\n3. Réparez-les, puis contrôlez que le poste résout de nouveau le nom du serveur et que la session s'ouvre.\n\nÀ rendre : pour chaque cause, le symptôme observé, l'outil de diagnostic utilisé et la correction appliquée.",
+  "start": {
+    "devices": [
+      {
+        "kind": "server",
+        "name": "SRV1",
+        "x": 220,
+        "y": 100,
+        "ip": "192.168.10.1/24",
+        "dns": ["127.0.0.1"]
+      },
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 330,
+        "y": 300
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 330,
+        "y": 470,
+        "ip": "192.168.10.10/24",
+        "dns": ["192.168.10.1"],
+        "logon": {
+          "user": "jdupont",
+          "password": "Azerty123!"
+        }
+      }
+    ],
+    "links": [
+      ["SRV1:Ethernet0", "SW1:Fa0/1"],
+      ["PC1:Ethernet0", "SW1:Fa0/2"]
+    ],
+    "domain": {
+      "name": "lab.local",
+      "netbios": "LAB",
+      "dc": "SRV1",
+      "ous": ["Societe"],
+      "users": [
+        {
+          "name": "Jean Dupont",
+          "sam": "jdupont",
+          "ou": "Societe",
+          "password": "Azerty123!"
+        }
+      ],
+      "join": ["PC1"]
+    }
+  },
+  "troubleshooting": {
+    "seed": 2,
+    "faults": [
+      {
+        "id": "win.clock-skew"
+      },
+      {
+        "id": "windows.service-stopped"
+      }
+    ]
+  },
+  "criteria": [
+    {
+      "id": "panne-horloge",
+      "label": "La cause de l'erreur d'ouverture de session est réparée",
+      "hint": "Une fois la première cause traitée, relisez le message de refus : il ne parle pas du mot de passe. À quoi le protocole d'authentification du domaine est-il sensible ?",
+      "check": {
+        "type": "faultRepaired",
+        "faultId": "win.clock-skew"
+      }
+    },
+    {
+      "id": "panne-service",
+      "label": "La cause de la panne de résolution de noms est réparée",
+      "hint": "Un nom qui ne se résout plus alors que le serveur répond au ping : quel service fournit cette réponse, et tourne-t-il ?",
+      "check": {
+        "type": "faultRepaired",
+        "faultId": "windows.service-stopped"
+      }
+    },
+    {
+      "id": "dns-demarre",
+      "label": "Le service DNS de SRV1 est en cours d'exécution",
+      "hint": "Comparez la liste des services de SRV1 avec ce que fournit normalement un serveur DNS.",
+      "check": {
+        "type": "serviceState",
+        "device": "SRV1",
+        "name": "DNS",
+        "running": true
+      }
+    },
+    {
+      "id": "resolution",
+      "label": "PC1 résout srv1.lab.local en 192.168.10.1",
+      "hint": "Le test de résolution depuis le poste doit de nouveau aboutir.",
+      "check": {
+        "type": "nslookup",
+        "client": "PC1",
+        "name": "srv1.lab.local",
+        "address": "192.168.10.1"
+      }
+    },
+    {
+      "id": "horloge",
+      "label": "L'horloge de PC1 est à l'heure du domaine (écart de 5 secondes au plus)",
+      "hint": "L'authentification du domaine est sensible à l'écart entre le poste et le contrôleur ; cherchez comment le poste se resynchronise.",
+      "check": {
+        "type": "clockOffset",
+        "device": "PC1",
+        "maxSeconds": 5
+      }
+    }
+  ]
+}
