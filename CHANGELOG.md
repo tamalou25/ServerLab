@@ -29,6 +29,7 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 - Journal Système : évènements 7000 (démarrage refusé), 7034 (arrêt inattendu) et 7031 (arrêt inattendu avec action corrective).
 - `sc failure` et `sc qfailure` (reset, reboot, command, actions), sorties calculées depuis l'état, captures et tests golden.
 - Les issues suivantes de la v2.8 n'ajoutent que des champs facultatifs, sans nouvelle version du format.
+- `sc qc <service>` (#225) : START_TYPE, DISPLAY_NAME et DEPENDENCIES calculés depuis l'état, disposition de l'exemple Learn (Netlogon, golden) ; autres services : message honnête, aucune valeur inventée. `tasklist /svc` : message honnête dédié (services par processus non modélisés). `net stop` avec dépendants : inchangé (invite exacte introuvable).
 - Interface (#226) : Snap-in Services (`services.msc`) : liste des services (Nom, État, Type de démarrage), démarrer, arrêter, redémarrer par les commandes `service.*` (annulables), propriétés
   (type de démarrage modifiable, onglet Dépendances calculé depuis le modèle ; pas de pause) (#226).
 - Gestionnaire de serveur : les services arrêtés dont le démarrage est automatique sont signalés en rouge et
