@@ -1,0 +1,94 @@
+{
+  "formatVersion": 1,
+  "id": "lab-42-diagnostic-services",
+  "title": "Diagnostic de services Windows",
+  "difficulty": "Intermédiaire",
+  "duration": "30 min",
+  "summary": "Plusieurs incidents touchent le domaine en même temps : retrouvez les services et réglages en cause à partir des symptômes, puis réparez durablement.",
+  "statement": "## Ticket utilisateur\n\n> « Depuis ce matin, mon poste **PC1** n'arrive plus à se connecter au domaine, le nom du serveur ne se résout plus et le partage **\\\\SRV2\\Docs** est inaccessible. »\n\nLe domaine **lab.local** est hébergé par **SRV1** (contrôleur de domaine, 192.168.10.1). **SRV2** (192.168.10.2) est un serveur membre qui héberge le partage **Docs**. **PC1** (192.168.10.10) est un poste du domaine, utilisé par **jdupont**.\n\n## Travail demandé\n\n1. Reproduisez les symptômes depuis PC1 (`nslookup`, accès au partage, `nltest`, `w32tm`) et notez ce que vous observez.\n2. Pour chaque symptôme, identifiez la cause à l'aide des consoles, de l'observateur d'évènements et des services (`Get-Service`, `sc query`, `w32tm /query /status`).\n3. Réparez chaque cause et faites en sorte que la réparation tienne après un redémarrage.\n4. Contrôlez que le poste se connecte de nouveau et que le partage s'ouvre.\n\nÀ rendre : pour chaque symptôme, la cause trouvée, la commande de réparation et sa vérification.",
+  "start": {
+    "devices": [
+      {
+        "kind": "server",
+        "name": "SRV1",
+        "x": 220,
+        "y": 100,
+        "ip": "192.168.10.1/24",
+        "dns": ["127.0.0.1"],
+        "services": [{ "name": "DNS", "running": false, "startType": "Manual" }]
+      },
+      {
+        "kind": "server",
+        "name": "SRV2",
+        "x": 460,
+        "y": 100,
+        "ip": "192.168.10.2/24",
+        "dns": ["192.168.10.1"],
+        "shares": [{ "name": "Docs", "path": "C:\\Docs", "read": ["Tout le monde"] }],
+        "services": [{ "name": "LanmanServer", "running": false }]
+      },
+      { "kind": "switch", "name": "SW1", "x": 330, "y": 300 },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 330,
+        "y": 470,
+        "ip": "192.168.10.10/24",
+        "dns": ["192.168.10.1"],
+        "logon": { "user": "jdupont", "password": "Azerty123!" },
+        "clockOffsetSeconds": 900
+      }
+    ],
+    "links": [
+      ["SRV1:Ethernet0", "SW1:Fa0/1"],
+      ["SRV2:Ethernet0", "SW1:Fa0/2"],
+      ["PC1:Ethernet0", "SW1:Fa0/3"]
+    ],
+    "domain": {
+      "name": "lab.local",
+      "netbios": "LAB",
+      "dc": "SRV1",
+      "ous": ["Societe"],
+      "users": [{ "name": "Jean Dupont", "sam": "jdupont", "ou": "Societe", "password": "Azerty123!" }],
+      "join": ["SRV2", "PC1"]
+    }
+  },
+  "criteria": [
+    {
+      "id": "dns-demarre",
+      "label": "Le service DNS de SRV1 est en cours d'exécution",
+      "hint": "Comparez la liste des services de SRV1 avec ce que fournit normalement un serveur DNS.",
+      "check": { "type": "serviceState", "device": "SRV1", "name": "DNS", "running": true }
+    },
+    {
+      "id": "dns-auto",
+      "label": "Le service DNS de SRV1 démarre automatiquement",
+      "hint": "Remettre le service en route ne suffit pas : regardez son type de démarrage.",
+      "check": { "type": "serviceState", "device": "SRV1", "name": "DNS", "startType": "Automatic" }
+    },
+    {
+      "id": "resolution",
+      "label": "PC1 résout srv1.lab.local en 192.168.10.1",
+      "hint": "Le test de résolution depuis le poste doit de nouveau aboutir.",
+      "check": { "type": "nslookup", "client": "PC1", "name": "srv1.lab.local", "address": "192.168.10.1" }
+    },
+    {
+      "id": "lanman",
+      "label": "Le service Serveur de SRV2 est en cours d'exécution",
+      "hint": "Un serveur de fichiers publie ses partages grâce à un service système ; vérifiez son état sur SRV2.",
+      "check": { "type": "serviceState", "device": "SRV2", "name": "LanmanServer", "running": true }
+    },
+    {
+      "id": "horloge",
+      "label": "L'horloge de PC1 est à l'heure du domaine (écart de 5 secondes au plus)",
+      "hint": "L'authentification du domaine est sensible à l'écart entre le poste et le contrôleur.",
+      "check": { "type": "clockOffset", "device": "PC1", "maxSeconds": 5 }
+    },
+    {
+      "id": "partage",
+      "label": "jdupont ouvre \\\\SRV2\\Docs depuis PC1",
+      "hint": "L'accès demande à la fois un nom résolu, une session valide et un service qui publie le partage.",
+      "check": { "type": "uncReachable", "from": "PC1", "path": "\\\\SRV2\\Docs" }
+    }
+  ]
+}
