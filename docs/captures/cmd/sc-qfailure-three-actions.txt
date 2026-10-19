@@ -1,0 +1,11 @@
+# Source: https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-xp/bb490995(v=technet.10) (« sc failure » : reset=, reboot=, command=, trois actions run / restart / reboot ; « sc qfailure ») ; mise en page de la sortie non publiée sur Learn, voir docs/fidelite.md v2.8
+# Commande: sc qfailure W3SVC
+[SC] QueryServiceConfig2 réussite(s)
+
+NOM_SERVICE: W3SVC
+        RESET_PERIOD (in seconds)    : 60
+        REBOOT_MESSAGE               : Le serveur redémarre dans 30 secondes.
+        COMMAND_LINE                 : C:\Scripts\relance.cmd
+        FAILURE_ACTIONS              : RUN PROCESS -- Delay = 5000 milliseconds.
+                                       RESTART -- Delay = 60000 milliseconds.
+                                       REBOOT -- Delay = 30000 milliseconds.

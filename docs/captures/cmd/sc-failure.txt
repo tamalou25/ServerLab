@@ -1,0 +1,3 @@
+# Source: https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-xp/bb490995(v=technet.10) (« sc failure », exemple « sc failure msftpsvc reset= 30 actions= restart/5000 ») ; texte de la réponse non publié sur Learn, voir docs/fidelite.md v2.8
+# Commande: sc failure W3SVC reset= 30 actions= restart/5000
+[SC] ChangeServiceConfig2 réussite(s)

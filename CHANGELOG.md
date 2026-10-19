@@ -20,11 +20,23 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   (événements 4771 et 4625) et l'accès aux partages du domaine (erreur 1398) ; `w32tm /resync` (service Temps Windows
   démarré) ou `Set-Date` le répare.
 - Critère de lab `clockOffset` (ordinateur, écart maximal en secondes).
+- Services : échec au démarrage et options de récupération (#224). Champs facultatifs `failure` et `recovery` sur l'état d'un
+  service (format 26 inchangé), commandes nommées annulables `service.setFailure`, `service.clearFailure` et
+  `service.setRecovery` (point d'appui de l'injection de panne du mode panne).
+- Un service en échec refuse de démarrer (`Start-Service`, `Restart-Service`, `net start`, `sc start` : erreur 1066 ou 1053)
+  jusqu'à la réparation de sa configuration ; un service qui en dépend ne démarre pas non plus (1068) ; la panne survit à un
+  redémarrage.
+- Journal Système : évènements 7000 (démarrage refusé), 7034 (arrêt inattendu) et 7031 (arrêt inattendu avec action corrective).
+- `sc failure` et `sc qfailure` (reset, reboot, command, actions), sorties calculées depuis l'état, captures et tests golden.
 - NTDS et Netlogon (#220) : un contrôleur de domaine dont l'un des deux services est arrêté ne répond plus aux clients.
   Session de domaine refusée (erreur 1311, événement NETLOGON 5719 sur le poste), `gpupdate` en échec, `nltest /dsgetdc`
   en erreur 1355 (golden), jonction au domaine impossible. Avec plusieurs contrôleurs, le client utilise celui qui répond ;
   redémarrer le service (`service.start`) rétablit tout.
 - Les issues suivantes de la v2.8 n'ajoutent que des champs facultatifs, sans nouvelle version du format.
+- Interface (#226) : Snap-in Services (`services.msc`) : liste des services (Nom, État, Type de démarrage), démarrer, arrêter, redémarrer par les commandes `service.*` (annulables), propriétés
+  (type de démarrage modifiable, onglet Dépendances calculé depuis le modèle ; pas de pause) (#226).
+- Gestionnaire de serveur : les services arrêtés dont le démarrage est automatique sont signalés en rouge et
+  rendent l'indicateur « Services » des vignettes rouge (#226).
 
 ## [2.7.0] — 2026-10-14
 
