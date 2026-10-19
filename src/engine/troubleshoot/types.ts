@@ -19,6 +19,11 @@ export interface FaultDef {
   difficulty: 1 | 2 | 3
   /** Visible seulement en fin de dépannage. */
   title: string
+  /**
+   * Panne composée : [cause masquante, cause masquée] (voir `composite.ts`). Réparation dans cet ordre ;
+   * les cibles des parties sont préfixées `a.` et `b.`.
+   */
+  parts?: readonly [FaultDef, FaultDef]
   /** Choisit des cibles valides dans l'état sain ; null si la panne ne s'applique pas à ce lab. Pur et déterministe. */
   pick(state: LabState, rand: () => number): FaultTargetParams | null
   /** Commandes nommées qui CASSENT l'état (appliquées par `dispatch`). */

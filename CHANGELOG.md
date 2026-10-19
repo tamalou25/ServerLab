@@ -21,6 +21,14 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   `ping`, `ipconfig`, `show vlan`, `show interfaces trunk`, `show spanning-tree`, `show etherchannel summary`…
   Injection et réparation par commandes nommées (dont `shell.exec` pour la configuration IOS) ; test de réparabilité
   sur 100 graines et sept labs sains de référence.
+- Pannes Windows (#230), domaine `windows`, aucune sortie de console nouvelle (symptômes des consoles déjà sourcées) :
+  `windows.service-stopped` étendue (DNS, DHCPServer, LanmanServer, W3SVC, Netlogon), `win.service-disabled`,
+  `win.service-failed`, `win.dependency-stopped`, `win.dns-wrong-a`, `win.dhcp-scope-disabled`,
+  `win.dhcp-scope-exhausted`, `win.trust-broken`, `win.account-locked`, `win.account-disabled`, `win.gpo-unlinked`,
+  `win.gpo-filtered`, `win.ntfs-rights`, `win.share-acl`, `win.clock-skew`.
+- Pannes composées (`win.combo.*`, 6) : deux causes dont la première masque la seconde (`troubleshoot/composite.ts`) ;
+  tirage de plusieurs pannes limité aux pannes qui restent réparables ensemble.
+- Compte « expiré » non ajouté (non modélisé) : voir `docs/fidelite.md`, D-27. Format `.slab` 26 inchangé.
 
 ### Chantier A de la v2.8 (services à état)
 

@@ -17,6 +17,7 @@ import {
 } from '@engine/index'
 import lab1 from '../../../labs/lab-01-adressage.json'
 import lab3 from '../../../labs/lab-03-dns.json'
+import { WINDOWS_BASES } from './bases-windows'
 import lab13 from '../../../labs/lab-13-vlan.json'
 import lab23 from '../../../labs/lab-23-ios-vlan.json'
 import lab24 from '../../../labs/lab-24-ios-routage.json'
@@ -198,5 +199,6 @@ export const BASES: { name: string; build: () => LabState }[] = [
   { name: 'lab-23-ios-vlan', build: healthyLab23 },
   { name: 'lab-24-routes-statiques', build: healthyLab24 },
   { name: 'lab-25-ios-nat', build: healthyLab25 },
-  { name: 'lab-38-stp-etherchannel', build: healthyLab38 }
+  { name: 'lab-38-stp-etherchannel', build: healthyLab38 },
+  ...WINDOWS_BASES
 ]
