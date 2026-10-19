@@ -9,6 +9,7 @@ import { transact } from '../../core/result'
 import { nextSeq } from '../../model/factory'
 import type { HostDevice, LabState } from '../../model/schema'
 import { effectiveIpv4 } from '../../net/addressing'
+import { tcpListening } from '../../services/listening'
 import type { PacketTrace } from '../../sim/trace'
 import { concatTraces } from '../../sim/trace'
 import { authenticate } from '../adds/credentials'
@@ -82,7 +83,9 @@ export function rdpConnect(state: LabState, clientId: string, input: RdpInput): 
   const target = ip
     ? hosts(state).find((h) => h.interfaces.some((i) => effectiveIpv4(i)?.address === ip))
     : undefined
-  const listening = !!target?.host.remoteDesktop.enabled
+  // Port 3389 : connexions autorisées ET service Services Bureau à distance (TermService) démarré.
+  // Arrêté, rien n'écoute : la connexion est refusée avec le message déjà simulé pour un port fermé.
+  const listening = !!target && tcpListening(target, RDP_PORT)
   if (!ip) return done(false, RDP_UNREACHABLE)
   const exchange = serverExchange(state, clientId, ip, {
     protocol: 'RDP',

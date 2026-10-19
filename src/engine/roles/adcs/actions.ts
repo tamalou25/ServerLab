@@ -12,6 +12,7 @@ import { addCertificate, makeThumbprint } from '../../services/certificates'
 import { requireDevice } from '../../topology/actions'
 import { ensureRoleState } from '../state'
 import type { AdcsServer } from './schema'
+import { serviceRunning } from '../../services/servicestate'
 import { ADCS_STATE, CERT_TEMPLATES, DEFAULT_TEMPLATES, enterpriseCas, templateName } from './state'
 
 const YEAR_MS = 365 * 24 * 3600 * 1000
@@ -33,6 +34,17 @@ export const REVOCATION_LABELS: Record<(typeof REVOCATION_REASONS)[number], stri
   AffiliationChanged: 'Modification de l’affiliation',
   Superseded: 'Remplacé',
   CessationOfOperation: 'Cessation d’activité'
+}
+
+/**
+ * Message d'une demande adressée à une autorité dont le service CertSvc est arrêté (v2.8, #222).
+ * Code 1722 RPC_S_SERVER_UNAVAILABLE « The RPC server is unavailable. » :
+ * https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--1700-3999-
+ * Que ce soit bien ce code que renvoie l'inscription réelle n'est pas sourcé (docs/fidelite.md,
+ * « À vérifier (v2.8 — services) »).
+ */
+export function certSvcStoppedMessage(caName: string): string {
+  return `Le serveur RPC n’est pas disponible (1722, RPC_S_SERVER_UNAVAILABLE) : le service Services de certificats Active Directory (CertSvc) est arrêté sur l’autorité ${caName}.`
 }
 
 export function requireAdcs(
@@ -197,7 +209,10 @@ export function requestCertificate(
         'NotDomainMember',
         'L’inscription auprès d’une autorité d’entreprise exige un ordinateur membre du domaine.'
       )
-    const found = enterpriseCas(draft as LabState, domain.name).find((c) => c.server.powered)
+    const reachable = enterpriseCas(draft as LabState, domain.name).filter((c) => c.server.powered)
+    // Une autorité allumée dont CertSvc est arrêté ne délivre plus rien (v2.8, #222)
+    const found = reachable.find((c) => serviceRunning(c.server, 'CertSvc'))
+    if (!found && reachable[0]) raise('CertSvcStopped', certSvcStoppedMessage(reachable[0].ca.caName))
     if (!found)
       raise(
         'CaUnavailable',
@@ -234,7 +249,8 @@ export function revokeCertificate(
   reason: (typeof REVOCATION_REASONS)[number] = 'Unspecified'
 ): EngineResult {
   return transact(state, (draft) => {
-    const { ca } = requireConfigured(draft, deviceId)
+    const { server, ca } = requireConfigured(draft, deviceId)
+    if (!serviceRunning(server, 'CertSvc')) raise('CertSvcStopped', certSvcStoppedMessage(ca.caName))
     const cert = ca.issued.find((c) => c.serial.toLowerCase() === serial.trim().toLowerCase())
     if (!cert) raise('CertificateNotFound', `Aucun certificat délivré ne porte le numéro de série ${serial}.`)
     if (cert.revoked) raise('AlreadyRevoked', 'Ce certificat est déjà révoqué.')
@@ -279,7 +295,13 @@ export function applyCertificateServicesClient(
     const enrolled = ca.issued.some(
       (c) => c.requester === host.name && c.template === 'Machine' && !c.revoked
     )
-    if (auto && caServer.powered && ca.templates.includes('Machine') && !enrolled)
+    if (
+      auto &&
+      caServer.powered &&
+      serviceRunning(caServer, 'CertSvc') &&
+      ca.templates.includes('Machine') &&
+      !enrolled
+    )
       issue(draft, caServer, ca, host as Draft<HostDevice>, 'Machine', [
         `${host.name}.${domain.name}`.toLowerCase()
       ])

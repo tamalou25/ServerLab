@@ -125,6 +125,9 @@ const SYSTEM_SERVICES: HostService[] = [
   { display: 'Client DNS', name: 'Dnscache' },
   { display: 'Journal d’événements', name: 'EventLog' },
   { display: 'Pare-feu', name: 'MpsSvc' },
+  // Spouleur d'impression : présent sur tout ordinateur Windows, sans effet de rôle (v2.8, #222).
+  // Nom court « Spooler » et libellé français : docs/fidelite.md, A-34 et « À vérifier (v2.8 — services) ».
+  { display: 'Spouleur d’impression', name: 'Spooler' },
   { display: 'Station de travail', name: 'LanmanWorkstation' },
   { display: 'Temps Windows', name: 'W32Time' }
 ]

@@ -32,6 +32,10 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   Session de domaine refusée (erreur 1311, événement NETLOGON 5719 sur le poste), `gpupdate` en échec, `nltest /dsgetdc`
   en erreur 1355 (golden), jonction au domaine impossible. Avec plusieurs contrôleurs, le client utilise celui qui répond ;
   redémarrer le service (`service.start`) rétablit tout.
+- Autres services (#222) : `CertSvc` arrêté (plus de délivrance, d'inscription automatique ni de révocation, erreur 1722),
+  `TermService` arrêté (port 3389 fermé, Bureau à distance refusé), `WsusService` arrêté (clients injoignables, synchronisation
+  refusée, code 0x80244022), `MpsSvc` arrêté (le pare-feu ne filtre plus), nouveau service `Spooler` (Spouleur d'impression,
+  démarrage automatique). Format `.slab` inchangé (v26), goldens `certsvc-arrete` et `wsusservice-arrete`.
 - Les issues suivantes de la v2.8 n'ajoutent que des champs facultatifs, sans nouvelle version du format.
 - Interface (#226) : Snap-in Services (`services.msc`) : liste des services (Nom, État, Type de démarrage), démarrer, arrêter, redémarrer par les commandes `service.*` (annulables), propriétés
   (type de démarrage modifiable, onglet Dépendances calculé depuis le modèle ; pas de pause) (#226).
