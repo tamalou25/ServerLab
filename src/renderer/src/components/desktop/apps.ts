@@ -5,6 +5,7 @@
  * sont associés dans renderApp.tsx.
  */
 import {
+  Cog,
   ShieldCheck,
   EthernetPort,
   FolderOpen,
@@ -193,6 +194,17 @@ const CORE_APPS: DesktopApp[] = [
     color: 'text-emerald-700',
     size: { w: 980, h: 600 },
     run: ['wf.msc', 'wf'],
+    start: 'admin',
+    tool: true,
+    available: always
+  },
+  {
+    id: 'services',
+    label: 'Services',
+    icon: Cog,
+    color: 'text-slate-500',
+    size: { w: 900, h: 520 },
+    run: ['services.msc', 'services'],
     start: 'admin',
     tool: true,
     available: always
