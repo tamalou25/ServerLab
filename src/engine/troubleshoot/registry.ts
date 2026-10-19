@@ -9,6 +9,7 @@ import { etherchannelDown } from './faults/etherchannel-down'
 import { missingRoute } from './faults/missing-route'
 import { portErrDisabled } from './faults/port-err-disabled'
 import { serviceStopped } from './faults/service-stopped'
+import { WINDOWS_FAULTS } from './faults/windows'
 import { trunkMissingVlan } from './faults/trunk-missing-vlan'
 import { wrongGateway } from './faults/wrong-gateway'
 import { wrongMask } from './faults/wrong-mask'
@@ -30,7 +31,8 @@ export const FAULTS: readonly FaultDef[] = [
   wrongNat,
   missingRoute,
   wrongStpRoot,
-  etherchannelDown
+  etherchannelDown,
+  ...WINDOWS_FAULTS
 ]
 
 /** Panne du catalogue par identifiant (undefined : identifiant inconnu, p. ex. fichier d'une version future). */

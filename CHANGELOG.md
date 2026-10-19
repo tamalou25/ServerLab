@@ -21,6 +21,14 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   `ping`, `ipconfig`, `show vlan`, `show interfaces trunk`, `show spanning-tree`, `show etherchannel summary`…
   Injection et réparation par commandes nommées (dont `shell.exec` pour la configuration IOS) ; test de réparabilité
   sur 100 graines et sept labs sains de référence.
+- Pannes Windows (#230), domaine `windows`, aucune sortie de console nouvelle (symptômes des consoles déjà sourcées) :
+  `windows.service-stopped` étendue (DNS, DHCPServer, LanmanServer, W3SVC, Netlogon), `win.service-disabled`,
+  `win.service-failed`, `win.dependency-stopped`, `win.dns-wrong-a`, `win.dhcp-scope-disabled`,
+  `win.dhcp-scope-exhausted`, `win.trust-broken`, `win.account-locked`, `win.account-disabled`, `win.gpo-unlinked`,
+  `win.gpo-filtered`, `win.ntfs-rights`, `win.share-acl`, `win.clock-skew`.
+- Pannes composées (`win.combo.*`, 6) : deux causes dont la première masque la seconde (`troubleshoot/composite.ts`) ;
+  tirage de plusieurs pannes limité aux pannes qui restent réparables ensemble.
+- Compte « expiré » non ajouté (non modélisé) : voir `docs/fidelite.md`, D-27. Format `.slab` 26 inchangé.
 - Interface du dépannage (#232) : Fichier > « Lancer un dépannage… » (ou bouton du sélecteur de labs) sur le lab ouvert —
   difficulté maximale, domaine (réseau, Windows, aléatoire), nombre de pannes (1 ou 2), graine affichée pour rejouer.
   Ticket utilisateur sans la cause, trois niveaux d'indices (commande `troubleshoot.useHint`, comptés dans le bilan),

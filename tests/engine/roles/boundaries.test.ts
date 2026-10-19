@@ -39,7 +39,14 @@ const ALLOWED_CORE_TO_ROLE = [
   'shell/ps/cmdlets/netsys.ts', // Test-ComputerSecureChannel : compte d'ordinateur du domaine
   'shell/ps/cmdlets/system.ts', // Restart-Computer -ComputerName : administrateur du domaine
   'shell/tools/net.ts', // ipconfig /renew, résolution de noms, whoami /groups
-  'troubleshoot/faults/service-stopped.ts' // panne de service : sonde DNS (symptôme = résolution de noms)
+  'troubleshoot/faults/domain-probe.ts',
+  'troubleshoot/faults/service-probes.ts',
+  'troubleshoot/faults/win-account.ts',
+  'troubleshoot/faults/win-dhcp.ts',
+  'troubleshoot/faults/win-dns-record.ts',
+  'troubleshoot/faults/win-gpo.ts',
+  'troubleshoot/faults/win-share.ts',
+  'troubleshoot/faults/win-trust.ts' // pannes Windows : symptômes lus par les fonctions des rôles (sondes)
 ]
 
 describe('frontière cœur / rôles', () => {
