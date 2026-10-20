@@ -11,6 +11,10 @@ import { transact } from '../../core/result'
 import { LAB_EPOCH_MS } from '../../core/clock'
 import { LINUX_USER } from '../../model/factory'
 import type { LinuxNode } from '../../model/linuxnode'
+import type { HostDevice } from '../../model/schema'
+import { providedText, snapshotOnWrite } from '../../services/linuxconfig'
+import { renderLogFile } from '../../services/linuxlog'
+import { installedPackages } from '../../services/linuxsystem'
 import { CommandFailure, type ExecContext } from '../context'
 
 export type { LinuxNode }
@@ -85,6 +89,8 @@ export function defaultLinuxFiles(user: string): LinuxFiles {
   dir('/tmp', 0o1777)
   dir('/var/www', 0o755)
   dir('/var/www/html', 0o755)
+  dir('/etc/ssh', 0o755)
+  dir('/etc/rsyslog.d', 0o755)
   dir('/var/log', 0o755, 'root', 'syslog')
   dir(`/home/${user}`, 0o750, user, user)
   const hasUser = user !== 'root'
@@ -154,15 +160,45 @@ export function defaultLinuxFiles(user: string): LinuxFiles {
   file('/etc/hosts', 0o644, undefined)
   file('/etc/resolv.conf', 0o644, undefined)
   file('/var/www/html/index.html', 0o644, '<html><body><h1>It works!</h1></body></html>\n')
-  file('/var/log/syslog', 0o640, '', 'syslog', 'adm')
-  file('/var/log/auth.log', 0o640, '', 'syslog', 'adm')
+  // Journaux de rsyslog : contenu calculé depuis le journal de l'ordinateur (services/linuxlog.ts)
+  file('/var/log/syslog', 0o640, undefined, 'syslog', 'adm')
+  file('/var/log/auth.log', 0o640, undefined, 'syslog', 'adm')
+  file('/etc/rsyslog.conf', 0o644, undefined)
   return files
 }
 
-/** Fichiers du poste (par défaut tant qu'aucune écriture n'a eu lieu). */
+/** Dossiers et fichiers qu'un paquet installé apporte (contenu fourni par services/linuxconfig.ts). */
+const PACKAGE_NODES: Record<string, [string, LinuxNode][]> = {
+  'openssh-server': [
+    ['/etc/ssh/sshd_config.d', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
+    ['/etc/ssh/sshd_config', { type: 'file', mode: 0o644, owner: 'root', group: 'root', mtime: 0 }]
+  ],
+  fail2ban: [
+    ['/etc/fail2ban', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
+    ['/etc/fail2ban/jail.d', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
+    [
+      '/etc/fail2ban/jail.d/defaults-debian.conf',
+      { type: 'file', mode: 0o644, owner: 'root', group: 'root', mtime: 0 }
+    ],
+    ['/var/log/fail2ban.log', { type: 'file', mode: 0o640, owner: 'root', group: 'adm', mtime: 0 }]
+  ]
+}
+
+/** Arborescence complétée des nœuds des paquets installés (ceux déjà présents ne sont pas touchés). */
+function withPackageFiles(files: LinuxFiles, pkgs: string[]): LinuxFiles {
+  const missing = pkgs.flatMap((p) => PACKAGE_NODES[p] ?? []).filter(([path]) => !(path in files))
+  return missing.length === 0 ? files : { ...files, ...Object.fromEntries(missing) }
+}
+
+/** Fichiers d'un serveur ou poste Linux (par défaut tant qu'aucune écriture n'a eu lieu). */
+export function hostFiles(host: HostDevice): LinuxFiles {
+  const base = host.host.linux?.files ?? defaultLinuxFiles(host.host.session?.user ?? LINUX_USER)
+  return withPackageFiles(base, installedPackages(host))
+}
+
+/** Fichiers du poste de la console. */
 export function linuxFiles(ctx: ExecContext): LinuxFiles {
-  const host = ctx.host.host
-  return host.linux?.files ?? defaultLinuxFiles(host.session?.user ?? LINUX_USER)
+  return hostFiles(ctx.host)
 }
 
 /** Copie modifiable des fichiers (l'état est gelé par immer). */
@@ -170,12 +206,24 @@ export const cloneFiles = (files: LinuxFiles): LinuxFiles => JSON.parse(JSON.str
 
 /** Enregistre l'arborescence modifiée dans l'état. */
 export function commitFiles(ctx: ExecContext, files: LinuxFiles): void {
-  const id = ctx.deviceId
+  commitFilesOf(ctx, ctx.deviceId, files)
+}
+
+/** Enregistre l'arborescence modifiée d'un autre ordinateur du lab (ex. authorized_keys d'un serveur joint en SSH). */
+export function commitFilesOf(ctx: ExecContext, id: string, files: LinuxFiles): void {
   ctx.apply(
     transact(ctx.state, (draft) => {
       const d = draft.devices[id]
-      if (d && (d.kind === 'client' || d.kind === 'server'))
-        d.host.linux = { distro: d.host.linux?.distro ?? 'debian12', files }
+      if (d && (d.kind === 'client' || d.kind === 'server')) {
+        // Un service garde sa configuration en mémoire jusqu'à son redémarrage (services/linuxconfig.ts)
+        const loaded = snapshotOnWrite(d.host.linux?.loaded, d.host.linux?.files, files)
+        d.host.linux = {
+          ...d.host.linux,
+          distro: d.host.linux?.distro ?? 'debian12',
+          files,
+          ...(loaded ? { loaded } : {})
+        }
+      }
       return undefined
     })
   )
@@ -202,6 +250,10 @@ export function resolvConfLines(domain: string | null): string[] {
 /** Contenu d'un fichier (contenus système calculés tant que le fichier n'a pas été modifié). */
 export function contentOf(ctx: ExecContext, path: string, node: LinuxNode): string {
   if (node.content !== undefined) return node.content
+  const provided = providedText(path)
+  if (provided !== undefined) return provided
+  const log = renderLogFile(ctx.host, path)
+  if (log !== null) return log
   if (path === '/etc/hostname') return `${ctx.host.name}\n`
   if (path === '/etc/hosts')
     return [

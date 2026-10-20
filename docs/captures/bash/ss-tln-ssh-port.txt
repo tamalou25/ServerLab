@@ -1,0 +1,5 @@
+# Source: https://manpages.debian.org/bookworm/iproute2/ss.8.en.html — sortie reconstituée d’après la page de manuel et le code source Debian (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo ss -tln
+Netid State  Recv-Q Send-Q  Local Address:Port  Peer Address:PortProcess
+tcp   LISTEN 0      128           0.0.0.0:2222       0.0.0.0:*
+tcp   LISTEN 0      128              [::]:2222          [::]:*

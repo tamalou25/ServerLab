@@ -22,6 +22,7 @@ import { raise, transact, type EngineResult } from '../core/result'
 import { effectiveIpv4 } from '../net/addressing'
 import type { EventLogEntry, HostDevice, LabState } from '../model/schema'
 import { PACKAGES, UNITS, findPackage, findUnit, type LinuxRelease, type LinuxUnit } from './linuxcatalog'
+import { parseSshd, runningConfigText } from './linuxconfig'
 import { isDefaultServiceState, serviceState } from './servicestate'
 
 type AnyHost = HostDevice | Draft<HostDevice>
@@ -126,13 +127,20 @@ function bindAddresses(host: AnyHost, bind: LinuxUnit['listens'][number]['bind']
   }
 }
 
+/** Sockets ouverts par l'unité : ceux du catalogue, sauf sshd dont les ports viennent de sa configuration en vigueur. */
+export function listensOf(host: AnyHost, unit: LinuxUnit): LinuxUnit['listens'] {
+  if (unit.name !== 'ssh') return unit.listens
+  const ports = parseSshd(runningConfigText(host.host.linux, 'ssh')).ports
+  return ports.map((port) => ({ proto: 'tcp' as const, port, bind: 'dual' as const, backlog: 128 }))
+}
+
 /** Sockets en écoute des unités actives (TCP puis UDP, par port). */
 export function linuxSockets(host: AnyHost): LinuxSocket[] {
   if (!host.powered) return []
   return installedUnits(host)
     .filter((u) => unitStatus(host, u).active)
     .flatMap((unit) =>
-      unit.listens.flatMap((l) =>
+      listensOf(host, unit).flatMap((l) =>
         bindAddresses(host, l.bind).map((address) => ({
           proto: l.proto,
           address,
@@ -148,10 +156,10 @@ export function linuxSockets(host: AnyHost): LinuxSocket[] {
 
 /** Une autre unité active écoute-t-elle déjà ce port (conflit « Address already in use ») ? */
 function portConflict(host: AnyHost, unit: LinuxUnit): LinuxUnit | undefined {
-  for (const l of unit.listens)
+  for (const l of listensOf(host, unit))
     for (const other of installedUnits(host)) {
       if (other === unit || !unitStatus(host, other).active) continue
-      if (other.listens.some((o) => o.proto === l.proto && o.port === l.port)) return other
+      if (listensOf(host, other).some((o) => o.proto === l.proto && o.port === l.port)) return other
     }
   return undefined
 }
@@ -186,6 +194,14 @@ function setUnitState(
   else host.host.services[unit.name] = next
 }
 
+/** Le service (re)démarre ou recharge : il relit ses fichiers (l'instantané de linuxconfig.ts est oublié). */
+function forgetLoadedConfig(host: Draft<HostDevice>, unit: LinuxUnit) {
+  const loaded = host.host.linux?.loaded
+  if (!loaded || loaded[unit.name] === undefined) return
+  delete loaded[unit.name]
+  if (Object.keys(loaded).length === 0 && host.host.linux) delete host.host.linux.loaded
+}
+
 function journal(
   draft: Draft<LabState>,
   deviceId: string,
@@ -200,6 +216,7 @@ function journal(
 function startUnit(draft: Draft<LabState>, deviceId: string, unit: LinuxUnit): boolean {
   const host = hostOf(draft, deviceId)
   journal(draft, deviceId, unit, `Starting ${unitTitle(unit)}...`)
+  forgetLoadedConfig(host, unit)
   if (portConflict(host, unit)) {
     journal(draft, deviceId, unit, `${unit.name}.service: Failed with result 'exit-code'.`, 'error')
     journal(draft, deviceId, unit, `Failed to start ${unitTitle(unit)}.`, 'error')
@@ -222,6 +239,16 @@ export const jobFailedLines = (unit: LinuxUnit) => [
   `Job for ${unit.name}.service failed because the control process exited with error code.`,
   `See "systemctl status ${unit.name}.service" and "journalctl -xeu ${unit.name}.service" for details.`
 ]
+
+/** `fail2ban-client reload` : le service relit ses fichiers sans changer d'état. */
+export function reloadUnitConfig(state: LabState, deviceId: string, name: string): EngineResult<void> {
+  return transact(state, (draft) => {
+    const host = hostOf(draft, deviceId)
+    const unit = findUnit(name)
+    if (!unit || !isInstalled(host, unit.pkg)) raise('UnitNotFound', `Unit ${name}.service not found.`)
+    forgetLoadedConfig(host, unit)
+  })
+}
 
 export type UnitAction = 'start' | 'stop' | 'restart' | 'reload' | 'enable' | 'disable'
 
@@ -266,6 +293,7 @@ export function unitAction(
             `Failed to reload ${unit.name}.service: Job type reload is not applicable for unit ${unit.name}.service.`
           )
         journal(draft, deviceId, unit, `Reloading ${unitTitle(unit)}...`)
+        forgetLoadedConfig(host, unit)
         journal(draft, deviceId, unit, `Reloaded ${unitTitle(unit)}.`)
         break
       case 'enable':
@@ -312,6 +340,7 @@ export function installPackages(
       if (have.includes(name) || changed.includes(name)) continue
       changed.push(name)
       host.host.linux = {
+        ...host.host.linux,
         distro: host.host.linux?.distro ?? 'ubuntu2404',
         packages: [...have, ...changed].sort()
       }
@@ -348,6 +377,7 @@ export function removePackages(
       }
     }
     host.host.linux = {
+      ...host.host.linux,
       distro: host.host.linux?.distro ?? 'ubuntu2404',
       packages: have.filter((p) => !changed.includes(p))
     }

@@ -34,7 +34,17 @@ const BASH = [
   'find',
   'groupdel',
   'userdel',
-  'visudo'
+  'visudo',
+  // SSH, journaux (v2.9, #237) : seuls ssh, ssh-keygen, ssh-copy-id, fail2ban-client et logger sont simulés
+  'scp',
+  'sftp',
+  'ssh-add',
+  'ssh-agent',
+  'ssh-keyscan',
+  'sshd',
+  'rsyslogd',
+  'fail2ban-regex',
+  'fail2ban-server'
 ]
 
 const KNOWN = { cmd: new Set(CMD), ps: new Set(PS), bash: new Set(BASH) }

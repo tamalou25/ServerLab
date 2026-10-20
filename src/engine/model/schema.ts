@@ -538,7 +538,29 @@ export const HostSchema = z.object({
       /** Fichiers modifiés (chemin absolu → nœud), v2.9 ; absent = arborescence par défaut. */
       files: z.record(z.string(), LinuxNodeSchema).optional(),
       /** Paquets installés (apt) ; absent = paquets de base de la distribution (services/linuxcatalog.ts). */
-      packages: z.array(z.string()).optional()
+      packages: z.array(z.string()).optional(),
+      /**
+       * Configuration en vigueur de chaque service (SSH, rsyslog, fail2ban) : texte lu au dernier
+       * (re)démarrage, tant que les fichiers ont été modifiés depuis ; absent = fichiers actuels.
+       */
+      loaded: z.record(z.string(), z.string()).optional(),
+      /** Bannissements de fail2ban (abstraits : une règle de refus, jamais d'attaque réelle). */
+      bans: z
+        .array(
+          z.object({
+            jail: z.string(),
+            ip: z.string(),
+            /** Horloge du lab au bannissement (ms). */
+            time: z.number(),
+            /** Durée en ms ; -1 = définitif. */
+            duration: z.number(),
+            /** Horloge du lab du débannissement manuel, s'il a eu lieu. */
+            unbanned: z.number().optional()
+          })
+        )
+        .optional(),
+      /** Serveurs SSH dont la clé d'hôte a été acceptée (nom ou adresse tapés) ; Linux et Windows. */
+      knownHosts: z.array(z.string()).optional()
     })
     .optional(),
   workgroup: z.string().default('WORKGROUP'),

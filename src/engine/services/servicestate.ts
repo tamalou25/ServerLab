@@ -51,8 +51,12 @@ export function isDefaultServiceState(s: ServiceState): boolean {
  * options de récupération sont conservées. L'état par défaut (démarré, automatique) n'est pas stocké.
  * Renvoie les noms des services en démarrage automatique qui ont échoué (évènement 7000).
  */
-export function bootServices(device: { host: { services: Record<string, ServiceState> } }): string[] {
+export function bootServices(device: {
+  host: { services: Record<string, ServiceState>; linux?: { loaded?: Record<string, string> } }
+}): string[] {
   const failed: string[] = []
+  // Linux : les services relisent leur configuration au démarrage (instantanés de linuxconfig.ts oubliés)
+  if (device.host.linux?.loaded) delete device.host.linux.loaded
   for (const [name, s] of Object.entries(device.host.services)) {
     const fails = s.failure !== undefined
     if (fails && s.startType === 'Automatic') failed.push(name)
