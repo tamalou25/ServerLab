@@ -413,7 +413,7 @@ const nslookupTool: ToolDef = {
       const what = r.fqdn.replace(/\.$/, '')
       ctx.writeLines([
         ...header,
-        `** server can't find ${what}: ${result.kind === 'nxdomain' ? 'NXDOMAIN' : 'SERVFAIL'}`,
+        `** server can't find ${what}: ${result.kind === 'nxdomain' ? 'NXDOMAIN' : result.refused ? 'REFUSED' : 'SERVFAIL'}`,
         ''
       ])
       return

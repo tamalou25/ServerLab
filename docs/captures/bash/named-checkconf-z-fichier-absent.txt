@@ -1,0 +1,10 @@
+# Source: https://manpages.debian.org/bookworm/bind9-utils/named-checkconf.8.en.html — sources BIND 9.18 (lib/isccfg/parser.c, lib/isccfg/check.c, bin/check/named-checkconf.c, paquet bind9 1:9.18), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo named-checkconf -z
+zone lab.lan/IN: loading from master file /var/cache/bind/db.lab.lan failed: file not found
+zone lab.lan/IN: not loaded due to errors.
+zone 2.168.192.in-addr.arpa/IN: loading from master file /var/cache/bind/db.192.168.2 failed: file not found
+zone 2.168.192.in-addr.arpa/IN: not loaded due to errors.
+zone localhost/IN: loaded serial 2
+zone 127.in-addr.arpa/IN: loaded serial 1
+zone 0.in-addr.arpa/IN: loaded serial 1
+zone 255.in-addr.arpa/IN: loaded serial 1

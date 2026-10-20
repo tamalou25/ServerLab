@@ -30,6 +30,33 @@ import {
 import { registerHostDns } from '../adds/join'
 import { effectiveOptions, inScopeRange, isExcluded, formatLeaseDuration } from './server'
 import { dhcpServiceOf, dhcpServiceStopped } from './state'
+import { leaseGranted, leaseReleased, leaseRenewed, type LinuxLeaseInfo } from '../../services/linuxdhcplease'
+
+/** Informations d'un bail pour dhcpd.leases d'un serveur Linux (v2.9, #240) ; null pour un autre serveur. */
+function linuxLease(
+  now: number,
+  server: Device,
+  client: Device,
+  ip: string,
+  mac: string,
+  ends: number
+): LinuxLeaseInfo | null {
+  if (server.kind !== 'server' || server.host.os !== 'linux') return null
+  const iface = server.interfaces.find((i) => {
+    const eff = effectiveIpv4(i)
+    return !!eff && inNetwork(ip, eff.address, eff.prefixLength)
+  })
+  const eff = iface ? effectiveIpv4(iface) : null
+  return {
+    ip,
+    mac,
+    hostName: client.name,
+    serverIp: eff?.address ?? '',
+    via: iface?.name ?? 'eth0',
+    now,
+    ends
+  }
+}
 
 export type DhcpOutcome = 'bound' | 'renewed' | 'released' | 'failed' | 'not-dhcp' | 'no-carrier'
 
@@ -609,6 +636,8 @@ export function dhcpAcquire(
     }
     sc.leases = sc.leases.filter((l) => !(l.mac === iface.mac && l.state === 'Active'))
     sc.leases.push({ ip, mac: iface.mac, hostName: hostFqdn(cli), expiresAt, state: 'Active' })
+    const granted = linuxLease(draft.clock, srv, cli, ip, iface.mac, expiresAt)
+    if (granted && srv.kind === 'server') leaseGranted(draft, srv, granted)
     const target = cli.interfaces.find((i) => i.id === ifaceId)
     if (target) {
       target.dhcpLease = {
@@ -718,6 +747,9 @@ export function dhcpRenew(state: LabState, clientId: string, ifaceId: string): D
         ?.scopes.find((s) => s.scopeId === scope.scopeId)
         ?.leases.find((x) => x.mac === iface.mac)
       if (l) l.expiresAt = expiresAt
+      const renewed =
+        srv && cli ? linuxLease(draft.clock, srv, cli, lease.address, iface.mac, expiresAt) : null
+      if (renewed && srv?.kind === 'server') leaseRenewed(draft, srv, renewed)
     }
     const target = cli?.interfaces.find((i) => i.id === ifaceId)
     if (target?.dhcpLease) {
@@ -784,6 +816,12 @@ export function dhcpRelease(state: LabState, clientId: string, ifaceId: string):
       for (const sc of srvDhcp.scopes)
         sc.leases = sc.leases.filter((l) => !(l.mac === iface.mac && l.state === 'Active'))
     }
+    const cliDev = draft.devices[clientId]
+    const freed =
+      srv && lease && cliDev
+        ? linuxLease(draft.clock, srv, cliDev, lease.address, iface.mac, draft.clock)
+        : null
+    if (freed && srv?.kind === 'server' && srvDhcp) leaseReleased(draft, srv, freed)
     const target = draft.devices[clientId]?.interfaces.find((i) => i.id === ifaceId)
     if (target) {
       target.dhcpLease = null

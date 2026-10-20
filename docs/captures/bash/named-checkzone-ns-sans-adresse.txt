@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/bind9-utils/named-checkzone.8.en.html — sources BIND 9.18 (bin/check/named-checkzone.c, lib/dns/master.c, lib/dns/zone.c, paquet bind9 1:9.18), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: named-checkzone lab.lan /tmp/zone.db
+zone lab.lan/IN: NS 'ns2.lab.lan' has no address records (A or AAAA)
+zone lab.lan/IN: not loaded due to errors.

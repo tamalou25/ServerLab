@@ -66,7 +66,19 @@ const BASH = [
   'nmblookup',
   'wbinfo',
   'winbindd',
-  'mount.cifs'
+  'mount.cifs',
+  // Bind9 et isc-dhcp-server (v2.9, #240) : seuls named-checkconf, named-checkzone, rndc (status, reload,
+  // reconfig, flush), host, dig, nslookup et dhcpd -t sont simulés
+  'named',
+  'rndc-confgen',
+  'ddns-confgen',
+  'dnssec-keygen',
+  'dnssec-signzone',
+  'named-journalprint',
+  'named-compilezone',
+  'dhcp-lease-list',
+  'dhcrelay',
+  'omshell'
 ]
 
 const KNOWN = { cmd: new Set(CMD), ps: new Set(PS), bash: new Set(BASH) }

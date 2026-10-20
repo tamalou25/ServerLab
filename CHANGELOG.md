@@ -63,6 +63,13 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   `hosts allow`, `[homes]`…) avec les droits Unix du compte appliqués ; accès depuis un poste Windows (`net use`, `net view`,
   Explorateur, `dir`, `type`, `mkdir`, `echo >`, `del`). État en champs facultatifs de `host.linux` (format `.slab` 27
   inchangé), 39 captures `docs/captures/bash`, tests golden et de comportement, L-80 à L-89 dans `docs/fidelite.md`.
+- Bind9 et isc-dhcp-server sur serveur Linux (#240) : `named.conf*` du paquet Debian (relu au `restart` / `rndc reload`),
+  `named-checkconf [-z]`, `named-checkzone`, `rndc status|reload [zone]|reconfig|flush`, `host` ; zones directe et inverse
+  réellement servies aux clients Windows et Linux (`dig`, `host`, `nslookup`, `ping`), `allow-query` / `recursion`, redirecteurs
+  dans les deux sens avec le DNS Windows ; `dhcpd.conf` / `INTERFACESv4` / `dhcpd -t`, démarrage refusé si la configuration est
+  invalide, baux réellement attribués aux postes (écrits dans `dhcpd.leases`, journal `dhcpd[pid]: DHCPDISCOVER…`), réservations,
+  renouvellement, libération, conflit avec un autre serveur DHCP. État en champs facultatifs de `host.linux` (format `.slab` 27
+  inchangé), captures `docs/captures/bash`, tests golden et de comportement, L-90 à L-99 dans `docs/fidelite.md`.
 
 ## [2.8.0] — 2026-10-19
 

@@ -4,6 +4,7 @@
  * est comparée ligne par ligne. Les invites de saisie (mots de passe) ne font pas partie des lignes.
  */
 import { APACHE_STEPS } from './bash-apache-golden.test'
+import { BIND_STEPS } from './bash-bind-golden.test'
 import { SAMBA_STEPS } from './bash-samba-golden.test'
 import { SSH_STEPS } from './bash-ssh-golden.test'
 import { STEPS } from './bash-system-golden.test'
@@ -128,7 +129,9 @@ describe('captures bash (docs/captures/bash)', () => {
     const apache = APACHE_STEPS.map(([name]) => name)
     // Captures Samba (#239) : testées par bash-samba-golden.test.ts
     const samba = SAMBA_STEPS.map(([name]) => name)
-    expect(files).toEqual([...Object.keys(CASES), ...system, ...ssh, ...apache, ...samba].sort())
+    // Captures Bind9 et isc-dhcp-server (#240) : testées par bash-bind-golden.test.ts
+    const bind = BIND_STEPS.map(([name]) => name)
+    expect(files).toEqual([...Object.keys(CASES), ...system, ...ssh, ...apache, ...samba, ...bind].sort())
   })
 
   it('chaque commande simulée de ce chantier a au moins une capture sourcée', () => {

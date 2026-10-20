@@ -1,0 +1,19 @@
+# Source: https://manpages.debian.org/bookworm/bind9-utils/rndc.8.en.html — sources BIND 9.18 (bin/rndc/rndc.c, bin/named/server.c, paquet bind9 1:9.18), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo rndc status
+version: BIND 9.18.49-1~deb12u2-Debian (Extended Support Version) <id:>
+running on LSRV1: Linux x86_64
+boot time: Mon, 5 Jan 2026 08:00:00 GMT
+last configured: Mon, 5 Jan 2026 08:00:19 GMT
+configuration file: /etc/bind/named.conf
+CPUs found: 1
+worker threads: 1
+number of zones: 104 (97 automatic)
+debug level: 0
+xfers running: 0
+xfers deferred: 0
+soa queries in progress: 0
+query logging is OFF
+recursive clients: 0/900/1000
+tcp clients: 0/150
+TCP high-water: 0
+server is up and running

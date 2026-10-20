@@ -151,6 +151,37 @@ const PACKAGE_NODES: Record<string, [string, LinuxNode][]> = {
     ],
     ['/var/log/samba', { type: 'dir', mode: 0o750, owner: 'root', group: 'adm', mtime: 0 }]
   ],
+  bind9: [
+    ['/etc/bind', { type: 'dir', mode: 0o2755, owner: 'root', group: 'bind', mtime: 0 }],
+    ...[
+      'named.conf',
+      'named.conf.options',
+      'named.conf.local',
+      'named.conf.default-zones',
+      'db.local',
+      'db.127',
+      'db.0',
+      'db.255'
+    ].map((name): [string, LinuxNode] => [
+      `/etc/bind/${name}`,
+      { type: 'file', mode: 0o644, owner: 'root', group: 'bind', mtime: 0 }
+    ]),
+    ['/etc/bind/rndc.key', { type: 'file', mode: 0o640, owner: 'bind', group: 'bind', mtime: 0 }],
+    ['/var/cache/bind', { type: 'dir', mode: 0o775, owner: 'root', group: 'bind', mtime: 0 }],
+    ['/var/lib', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
+    ['/var/lib/bind', { type: 'dir', mode: 0o775, owner: 'root', group: 'bind', mtime: 0 }],
+    ['/usr/share/dns', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
+    ['/usr/share/dns/root.hints', { type: 'file', mode: 0o644, owner: 'root', group: 'root', mtime: 0 }]
+  ],
+  'isc-dhcp-server': [
+    ['/etc/dhcp', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
+    ['/etc/dhcp/dhcpd.conf', { type: 'file', mode: 0o644, owner: 'root', group: 'root', mtime: 0 }],
+    ['/etc/default', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
+    ['/etc/default/isc-dhcp-server', { type: 'file', mode: 0o644, owner: 'root', group: 'root', mtime: 0 }],
+    ['/var/lib', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
+    ['/var/lib/dhcp', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
+    ['/var/lib/dhcp/dhcpd.leases', { type: 'file', mode: 0o644, owner: 'root', group: 'root', mtime: 0 }]
+  ],
   fail2ban: [
     ['/etc/fail2ban', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
     ['/etc/fail2ban/jail.d', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
