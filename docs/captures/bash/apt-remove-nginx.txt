@@ -1,0 +1,9 @@
+# Source: https://manpages.debian.org/bookworm/apt/apt-get.8.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo apt remove nginx
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following packages will be REMOVED:
+  nginx
+0 upgraded, 0 newly installed, 1 to remove and 0 not upgraded.
+Removing nginx (1.22.1-9+deb12u10) ...

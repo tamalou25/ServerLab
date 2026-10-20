@@ -116,10 +116,8 @@ describe('Poste Linux : équipement et console', () => {
     expect(sh.run('cd /nulle-part').errors).toBe('bash: cd: /nulle-part: No such file or directory')
     expect(sh.run('foo').errors).toBe('foo: command not found')
     // Commande Linux réelle non simulée : dit comme tel, pas « introuvable » (audit F-01)
-    expect(sh.run('systemctl status ssh').errors).toBe(
-      'systemctl: commande réelle non simulée dans ServerLab'
-    )
-    expect(sh.run('ss -tulpn').errors).toBe('ss: commande réelle non simulée dans ServerLab')
+    expect(sh.run('ufw status').errors).toBe('ufw: commande réelle non simulée dans ServerLab')
+    expect(sh.run('netstat -tulpn').errors).toBe('netstat: commande réelle non simulée dans ServerLab')
     expect(sh.run('whoami').text).toBe('etudiant')
     expect(sh.run('sudo whoami').text).toBe('root')
     expect(sh.run('hostname').text).toBe('LNX1')

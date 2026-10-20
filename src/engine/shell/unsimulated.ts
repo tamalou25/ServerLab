@@ -12,23 +12,14 @@ const PS = ['get-process', 'stop-process', 'get-hotfix', 'get-wmiobject', 'get-c
 
 /** Commandes Linux réelles non simulées sur le poste Linux. */
 const BASH = [
-  'ss',
   'netstat',
-  'systemctl',
   'service',
-  'journalctl',
-  'uname',
-  'nslookup',
   'arp',
   'route',
-  'ps',
   'top',
-  'apt',
-  'apt-get',
   'ufw',
   'iptables',
   'nmcli',
-  'traceroute',
   // Éditeurs et commandes de fichiers hors du périmètre simulé (v2.9)
   'vi',
   'vim',

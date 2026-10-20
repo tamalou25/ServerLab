@@ -1,0 +1,9 @@
+# Source: https://manpages.debian.org/bookworm/apt/apt-get.8.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo apt install nginx
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following NEW packages will be installed:
+  nginx
+0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+Setting up nginx (1.22.1-9+deb12u10) ...

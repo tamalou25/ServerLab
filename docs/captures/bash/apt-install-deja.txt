@@ -1,0 +1,7 @@
+# Source: https://manpages.debian.org/bookworm/apt/apt-get.8.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo apt install apache2
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+apache2 is already the newest version (2.4.68-1~deb12u1).
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.

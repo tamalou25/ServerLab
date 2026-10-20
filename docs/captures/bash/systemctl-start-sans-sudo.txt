@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/systemd/systemctl.1.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: systemctl restart apache2
+Failed to restart apache2.service: Interactive authentication required.
+See system logs and 'systemctl status apache2.service' for details.

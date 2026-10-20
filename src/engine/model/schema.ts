@@ -536,7 +536,9 @@ export const HostSchema = z.object({
     .object({
       distro: z.enum(LINUX_DISTROS).default('debian12'),
       /** Fichiers modifiés (chemin absolu → nœud), v2.9 ; absent = arborescence par défaut. */
-      files: z.record(z.string(), LinuxNodeSchema).optional()
+      files: z.record(z.string(), LinuxNodeSchema).optional(),
+      /** Paquets installés (apt) ; absent = paquets de base de la distribution (services/linuxcatalog.ts). */
+      packages: z.array(z.string()).optional()
     })
     .optional(),
   workgroup: z.string().default('WORKGROUP'),

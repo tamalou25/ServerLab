@@ -6,7 +6,10 @@
 import { LAB_EPOCH_MS } from '../../core/clock'
 import { effectiveIpv4 } from '../../net/addressing'
 import { isIpv4 } from '../../net/ipv4'
+import { findPackage } from '../../services/linuxcatalog'
+import { linuxRelease } from '../../services/linuxsystem'
 import { ctimeDate } from '../../shell/bash/interpreter'
+import type { ExecContext } from '../../shell/context'
 import { CommandFailure } from '../../shell/context'
 import type { ToolDef } from '../../shell/tools/types'
 import { dnsServersOf, resolveName, reverseLookup } from './resolver'
@@ -14,6 +17,24 @@ import { DNS_RECORD_TYPES, type DnsRecordType } from './schema'
 
 const DIG_VERSION = '9.18.18-0ubuntu0.22.04.2-Ubuntu'
 const STUB = '127.0.0.53'
+
+/**
+ * Serveur Linux (v2.9) : version de dig selon la distribution (paquet bind9-dnsutils du catalogue) ;
+ * Debian 12 n'a pas systemd-resolved, /etc/resolv.conf désigne directement le serveur DNS de la carte.
+ */
+function digVersion(ctx: ExecContext): string {
+  if (ctx.host.kind !== 'server') return DIG_VERSION
+  const release = linuxRelease(ctx.host)
+  const full = findPackage('bind9-dnsutils')?.versions[release] ?? ''
+  return `${full.replace(/^\d+:/, '')}-${release === 'debian12' ? 'Debian' : 'Ubuntu'}`
+}
+
+/** Résolveur interrogé par défaut : stub local (Ubuntu) ou premier serveur DNS de la carte (Debian). */
+function defaultResolver(ctx: ExecContext): string {
+  return ctx.host.kind === 'server' && linuxRelease(ctx.host) === 'debian12'
+    ? (dnsServersOf(ctx.host)[0] ?? STUB)
+    : STUB
+}
 
 const fqdn = (name: string) => (name.endsWith('.') ? name : `${name}.`)
 
@@ -72,7 +93,7 @@ const digTool: ToolDef = {
     ]
       .filter((x) => x)
       .join(' ')
-    const header = [``, `; <<>> DiG ${DIG_VERSION} <<>> ${cmd}`, ';; global options: +cmd']
+    const header = [``, `; <<>> DiG ${digVersion(ctx)} <<>> ${cmd}`, ';; global options: +cmd']
     // Serveur interrogé directement injoignable : aucune réponse
     if (result.kind === 'timeout' && server) {
       ctx.writeLines([
@@ -90,7 +111,7 @@ const digTool: ToolDef = {
     const authoritative =
       !!server && (result.kind === 'answer' || result.kind === 'nxdomain') && result.authoritative
     const flags = `qr${authoritative ? ' aa' : ''} rd ra`
-    const used = server ?? STUB
+    const used = server ?? defaultResolver(ctx)
     const size =
       12 +
       qname.length +
@@ -129,6 +150,8 @@ const digTool: ToolDef = {
 const resolvectlTool: ToolDef = {
   name: 'resolvectl',
   synopsis: 'Affiche les serveurs DNS utilisés (resolvectl status, resolvectl dns).',
+  // Debian 12 n'installe pas systemd-resolved
+  available: (ctx) => ctx.host.kind !== 'server' || linuxRelease(ctx.host) !== 'debian12',
   run(ctx, args) {
     const action = args[0] ?? 'status'
     const iface = ctx.host.interfaces.find((i) => effectiveIpv4(i))

@@ -30,6 +30,17 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 - Format `.slab` 27 : champ facultatif `host.linux { distro: 'debian12' | 'ubuntu2404' }` ; migration 26 → 27 (la version
   seule change), fichier de référence `v27.slab` (serveur LSRV1).
 - Palette : entrée « Serveur Linux » (groupe Serveurs). Labs déclaratifs : champ facultatif `os: "linux"` d'un équipement.
+- Administration Linux (#236) : `apt` (`update`, `install`, `remove`, `search`, `list --installed`) sur un catalogue local de
+  13 paquets (`services/linuxcatalog.ts`) ; `apt update` et `install` échouent sans Internet simulé (« Temporary failure
+  resolving »). `systemctl` (`start`, `stop`, `restart`, `reload`, `enable`, `disable`, `status`, `is-active`,
+  `is-enabled`) avec effets réels sur l'état (`running/startType` ⇔ `active/enabled`, `host.services` des services
+  Windows) et conflits de port ; `journalctl -u` lu depuis le journal de l'équipement ; `ss -tulpn` (écoutes dérivées
+  des services actifs, aussi vues par `Test-NetConnection`) ; `ps aux`, `df -h`, `free -h`, `uname`, `hostnamectl`
+  (valeurs dérivées ; non modélisé = « - » et message honnête) ; `traceroute`, `curl`, `nslookup`, `ip neigh`.
+  Sur un serveur Debian 12, pas de `resolvectl` et `dig` interroge le DNS de la carte.
+- Format `.slab` 27 inchangé : champ facultatif `host.linux.packages` (absent = paquets de base de la distribution).
+- Fidélité : captures `docs/captures/bash/` (comparaison golden, console `bash` ajoutée à `golden.ts`), section v2.9 de
+  `docs/fidelite.md` (L-40 à L-51) et « À vérifier (v2.9 — Linux) » (captures reconstituées d'après les manpages).
 
 ## [2.8.0] — 2026-10-19
 

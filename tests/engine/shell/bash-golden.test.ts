@@ -3,6 +3,7 @@
  * la commande de l'en-tête est rejouée sur un poste Linux préparé et sa sortie (standard + erreurs)
  * est comparée ligne par ligne. Les invites de saisie (mots de passe) ne font pas partie des lignes.
  */
+import { STEPS } from './bash-system-golden.test'
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -116,7 +117,9 @@ describe('captures bash (docs/captures/bash)', () => {
       .filter((f) => f.endsWith('.txt'))
       .map((f) => f.slice(0, -4))
       .sort()
-    expect(files).toEqual(Object.keys(CASES).sort())
+    // Captures de l'administration Linux (#236) : testées par bash-system-golden.test.ts
+    const system = STEPS.map(([name]) => name)
+    expect(files).toEqual([...Object.keys(CASES), ...system].sort())
   })
 
   it('chaque commande simulée de ce chantier a au moins une capture sourcée', () => {
