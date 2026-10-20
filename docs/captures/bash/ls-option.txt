@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/ls.1.en.html
+# Commande: ls -j
+ls: invalid option -- 'j'
+Try 'ls --help' for more information.

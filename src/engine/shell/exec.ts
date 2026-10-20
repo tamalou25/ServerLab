@@ -44,8 +44,13 @@ export function shellPrompt(session: ShellSession, state?: LabState): string {
   if (kind === 'bash') {
     const d = state?.devices[session.deviceId]
     const host = d?.name ?? 'ubuntu'
+    const su = session.variables['USER']
     const user =
-      d && (d.kind === 'client' || d.kind === 'server') ? (d.host.session?.user ?? LINUX_USER) : LINUX_USER
+      typeof su === 'string' && su !== ''
+        ? su
+        : d && (d.kind === 'client' || d.kind === 'server')
+          ? (d.host.session?.user ?? LINUX_USER)
+          : LINUX_USER
     return bashPrompt({ host, user, cwd: session.cwd })
   }
   return kind === 'powershell' ? `PS ${session.cwd}> ` : `${session.cwd}>`

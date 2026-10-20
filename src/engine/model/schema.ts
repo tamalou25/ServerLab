@@ -7,6 +7,7 @@
  * (`.default(...)`) pour rester compatible avec les fichiers existants.
  */
 import { z } from 'zod'
+import { LinuxNodeSchema } from './linuxnode'
 import { DEVICE_KINDS } from './kinds'
 import { IOS_ROUTER_MODELS, IOS_SWITCH_MODELS } from '../ios/models'
 import { DhcpExclusionSchema, DhcpServerSchema } from './dhcp'
@@ -534,6 +535,8 @@ export const HostSchema = z.object({
   linux: z
     .object({
       distro: z.enum(LINUX_DISTROS).default('debian12'),
+      /** Fichiers modifiés (chemin absolu → nœud), v2.9 ; absent = arborescence par défaut. */
+      files: z.record(z.string(), LinuxNodeSchema).optional(),
       /** Paquets installés (apt) ; absent = paquets de base de la distribution (services/linuxcatalog.ts). */
       packages: z.array(z.string()).optional()
     })

@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/ls.1.en.html ; mise en forme réelle, valeurs d'exemple du lab (liens, dates)
+# Commande: ls -ld /tmp /root
+drwx------ 2 root root 4096 Jan  5 08:00 /root
+drwxrwxrwt 2 root root 4096 Jan  5 08:00 /tmp

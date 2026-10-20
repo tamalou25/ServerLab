@@ -149,7 +149,7 @@ s'être trompé de commande (`src/engine/shell/unsimulated.ts`, audit v2.6.2 F-0
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | cmd          | `netstat`, `arp`, `route`, `systeminfo`, `tasklist`, `taskkill`, `sc`, `wmic`, `getmac`                                                                                                        |
 | PowerShell   | `Get-Service`, `Start-/Stop-/Restart-/Set-Service`, `Get-Process`, `Stop-Process`, `Get-NetTCPConnection`, `Get-NetNeighbor`, `Get-NetRoute`, `Get-HotFix`, `Get-WmiObject`, `Get-CimInstance` |
-| bash (Linux) | `netstat`, `service`, `arp`, `route`, `top`, `ufw`, `iptables`, `nmcli` (v2.9 : `ss`, `systemctl`, `journalctl`, `uname`, `nslookup`, `ps`, `apt`, `apt-get`, `traceroute` sont simulés)       |
+| bash (Linux) | `netstat`, `service`, `arp`, `route`, `top`, `ufw`, `iptables`, `nmcli`, `vi`, `vim`, `emacs`, `rm`, `cp`, `mv`, `head`, `tail`, `wc`, `less`, `find`, `userdel`, `groupdel`, `visudo`         |
 
 Autres limites connues, non simulées : codes de sortie et variables (`$?`, `$LASTEXITCODE`,
 `%ERRORLEVEL%`, `%COMPUTERNAME%`, `echo $?`) et `show mac address-table`.
@@ -538,6 +538,57 @@ change selon le système.
 | ID   | Commande                                       | Statut                                                                                                                                                                                                                                                                         |
 | ---- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | L-01 | Bannière de la console bash d'un serveur Linux | Ajouté : « Debian GNU/Linux 12 (simulé) — ServerLab » (« Ubuntu 24.04 LTS » si `host.linux.distro` vaut `ubuntu2404`) à la place de la bannière du poste Ubuntu 22.04. Texte propre à ServerLab (comme celle du poste), pas une sortie de système réel ; compte `admin` (sudo) |
+
+Chantier #235 : système de fichiers, utilisateurs et droits de la console bash (poste Linux, et serveur Linux
+de #234). Les identifiants L-01 à L-09 sont réservés à #234. Consoles couvertes par les captures
+`docs/captures/bash/<commande>.txt` (test `tests/engine/shell/bash-golden.test.ts`).
+
+| ID   | Élément                                                                                         | Statut                                                                                                                                                                                                                                                                                          |
+| ---- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| L-10 | Arborescence `/etc`, `/var/www`, `/var/log`, `/home`, `/root`, `/tmp`… sur des fichiers simulés | Ajouté : nœuds `{ type, mode, owner, group, content }` (champ facultatif `host.linux.files`, format `.slab` 27 inchangé). `hostname`, `hosts` et `resolv.conf` sont calculés tant qu'ils ne sont pas modifiés. Arborescence réduite (pas de `/usr/bin`, `/proc`… peuplés)                       |
+| L-11 | Droits Unix appliqués (propriétaire, groupe, autres ; `r`, `w`, `x`)                            | Ajouté : lecture (`cat`, `ls`, `sed`), écriture (`>`, `>>`, `tee`, `touch`, `mkdir`), traversée (`x` de chaque dossier du chemin), `cd`. root passe partout. Messages `Permission denied` / `Operation not permitted` des outils coreutils                                                      |
+| L-12 | Redirection `>` `>>` faite avec les droits de l'utilisateur, jamais ceux de `sudo`              | Ajouté : `sudo echo x >> /etc/hosts` échoue comme sur un vrai bash ; `echo x \| sudo tee -a /etc/hosts` fonctionne                                                                                                                                                                              |
+| L-13 | Comptes lus dans `/etc/passwd`, `/etc/group`, `/etc/shadow`                                     | Ajouté : aucun état à part ; `useradd`, `usermod`, `groupadd`, `passwd` réécrivent ces fichiers. Mot de passe de `shadow` : marqueur `$sim$` suivi du mot de passe (AUCUN hachage réel, texte lisible par root seulement)                                                                       |
+| L-14 | `sudo` et `/etc/sudoers`                                                                        | Ajouté : règles `utilisateur` / `%groupe` avec commandes `ALL` (groupe `sudo` par défaut), `NOPASSWD:`, mot de passe demandé s'il est défini (3 essais), jeton retenu 15 minutes (`sudo -k` / `-K` l'oublient), `sudo -i` et `sudo -s`. Règles à commandes restreintes ignorées                 |
+| L-15 | `su`, `su -`, `exit`                                                                            | Ajouté : mot de passe du compte visé (root n'en saisit pas), pile des sessions (`exit` revient), `su -` va dans le dossier personnel, shell `nologin` refusé                                                                                                                                    |
+| L-16 | `id`, `useradd`, `usermod -aG`, `groupadd`, `passwd`, `chmod`, `chown`, `tee`, `sed`            | Ajouté, avec leurs erreurs d'origine (utilisateur ou groupe inexistant, déjà existant, nom invalide, mode invalide, opération non permise). `chmod` octal et symbolique (`u+x`, `go-w`, `a=rx`, `X`, `s`, `t`, umask 022), `-R` ; `chown` `utilisateur:groupe`, `utilisateur:`, `:groupe`, `-R` |
+| L-17 | `sed -i 's/a/b/'` (sous-ensemble)                                                               | Ajouté : commande `s` (drapeaux `g`, `I`, `N`), `-e`, `;`, `-E`, séparateur libre. Fidèle au vrai `sed -i` : exige `w` + `x` sur le **dossier** (fichier temporaire), pas `w` sur le fichier. Autres commandes (`d`, `p`, `y`, adresses) : `unknown command`                                    |
+| L-18 | `nano`, `vi`, `vim`, `rm`, `cp`, `mv`, `head`, `tail`, `wc`, `less`, `find`, `userdel`…         | Non simulés : `nano` affiche un message honnête (la console est une console de lignes) avec les équivalents simulés ; les autres commandes réelles passent par `unsimulated.ts`                                                                                                                 |
+| L-19 | Options réelles d'un outil non simulées (`ls -R`, `useradd -k`, `sudo -u`…)                     | Message `unsimulatedOptionMessage` (« existe réellement mais n'est pas simulée ») au lieu de « invalid option »                                                                                                                                                                                 |
+
+### À vérifier (v2.9 — Linux)
+
+Aucune capture sur une machine Debian 12 / Ubuntu 22.04 n'a pu être faite : les captures de `docs/captures/bash/`
+citent la page de manuel Debian (comportement, formats) ; les **messages d'erreur** viennent de la connaissance des
+outils (coreutils 9.1, sed 4.9, shadow 4.13, sudo 1.9, util-linux 2.38, locale C) et doivent être comparés à une
+vraie sortie avant d'être tenus pour exacts.
+
+- L-10 : la liste de `/` et le contenu des dossiers sont ceux d'une installation minimale simulée (pas de `snap`,
+  `lib32`, `swap.img`…). `id` n'affiche pas les groupes d'un vrai Ubuntu (`cdrom`, `dip`, `plugdev`, `lxd`).
+- L-11 : `ls` écrit les noms sur une ligne séparés par deux espaces (la largeur réelle dépend du terminal) ;
+  `ls -l` : nombre de liens, dates (`Jan  5 08:00` = horloge du lab) et blocs `total` sont des valeurs d'exemple.
+  Le tri suit `localeCompare` (locale UTF-8), pas l'ordre octet de la locale C.
+- L-11 : les groupes d'un utilisateur sont relus à **chaque commande**. Sur un vrai système, `usermod -aG` ne
+  s'applique à un shell ouvert qu'après une nouvelle connexion (`su - utilisateur`, `newgrp`).
+- L-13 : `useradd` sans `-s` donne `/bin/sh` (`/etc/default/useradd` Debian) ; `-m` crée `/home/bob` en `0755`
+  (le mode réel dépend de `HOME_MODE`/`UMASK` de `login.defs`) sans copier `/etc/skel` ; ordre des vérifications
+  (nom, existence, groupes, droits) à confirmer ; texte d'usage complet de `useradd`, `usermod`, `groupadd`,
+  `passwd` non reproduit (première ligne seulement) ; message de `usermod -a` sans `-G` (`-a flag is only allowed
+with the -G flag`) relevé dans le code source de shadow, non capturé.
+- L-13 : `passwd` : l'en-tête `Changing password for X.` n'est affiché que pour un utilisateur ordinaire ; le
+  contrôle de qualité (`BAD PASSWORD: …`, 3 essais) n'est pas simulé ; un compte sans mot de passe (`!`) ne
+  demande pas l'ancien mot de passe (le vrai `passwd` échoue). Les comptes créés avec `useradd` sont verrouillés (`!`).
+- L-14 : « `bob is not in the sudoers file.  This incident will be reported.` » : le second membre de phrase
+  dépend de la version de sudo (1.9.x). Un compte sans mot de passe défini (dont `etudiant` par défaut) utilise `sudo`
+  sans invite (simplification du poste de travail de l'élève ; un Ubuntu réel en demande un). `sudo` sans argument
+  affiche seulement la première ligne d'usage. `/etc/sudoers` se modifie avec `tee` (pas de `visudo`, aucune
+  validation de syntaxe).
+- L-15 : message d'avertissement `su: warning: cannot change directory to …` et refus des shells `nologin`
+  (« This account is currently not available. ») sont ceux de util-linux 2.38 ; délai de 2 s après un échec non simulé.
+- L-17 : les expressions régulières de base de `sed` sont converties en `RegExp` JavaScript (classes POSIX
+  `[[:alpha:]]` non gérées) ; messages d'erreur d'expression invalide approximatifs ; le nom du fichier temporaire
+  de `sed -i` est tiré de l'horloge du lab (aléatoire sur un vrai système).
+- L-18 : `nano` n'ouvre pas d'éditeur : message propre à ServerLab (pas une sortie réelle).
 
 ### Administration Linux (#236)
 

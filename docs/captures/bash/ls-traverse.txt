@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/ls.1.en.html
+# Commande: ls /root/x
+ls: cannot access '/root/x': Permission denied

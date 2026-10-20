@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/util-linux/su.1.en.html
+# Commande: su bob
+su: Authentication failure

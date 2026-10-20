@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/sudo/sudo.8.en.html et https://manpages.debian.org/bookworm/sudo/sudoers.5.en.html
+# Commande: sudo whoami
+root

@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/mkdir.1.en.html
+# Commande: mkdir /tmp
+mkdir: cannot create directory '/tmp': File exists

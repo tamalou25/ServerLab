@@ -13,7 +13,7 @@ import { Bash, buildLinuxLab } from './linux-lab'
 type Step = [string, 'srv' | 'off' | 'pc', string, string[]?, Token[]?, string[]?]
 
 /** Le déroulé s'enchaîne sur le même serveur : l'ordre des étapes compte. */
-const STEPS: Step[] = [
+export const STEPS: Step[] = [
   ['ping', 'srv', 'ping -c 2 192.168.2.254'],
   ['ip-a', 'srv', 'ip a', [], ['mac']],
   ['apt-list-installed', 'srv', 'apt list --installed'],

@@ -1,0 +1,2 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/chmod.1.en.html
+# Commande: chmod u+x,go-w a.txt

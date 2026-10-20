@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/sed/sed.1.en.html
+# Commande: sed 's/a/b/' /etc/shadow
+sed: can't read /etc/shadow: Permission denied

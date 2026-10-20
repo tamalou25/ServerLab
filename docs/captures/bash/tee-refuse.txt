@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/tee.1.en.html
+# Commande: echo 10.0.0.5 srv | tee -a /etc/hosts
+tee: /etc/hosts: Permission denied
+10.0.0.5 srv

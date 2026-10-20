@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/passwd/usermod.8.en.html
+# Commande: sudo usermod -aG inconnu etudiant
+usermod: group 'inconnu' does not exist

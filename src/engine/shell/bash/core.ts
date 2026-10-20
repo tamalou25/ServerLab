@@ -13,6 +13,9 @@ import { firstAddress, resolveName } from '../../roles/dns/resolver'
 import { CommandFailure, type ExecContext } from '../context'
 import type { ToolDef } from '../tools/types'
 import { neighLines } from './net'
+import { accountTools } from './accounts'
+import { linuxFileTools } from './filetools'
+import { actor } from './linuxfs'
 
 /** Les commandes d'administration exigent sudo. */
 export function requireRoot(ctx: ExecContext, message: string): void {
@@ -299,8 +302,16 @@ const whoamiTool: ToolDef = {
   name: 'whoami',
   synopsis: 'Affiche l’utilisateur courant.',
   run(ctx) {
-    ctx.write(ctx.root ? 'root' : (ctx.host.host.session?.user ?? 'etudiant'))
+    ctx.write(actor(ctx))
   }
 }
 
-export const coreBashTools: ToolDef[] = [ipTool, pingTool, dhclientTool, hostnameTool, whoamiTool]
+export const coreBashTools: ToolDef[] = [
+  ipTool,
+  pingTool,
+  dhclientTool,
+  hostnameTool,
+  whoamiTool,
+  ...accountTools,
+  ...linuxFileTools
+]

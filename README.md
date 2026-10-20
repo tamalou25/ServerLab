@@ -173,7 +173,9 @@ l'application ou abandon est signalé dans le résultat.
 
 La palette propose un **Poste Linux** (Ubuntu simulé) avec une console bash : `ip a`, `ip route`, `ping`,
 `dig`, `realm join` pour rejoindre le domaine Active Directory, `mount -t cifs` ou `smbclient` pour accéder
-aux partages selon les autorisations NTFS du compte. Les sorties reprennent le format d'origine des outils
+aux partages selon les autorisations NTFS du compte. Le système de fichiers local (`/etc`, `/var/www`, `/home`)
+et ses droits Unix sont simulés : `cat`, `echo >>`, `tee`, `sed -i`, `chmod`, `chown`, `useradd`, `usermod -aG`,
+`passwd`, `id`, `su`, `sudo` (groupe `sudo` de `/etc/sudoers`). Les sorties reprennent le format d'origine des outils
 (en anglais).
 
 ## Équipements Cisco

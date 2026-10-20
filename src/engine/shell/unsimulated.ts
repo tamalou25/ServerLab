@@ -11,7 +11,31 @@ const CMD = ['taskkill', 'wmic', 'getmac']
 const PS = ['get-process', 'stop-process', 'get-hotfix', 'get-wmiobject', 'get-ciminstance']
 
 /** Commandes Linux réelles non simulées sur le poste Linux. */
-const BASH = ['netstat', 'service', 'arp', 'route', 'top', 'ufw', 'iptables', 'nmcli']
+const BASH = [
+  'netstat',
+  'service',
+  'arp',
+  'route',
+  'top',
+  'ufw',
+  'iptables',
+  'nmcli',
+  // Éditeurs et commandes de fichiers hors du périmètre simulé (v2.9)
+  'vi',
+  'vim',
+  'emacs',
+  'rm',
+  'cp',
+  'mv',
+  'head',
+  'tail',
+  'wc',
+  'less',
+  'find',
+  'groupdel',
+  'userdel',
+  'visudo'
+]
 
 const KNOWN = { cmd: new Set(CMD), ps: new Set(PS), bash: new Set(BASH) }
 
