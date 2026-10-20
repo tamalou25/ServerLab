@@ -4,7 +4,12 @@ Toutes les évolutions notables de ServerLab sont consignées ici.
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versions : [SemVer](https://semver.org/lang/fr/).
 La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
-## [Non publié]
+## [2.8.0] — 2026-10-19
+
+Services à état et mode panne. Format `.slab` 26 (migration 25 → 26 : horloge par ordinateur). Les sorties sans source
+publiée complète restent listées « à vérifier » dans `docs/fidelite.md` (section v2.8).
+
+Labs 42 à 45.
 
 ### Chantier D de la v2.8 (mode panne)
 
@@ -420,6 +425,7 @@ Première release publique (installeur Windows NSIS et AppImage Linux).
 - Thèmes sombre et clair, interface compacte.
 - Mises à jour automatiques (electron-updater) et workflow de release sur tag.
 
+[2.8.0]: https://github.com/tamalou25/ServerLab/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.2...v2.7.0
 [2.6.2]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.1...v2.6.2
 [2.6.1]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.0...v2.6.1

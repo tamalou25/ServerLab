@@ -451,15 +451,26 @@ migration.
 
 ## v2.8 — Services à état et mode panne
 
-Les issues (n° GitHub) sont créées par le workflow « Roadmap sync » ; ce tableau est complété à chaque PR.
+Milestone terminé : `CHANGELOG.md` [2.8.0], `package.json` 2.8.0 ; tag `v2.8.0` à pousser par Gary.
+Format `.slab` : v2.8 → format 26 (migration 25 → 26 écrite par l'issue #219, horloge par ordinateur) ; les autres
+issues n'ont ajouté que des champs facultatifs.
 
-| Issue | Sujet                                                | Branche                   | PR  | État     |
-| ----- | ---------------------------------------------------- | ------------------------- | --- | -------- |
-| #219  | Chantier A : horloge par poste, W32Time et Kerberos  | feat/219-horloge-kerberos | —   | en cours |
-| —     | Chantier A : autres issues (7 issues, lab 42)        | —                         | —   | à faire  |
-| —     | Chantier D : mode panne (6 issues, 3 labs d'exemple) | —                         | —   | à faire  |
-
-Format `.slab` : v2.8 → format 26 (migration écrite par l'issue #219, horloge par ordinateur) ; les autres issues de la v2.8 ajoutent des champs facultatifs sans nouvelle version. Migrations suivantes à partir du 27. Découpage validé par Gary : A + D en 2.8, B en 2.9, C en 2.10.
+| Issue | Sujet                                                           | Branche                         | PR   | État     |
+| ----- | --------------------------------------------------------------- | ------------------------------- | ---- | -------- |
+| #223  | Chantier A : dépendances réelles entre services                 | `feat/223-service-dependencies` | #260 | fusionné |
+| #226  | Chantier A : snap-in Services, alertes du Gestionnaire          | `feat/226-snapin-services`      | #261 | fusionné |
+| #219  | Chantier A : horloge par poste, W32Time et Kerberos             | `feat/219-horloge-kerberos`     | #262 | fusionné |
+| #224  | Chantier A : échec au démarrage, options de récupération        | `feat/224-echec-service`        | #263 | fusionné |
+| #220  | Chantier A : NTDS et Netlogon                                   | `feat/220-ntds-netlogon`        | #264 | fusionné |
+| #225  | Chantier A : `sc qc`, cohérence des commandes CMD               | `feat/225-cmd-services`         | #265 | fusionné |
+| #222  | Chantier A : CertSvc, TermService, WsusService, MpsSvc, Spooler | `feat/222-autres-services`      | #266 | fusionné |
+| #228  | Chantier D : modèle de panne et catalogue                       | `feat/228-modele-panne`         | #267 | fusionné |
+| #227  | Chantier A : lab 42 « Diagnostic de services Windows »          | `feat/227-lab-42`               | #268 | fusionné |
+| #229  | Chantier D : 12 pannes réseau                                   | `feat/229-pannes-reseau`        | #269 | fusionné |
+| #230  | Chantier D : pannes Windows et pannes composées                 | `feat/230-pannes-windows`       | #270 | fusionné |
+| #232  | Chantier D : interface « Lancer un dépannage »                  | `feat/232-interface-depannage`  | #271 | fusionné |
+| #231  | Chantier D : tirage par graine et réparabilité                  | `feat/231-tirage-graine`        | #272 | fusionné |
+| #233  | Chantier D : 3 labs de dépannage (labs 43 à 45)                 | `feat/233-labs-depannage`       | #273 | fusionné |
 
 ## v2.9 — Serveurs Linux
 
