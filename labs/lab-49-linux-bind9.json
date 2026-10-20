@@ -1,0 +1,107 @@
+{
+  "formatVersion": 1,
+  "id": "lab-49-linux-bind9",
+  "title": "Linux : une zone DNS avec Bind9",
+  "difficulty": "Intermédiaire",
+  "duration": "40 min",
+  "summary": "Déclarez et alimentez la zone lab.lan sur Bind9, puis faites résoudre ses noms par un poste Linux et un poste Windows.",
+  "statement": "## Contexte\n\n**LSRV1** (192.168.20.10/24) a Bind9 installé (configuration Debian par défaut). **LNX1** et **PC1** utilisent LSRV1 comme serveur DNS.\n\n## Travail demandé\n\n1. Créez le fichier de zone `/var/cache/bind/db.lab.lan` : SOA, NS, `ns1` (192.168.20.10), `www` (192.168.20.20) et un alias `web` pour `www`.\n2. Déclarez la zone dans `/etc/bind/named.conf.local` (`type master`, `file`).\n3. Contrôlez (`named-checkconf`, `named-checkzone`) puis rechargez (`rndc reload`).\n4. Testez avec `dig @192.168.20.10 www.lab.lan` depuis LNX1 et `nslookup www.lab.lan` depuis PC1.\n\nÀ rendre : le fichier de zone et les résultats des tests.",
+  "start": {
+    "devices": [
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 330,
+        "y": 300
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "LSRV1",
+        "x": 330,
+        "y": 100,
+        "ip": "192.168.20.10/24",
+        "packages": ["bind9"]
+      },
+      {
+        "kind": "client",
+        "os": "linux",
+        "name": "LNX1",
+        "x": 130,
+        "y": 470,
+        "ip": "192.168.20.20/24",
+        "dns": ["192.168.20.10"]
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 530,
+        "y": 470,
+        "ip": "192.168.20.30/24",
+        "dns": ["192.168.20.10"]
+      }
+    ],
+    "links": [
+      ["LSRV1:eth0", "SW1:Fa0/1"],
+      ["LNX1:eth0", "SW1:Fa0/2"],
+      ["PC1:Ethernet0", "SW1:Fa0/3"]
+    ]
+  },
+  "criteria": [
+    {
+      "id": "named",
+      "label": "Le service named est actif",
+      "hint": "named garde la configuration lue à son démarrage.",
+      "check": {
+        "type": "linuxServiceActive",
+        "device": "LSRV1",
+        "unit": "named"
+      }
+    },
+    {
+      "id": "zone",
+      "label": "La zone lab.lan contient l’enregistrement de www",
+      "hint": "Un enregistrement A associe un nom à une adresse IPv4.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/var/cache/bind/db.lab.lan",
+        "text": "^www\\s+IN\\s+A\\s+192\\.168\\.20\\.20",
+        "regex": true
+      }
+    },
+    {
+      "id": "declaration",
+      "label": "La zone est déclarée dans named.conf.local",
+      "hint": "Bind ne sert que les zones déclarées dans sa configuration.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/bind/named.conf.local",
+        "text": "zone \"lab.lan\""
+      }
+    },
+    {
+      "id": "linux",
+      "label": "LNX1 résout www.lab.lan",
+      "hint": "Une zone ajoutée n’est servie qu’après le rechargement de named.",
+      "check": {
+        "type": "nslookup",
+        "client": "LNX1",
+        "name": "www.lab.lan",
+        "address": "192.168.20.20"
+      }
+    },
+    {
+      "id": "windows",
+      "label": "PC1 résout www.lab.lan",
+      "hint": "Le poste Windows interroge le même serveur : le résultat doit être identique.",
+      "check": {
+        "type": "nslookup",
+        "client": "PC1",
+        "name": "www.lab.lan",
+        "address": "192.168.20.20"
+      }
+    }
+  ]
+}

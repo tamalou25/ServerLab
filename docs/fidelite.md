@@ -763,6 +763,18 @@ sont remplacées par un jeton ou ignorées des deux côtés de la comparaison.
 - L-97 : `dhcpd.conf` d'exemple abrégé (les sous-réseaux d'exemple commentés ne sont pas recopiés) ; le nom inconnu (`ns1.example.org: host unknown.`) est résolu d'après `/etc/hosts` seulement ; format des erreurs : message, ligne du fichier, puis `^` sous le mot fautif (position exacte du `^` de mémoire) ; les lignes `No subnet declaration for eth0 (…)` et `Not configured to listen on any interfaces!` d'après `common/discover.c` et `server/dhcpd.c` ; `Can't open … : No such file or directory` de mémoire ; `bad range, address … not in subnet …` et `bad subnet number/mask combination` d'après `confpars.c` (une seule erreur par plage sur un vrai dhcpd).
 - L-98 : `default-lease-time` vaut 43200 s sans déclaration ; plusieurs plages d'un sous-réseau sont fusionnées (les trous deviennent des exclusions) ; la ligne `uid` des baux n'est pas écrite ; les baux expirés ne sont pas purgés du fichier ; l'ordre des blocs `lease` suit l'ordre chronologique (un vrai dhcpd réécrit le fichier de temps en temps) ; deux serveurs DHCP sur le même réseau : le client retient la première offre reçue (comportement existant du moteur), sans ping-check ni `authoritative` (DHCPNAK) simulés.
 
+### Labs et pannes Linux (#241)
+
+Aucune sortie nouvelle : les labs 46 à 53 et les pannes `linux.*` n'utilisent que des commandes déjà sourcées
+(`docs/captures/bash/`). Écarts de modélisation connus :
+
+| ID    | Élément                                                          | Statut                                                                                                                                                                                       |
+| ----- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| L-100 | Panne « serial de zone non incrémenté »                          | Non simulée : BIND recharge une zone primaire dès que le fichier change, le serial ne sert qu'aux secondaires (transferts de zone non simulés, L-99)                                         |
+| L-101 | Panne « erreur de syntaxe de `smb.conf` »                        | Non simulée : le smbd simulé démarre toujours (seul `testparm` signale `Error loading services.`) ; les pannes Samba portent sur le chemin et les droits du dossier                          |
+| L-102 | Départ des labs Linux (`packages`, `bash`)                       | Les paquets sont posés sans dépôt distant (comme un `apt install` réussi) ; les lignes `bash` sont saisies par le compte `admin` avec `sudo`, une ligne en erreur interrompt la construction |
+| L-103 | Réparations des pannes (`sed -i` sur le texte exact de la ligne) | Une réparation rejouée sur un lab déjà sain n'est pas idempotente (elle suppose la panne injectée) ; le tirage ne la rejoue que sur l'état cassé                                             |
+
 ## Équipements Cisco IOS (v2.5)
 
 Écarts connus avec le vrai IOS (IOS 15.x sur 1921 / 2811 / 2960, IOS-XE 17 sur 9200). Même règle : on
