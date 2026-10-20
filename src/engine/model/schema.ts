@@ -531,7 +531,13 @@ export type LinuxDistro = (typeof LINUX_DISTROS)[number]
 export const HostSchema = z.object({
   os: z.enum(HOST_OS).default('windows'),
   /** Serveur Linux : distribution (absent = debian12). Sans effet sur un ordinateur Windows. */
-  linux: z.object({ distro: z.enum(LINUX_DISTROS).default('debian12') }).optional(),
+  linux: z
+    .object({
+      distro: z.enum(LINUX_DISTROS).default('debian12'),
+      /** Paquets installés (apt) ; absent = paquets de base de la distribution (services/linuxcatalog.ts). */
+      packages: z.array(z.string()).optional()
+    })
+    .optional(),
   workgroup: z.string().default('WORKGROUP'),
   /** Domaine AD rejoint (FQDN) ou null si groupe de travail. */
   domain: z.string().nullable().default(null),

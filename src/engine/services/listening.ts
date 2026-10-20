@@ -9,6 +9,7 @@
  */
 import type { HostDevice } from '../model/schema'
 import { predefinedRules } from './firewall'
+import { linuxSockets } from './linuxsystem'
 import { serviceRunning } from './servicestate'
 
 export interface ListeningPort {
@@ -40,6 +41,12 @@ const RULE_SERVICE: Record<string, string | null> = {
 /** Ports en écoute, triés (TCP puis UDP, par numéro), sans doublon. */
 export function listeningPorts(host: HostDevice): ListeningPort[] {
   if (!host.powered) return []
+  // Linux : sockets des unités systemd actives (linuxsystem.ts)
+  if (host.host.os === 'linux')
+    return linuxSockets(host)
+      .map((s) => ({ protocol: s.proto.toUpperCase() as 'TCP' | 'UDP', port: s.port, service: s.unit.name }))
+      .filter((e, i, all) => all.findIndex((o) => o.protocol === e.protocol && o.port === e.port) === i)
+      .sort((a, b) => (a.protocol === b.protocol ? a.port - b.port : a.protocol === 'TCP' ? -1 : 1))
   return predefinedRules(host)
     .filter((r) => r.protocol === 'TCP' || r.protocol === 'UDP')
     .filter((r) => r.id !== 'RemoteDesktop-UserMode-In-TCP' || host.host.remoteDesktop.enabled)

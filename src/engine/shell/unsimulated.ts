@@ -11,25 +11,7 @@ const CMD = ['taskkill', 'wmic', 'getmac']
 const PS = ['get-process', 'stop-process', 'get-hotfix', 'get-wmiobject', 'get-ciminstance']
 
 /** Commandes Linux réelles non simulées sur le poste Linux. */
-const BASH = [
-  'ss',
-  'netstat',
-  'systemctl',
-  'service',
-  'journalctl',
-  'uname',
-  'nslookup',
-  'arp',
-  'route',
-  'ps',
-  'top',
-  'apt',
-  'apt-get',
-  'ufw',
-  'iptables',
-  'nmcli',
-  'traceroute'
-]
+const BASH = ['netstat', 'service', 'arp', 'route', 'top', 'ufw', 'iptables', 'nmcli']
 
 const KNOWN = { cmd: new Set(CMD), ps: new Set(PS), bash: new Set(BASH) }
 

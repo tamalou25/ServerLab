@@ -1,0 +1,8 @@
+# Source: https://manpages.debian.org/bookworm/apt/apt.8.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: apt list --installed
+Listing... Done
+bind9-dnsutils/stable,now 1:9.18.49-1~deb12u2 amd64 [installed]
+cron/stable,now 3.0pl1-162 amd64 [installed]
+curl/stable,now 7.88.1-10+deb12u15 amd64 [installed]
+openssh-server/stable,now 1:9.2p1-2+deb12u10 amd64 [installed]
+rsyslog/stable,now 8.2302.0-1+deb12u1 amd64 [installed]

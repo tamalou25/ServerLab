@@ -1,0 +1,9 @@
+# Source: https://manpages.debian.org/bookworm/iputils-ping/ping.8.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: ping -c 2 192.168.2.254
+PING 192.168.2.254 (192.168.2.254) 56(84) bytes of data.
+64 bytes from 192.168.2.254: icmp_seq=1 ttl=255 time=0.400 ms
+64 bytes from 192.168.2.254: icmp_seq=2 ttl=255 time=0.400 ms
+
+--- 192.168.2.254 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1001ms
+rtt min/avg/max/mdev = 0.400/0.400/0.400/0.000 ms

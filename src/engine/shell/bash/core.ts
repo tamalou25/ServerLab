@@ -12,6 +12,7 @@ import { dhcpRelease, dhcpRenew } from '../../roles/dhcp/client'
 import { firstAddress, resolveName } from '../../roles/dns/resolver'
 import { CommandFailure, type ExecContext } from '../context'
 import type { ToolDef } from '../tools/types'
+import { neighLines } from './net'
 
 /** Les commandes d'administration exigent sudo. */
 export function requireRoot(ctx: ExecContext, message: string): void {
@@ -167,6 +168,7 @@ const ipTool: ToolDef = {
         return setStatic(ctx, iface, { gateway: via })
       }
     }
+    if (is(object, 'neighbour', 'neighbor') || object === 'neigh') return ctx.writeLines(neighLines(ctx))
     if (is(object, 'link')) {
       const lines = [...LOOPBACK]
       ctx.host.interfaces.forEach((iface, i) => lines.push(...linkLines(ctx, iface, i + 2)))

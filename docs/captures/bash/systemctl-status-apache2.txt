@@ -1,0 +1,9 @@
+# Source: https://manpages.debian.org/bookworm/systemd/systemctl.1.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo systemctl status apache2
+● apache2.service - The Apache HTTP Server
+     Loaded: loaded (/lib/systemd/system/apache2.service; enabled; preset: enabled)
+     Active: active (running) since Mon 2026-01-05 08:00:02 UTC; 0s ago
+   Main PID: 413 (apache2)
+
+Jan 05 08:00:01 LSRV1 systemd[1]: Starting apache2.service - The Apache HTTP Server...
+Jan 05 08:00:02 LSRV1 systemd[1]: Started apache2.service - The Apache HTTP Server.
