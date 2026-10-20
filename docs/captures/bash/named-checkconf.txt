@@ -1,0 +1,2 @@
+# Source: https://manpages.debian.org/bookworm/bind9-utils/named-checkconf.8.en.html — sources BIND 9.18 (lib/isccfg/parser.c, lib/isccfg/check.c, bin/check/named-checkconf.c, paquet bind9 1:9.18), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo named-checkconf

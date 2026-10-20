@@ -1,0 +1,16 @@
+# Source: https://manpages.debian.org/bookworm/isc-dhcp-server/dhcpd.8.en.html — sources isc-dhcp 4.4.3-P1 (server/dhcpd.c, server/confpars.c, common/parse.c, paquet isc-dhcp-server 4.4.3-P1-2), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo dhcpd -t
+Internet Systems Consortium DHCP Server 4.4.3-P1
+Copyright 2004-2022 Internet Systems Consortium.
+All rights reserved.
+For info, please visit https://www.isc.org/software/dhcp/
+Config file: /etc/dhcp/dhcpd.conf
+Database file: /var/lib/dhcp/dhcpd.leases
+PID file: /var/run/dhcpd.pid
+/etc/dhcp/dhcpd.conf line 8: ns1.example.org: host unknown.
+option domain-name-servers ns1.example.org, ns2.example.org;
+                           ^
+/etc/dhcp/dhcpd.conf line 8: ns2.example.org: host unknown.
+option domain-name-servers ns1.example.org, ns2.example.org;
+                                            ^
+Configuration file errors encountered -- exiting

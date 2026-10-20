@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/systemd/systemctl.1.en.html — sources isc-dhcp 4.4.3-P1 (server/discover.c, server/dhcpd.c) et debian/isc-dhcp-server.init.d, sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo systemctl start isc-dhcp-server
+Job for isc-dhcp-server.service failed because the control process exited with error code.
+See "systemctl status isc-dhcp-server.service" and "journalctl -xeu isc-dhcp-server.service" for details.

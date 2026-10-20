@@ -17,6 +17,8 @@ import { netshTool } from './tools/netsh'
 import { diagTools } from './tools/diag'
 import { w32tmTool } from './tools/time'
 import { apacheBashTools } from './bash/apache'
+import { bindBashTools } from './bash/bind'
+import { dhcpBashTools } from './bash/dhcp'
 import { coreBashTools } from './bash/core'
 import { loggingBashTools } from './bash/logging'
 import { netBashTools } from './bash/net'
@@ -62,6 +64,8 @@ export function shellCatalog(): CommandCatalog {
       ...loggingBashTools,
       ...apacheBashTools,
       ...sambaBashTools,
+      ...bindBashTools,
+      ...dhcpBashTools,
       ...roles.flatMap((m) => m.bashTools ?? [])
     ]
   }

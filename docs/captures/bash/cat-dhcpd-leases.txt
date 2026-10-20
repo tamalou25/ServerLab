@@ -1,0 +1,15 @@
+# Source: https://manpages.debian.org/bookworm/isc-dhcp-server/dhcpd.leases.5.en.html — sources isc-dhcp 4.4.3-P1 (server/db.c, paquet isc-dhcp-server 4.4.3-P1-2), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: cat /var/lib/dhcp/dhcpd.leases
+# The format of this file is documented in the dhcpd.leases(5) manual page.
+# This lease file was written by isc-dhcp-4.4.3-P1
+
+lease 192.168.2.100 {
+  starts {date};
+  ends {date};
+  cltt {date};
+  binding state active;
+  next binding state free;
+  rewind binding state free;
+  hardware ethernet 02:53:4c:00:00:1e;
+  client-hostname "LNX1";
+}

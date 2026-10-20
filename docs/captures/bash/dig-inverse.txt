@@ -1,0 +1,22 @@
+# Source: https://manpages.debian.org/bookworm/bind9-dnsutils/dig.1.en.html — sources BIND 9.18 (bin/dig/dig.c, paquet bind9-dnsutils 1:9.18), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: dig @192.168.2.10 -x 192.168.2.20
+
+; <<>> DiG 9.18.49-1~deb12u2-Debian <<>> @192.168.2.10 -x 192.168.2.20
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: {id}
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 65494
+;; QUESTION SECTION:
+;20.2.168.192.in-addr.arpa.			IN	PTR
+
+;; ANSWER SECTION:
+20.2.168.192.in-addr.arpa.		604800	IN	PTR	www.lab.lan.
+
+;; Query time: {n} msec
+;; SERVER: 192.168.2.10#53(192.168.2.10) (UDP)
+;; WHEN: {date}
+;; MSG SIZE  rcvd: {size}
+

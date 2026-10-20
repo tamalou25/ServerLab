@@ -14,18 +14,32 @@ import { createRecorder, type PacketTrace, type PduLayer } from '../../sim/trace
 import { findZoneFor, normalizeName, ptrQueryName, relativeName } from './server'
 import { dnsServerOf } from './state'
 import { serviceRunning } from '../../services/servicestate'
+import { bindReply, runningServer } from '../../services/linuxbind'
+import { findUnit } from '../../services/linuxcatalog'
+import { isInstalled } from '../../services/linuxpackages'
+import { unitStatus } from '../../services/linuxsystem'
+
+/** Types interrogeables : ceux du DNS Windows, plus ceux que les zones Bind9 peuvent porter. */
+export type DnsQueryType = DnsRecordType | 'AAAA' | 'MX' | 'TXT'
 
 export interface DnsAnswerRecord {
   name: string
-  type: DnsRecordType
+  type: DnsQueryType
   data: string
   ttl: number
 }
 
 export type DnsResult =
-  | { kind: 'answer'; qname: string; records: DnsAnswerRecord[]; authoritative: boolean }
-  | { kind: 'nxdomain'; qname: string; authoritative: boolean }
-  | { kind: 'servfail'; qname: string }
+  | {
+      kind: 'answer'
+      qname: string
+      records: DnsAnswerRecord[]
+      authoritative: boolean
+      /** Section AUTHORITY (SOA de la zone pour une réponse vide d'un serveur Bind9). */
+      authority?: DnsAnswerRecord[]
+    }
+  | { kind: 'nxdomain'; qname: string; authoritative: boolean; authority?: DnsAnswerRecord[] }
+  | { kind: 'servfail'; qname: string; refused?: true }
   | { kind: 'timeout'; qname: string }
 
 const MAX_DEPTH = 5
@@ -59,14 +73,29 @@ function describe(result: DnsResult): string {
     case 'nxdomain':
       return 'Nom inexistant (NXDOMAIN)'
     case 'servfail':
-      return 'Échec du serveur (SERVFAIL)'
+      return result.refused ? 'Requête refusée (REFUSED)' : 'Échec du serveur (SERVFAIL)'
     case 'timeout':
       return 'pas de réponse'
   }
 }
 
+/** Serveur Linux dont named (Bind9) est démarré (v2.9, #240). */
+function isBindServer(device: Device | undefined): boolean {
+  const unit = findUnit('named')
+  return (
+    !!device &&
+    device.kind === 'server' &&
+    device.host.os === 'linux' &&
+    device.powered &&
+    !!unit &&
+    isInstalled(device, 'bind9') &&
+    unitStatus(device, unit).active
+  )
+}
+
 /** Le serveur exécute-t-il le service DNS ? */
 function isDnsServer(device: Device | undefined): device is ServerDevice {
+  if (isBindServer(device)) return true
   return (
     !!device &&
     device.kind === 'server' &&
@@ -80,6 +109,7 @@ function isDnsServer(device: Device | undefined): device is ServerDevice {
 
 /** Rôle DNS installé mais service arrêté (note de la trace). */
 function dnsServiceStopped(device: Device | undefined): boolean {
+  if (device?.kind === 'server' && device.host.os === 'linux') return isInstalled(device, 'bind9')
   return (
     !!device &&
     device.kind === 'server' &&
@@ -89,7 +119,7 @@ function dnsServiceStopped(device: Device | undefined): boolean {
 }
 
 /** Réponse des résolveurs publics (Internet). */
-function publicLookup(qname: string, qtype: DnsRecordType): DnsResult {
+function publicLookup(qname: string, qtype: DnsQueryType): DnsResult {
   const name = normalizeName(qname)
   if (qtype === 'PTR') {
     const ip = name
@@ -122,9 +152,11 @@ function serverLookup(
   ctx: SimContext,
   server: ServerDevice,
   qname: string,
-  qtype: DnsRecordType,
-  depth: number
+  qtype: DnsQueryType,
+  depth: number,
+  clientIp = '127.0.0.1'
 ): DnsResult {
+  if (isBindServer(server)) return bindLookup(ctx, server, qname, qtype, depth, clientIp)
   const dns = dnsServerOf(server)
   const name = normalizeName(qname)
   if (!dns || depth > MAX_DEPTH) return { kind: 'servfail', qname: name }
@@ -151,12 +183,69 @@ function serverLookup(
   return recurse(ctx, server, name, qtype, depth)
 }
 
+const asAnswer = (r: { name: string; type: string; data: string; ttl: number }): DnsAnswerRecord => ({
+  name: r.name,
+  type: r.type as DnsQueryType,
+  data: r.data,
+  ttl: r.ttl
+})
+
+/** Réponse d'un serveur Bind9 (configuration en vigueur de named, services/linuxbind.ts). */
+function bindLookup(
+  ctx: SimContext,
+  server: ServerDevice,
+  qname: string,
+  qtype: DnsQueryType,
+  depth: number,
+  clientIp: string
+): DnsResult {
+  const name = normalizeName(qname)
+  if (depth > MAX_DEPTH) return { kind: 'servfail', qname: name }
+  const reply = bindReply(runningServer(server), name, qtype, clientIp)
+  const upstream = (servers: string[], only: boolean): DnsResult => {
+    for (const s of servers) {
+      const r = queryServer(ctx, server.id, s, name, qtype, depth + 1)
+      if (r.kind !== 'timeout') return r.kind === 'answer' ? { ...r, authoritative: false } : r
+    }
+    if (!only) {
+      const r = queryServer(ctx, server.id, ROOT_HINT_IP, name, qtype, depth + 1)
+      if (r.kind !== 'timeout') return r.kind === 'answer' ? { ...r, authoritative: false } : r
+    }
+    return { kind: 'servfail', qname: name }
+  }
+  switch (reply.kind) {
+    case 'answer':
+      return {
+        kind: 'answer',
+        qname: name,
+        authoritative: reply.authoritative,
+        ...(reply.authority ? { authority: reply.authority.map(asAnswer) } : {}),
+        records: reply.records.map((r) => ({
+          name: r.name,
+          type: r.type as DnsQueryType,
+          data: r.data,
+          ttl: r.ttl
+        }))
+      }
+    case 'nxdomain':
+      return { kind: 'nxdomain', qname: name, authoritative: true, authority: reply.authority.map(asAnswer) }
+    case 'servfail':
+      return { kind: 'servfail', qname: name }
+    case 'refused':
+      return { kind: 'servfail', qname: name, refused: true }
+    case 'forward':
+      return upstream(reply.servers, reply.only)
+    case 'recurse':
+      return upstream([], false)
+  }
+}
+
 /** Résolution récursive : redirecteurs puis indications de racine. */
 function recurse(
   ctx: SimContext,
   server: ServerDevice,
   qname: string,
-  qtype: DnsRecordType,
+  qtype: DnsQueryType,
   depth: number
 ): DnsResult {
   const dns = dnsServerOf(server)
@@ -181,7 +270,7 @@ export function queryServer(
   fromId: string,
   serverIp: string,
   qname: string,
-  qtype: DnsRecordType,
+  qtype: DnsQueryType,
   depth = 0
 ): DnsResult {
   const name = normalizeName(qname)
@@ -211,7 +300,7 @@ export function queryServer(
         ? publicLookup(name, qtype)
         : { kind: 'timeout', qname: name }
   } else if (isDnsServer(responder)) {
-    result = serverLookup(ctx, responder, name, qtype, depth)
+    result = serverLookup(ctx, responder, name, qtype, depth, request.src)
   } else {
     const last = ctx.rec.events[ctx.rec.events.length - 1]
     if (last) {
@@ -274,7 +363,7 @@ export function resolveName(
   state: LabState,
   clientId: string,
   name: string,
-  qtype: DnsRecordType = 'A',
+  qtype: DnsQueryType = 'A',
   serverOverride?: string
 ): Resolution {
   const rec = createRecorder()

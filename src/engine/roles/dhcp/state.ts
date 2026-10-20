@@ -6,6 +6,10 @@ import type { RoleStateDef } from '../types'
 import type { Device } from '../../model/schema'
 import { DhcpServerSchema, type DhcpServer } from './schema'
 import { serviceRunning } from '../../services/servicestate'
+import { findUnit } from '../../services/linuxcatalog'
+import { linuxDhcpServer } from '../../services/linuxdhcp'
+import { isInstalled } from '../../services/linuxpackages'
+import { unitStatus } from '../../services/linuxsystem'
 
 /** Serveur DHCP tel qu'après l'installation du rôle. */
 export function createDhcpServer(): DhcpServer {
@@ -35,6 +39,8 @@ export const dhcpServerOf = (device: Parameters<typeof roleState>[0]): DhcpServe
  */
 /** Rôle DHCP installé mais service « DHCPServer » arrêté (note des traces). */
 export function dhcpServiceStopped(device: Device | undefined): boolean {
+  if (device?.kind === 'server' && device.host.os === 'linux')
+    return isInstalled(device, 'isc-dhcp-server') && !linuxDhcpServer(device, linuxDhcpActive(device))
   return (
     !!device &&
     device.kind === 'server' &&
@@ -43,8 +49,17 @@ export function dhcpServiceStopped(device: Device | undefined): boolean {
   )
 }
 
+/** isc-dhcp-server démarré sur un serveur Linux (v2.9, #240). */
+function linuxDhcpActive(device: Parameters<typeof unitStatus>[0]): boolean {
+  const unit = findUnit('isc-dhcp-server')
+  return !!unit && unitStatus(device, unit).active
+}
+
 export function dhcpServiceOf(device: Device | undefined): DhcpServer | null {
   if (!device) return null
+  // Serveur Linux : les étendues viennent de dhcpd.conf, les baux de dhcpd.leases (services/linuxdhcp.ts)
+  if (device.kind === 'server' && device.host.os === 'linux')
+    return linuxDhcpServer(device, linuxDhcpActive(device))
   if (device.kind === 'server')
     return device.host.features.includes('DHCP') && serviceRunning(device, 'DHCPServer')
       ? dhcpServerOf(device)

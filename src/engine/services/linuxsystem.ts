@@ -23,6 +23,9 @@ import { effectiveIpv4 } from '../net/addressing'
 import type { EventLogEntry, HostDevice, LabState } from '../model/schema'
 import { UNITS, findPackage, findUnit, type LinuxUnit } from './linuxcatalog'
 import { configTest, configuredLogs } from './linuxapache'
+import { checkConf, loadServer } from './linuxbind'
+import { DHCP_DEFAULT, DHCPD_CONF, bundleMap, configTextOf, fileText, unbundle } from './linuxconfig'
+import { dhcpdStartProblem, readDhcpd } from './linuxdhcp'
 import {
   apacheConfig,
   appendErrorLog,
@@ -274,17 +277,59 @@ function apacheStarted(draft: Draft<LabState>, deviceId: string, unit: LinuxUnit
   })
 }
 
+/**
+ * Bind9 et isc-dhcp-server refusent de démarrer avec une configuration invalide (v2.9, #240) : lignes de
+ * leur journal, ou null si le démarrage est possible.
+ */
+function daemonStartProblem(host: Draft<HostDevice>, unit: LinuxUnit): string[] | null {
+  const real = host as unknown as HostDevice
+  const files = host.host.linux?.files
+  if (unit.name === 'named') {
+    const check = checkConf((p) => fileText(files, p))
+    if (check.ok) return null
+    return [...check.messages, `loading configuration: ${check.result}`, 'exiting (due to fatal error)']
+  }
+  if (unit.name === 'isc-dhcp-server')
+    return dhcpdStartProblem(
+      real,
+      readDhcpd(real, fileText(files, DHCPD_CONF), fileText(files, DHCP_DEFAULT))
+    )
+  return null
+}
+
+/** Journal de named quand il démarre : zones chargées puis « running ». */
+function namedStarted(draft: Draft<LabState>, deviceId: string, unit: LinuxUnit) {
+  const host = hostOf(draft, deviceId)
+  const files = host.host.linux?.files
+  const server = loadServer(host as unknown as HostDevice, (p) => fileText(files, p))
+  const pid = unitPid(host, unit)
+  for (const z of server.zones)
+    if (z.load)
+      journal(
+        draft,
+        deviceId,
+        unit,
+        `named[${pid}]: zone ${z.zone.name}/IN: loaded serial ${z.load.serial ?? 0}`
+      )
+  journal(draft, deviceId, unit, `named[${pid}]: all zones loaded`)
+  journal(draft, deviceId, unit, `named[${pid}]: running`)
+}
+
 /** Démarre l'unité ; renvoie false (et journalise l'échec) si le port est déjà pris. */
 function startUnit(draft: Draft<LabState>, deviceId: string, unit: LinuxUnit): boolean {
   const host = hostOf(draft, deviceId)
   journal(draft, deviceId, unit, `Starting ${unitTitle(unit)}...`)
   forgetLoadedConfig(host, unit)
   const conflict = portConflict(host, unit)
-  const problem = unit.name === 'apache2' ? apacheStartProblem(host, unit, conflict, 'start') : null
+  const problem =
+    unit.name === 'apache2'
+      ? apacheStartProblem(host, unit, conflict, 'start')
+      : daemonStartProblem(host, unit)
   if (conflict || problem) {
     // Les messages d'apachectl arrivent dans le journal de l'unité sous leur propre nom de programme
     const pid = 1000 + startCount(host, unit.name) * 7
-    for (const line of problem ?? []) journalUntimed(draft, deviceId, unit, `apachectl[${pid}]: ${line}`)
+    const program = unit.name === 'apache2' ? 'apachectl' : unit.process
+    for (const line of problem ?? []) journalUntimed(draft, deviceId, unit, `${program}[${pid}]: ${line}`)
     journal(draft, deviceId, unit, `${unit.name}.service: Failed with result 'exit-code'.`, 'error')
     journal(draft, deviceId, unit, `Failed to start ${unitTitle(unit)}.`, 'error')
     return false
@@ -292,6 +337,7 @@ function startUnit(draft: Draft<LabState>, deviceId: string, unit: LinuxUnit): b
   setUnitState(host, unit, { active: true })
   journal(draft, deviceId, unit, `Started ${unitTitle(unit)}.`)
   if (unit.name === 'apache2') apacheStarted(draft, deviceId, unit, false)
+  if (unit.name === 'named') namedStarted(draft, deviceId, unit)
   return true
 }
 
@@ -339,6 +385,84 @@ export const jobFailedLines = (unit: LinuxUnit) => [
   `Job for ${unit.name}.service failed because the control process exited with error code.`,
   `See "systemctl status ${unit.name}.service" and "journalctl -xeu ${unit.name}.service" for details.`
 ]
+
+/**
+ * `rndc reload [zone]` et `rndc reconfig` (v2.9, #240) : named relit sa configuration et ses zones (reload),
+ * une seule zone (reload zone), ou la configuration et les nouvelles zones seulement (reconfig).
+ * Renvoie le message affiché par rndc ; une configuration invalide échoue (« 'reload' failed: … »).
+ */
+export function rndcReload(
+  state: LabState,
+  deviceId: string,
+  command: 'reload' | 'reconfig',
+  zone: string | null
+): EngineResult<{ message: string; failed?: boolean }> {
+  return transact(state, (draft) => {
+    const host = hostOf(draft, deviceId)
+    const unit = findUnit('named')
+    if (!unit) raise('UnitNotFound', 'Unit named.service not found.')
+    const u = unit as LinuxUnit
+    const real = host as unknown as HostDevice
+    const files = host.host.linux?.files
+    const pid = unitPid(host, u)
+    const say = (m: string) => journal(draft, deviceId, u, `named[${pid}]: ${m}`)
+    const running = unbundle(runningConfigText(host.host.linux, 'named'))
+    const keep = (loaded: Map<string, string>) => {
+      const text = bundleMap(loaded)
+      const linux = host.host.linux
+      if (!linux) return
+      if (text === configTextOf('named', files)) forgetLoadedConfig(host, u)
+      else linux.loaded = { ...linux.loaded, named: text }
+    }
+    say(`received control channel command '${zone ? `reload ${zone}` : command}'`)
+    if (zone !== null) {
+      const server = loadServer(real, (p) => running.get(p) ?? null)
+      const name = zone.toLowerCase().replace(/\.$/, '') || '.'
+      const z = server.zones.find((x) => x.zone.name === name)
+      if (!z) raise('NotFound', "rndc: 'reload' failed: not found")
+      const file = (z as (typeof server.zones)[number]).zone.file
+      const path =
+        file === null ? null : file.startsWith('/') ? file : `${server.check.model.directory}/${file}`
+      const now = path === null ? null : fileText(files, path)
+      if (path === null || now === null || now === running.get(path))
+        return { message: 'zone reload up-to-date' }
+      running.set(path, now)
+      keep(running)
+      const reloaded = loadServer(real, (p) => running.get(p) ?? null).zones.find((x) => x.zone.name === name)
+      if (reloaded?.load) say(`zone ${name}/IN: loaded serial ${reloaded.load.serial ?? 0}`)
+      return { message: 'zone reload queued' }
+    }
+    const check = checkConf((p) => fileText(files, p))
+    if (!check.ok) {
+      for (const m of check.messages) say(m)
+      say(`reloading configuration failed: ${check.result}`)
+      return { message: `rndc: '${command}' failed: ${check.result}`, failed: true }
+    }
+    if (command === 'reload') forgetLoadedConfig(host, u)
+    else {
+      // reconfig : les zones déjà chargées gardent leurs données
+      const next = unbundle(configTextOf('named', files) ?? '')
+      const loadedZones = loadServer(real, (p) => running.get(p) ?? null)
+      for (const z of loadedZones.zones) {
+        const file = z.zone.file
+        const path =
+          file === null ? null : file.startsWith('/') ? file : `${loadedZones.check.model.directory}/${file}`
+        if (path !== null && running.has(path)) next.set(path, running.get(path) as string)
+      }
+      keep(next)
+    }
+    say('reloading configuration succeeded')
+    if (command === 'reload') {
+      say('reloading zones succeeded')
+      const server = loadServer(real, (p) => fileText(files, p))
+      for (const z of server.zones)
+        if (z.load) say(`zone ${z.zone.name}/IN: loaded serial ${z.load.serial ?? 0}`)
+      say('all zones loaded')
+      say('running')
+    }
+    return { message: command === 'reload' ? 'server reload successful' : '' }
+  })
+}
 
 /** `fail2ban-client reload` : le service relit ses fichiers sans changer d'état. */
 export function reloadUnitConfig(state: LabState, deviceId: string, name: string): EngineResult<void> {

@@ -11,6 +11,8 @@
  * (voir `snapshotOnWrite`). Fonctions pures, sans dépendance à la console.
  */
 
+import { BIND_PROVIDED } from './linuxbinddata'
+import { DEFAULT_ISC_DHCP_SERVER, DHCPD_CONF_DEFAULT, leasesHeader } from './linuxdhcpdata'
 import { SMB_CONF_DEFAULT } from './linuxsambadata'
 import { APACHE_DIR, APACHE_PROVIDED, buildConfig, withApacheNodes, type ConfigSource } from './linuxapache'
 
@@ -25,6 +27,12 @@ export const RSYSLOG_DIR = '/etc/rsyslog.d'
 export const JAIL_DIR = '/etc/fail2ban/jail.d'
 export const JAIL_LOCAL = '/etc/fail2ban/jail.local'
 export const SMB_CONF = '/etc/samba/smb.conf'
+export const NAMED_CONF = '/etc/bind/named.conf'
+export const DHCPD_CONF = '/etc/dhcp/dhcpd.conf'
+export const DHCP_DEFAULT = '/etc/default/isc-dhcp-server'
+export const DHCPD_LEASES = '/var/lib/dhcp/dhcpd.leases'
+/** Séparateur des fichiers dans le texte de configuration de named et de dhcpd (une ligne « U+0001 chemin »). */
+export const BUNDLE_MARK = '\u0001'
 
 /** /etc/fail2ban/jail.d/defaults-debian.conf du paquet fail2ban 1.0.2-2 (active la prison sshd). */
 export const FAIL2BAN_DEFAULTS_DEBIAN = '[sshd]\nenabled = true\n'
@@ -237,6 +245,10 @@ const PROVIDED: Record<string, string> = {
   [SSHD_CONFIG]: SSHD_CONFIG_DEFAULT,
   [RSYSLOG_CONF]: RSYSLOG_CONF_DEFAULT,
   [SMB_CONF]: SMB_CONF_DEFAULT,
+  ...BIND_PROVIDED,
+  [DHCPD_CONF]: DHCPD_CONF_DEFAULT,
+  [DHCP_DEFAULT]: DEFAULT_ISC_DHCP_SERVER,
+  [DHCPD_LEASES]: leasesHeader('4.4.3-P1'),
   [`${JAIL_DIR}/defaults-debian.conf`]: FAIL2BAN_DEFAULTS_DEBIAN
 }
 
@@ -565,8 +577,55 @@ export function hostsTextOf(files: ConfigFiles, hostname: string): string {
 // Configuration en vigueur
 // ---------------------------------------------------------------------------------------------
 
+/** Fichiers `chemin → texte` en un seul texte (instantané de configuration d'une unité à plusieurs fichiers). */
+export function bundleOf(paths: string[], files: ConfigFiles): string {
+  return paths.map((p) => `${BUNDLE_MARK}${p}\n${fileText(files, p) ?? ''}\n`).join('')
+}
+
+/** Texte de configuration reconstitué à partir de ses fichiers (inverse de `unbundle`). */
+export const bundleMap = (files: Map<string, string>): string =>
+  [...files].map(([p, t]) => `${BUNDLE_MARK}${p}\n${t}\n`).join('')
+
+/** Fichiers d'un texte produit par `bundleOf` (chemin → texte). */
+export function unbundle(text: string): Map<string, string> {
+  const out = new Map<string, string>()
+  for (const part of text.split(BUNDLE_MARK).slice(1)) {
+    const nl = part.indexOf('\n')
+    out.set(part.slice(0, nl), part.slice(nl + 1).replace(/\n$/, ''))
+  }
+  return out
+}
+
+/**
+ * Configuration de named : named.conf, ses inclusions, les fichiers de zone cités (`file "…"`, relatifs
+ * au `directory`) et tout ce qui se trouve sous /etc/bind, /var/cache/bind et /var/lib/bind.
+ */
+function namedBundleText(files: ConfigFiles): string {
+  const paths = new Set<string>()
+  const directory = (() => {
+    for (const p of [NAMED_CONF, '/etc/bind/named.conf.options', '/etc/bind/named.conf.local']) {
+      const m = /\bdirectory\s+"([^"]+)"/.exec(fileText(files, p) ?? '')
+      if (m) return m[1] as string
+    }
+    return '/var/cache/bind'
+  })()
+  const add = (path: string, depth = 0) => {
+    const text = fileText(files, path)
+    if (text === null || paths.has(path) || depth > 8) return
+    paths.add(path)
+    for (const m of text.matchAll(/\b(?:include|file)\s+"([^"]+)"/g)) {
+      const ref = m[1] as string
+      add(ref.startsWith('/') ? ref : `${directory}/${ref}`, depth + 1)
+    }
+  }
+  add(NAMED_CONF)
+  const known = [...Object.keys(files ?? {}), ...Object.keys(BIND_PROVIDED)].sort()
+  for (const p of known) if (/^\/(etc\/bind|var\/cache\/bind|var\/lib\/bind)\//.test(p)) add(p)
+  return bundleOf([...paths], files)
+}
+
 /** Unités dont la configuration est lue à leur (re)démarrage. */
-export const CONFIGURED_UNITS = ['ssh', 'rsyslog', 'fail2ban', 'apache2', 'smbd']
+export const CONFIGURED_UNITS = ['ssh', 'rsyslog', 'fail2ban', 'apache2', 'smbd', 'named', 'isc-dhcp-server']
 
 /** Texte de configuration actuel (fichiers) d'une unité ; null si l'unité n'a pas de configuration modélisée. */
 export function configTextOf(unit: string, files: ConfigFiles): string | null {
@@ -575,6 +634,8 @@ export function configTextOf(unit: string, files: ConfigFiles): string | null {
   if (unit === 'fail2ban') return jailConfigText(files)
   if (unit === 'apache2') return apacheBundleText(files)
   if (unit === 'smbd') return fileText(files, SMB_CONF)
+  if (unit === 'named') return namedBundleText(files)
+  if (unit === 'isc-dhcp-server') return bundleOf([DHCPD_CONF, DHCP_DEFAULT], files)
   return null
 }
 

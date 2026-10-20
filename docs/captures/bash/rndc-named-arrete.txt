@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/bind9-utils/rndc.8.en.html — sources BIND 9.18 (bin/rndc/rndc.c, bin/named/server.c, paquet bind9 1:9.18), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo rndc reload
+rndc: connect failed: 127.0.0.1#953: connection refused

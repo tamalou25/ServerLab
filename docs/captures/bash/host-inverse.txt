@@ -1,0 +1,8 @@
+# Source: https://manpages.debian.org/bookworm/bind9-host/host.1.en.html — sources BIND 9.18 (bin/dig/host.c, paquet bind9-host 1:9.18), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: host 192.168.2.20 192.168.2.10
+Using domain server:
+Name: 192.168.2.10
+Address: 192.168.2.10#53
+Aliases: 
+
+20.2.168.192.in-addr.arpa domain name pointer www.lab.lan.
