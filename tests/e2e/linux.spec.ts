@@ -98,6 +98,24 @@ test('Poste Linux : console bash, jonction au domaine, partage monté selon les 
   }
 })
 
+test('Palette : serveur Linux posé, console bash ouverte', async () => {
+  const { close, page, consoleErrors } = await launchApp()
+  try {
+    await page.getByTestId('palette-linux-server').click()
+    await page.getByTestId('topology-canvas').click({ position: { x: 400, y: 300 } })
+    await expect(page.getByTestId('device-LSRV1')).toBeVisible()
+    await expect(page.getByTestId('properties-panel')).toContainText('Serveur Linux')
+    await page.getByTestId('device-LSRV1').dblclick()
+    const win = page.getByTestId('device-window-LSRV1')
+    await expect(win.getByTestId('tab-desktop')).toHaveCount(0)
+    await win.getByTestId('tab-console').click()
+    await expect(win.getByTestId('console-bash')).toContainText('admin@LSRV1:~$')
+    expect(consoleErrors).toEqual([])
+  } finally {
+    await close()
+  }
+})
+
 test('Palette : poste Linux placé sur le canvas', async () => {
   const { close, page, consoleErrors } = await launchApp()
   try {

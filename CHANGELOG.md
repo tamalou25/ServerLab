@@ -16,10 +16,20 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   `useradd`, `usermod -aG`, `groupadd`, `passwd`, `id`, `su`, `sudo` (règle `/etc/sudoers` : groupe `sudo`, `NOPASSWD`,
   mot de passe, jeton de 15 minutes), `ls -l -a -d`. `nano` : message honnête (console de lignes).
 - Comptes lus dans `/etc/passwd`, `/etc/group`, `/etc/shadow` (marqueur `$sim$`, aucun hachage réel). État Linux dans
-  le champ facultatif `host.linux`, à intégrer au format `.slab` 27 (non déclaré dans cette issue).
+  le champ facultatif `host.linux.files` (format `.slab` 27 inchangé, schéma `model/linuxnode.ts`).
 - Golden : console `bash` ajoutée à `tests/engine/golden/golden.ts`, 83 captures `docs/captures/bash/<commande>*.txt`
   (pages de manuel Debian, cas d'erreur réels) et `tests/engine/shell/bash-golden.test.ts` ; section « v2.9 — Serveurs
   Linux » et « À vérifier (v2.9 — Linux) » dans `docs/fidelite.md`.
+
+### v2.9 (serveurs Linux) — format `.slab` 27
+
+- Serveur Linux (#234) : `host.os = 'linux'` autorisé sur `kind: 'server'` (Debian 12 simulé, préfixe `LSRV`, carte
+  `eth0`, compte `admin` avec sudo, aucune fonctionnalité Windows). Console bash, `ip`, montage SMB et `realm` du poste
+  Linux réutilisés ; prédicat unique `isLinuxHost(device)` (`src/engine/model/host.ts`) à la place des tests
+  `kind === 'client' && os === 'linux'`.
+- Format `.slab` 27 : champ facultatif `host.linux { distro: 'debian12' | 'ubuntu2404' }` ; migration 26 → 27 (la version
+  seule change), fichier de référence `v27.slab` (serveur LSRV1).
+- Palette : entrée « Serveur Linux » (groupe Serveurs). Labs déclaratifs : champ facultatif `os: "linux"` d'un équipement.
 
 ## [2.8.0] — 2026-10-19
 

@@ -532,13 +532,20 @@ archivé « NET TIME and w32time » (lignes `Current time at \\DC-01.mydomain.co
 
 ## v2.9 — Serveurs Linux
 
+Le serveur Linux (#234) réutilise la console bash du poste Linux : aucune commande nouvelle. Seul le texte d'accueil
+change selon le système.
+
+| ID   | Commande                                       | Statut                                                                                                                                                                                                                                                                         |
+| ---- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| L-01 | Bannière de la console bash d'un serveur Linux | Ajouté : « Debian GNU/Linux 12 (simulé) — ServerLab » (« Ubuntu 24.04 LTS » si `host.linux.distro` vaut `ubuntu2404`) à la place de la bannière du poste Ubuntu 22.04. Texte propre à ServerLab (comme celle du poste), pas une sortie de système réel ; compte `admin` (sudo) |
+
 Chantier #235 : système de fichiers, utilisateurs et droits de la console bash (poste Linux, et serveur Linux
 de #234). Les identifiants L-01 à L-09 sont réservés à #234. Consoles couvertes par les captures
 `docs/captures/bash/<commande>.txt` (test `tests/engine/shell/bash-golden.test.ts`).
 
 | ID   | Élément                                                                                         | Statut                                                                                                                                                                                                                                                                                          |
 | ---- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| L-10 | Arborescence `/etc`, `/var/www`, `/var/log`, `/home`, `/root`, `/tmp`… sur des fichiers simulés | Ajouté : nœuds `{ type, mode, owner, group, content }` (champ facultatif `host.linux`, format `.slab` 27 à intégrer). `hostname`, `hosts` et `resolv.conf` sont calculés tant qu'ils ne sont pas modifiés. Arborescence réduite (pas de `/usr/bin`, `/proc`… peuplés)                           |
+| L-10 | Arborescence `/etc`, `/var/www`, `/var/log`, `/home`, `/root`, `/tmp`… sur des fichiers simulés | Ajouté : nœuds `{ type, mode, owner, group, content }` (champ facultatif `host.linux.files`, format `.slab` 27 inchangé). `hostname`, `hosts` et `resolv.conf` sont calculés tant qu'ils ne sont pas modifiés. Arborescence réduite (pas de `/usr/bin`, `/proc`… peuplés)                       |
 | L-11 | Droits Unix appliqués (propriétaire, groupe, autres ; `r`, `w`, `x`)                            | Ajouté : lecture (`cat`, `ls`, `sed`), écriture (`>`, `>>`, `tee`, `touch`, `mkdir`), traversée (`x` de chaque dossier du chemin), `cd`. root passe partout. Messages `Permission denied` / `Operation not permitted` des outils coreutils                                                      |
 | L-12 | Redirection `>` `>>` faite avec les droits de l'utilisateur, jamais ceux de `sudo`              | Ajouté : `sudo echo x >> /etc/hosts` échoue comme sur un vrai bash ; `echo x \| sudo tee -a /etc/hosts` fonctionne                                                                                                                                                                              |
 | L-13 | Comptes lus dans `/etc/passwd`, `/etc/group`, `/etc/shadow`                                     | Ajouté : aucun état à part ; `useradd`, `usermod`, `groupadd`, `passwd` réécrivent ces fichiers. Mot de passe de `shadow` : marqueur `$sim$` suivi du mot de passe (AUCUN hachage réel, texte lisible par root seulement)                                                                       |
@@ -582,8 +589,6 @@ with the -G flag`) relevé dans le code source de shadow, non capturé.
   `[[:alpha:]]` non gérées) ; messages d'erreur d'expression invalide approximatifs ; le nom du fichier temporaire
   de `sed -i` est tiré de l'horloge du lab (aléatoire sur un vrai système).
 - L-18 : `nano` n'ouvre pas d'éditeur : message propre à ServerLab (pas une sortie réelle).
-- Format `.slab` : l'état (`host.linux`) n'est conservé qu'en mémoire tant que le format 27 ne le déclare pas ;
-  à l'enregistrement d'un lab, l'arborescence modifiée revient à celle par défaut.
 
 ## Équipements Cisco IOS (v2.5)
 

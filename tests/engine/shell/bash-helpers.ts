@@ -25,8 +25,11 @@ export function linuxLab(): LabState {
 export class Bash {
   session: ShellSession
   readonly deviceId: string
-  constructor(public state: LabState = linuxLab()) {
-    this.deviceId = Object.values(state.devices).find((d) => d.name === 'LNX1')?.id ?? ''
+  constructor(
+    public state: LabState = linuxLab(),
+    name = 'LNX1'
+  ) {
+    this.deviceId = Object.values(state.devices).find((d) => d.name === name)?.id ?? ''
     this.session = createShellSession(state, this.deviceId, 'cmd')
   }
   run(line: string, answers: string[] = []): RunResult {

@@ -4,35 +4,17 @@
  * de la console bash. Les utilisateurs et groupes ne sont pas un état à part : ils sont lus dans le
  * contenu de /etc/passwd, /etc/group, /etc/shadow et /etc/sudoers, comme sur un vrai système.
  *
- * État : champ FACULTATIF `host.linux` (absent = arborescence par défaut, calculée à la lecture).
- * Le schéma `LinuxFsSchema` est destiné au format .slab 27 ; tant qu'il n'y est pas déclaré, l'état
- * vit en mémoire seulement (voir le rapport de l'issue #235).
+ * État : champ facultatif `host.linux.files` (absent = arborescence par défaut, calculée à la lecture),
+ * schéma dans model/linuxnode.ts, format .slab 27 inchangé.
  */
-import { z } from 'zod'
 import { transact } from '../../core/result'
 import { LAB_EPOCH_MS } from '../../core/clock'
 import { LINUX_USER } from '../../model/factory'
-import { MAX_FILE_CONTENT, type Host } from '../../model/schema'
+import type { LinuxNode } from '../../model/linuxnode'
 import { CommandFailure, type ExecContext } from '../context'
 
-export const LinuxNodeSchema = z.object({
-  type: z.enum(['file', 'dir']),
-  /** Droits Unix sur 12 bits (0o755, 0o4755, 0o1777…). */
-  mode: z.number().int().min(0).max(0o7777),
-  owner: z.string(),
-  group: z.string(),
-  /** Contenu texte d'un fichier ; absent = contenu fourni par le système (hostname, hosts, resolv.conf) ou vide. */
-  content: z.string().max(MAX_FILE_CONTENT).optional(),
-  /** Date de modification : horloge du lab (ms). */
-  mtime: z.number().default(0)
-})
-export type LinuxNode = z.infer<typeof LinuxNodeSchema>
-
-/** Champ facultatif `host.linux` : chemin absolu → nœud. */
-export const LinuxFsSchema = z.object({ files: z.record(z.string(), LinuxNodeSchema) })
-export type LinuxFs = z.infer<typeof LinuxFsSchema>
+export type { LinuxNode }
 export type LinuxFiles = Record<string, LinuxNode>
-type LinuxHost = Host & { linux?: LinuxFs }
 
 /** Marqueur de mot de passe de /etc/shadow : AUCUN hachage réel, le mot de passe suit le marqueur. */
 export const SHADOW_MARK = '$sim$'
@@ -179,7 +161,7 @@ export function defaultLinuxFiles(user: string): LinuxFiles {
 
 /** Fichiers du poste (par défaut tant qu'aucune écriture n'a eu lieu). */
 export function linuxFiles(ctx: ExecContext): LinuxFiles {
-  const host = ctx.host.host as LinuxHost
+  const host = ctx.host.host
   return host.linux?.files ?? defaultLinuxFiles(host.session?.user ?? LINUX_USER)
 }
 
@@ -192,7 +174,8 @@ export function commitFiles(ctx: ExecContext, files: LinuxFiles): void {
   ctx.apply(
     transact(ctx.state, (draft) => {
       const d = draft.devices[id]
-      if (d && (d.kind === 'client' || d.kind === 'server')) (d.host as LinuxHost).linux = { files }
+      if (d && (d.kind === 'client' || d.kind === 'server'))
+        d.host.linux = { distro: d.host.linux?.distro ?? 'debian12', files }
       return undefined
     })
   )

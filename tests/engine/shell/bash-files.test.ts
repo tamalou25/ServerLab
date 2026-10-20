@@ -3,7 +3,17 @@
  * cat / echo > >> / tee / sed -i / nano, et droits Unix (rwx, propriétaire, groupe) APPLIQUÉS aux accès.
  */
 import { describe, expect, it } from 'vitest'
-import { parseSlab, serializeSlab, shellPrompt } from '@engine/index'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import {
+  applyStatePatches,
+  command,
+  dispatch,
+  parseSlab,
+  serializeSlab,
+  shellPrompt,
+  type LabState
+} from '@engine/index'
 import { Bash } from './bash-helpers'
 
 describe('arborescence et lecture', () => {
@@ -339,23 +349,47 @@ describe('options et cas limites', () => {
   })
 })
 
-describe('état Linux dans le format .slab', () => {
-  it('l’arborescence modifiée vit dans host.linux (champ facultatif, format 27 à venir)', () => {
+describe('état Linux dans le format .slab (host.linux.files, format 27)', () => {
+  const save = (state: LabState) =>
+    parseSlab(serializeSlab(state, { savedAt: '2026-10-20T12:00:00.000Z', appVersion: '2.9.0' }))
+
+  it('l’arborescence modifiée vit dans host.linux.files ; absente tant que rien n’est écrit', () => {
     const sh = new Bash()
-    expect((sh.host.host as { linux?: unknown }).linux).toBeUndefined()
+    expect(sh.host.host.linux?.files).toBeUndefined()
     sh.run('echo salut > f')
-    const linux = (sh.host.host as { linux?: { files: Record<string, { content?: string }> } }).linux
-    expect(linux?.files['/home/etudiant/f']?.content).toBe('salut\n')
+    expect(sh.host.host.linux?.files?.['/home/etudiant/f']?.content).toBe('salut\n')
   })
 
-  it('un lab enregistré puis rouvert reste utilisable (arborescence par défaut tant que le champ n’est pas au format)', () => {
+  it('aller-retour .slab : chmod et useradd sont conservés', () => {
     const sh = new Bash()
     sh.run('echo salut > f')
-    const reopened = parseSlab(
-      serializeSlab(sh.state, { savedAt: '2026-10-20T12:00:00.000Z', appVersion: '2.9.0' })
-    )
+    sh.run('chmod 600 f')
+    sh.run('sudo useradd -m bob')
+    const reopened = save(sh.state)
     if (!reopened.ok) throw new Error(reopened.message)
+    expect(reopened.doc.lab).toEqual(sh.state)
     const again = new Bash(reopened.doc.lab)
+    expect(again.all('ls -l f')).toContain('-rw-------')
+    expect(again.all('id bob')).toContain('uid=1001(bob)')
     expect(again.all('cat /etc/hostname')).toBe('LNX1')
+  })
+
+  it('une ligne de console annulable (shell.exec) : annuler / rétablir par patches', () => {
+    const sh = new Bash()
+    const r = dispatch(sh.state, command('shell.exec', sh.session, 'echo a > f', []))
+    if (!r.ok || !r.entry) throw new Error('shell.exec refusé')
+    expect(applyStatePatches(r.state, r.entry.inversePatches)).toEqual(sh.state)
+  })
+
+  it('v27.slab (sans files) : arborescence par défaut calculée à la lecture', () => {
+    const doc = readFileSync(join(__dirname, '../serialization/fixtures/v27.slab'), 'utf8')
+    const parsed = parseSlab(doc)
+    if (!parsed.ok) throw new Error(parsed.message)
+    const lsrv = Object.values(parsed.doc.lab.devices).find((d) => d.name === 'LSRV1')
+    if (lsrv?.kind !== 'server') throw new Error('LSRV1 introuvable')
+    expect(lsrv.host.linux?.files).toBeUndefined()
+    const sh = new Bash(parsed.doc.lab, 'LSRV1')
+    expect(sh.all('cat /etc/hostname')).toBe('LSRV1')
+    expect(sh.all('ls -ld /home/admin')).toContain('admin admin')
   })
 })

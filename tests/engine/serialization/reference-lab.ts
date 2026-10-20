@@ -12,6 +12,7 @@
  * Depuis la v21 : horloge et NTP de CR1 (clock timezone, ntp server, exec-timeout de la console).
  * Depuis la v22 : RIP v2 de CR1 et default-information originate d'OSPF.
  * Depuis la v19 : spanning-tree de CSW1 (rapid-pvst, priorité du VLAN 30, BPDU Guard).
+ * Depuis la v27 : serveur Linux LSRV1 (Debian 12 simulé).
  * Le même scénario a servi à produire chaque fichier vN.slab avec le code de la version N.
  */
 import {
@@ -236,6 +237,8 @@ export function buildReferenceLab(): LabState {
   ).state
   // v26 : horloge de PC2 en avance de 90 secondes (sous la tolérance Kerberos de 5 minutes)
   s = unwrap(setHostClock(s, id('PC2'), 90)).state
+  // v27 : serveur Linux (Debian 12 simulé) LSRV1, non câblé
+  s = unwrap(addDevice(s, { kind: 'server', os: 'linux', position: { x: 0, y: 200 }, name: 'LSRV1' })).state
   return runIosScript(s, id('CR1'), [
     'enable',
     'configure terminal',
