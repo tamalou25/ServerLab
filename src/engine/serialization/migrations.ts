@@ -5,7 +5,7 @@
  */
 import { DEFAULT_DC_POLICY_ID, DEFAULT_DOMAIN_POLICY_ID, defaultDomainGpos } from '../roles/gpo/defaults'
 
-export const CURRENT_SCHEMA_VERSION = 26
+export const CURRENT_SCHEMA_VERSION = 27
 
 type RawDocument = Record<string, unknown>
 
@@ -258,6 +258,15 @@ function addV28HostClock(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 26 }
 }
 
+/**
+ * 26 → 27 (v2.9, serveurs Linux) : `kind: 'server'` peut porter `host.os = 'linux'` et le champ facultatif
+ * `host.linux { distro }` apparaît. Les fichiers 26 n'ont que des serveurs Windows : seul le numéro change.
+ * Les issues suivantes de la v2.9 n'ajoutent que des champs facultatifs (format 27).
+ */
+function addV29LinuxServers(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 27 }
+}
+
 /** migrations[n] migre un document de la version n vers n + 1. */
 export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   1: addDefaultGpos,
@@ -284,7 +293,8 @@ export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   22: addV27RouterDiagnostics,
   23: addV27Services,
   24: addV27LocalAccountsRegistry,
-  25: addV28HostClock
+  25: addV28HostClock,
+  26: addV29LinuxServers
 }
 
 export type MigrationResult = { ok: true; doc: RawDocument } | { ok: false; message: string }

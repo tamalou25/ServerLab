@@ -319,7 +319,7 @@ describe('format .slab 26 : champs facultatifs', () => {
   it('v26.slab s’ouvre sans panne ni récupération (valeurs par défaut)', () => {
     const parsed = parseSlab(readFixture(26))
     if (!parsed.ok) throw new Error(parsed.message)
-    expect(parsed.doc.schemaVersion).toBe(26)
+    expect(parsed.doc.schemaVersion).toBe(27)
     const hosts = Object.values(parsed.doc.lab.devices).filter(
       (d) => d.kind === 'server' || d.kind === 'client'
     ) as HostDevice[]

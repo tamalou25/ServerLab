@@ -24,7 +24,7 @@ import { observeTrace } from './tutorial'
 export function ensureTerminal(deviceId: string, kind: ShellKind): string {
   useConsoleStore.getState().ensure(deviceId, kind, () => ({
     session: createShellSession(useLabStore.getState().lab, deviceId, kind),
-    banner: shellBanner(kind)
+    banner: shellBanner(kind, useLabStore.getState().lab, deviceId)
   }))
   return terminalKey(deviceId, kind)
 }
@@ -58,7 +58,10 @@ function restartTerminal(key: string, notice: string): void {
   store.append(key, [
     { text: '', kind: 'out' },
     { text: notice, kind: 'verbose' },
-    ...shellBanner(term.kind).map((t) => ({ text: t, kind: 'out' as const }))
+    ...shellBanner(term.kind, useLabStore.getState().lab, term.deviceId).map((t) => ({
+      text: t,
+      kind: 'out' as const
+    }))
   ])
   store.update(key, {
     session: createShellSession(useLabStore.getState().lab, term.deviceId, term.kind),

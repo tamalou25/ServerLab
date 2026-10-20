@@ -1,11 +1,21 @@
 /**
  * Apparence des équipements (icônes lucide, couleurs) — purement visuel.
  */
-import { Cloud, Monitor, Network, Router, Server, SquareTerminal, type LucideIcon } from 'lucide-react'
+import {
+  Cloud,
+  Monitor,
+  Network,
+  Router,
+  Server,
+  ServerCog,
+  SquareTerminal,
+  type LucideIcon
+} from 'lucide-react'
 import {
   DEVICE_KINDS,
   IOS_MODEL_INFO,
   IOS_MODELS,
+  isLinuxHost,
   type Device,
   type DeviceKind,
   type IosModel
@@ -16,13 +26,14 @@ import { t } from './i18n'
  * Entrée de la palette : un type d'équipement, le poste Linux (poste client Ubuntu simulé) ou un
  * modèle Cisco IOS (routeur ou switch).
  */
-export type PaletteKind = DeviceKind | 'linux' | IosModel
+export type PaletteKind = DeviceKind | 'linux' | 'linux-server' | IosModel
 
 /** Vrai si la valeur (glisser-déposer) est une entrée de la palette. */
 export function isPaletteKind(value: string): value is PaletteKind {
   return (
     (DEVICE_KINDS as readonly string[]).includes(value) ||
     value === 'linux' ||
+    value === 'linux-server' ||
     (IOS_MODELS as readonly string[]).includes(value)
   )
 }
@@ -33,11 +44,12 @@ export function iosModel(device: Device): IosModel | undefined {
 }
 
 /** Poste Linux : poste client dont le système est Ubuntu (simulé). */
-export const isLinux = (device: Device): boolean => device.kind === 'client' && device.host.os === 'linux'
+export const isLinux = (device: Device): boolean => isLinuxHost(device)
 
 /** Paramètres de création d'un équipement de la palette. */
 export function paletteParams(kind: PaletteKind): { kind: DeviceKind; os?: 'linux'; model?: IosModel } {
   if (kind === 'linux') return { kind: 'client', os: 'linux' }
+  if (kind === 'linux-server') return { kind: 'server', os: 'linux' }
   if ((IOS_MODELS as readonly string[]).includes(kind)) {
     const model = kind as IosModel
     return { kind: IOS_MODEL_INFO[model].kind, model }
@@ -47,7 +59,7 @@ export function paletteParams(kind: PaletteKind): { kind: DeviceKind; os?: 'linu
 
 /** Entrée de la palette correspondant à un équipement (poste Linux distingué). */
 export const paletteKind = (device: Device): PaletteKind =>
-  isLinux(device) ? 'linux' : (iosModel(device) ?? device.kind)
+  isLinux(device) ? (device.kind === 'server' ? 'linux-server' : 'linux') : (iosModel(device) ?? device.kind)
 
 /**
  * Libellé, description (infobulle, recherche) et modèle d'une entrée de la palette, dans la langue
@@ -62,6 +74,7 @@ export const DEVICE_ICONS: Record<PaletteKind, LucideIcon> = {
   server: Server,
   client: Monitor,
   linux: SquareTerminal,
+  'linux-server': ServerCog,
   switch: Network,
   router: Router,
   cloud: Cloud,
@@ -79,6 +92,7 @@ export const KIND_STRIPE: Record<PaletteKind, string> = {
   server: 'bg-kind-server',
   client: 'bg-kind-client',
   linux: 'bg-kind-client',
+  'linux-server': 'bg-kind-server',
   switch: 'bg-kind-switch',
   router: 'bg-kind-router',
   cloud: 'bg-kind-cloud',

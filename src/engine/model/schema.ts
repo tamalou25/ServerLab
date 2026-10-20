@@ -524,8 +524,14 @@ export const CifsMountSchema = z.object({
 })
 export type CifsMount = z.infer<typeof CifsMountSchema>
 
+/** Distribution d'un serveur Linux simulé (v2.9, format 27). */
+export const LINUX_DISTROS = ['debian12', 'ubuntu2404'] as const
+export type LinuxDistro = (typeof LINUX_DISTROS)[number]
+
 export const HostSchema = z.object({
   os: z.enum(HOST_OS).default('windows'),
+  /** Serveur Linux : distribution (absent = debian12). Sans effet sur un ordinateur Windows. */
+  linux: z.object({ distro: z.enum(LINUX_DISTROS).default('debian12') }).optional(),
   workgroup: z.string().default('WORKGROUP'),
   /** Domaine AD rejoint (FQDN) ou null si groupe de travail. */
   domain: z.string().nullable().default(null),

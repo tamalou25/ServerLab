@@ -66,9 +66,11 @@ describe('fichiers .slab de référence', () => {
             .map((d) => d.name)
             .sort()
         ).toEqual(
-          version >= 9
-            ? ['CR1', 'CSW1', 'PC1', 'PC2', 'R1', 'SRV1', 'SW1']
-            : ['PC1', 'PC2', 'R1', 'SRV1', 'SW1']
+          version >= 27
+            ? ['CR1', 'CSW1', 'LSRV1', 'PC1', 'PC2', 'R1', 'SRV1', 'SW1']
+            : version >= 9
+              ? ['CR1', 'CSW1', 'PC1', 'PC2', 'R1', 'SRV1', 'SW1']
+              : ['PC1', 'PC2', 'R1', 'SRV1', 'SW1']
         )
         expect(Object.keys(lab.links)).toHaveLength(version >= 9 ? 5 : 4)
         const domain = lab.domains['lab.local']
@@ -113,6 +115,25 @@ describe('fichiers .slab de référence', () => {
       })
     })
   }
+})
+
+describe('migration 26 → 27 (serveurs Linux de la v2.9)', () => {
+  it('change seulement la version ; les serveurs existants restent des serveurs Windows', () => {
+    const doc = JSON.parse(readFixture(26)) as Record<string, unknown>
+    expect(migrations[26]!(doc)).toEqual({ ...doc, schemaVersion: 27 })
+    const srv = Object.values(open(26).lab.devices).find((d) => d.name === 'SRV1')
+    expect(srv?.kind === 'server' && [srv.host.os, srv.host.linux]).toEqual(['windows', undefined])
+  })
+
+  it('v27.slab : garde le serveur Linux LSRV1 (Debian 12, utilisateur admin, interface eth0)', () => {
+    const lsrv = Object.values(open(27).lab.devices).find((d) => d.name === 'LSRV1')
+    expect(lsrv?.kind).toBe('server')
+    if (lsrv?.kind !== 'server') return
+    expect(lsrv.host.os).toBe('linux')
+    expect(lsrv.host.linux).toEqual({ distro: 'debian12' })
+    expect(lsrv.host.session?.user).toBe('admin')
+    expect(lsrv.interfaces.map((i) => i.name)).toEqual(['eth0'])
+  })
 })
 
 describe('migration 25 → 26 (horloge par ordinateur de la v2.8)', () => {
