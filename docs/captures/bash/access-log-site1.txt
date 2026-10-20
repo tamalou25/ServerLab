@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/apache2/apache2.8.en.html — format combined de https://sources.debian.org/data/main/a/apache2/2.4.68-1~deb12u1/debian/config-dir/apache2.conf.in (LogFormat) (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo cat /var/log/apache2/site1-access.log
+192.168.2.20 - - [05/Jan/2026:08:00:06 +0000] "GET / HTTP/1.1" 200 266 "-" "curl/7.81.0"
+192.168.2.20 - - [05/Jan/2026:08:00:07 +0000] "GET / HTTP/1.1" 200 266 "-" "curl/7.81.0"

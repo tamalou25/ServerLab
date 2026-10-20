@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/curl/curl.1.en.html — réponse d’Apache reconstituée d’après server/vhost.c (choix du site par ServerName) (httpd 2.4.68-1~deb12u1) (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: curl -H "Host: site1.lab.local" http://192.168.2.10/
+<h1>Site 1</h1>

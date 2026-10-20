@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/ls.1.en.html — liens symboliques posés par le paquet apache2 (debian/apache2.postinst, a2ensite) sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: ls -l /etc/apache2/sites-enabled
+total 4
+lrwxrwxrwx 1 root root 35 Jan  5 08:00 000-default.conf -> ../sites-available/000-default.conf

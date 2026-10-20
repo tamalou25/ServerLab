@@ -50,6 +50,13 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   Format `.slab` 27 inchangé : champs facultatifs `host.linux.loaded`, `bans` et `knownHosts` ; 34 captures `docs/captures/bash/`
   (L-60 à L-67 de `docs/fidelite.md`) comparées par `tests/engine/shell/bash-ssh-golden.test.ts`. Correction : `apt install` et
   l'écriture d'un fichier (`tee`, `sed -i`) ne s'effacent plus mutuellement dans `host.linux`.
+- Apache2 sur serveur Linux (#238) : `a2ensite`, `a2dissite`, `a2enmod`, `a2dismod`, `a2enconf`, `a2disconf` (port du script
+  Debian, liens symboliques réels, dépendances et conflits de modules), `apache2ctl` / `apachectl` (`configtest` avec les
+  vrais messages d'Apache, `-S`, `-M`, `-v`, `start`/`stop`/`restart`/`graceful`), configuration relue seulement au
+  `reload` / `restart`, hôtes virtuels (nom, port, adresse), `DocumentRoot`, `Require`, `Options`, `Redirect`, HTTPS
+  (certificat auto-signé), `access.log` / `error.log`, conflit de port ; visible par `curl` (bash) et par le navigateur et
+  `Invoke-WebRequest` d'un poste Windows. État en champs facultatifs de `host.linux` (format `.slab` 27 inchangé, nœud
+  de fichier `link`), 59 captures `docs/captures/bash`, tests golden et de comportement, L-70 à L-79 dans `docs/fidelite.md`.
 
 ## [2.8.0] — 2026-10-19
 

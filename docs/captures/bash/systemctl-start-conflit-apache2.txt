@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/systemd/systemctl.1.en.html — démarrage refusé, port 80 déjà utilisé (server/listen.c : AH00072) (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo systemctl start apache2
+Job for apache2.service failed because the control process exited with error code.
+See "systemctl status apache2.service" and "journalctl -xeu apache2.service" for details.

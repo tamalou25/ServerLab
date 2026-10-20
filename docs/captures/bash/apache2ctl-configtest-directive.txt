@@ -1,0 +1,6 @@
+# Source: https://manpages.debian.org/bookworm/apache2/apache2ctl.8.en.html — https://sources.debian.org/data/main/a/apache2/2.4.68-1~deb12u1/debian/apache2ctl et server/config.c (ap_walk_config, invoke_cmd : « Invalid command ») (httpd 2.4.68-1~deb12u1), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo apache2ctl configtest
+AH00526: Syntax error on line 4 of /etc/apache2/sites-enabled/casse.conf:
+Invalid command 'DocumentRot', perhaps misspelled or defined by a module not included in the server configuration
+Action 'configtest' failed.
+The Apache error log may have more information.

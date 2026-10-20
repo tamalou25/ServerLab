@@ -1,0 +1,8 @@
+# Source: https://manpages.debian.org/bookworm/curl/curl.1.en.html — réponse d’Apache reconstituée d’après modules/ssl/ssl_engine_kernel.c (« You’re speaking plain HTTP to an SSL-enabled server port ») (httpd 2.4.68-1~deb12u1) (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: curl -I http://192.168.2.10:443/
+HTTP/1.1 400 Bad Request
+Date: Mon, 05 Jan 2026 08:00:26 GMT
+Server: Apache/2.4.68 (Debian)
+Content-Length: 481
+Content-Type: text/html; charset=iso-8859-1
+

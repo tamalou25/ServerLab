@@ -17,6 +17,8 @@ import { isIpv4 } from '../net/ipv4'
 import { isLinuxHost } from '../model/host'
 import type { EventLogEntry, HostDevice, LabState } from '../model/schema'
 import { firstAddress, resolveName } from '../roles/dns/resolver'
+import { APACHE_LOGS } from './linuxapache'
+import { renderApacheLine } from './linuxapachehost'
 import { findUnit } from './linuxcatalog'
 import { observeSshFailure } from './linuxfail2ban'
 import { parseRsyslog, runningConfigText } from './linuxconfig'
@@ -40,6 +42,13 @@ export const FAIL2BAN_LOG = '/var/log/fail2ban.log'
 
 /** Contenu d'un fichier de journal, calculé depuis le journal de l'ordinateur ; null si le chemin n'en est pas un. */
 export function renderLogFile(host: HostDevice, path: string): string | null {
+  if (path.startsWith(`${APACHE_LOGS}/`)) {
+    // access.log, error.log et journaux des sites d'Apache (v2.9, #238) : une entrée = une ligne
+    const lines = host.host.eventLog
+      .filter((e) => e.source.startsWith('apache2.') && e.account === path && e.message !== '')
+      .map((e) => renderApacheLine(host, e))
+    return lines.length === 0 ? '' : `${lines.join('\n')}\n`
+  }
   if (path !== AUTH_LOG && path !== SYSLOG && path !== FAIL2BAN_LOG) return null
   const traditional = linuxRelease(host) !== 'debian12'
   const wanted = (e: EventLogEntry) =>
@@ -47,7 +56,7 @@ export function renderLogFile(host: HostDevice, path: string): string | null {
       ? isFail2banSource(e.source)
       : path === AUTH_LOG
         ? isAuthSource(e.source)
-        : !isAuthSource(e.source) && !isFail2banSource(e.source)
+        : !isAuthSource(e.source) && !isFail2banSource(e.source) && !e.source.startsWith('apache2.')
   const lines = host.host.eventLog.filter(wanted).map((e) => {
     if (path === FAIL2BAN_LOG) {
       const level = e.source === 'fail2ban.actions' && /\] (Un)?[Bb]an /.test(e.message) ? 'NOTICE' : 'INFO'

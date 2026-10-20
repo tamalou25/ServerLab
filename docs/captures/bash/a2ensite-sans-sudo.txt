@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/apache2/a2enmod.8.en.html — messages du script https://sources.debian.org/data/main/a/apache2/2.4.68-1~deb12u1/debian/a2enmod (add_link : die « Could not create … ») (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: a2ensite site2
+Enabling site site2.
+Could not create /etc/apache2/sites-enabled/site2.conf: Permission denied

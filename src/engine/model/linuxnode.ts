@@ -12,6 +12,8 @@ export const LinuxNodeSchema = z.object({
   group: z.string(),
   /** Contenu texte (même limite que MAX_FILE_CONTENT) ; absent = contenu fourni par le système ou vide. */
   content: z.string().max(65536).optional(),
+  /** Lien symbolique (a2ensite, a2enmod) : cible telle que stockée dans le lien (relative ou absolue), v2.9 #238. */
+  link: z.string().optional(),
   /** Date de modification : horloge du lab (ms). */
   mtime: z.number().default(0)
 })

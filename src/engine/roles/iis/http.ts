@@ -5,6 +5,9 @@
  */
 import type { Certificate, HostDevice, LabState, ServerDevice } from '../../model/schema'
 import { effectiveIpv4 } from '../../net/addressing'
+import { webRespond } from '../../services/linuxhttp'
+import { contentOfHost, hostFiles } from '../../shell/bash/linuxfs'
+import { sourceAddressFor } from '../../sim/forward'
 import { certificateCovers, certificateTrusted } from '../../services/certificates'
 import { concatTraces, type PacketTrace } from '../../sim/trace'
 import { isRevoked } from '../adcs/actions'
@@ -136,6 +139,90 @@ function serve(server: ServerDevice, site: IisSite, path: string): { code: strin
   return { code: '200', file: `${local}\\${found?.name ?? doc}` }
 }
 
+/** Texte lisible d'une page HTML (balises retirées), pour l'affichage du navigateur simulé. */
+function pageText(html: string): string {
+  return html
+    .replace(/<(style|script)[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** Requête GET vers un serveur Linux : Apache2 (services/linuxhttp.ts). Les accès du navigateur ne sont pas journalisés. */
+function linuxGet(
+  state: LabState,
+  client: HostDevice,
+  server: ServerDevice,
+  url: ParsedUrl,
+  ip: string,
+  local: boolean,
+  resolution: PacketTrace | null,
+  display: string,
+  failure: (code: HttpFailure, message: string, trace?: PacketTrace | null) => HttpResult
+): HttpResult {
+  const files = hostFiles(server)
+  const web = webRespond(
+    server,
+    files,
+    (p) => (files[p] ? contentOfHost(server, p, files[p], files) : ''),
+    {
+      scheme: url.protocol,
+      host: url.host,
+      port: url.port,
+      dstIp: ip,
+      path: `/${url.path}`,
+      method: 'GET',
+      clientIp: local ? ip : (sourceAddressFor(state, client, ip) ?? '127.0.0.1'),
+      clientPort: 49152 + ((state.seq * 37) % 16000),
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edg/130.0'
+    },
+    state.clock
+  )
+  const refused = 'failure' in web
+  let trace = resolution
+  if (!local) {
+    const exchange = serverExchange(state, client.id, ip, {
+      protocol: 'HTTP',
+      port: url.port,
+      request: url.protocol === 'https' ? `TLS ClientHello (${url.host})` : `GET /${url.path} HTTP/1.1`,
+      reply: refused
+        ? 'TCP RST'
+        : url.protocol === 'https'
+          ? 'TLS ServerHello, Certificate'
+          : `HTTP/1.1 ${web.status} ${web.statusText}`,
+      fields: [['Hôte', url.host]]
+    })
+    trace = trace ? concatTraces(`HTTP ${url.host}`, [trace, exchange.trace]) : exchange.trace
+    if (!exchange.ok) return failure('ConnectFailed', CONNECT_FAILED, trace)
+  }
+  if (refused) {
+    return web.failure === 'refused'
+      ? failure('ConnectFailed', CONNECT_FAILED, trace)
+      : failure('SecureChannel', SECURE_CHANNEL, trace)
+  }
+  return {
+    kind: 'response',
+    url: display,
+    status: web.status,
+    subStatus: 0,
+    statusText: web.statusText,
+    server,
+    site: null,
+    file: web.file,
+    body: pageText(web.body) || `Réponse de ${web.site}.`,
+    certificate: null,
+    // Le certificat « snakeoil » d'Apache est auto-signé : aucun poste ne l'approuve
+    certificateWarning: web.tls
+      ? 'Le certificat de sécurité présenté par ce site n’a pas été émis par une autorité de certification approuvée.'
+      : null,
+    trace
+  }
+}
+
 /** Requête GET depuis un ordinateur. */
 export function httpGet(state: LabState, clientId: string, urlText: string): HttpResult {
   const client = hostOf(state, clientId)
@@ -167,6 +254,9 @@ export function httpGet(state: LabState, clientId: string, urlText: string): Htt
   }
 
   const server = local ? (client.kind === 'server' ? client : null) : serverAt(state, ip)
+  // Serveur Linux : Apache2 répond d'après sa configuration en vigueur (v2.9, #238)
+  if (server && server.host.os === 'linux')
+    return linuxGet(state, client, server, url, ip, local, trace, display, failure)
   // Service de publication World Wide Web (W3SVC) arrêté : aucun site n'écoute
   const iis =
     server?.host.features.includes('Web-Server') && serviceRunning(server, 'W3SVC')

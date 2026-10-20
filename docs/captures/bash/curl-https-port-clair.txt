@@ -1,0 +1,3 @@
+# Source: https://curl.se/docs/manpage.html — erreur OpenSSL 3 « wrong version number » (SSL_R_WRONG_VERSION_NUMBER), 7.88.1 (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: curl -k https://192.168.2.10:80/
+curl: (35) error:0A00010B:SSL routines::wrong version number

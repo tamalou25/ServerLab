@@ -1,0 +1,8 @@
+# Source: https://curl.se/docs/sslcerts.html — message du client, https://sources.debian.org/data/main/c/curl/7.88.1-10+deb12u15/src/tool_operate.c (CURL_CA_CERT_ERRORMSG) (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: curl https://192.168.2.10/
+curl: (60) SSL certificate problem: self-signed certificate
+More details here: https://curl.se/docs/sslcerts.html
+
+curl failed to verify the legitimacy of the server and therefore could not
+establish a secure connection to it. To learn more about this situation and
+how to fix it, please visit the web page mentioned above.

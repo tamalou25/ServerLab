@@ -1,0 +1,8 @@
+# Source: https://manpages.debian.org/bookworm/curl/curl.1.en.html — réponse d’Apache reconstituée d’après modules/aaa/mod_authz_core.c (Require all denied de apache2.conf) et http_protocol.c (httpd 2.4.68-1~deb12u1) (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: curl -I -H "Host: site3.lab.local" http://192.168.2.10/
+HTTP/1.1 403 Forbidden
+Date: Mon, 05 Jan 2026 08:00:16 GMT
+Server: Apache/2.4.68 (Debian)
+Content-Length: 320
+Content-Type: text/html; charset=iso-8859-1
+

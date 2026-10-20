@@ -10,39 +10,21 @@
 import { transact } from '../../core/result'
 import { LAB_EPOCH_MS } from '../../core/clock'
 import { LINUX_USER } from '../../model/factory'
-import type { LinuxNode } from '../../model/linuxnode'
 import type { HostDevice } from '../../model/schema'
-import { providedText, snapshotOnWrite } from '../../services/linuxconfig'
+import type { LinuxNode } from '../../model/linuxnode'
+import { hostsTextOf, providedText, resolveLink, snapshotOnWrite } from '../../services/linuxconfig'
+import { defaultIndexFor } from '../../services/linuxapache'
 import { renderLogFile } from '../../services/linuxlog'
-import { installedPackages } from '../../services/linuxsystem'
+import { isInstalled } from '../../services/linuxpackages'
+import { defaultLinuxFiles, hostFiles, type LinuxFiles } from '../../services/linuxtree'
 import { CommandFailure, type ExecContext } from '../context'
 
 export type { LinuxNode }
-export type LinuxFiles = Record<string, LinuxNode>
+export type { LinuxFiles }
+export { defaultLinuxFiles, hostFiles }
 
 /** Marqueur de mot de passe de /etc/shadow : AUCUN hachage réel, le mot de passe suit le marqueur. */
 export const SHADOW_MARK = '$sim$'
-
-const SYSTEM_DIRS = [
-  'bin',
-  'boot',
-  'dev',
-  'etc',
-  'home',
-  'lib',
-  'media',
-  'mnt',
-  'opt',
-  'proc',
-  'root',
-  'run',
-  'sbin',
-  'srv',
-  'sys',
-  'tmp',
-  'usr',
-  'var'
-]
 
 /** Utilisateur de la session de la console : `su` le remplace pour la durée de la session. */
 export function bashUser(ctx: ExecContext): string {
@@ -67,135 +49,6 @@ export function byteLength(text: string): number {
 /** Jours écoulés depuis le 01/01/1970 à l'horloge du lab (champ « dernier changement » de shadow). */
 export const epochDays = (clock: number) => Math.floor((LAB_EPOCH_MS + clock) / 86_400_000)
 
-/** Arborescence d'un système neuf : /etc, /var/www, /var/log, /home, /root… */
-export function defaultLinuxFiles(user: string): LinuxFiles {
-  const files: LinuxFiles = {}
-  const dir = (path: string, mode: number, owner = 'root', group = 'root') => {
-    files[path] = { type: 'dir', mode, owner, group, mtime: 0 }
-  }
-  const file = (path: string, mode: number, content: string | undefined, owner = 'root', group = 'root') => {
-    files[path] = {
-      type: 'file',
-      mode,
-      owner,
-      group,
-      mtime: 0,
-      ...(content === undefined ? {} : { content })
-    }
-  }
-  dir('/', 0o755)
-  for (const d of SYSTEM_DIRS) dir(`/${d}`, 0o755)
-  dir('/root', 0o700)
-  dir('/tmp', 0o1777)
-  dir('/var/www', 0o755)
-  dir('/var/www/html', 0o755)
-  dir('/etc/ssh', 0o755)
-  dir('/etc/rsyslog.d', 0o755)
-  dir('/var/log', 0o755, 'root', 'syslog')
-  dir(`/home/${user}`, 0o750, user, user)
-  const hasUser = user !== 'root'
-  file(
-    '/etc/passwd',
-    0o644,
-    [
-      'root:x:0:0:root:/root:/bin/bash',
-      'daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin',
-      'bin:x:2:2:bin:/bin:/usr/sbin/nologin',
-      'sys:x:3:3:sys:/dev:/usr/sbin/nologin',
-      'www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin',
-      'nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin',
-      ...(hasUser ? [`${user}:x:1000:1000:${user},,,:/home/${user}:/bin/bash`] : [])
-    ].join('\n') + '\n'
-  )
-  file(
-    '/etc/group',
-    0o644,
-    [
-      'root:x:0:',
-      'daemon:x:1:',
-      'bin:x:2:',
-      'sys:x:3:',
-      `adm:x:4:${hasUser ? user : ''}`,
-      `sudo:x:27:${hasUser ? user : ''}`,
-      'www-data:x:33:',
-      'shadow:x:42:',
-      'users:x:100:',
-      'syslog:x:104:',
-      'nogroup:x:65534:',
-      ...(hasUser ? [`${user}:x:1000:`] : [])
-    ].join('\n') + '\n'
-  )
-  file(
-    '/etc/shadow',
-    0o640,
-    [
-      'root:*:20458:0:99999:7:::',
-      'daemon:*:20458:0:99999:7:::',
-      'www-data:*:20458:0:99999:7:::',
-      'nobody:*:20458:0:99999:7:::',
-      ...(hasUser ? [`${user}:!:20458:0:99999:7:::`] : [])
-    ].join('\n') + '\n',
-    'root',
-    'shadow'
-  )
-  file(
-    '/etc/sudoers',
-    0o440,
-    [
-      "# This file MUST be edited with the 'visudo' command as root.",
-      '',
-      '# User privilege specification',
-      'root\tALL=(ALL:ALL) ALL',
-      '',
-      '# Members of the admin group may gain root privileges',
-      '%admin ALL=(ALL) ALL',
-      '',
-      '# Allow members of group sudo to execute any command',
-      '%sudo\tALL=(ALL:ALL) ALL',
-      ''
-    ].join('\n')
-  )
-  // Contenu fourni par le système (nom du poste, domaine DHCP) tant qu'il n'est pas modifié
-  file('/etc/hostname', 0o644, undefined)
-  file('/etc/hosts', 0o644, undefined)
-  file('/etc/resolv.conf', 0o644, undefined)
-  file('/var/www/html/index.html', 0o644, '<html><body><h1>It works!</h1></body></html>\n')
-  // Journaux de rsyslog : contenu calculé depuis le journal de l'ordinateur (services/linuxlog.ts)
-  file('/var/log/syslog', 0o640, undefined, 'syslog', 'adm')
-  file('/var/log/auth.log', 0o640, undefined, 'syslog', 'adm')
-  file('/etc/rsyslog.conf', 0o644, undefined)
-  return files
-}
-
-/** Dossiers et fichiers qu'un paquet installé apporte (contenu fourni par services/linuxconfig.ts). */
-const PACKAGE_NODES: Record<string, [string, LinuxNode][]> = {
-  'openssh-server': [
-    ['/etc/ssh/sshd_config.d', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
-    ['/etc/ssh/sshd_config', { type: 'file', mode: 0o644, owner: 'root', group: 'root', mtime: 0 }]
-  ],
-  fail2ban: [
-    ['/etc/fail2ban', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
-    ['/etc/fail2ban/jail.d', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
-    [
-      '/etc/fail2ban/jail.d/defaults-debian.conf',
-      { type: 'file', mode: 0o644, owner: 'root', group: 'root', mtime: 0 }
-    ],
-    ['/var/log/fail2ban.log', { type: 'file', mode: 0o640, owner: 'root', group: 'adm', mtime: 0 }]
-  ]
-}
-
-/** Arborescence complétée des nœuds des paquets installés (ceux déjà présents ne sont pas touchés). */
-function withPackageFiles(files: LinuxFiles, pkgs: string[]): LinuxFiles {
-  const missing = pkgs.flatMap((p) => PACKAGE_NODES[p] ?? []).filter(([path]) => !(path in files))
-  return missing.length === 0 ? files : { ...files, ...Object.fromEntries(missing) }
-}
-
-/** Fichiers d'un serveur ou poste Linux (par défaut tant qu'aucune écriture n'a eu lieu). */
-export function hostFiles(host: HostDevice): LinuxFiles {
-  const base = host.host.linux?.files ?? defaultLinuxFiles(host.host.session?.user ?? LINUX_USER)
-  return withPackageFiles(base, installedPackages(host))
-}
-
 /** Fichiers du poste de la console. */
 export function linuxFiles(ctx: ExecContext): LinuxFiles {
   return hostFiles(ctx.host)
@@ -216,7 +69,7 @@ export function commitFilesOf(ctx: ExecContext, id: string, files: LinuxFiles): 
       const d = draft.devices[id]
       if (d && (d.kind === 'client' || d.kind === 'server')) {
         // Un service garde sa configuration en mémoire jusqu'à son redémarrage (services/linuxconfig.ts)
-        const loaded = snapshotOnWrite(d.host.linux?.loaded, d.host.linux?.files, files)
+        const loaded = snapshotOnWrite(d.host.linux?.loaded, hostFiles(d as HostDevice), files)
         d.host.linux = {
           ...d.host.linux,
           distro: d.host.linux?.distro ?? 'debian12',
@@ -248,25 +101,28 @@ export function resolvConfLines(domain: string | null): string[] {
 }
 
 /** Contenu d'un fichier (contenus système calculés tant que le fichier n'a pas été modifié). */
-export function contentOf(ctx: ExecContext, path: string, node: LinuxNode): string {
-  if (node.content !== undefined) return node.content
+export function contentOfHost(host: HostDevice, path: string, node: LinuxNode, files?: LinuxFiles): string {
+  if (node.link !== undefined) {
+    const target = resolveLink(path, node.link)
+    const all = files ?? hostFiles(host)
+    const targetNode = all[target]
+    return targetNode ? contentOfHost(host, target, targetNode, all) : ''
+  }
+  // apache2 installé : la postinst a copié la page par défaut de Debian dans /var/www/html
+  const content = defaultIndexFor(path, node.content, isInstalled(host, 'apache2'))
+  if (content !== undefined) return content
   const provided = providedText(path)
   if (provided !== undefined) return provided
-  const log = renderLogFile(ctx.host, path)
+  const log = renderLogFile(host, path)
   if (log !== null) return log
-  if (path === '/etc/hostname') return `${ctx.host.name}\n`
-  if (path === '/etc/hosts')
-    return [
-      '127.0.0.1 localhost',
-      `127.0.1.1 ${ctx.host.name}`,
-      '',
-      '# The following lines are desirable for IPv6 capable hosts',
-      '::1     ip6-localhost ip6-loopback',
-      ''
-    ].join('\n')
-  if (path === '/etc/resolv.conf') return `${resolvConfLines(ctx.host.host.domain).join('\n')}\n`
+  if (path === '/etc/hostname') return `${host.name}\n`
+  if (path === '/etc/hosts') return hostsTextOf(host.host.linux?.files, host.name)
+  if (path === '/etc/resolv.conf') return `${resolvConfLines(host.host.domain).join('\n')}\n`
   return ''
 }
+
+export const contentOf = (ctx: ExecContext, path: string, node: LinuxNode): string =>
+  contentOfHost(ctx.host, path, node)
 
 // ---------------------------------------------------------------------------
 // Chemins
