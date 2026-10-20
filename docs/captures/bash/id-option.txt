@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/id.1.en.html
+# Commande: id -Q
+id: invalid option -- 'Q'
+Try 'id --help' for more information.

@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/mkdir.1.en.html
+# Commande: mkdir
+mkdir: missing operand
+Try 'mkdir --help' for more information.

@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/passwd/useradd.8.en.html
+# Commande: useradd bob
+useradd: Permission denied.
+useradd: cannot lock /etc/passwd; try again later.

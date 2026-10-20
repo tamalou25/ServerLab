@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/chown.1.en.html
+# Commande: sudo chown nosuch a.txt
+chown: invalid user: 'nosuch'

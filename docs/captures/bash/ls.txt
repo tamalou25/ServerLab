@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/ls.1.en.html ; mise en forme réelle, valeurs d'exemple du lab (liens, dates)
+# Commande: ls -l /var/www/html
+total 4
+-rw-r--r-- 1 root root 45 Jan  5 08:00 index.html

@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/id.1.en.html
+# Commande: id
+uid=1000(etudiant) gid=1000(etudiant) groups=1000(etudiant),4(adm),27(sudo)

@@ -158,20 +158,5 @@ const resolvectlTool: ToolDef = {
 
 export const dnsBashTools: ToolDef[] = [digTool, resolvectlTool]
 
-/** Contenu de /etc/resolv.conf d'Ubuntu (résolveur local systemd-resolved). */
-export function resolvConfLines(domain: string | null): string[] {
-  return [
-    '# This is /run/systemd/resolve/stub-resolv.conf managed by man:systemd-resolved(8).',
-    '# Do not edit.',
-    '#',
-    "# This file might be symlinked as /etc/resolv.conf. If you're looking at",
-    '# /etc/resolv.conf and seeing this text, you have followed the symlink.',
-    '#',
-    '# Run "resolvectl status" to see details about the uplink DNS servers',
-    '# currently in use.',
-    '',
-    `nameserver ${STUB}`,
-    'options edns0 trust-ad',
-    `search ${domain ?? '.'}`
-  ]
-}
+// Contenu de /etc/resolv.conf : défini avec le système de fichiers Linux simulé
+export { resolvConfLines } from '../../shell/bash/linuxfs'

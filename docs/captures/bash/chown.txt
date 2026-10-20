@@ -1,0 +1,2 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/chown.1.en.html
+# Commande: sudo chown www-data:www-data /var/www/html/index.html

@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/passwd/groupadd.8.en.html
+# Commande: groupadd compta
+groupadd: Permission denied.
+groupadd: cannot lock /etc/group; try again later.

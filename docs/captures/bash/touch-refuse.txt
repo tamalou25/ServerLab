@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/touch.1.en.html
+# Commande: touch /etc/x
+touch: cannot touch '/etc/x': Permission denied

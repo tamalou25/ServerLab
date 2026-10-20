@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/mkdir.1.en.html
+# Commande: mkdir -Q x
+mkdir: invalid option -- 'Q'
+Try 'mkdir --help' for more information.

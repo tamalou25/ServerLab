@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/util-linux/su.1.en.html
+# Commande: su nobody2
+su: user nobody2 does not exist or the user entry does not contain all the required fields

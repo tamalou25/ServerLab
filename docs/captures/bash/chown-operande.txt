@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/chown.1.en.html
+# Commande: chown
+chown: missing operand
+Try 'chown --help' for more information.

@@ -1,0 +1,2 @@
+# Source: https://manpages.debian.org/bookworm/passwd/groupadd.8.en.html
+# Commande: sudo groupadd compta
