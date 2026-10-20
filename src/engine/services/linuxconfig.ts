@@ -11,6 +11,7 @@
  * (voir `snapshotOnWrite`). Fonctions pures, sans dépendance à la console.
  */
 
+import { SMB_CONF_DEFAULT } from './linuxsambadata'
 import { APACHE_DIR, APACHE_PROVIDED, buildConfig, withApacheNodes, type ConfigSource } from './linuxapache'
 
 /** Fichiers vus par ce module : le champ `host.linux.files` (absent = arborescence par défaut). */
@@ -23,6 +24,7 @@ export const RSYSLOG_CONF = '/etc/rsyslog.conf'
 export const RSYSLOG_DIR = '/etc/rsyslog.d'
 export const JAIL_DIR = '/etc/fail2ban/jail.d'
 export const JAIL_LOCAL = '/etc/fail2ban/jail.local'
+export const SMB_CONF = '/etc/samba/smb.conf'
 
 /** /etc/fail2ban/jail.d/defaults-debian.conf du paquet fail2ban 1.0.2-2 (active la prison sshd). */
 export const FAIL2BAN_DEFAULTS_DEBIAN = '[sshd]\nenabled = true\n'
@@ -234,6 +236,7 @@ const PROVIDED: Record<string, string> = {
   ...APACHE_PROVIDED,
   [SSHD_CONFIG]: SSHD_CONFIG_DEFAULT,
   [RSYSLOG_CONF]: RSYSLOG_CONF_DEFAULT,
+  [SMB_CONF]: SMB_CONF_DEFAULT,
   [`${JAIL_DIR}/defaults-debian.conf`]: FAIL2BAN_DEFAULTS_DEBIAN
 }
 
@@ -563,7 +566,7 @@ export function hostsTextOf(files: ConfigFiles, hostname: string): string {
 // ---------------------------------------------------------------------------------------------
 
 /** Unités dont la configuration est lue à leur (re)démarrage. */
-export const CONFIGURED_UNITS = ['ssh', 'rsyslog', 'fail2ban', 'apache2']
+export const CONFIGURED_UNITS = ['ssh', 'rsyslog', 'fail2ban', 'apache2', 'smbd']
 
 /** Texte de configuration actuel (fichiers) d'une unité ; null si l'unité n'a pas de configuration modélisée. */
 export function configTextOf(unit: string, files: ConfigFiles): string | null {
@@ -571,6 +574,7 @@ export function configTextOf(unit: string, files: ConfigFiles): string | null {
   if (unit === 'rsyslog') return rsyslogConfigText(files)
   if (unit === 'fail2ban') return jailConfigText(files)
   if (unit === 'apache2') return apacheBundleText(files)
+  if (unit === 'smbd') return fileText(files, SMB_CONF)
   return null
 }
 

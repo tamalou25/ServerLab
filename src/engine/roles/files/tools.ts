@@ -8,6 +8,7 @@ import {
   canonicalAcl,
   domainToken,
   effectiveAcl,
+  localToken,
   principalName,
   sessionToken,
   type AccessToken
@@ -24,7 +25,9 @@ import {
   setNtfsInheritance
 } from './actions'
 import { findNode, nodePath, parseUnc } from './paths'
-import { mapDrive, openUnc, sessionDrives, unmapDrive } from './smb'
+import { connectShare, mapDrive, openUnc, sessionDrives, unmapDrive } from './smb'
+import { isLinuxServer, linuxShareNames } from './linuxshare'
+import { authenticate as sambaAuthenticate, sambaServer } from '../../shell/bash/sambaaccess'
 import { verifyCredentials } from '../adds/join'
 import { authenticate } from '../adds/credentials'
 import { netAccounts, netGroup, netLocalGroup, netUser } from '../adds/net'
@@ -381,6 +384,13 @@ function connectionToken(
           (d.kind === 'server' || d.kind === 'client') && d.name.toLowerCase() === serverName.toLowerCase()
       )
     : undefined
+  // Serveur Samba : compte Unix / Samba du serveur (v2.9, #239), le domaine saisi est ignoré
+  if (target && isLinuxServer(target)) {
+    const srv = sambaServer(target as ServerDevice)
+    if (srv && sambaAuthenticate(srv, sam, password ?? '').kind === 'failed') return null
+    const base = sessionToken(ctx.state, ctx.deviceId) ?? localToken(ctx.host.name, ctx.user.name)
+    return { ...base, smb: { user: sam, password: password ?? '' } }
+  }
   if (target && domainPart?.toLowerCase() === target.name.toLowerCase())
     return authenticate(ctx.state, target, user, password ?? '')
   const domain = Object.values(ctx.state.domains).find(
@@ -557,7 +567,10 @@ function netUse(ctx: ExecContext, args: string[]): void {
     const opened = openUnc(ctx.state, ctx.deviceId, remote, token)
     ctx.addTrace(opened.trace)
     if (!opened.ok) systemError(ctx, opened.code, opened.error)
-    else ctx.writeLines([DONE, ''])
+    else {
+      ctx.state = connectShare(ctx.state, ctx.deviceId, remote, token)
+      ctx.writeLines([DONE, ''])
+    }
     return
   }
   let letter = local.replace(/:$/, '').toUpperCase()
@@ -601,7 +614,11 @@ function netView(ctx: ExecContext, args: string[]): void {
     (d): d is ServerDevice =>
       d.kind === 'server' && d.name.toLowerCase() === (unc?.server ?? '').toLowerCase()
   )
-  const shares = server ? server.storage.shares.filter((s) => !s.name.endsWith('$')) : []
+  const shares = server
+    ? isLinuxServer(server)
+      ? linuxShareNames(server).map((s) => ({ name: s.name, description: s.comment }))
+      : server.storage.shares.filter((s) => !s.name.endsWith('$'))
+    : []
   const drives = sessionDrives(ctx.host, shellToken(ctx).account)
   ctx.writeLines([
     `Ressources partagées de ${target}`,

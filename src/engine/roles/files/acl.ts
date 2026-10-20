@@ -85,6 +85,8 @@ export interface AccessToken {
   sids: string[]
   /** Membre des Administrateurs de l'ordinateur. */
   admin: boolean
+  /** Identifiants SMB donnés à la connexion d'un serveur Samba (net use /user:, v2.9, #239). */
+  smb?: { user: string; password: string }
 }
 
 const WK = WELL_KNOWN_SIDS

@@ -17,6 +17,7 @@ import { firstAddress, resolveName } from '../dns/resolver'
 import { accessPerms, sharePerms, type AccessToken, type Perm } from './acl'
 import { findShare, shareFolderId } from './actions'
 import { findNode, formatUnc, nodePath, parseUnc } from './paths'
+import { authenticatedUser, forgetShare, isLinuxServer, openLinuxShare, rememberLogin } from './linuxshare'
 
 export const NETWORK_PATH_NOT_FOUND = 'Le chemin réseau n’a pas été trouvé.'
 export const NETWORK_NAME_NOT_FOUND = 'Le nom de réseau est introuvable.'
@@ -128,6 +129,34 @@ export function openUnc(
   if (!located || located.device.kind !== 'server' || !located.device.powered)
     return fail(53, NETWORK_PATH_NOT_FOUND)
   const server = located.device
+  // Serveur Linux : partages Samba (smb.conf en vigueur, droits Unix), v2.9 #239
+  if (isLinuxServer(server)) {
+    if (located.ip) {
+      const smb = serverExchange(state, clientId, located.ip, {
+        protocol: 'SMB',
+        port: 445,
+        request: `SMB2 : connexion à \\\\${unc.server}\\${unc.share || 'IPC$'}`,
+        reply: 'SMB2 : réponse du serveur Samba',
+        fields: [['Chemin', formatUnc(unc)]]
+      })
+      traces.push(smb.trace)
+      if (!smb.ok) return fail(53, NETWORK_PATH_NOT_FOUND)
+    }
+    const opened = openLinuxShare(state, client, server, located.ip, unc.share, unc.rest, token)
+    if (!opened.ok) return fail(opened.code, opened.error)
+    return {
+      ok: true,
+      target: {
+        server: opened.server,
+        share: opened.share,
+        nodeId: opened.nodeId,
+        localPath: opened.localPath,
+        perms: opened.perms,
+        sharePerms: opened.sharePerms
+      },
+      trace: concatTraces(title, traces)
+    }
+  }
   // Service « Serveur » (LanmanServer) arrêté : plus d'accès aux partages (Learn, net stop :
   // « Stopping the Server service prevents users from gaining access to the computer's shared resources »)
   if (!serviceRunning(server, 'LanmanServer')) return fail(53, NETWORK_PATH_NOT_FOUND)
@@ -252,6 +281,10 @@ export function mapDrive(
       persistent: options.persistent ?? true
     }
     host.host.drives.push(drive)
+    if (isLinuxServer(opened.target.server) && unc) {
+      const user = authenticatedUser(state, client, opened.target.server, token)
+      if (user) rememberLogin(draft, clientId, unc.server, user, unc.share)
+    }
     return undefined
   })
   return { state: r.ok ? r.state : state, trace: opened.trace, ok: true, code: 0, message: '' }
@@ -272,8 +305,31 @@ export function unmapDrive(
     return { state, trace: empty, ok: false, code: 2250, message: 'La connexion réseau n’existe pas.' }
   const r = transact(state, (draft) => {
     const host = draft.devices[clientId] as Draft<HostDevice>
-    host.host.drives = host.host.drives.filter((d) => !(mine(d) && (upper === '*' || d.letter === upper)))
+    const removed = host.host.drives.filter((d) => mine(d) && (upper === '*' || d.letter === upper))
+    host.host.drives = host.host.drives.filter((d) => !removed.includes(d))
+    for (const d of removed) {
+      const unc = parseUnc(d.path)
+      if (unc) forgetShare(draft, clientId, unc.server, unc.share)
+    }
     return undefined
   })
   return { state: r.ok ? r.state : state, trace: empty, ok: true, code: 0, message: '' }
+}
+
+/** Connexion à un partage sans lettre de lecteur (net use \\\\srv\\partage) : mémorise la connexion d'un serveur Samba. */
+export function connectShare(
+  state: LabState,
+  clientId: string,
+  path: string,
+  token: AccessToken | null
+): LabState {
+  const client = hostOf(state, clientId)
+  const unc = parseUnc(path)
+  if (!client || !unc) return state
+  const opened = openUnc(state, clientId, path, token)
+  if (!opened.ok || !isLinuxServer(opened.target.server)) return state
+  const user = authenticatedUser(state, client, opened.target.server, token)
+  if (!user) return state
+  const r = transact(state, (draft) => rememberLogin(draft, clientId, unc.server, user, unc.share))
+  return r.ok ? r.state : state
 }

@@ -560,7 +560,21 @@ export const HostSchema = z.object({
         )
         .optional(),
       /** Serveurs SSH dont la clé d'hôte a été acceptée (nom ou adresse tapés) ; Linux et Windows. */
-      knownHosts: z.array(z.string()).optional()
+      knownHosts: z.array(z.string()).optional(),
+      /**
+       * Connexions SMB ouvertes depuis cet ordinateur (poste Windows) vers un serveur Samba : serveur
+       * (nom en minuscules), compte Samba vérifié, horloge du lab à la connexion et partages (v2.9, #239).
+       */
+      smbLogins: z
+        .array(
+          z.object({
+            server: z.string(),
+            user: z.string(),
+            time: z.number(),
+            shares: z.array(z.string()).default([])
+          })
+        )
+        .optional()
     })
     .optional(),
   workgroup: z.string().default('WORKGROUP'),

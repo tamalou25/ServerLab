@@ -57,6 +57,12 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   (certificat auto-signé), `access.log` / `error.log`, conflit de port ; visible par `curl` (bash) et par le navigateur et
   `Invoke-WebRequest` d'un poste Windows. État en champs facultatifs de `host.linux` (format `.slab` 27 inchangé, nœud
   de fichier `link`), 59 captures `docs/captures/bash`, tests golden et de comportement, L-70 à L-79 dans `docs/fidelite.md`.
+- Samba sur serveur Linux et interopérabilité Windows (#239) : `smb.conf` du paquet Debian (relu au `restart` / `reload`),
+  `testparm` (messages de `testparm.c`, paramètres inconnus), `smbpasswd -a/-x/-d/-e/-n`, `pdbedit -L/-x`, `smbstatus`,
+  `smbclient -L` et `-c ls/cd/mkdir` ; partages (`path`, `read only`, `valid users`, `guest ok`, `write list`, `force user`,
+  `hosts allow`, `[homes]`…) avec les droits Unix du compte appliqués ; accès depuis un poste Windows (`net use`, `net view`,
+  Explorateur, `dir`, `type`, `mkdir`, `echo >`, `del`). État en champs facultatifs de `host.linux` (format `.slab` 27
+  inchangé), 39 captures `docs/captures/bash`, tests golden et de comportement, L-80 à L-89 dans `docs/fidelite.md`.
 
 ## [2.8.0] — 2026-10-19
 

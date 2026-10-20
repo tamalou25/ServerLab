@@ -1,0 +1,28 @@
+# Source: https://manpages.debian.org/bookworm/samba/smbpasswd.8.en.html — https://sources.debian.org/src/samba/2:4.17.12+dfsg-0+deb12u4/source3/utils/smbpasswd.c et source3/passdb/passdb.c (local_password_change) (samba 4.17.12), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: smbpasswd -a alice
+When run by root:
+    smbpasswd [options] [username]
+otherwise:
+    smbpasswd [options]
+
+options:
+  -L                   local mode (must be first option)
+  -h                   print this usage message
+  -s                   use stdin for password prompt
+  -c smb.conf file     Use the given path to the smb.conf file
+  -D LEVEL             debug level
+  -r MACHINE           remote machine
+  -U USER              remote username (e.g. SAM/user)
+
+extra options when run by root or in local mode:
+  -a                   add user
+  -d                   disable user
+  -e                   enable user
+  -i                   interdomain trust account
+  -m                   machine trust account
+  -n                   set no password
+  -W                   use stdin ldap admin password
+  -w PASSWORD          ldap admin password
+  -x                   delete user
+  -R ORDER             name resolve order
+

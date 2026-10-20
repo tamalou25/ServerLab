@@ -54,7 +54,19 @@ const BASH = [
   'ab',
   'openssl',
   'certbot',
-  'ln'
+  'ln',
+  // Samba (v2.9, #239) : seuls testparm, smbpasswd, pdbedit, smbstatus, smbclient (-L et -c ls) sont simulés
+  'smbd',
+  'nmbd',
+  'samba-tool',
+  'smbcontrol',
+  'smbtree',
+  'smbget',
+  'smbcacls',
+  'nmblookup',
+  'wbinfo',
+  'winbindd',
+  'mount.cifs'
 ]
 
 const KNOWN = { cmd: new Set(CMD), ps: new Set(PS), bash: new Set(BASH) }
