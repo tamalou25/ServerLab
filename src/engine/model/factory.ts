@@ -55,6 +55,9 @@ export const DEFAULT_LOCAL_USER = { server: 'Administrateur', client: 'Utilisate
 export const LINUX_USER = 'etudiant'
 export const LINUX_NAME_PREFIX = 'LNX'
 export const LINUX_INTERFACE = 'eth0'
+/** Serveur Linux (Debian 12 simulé) : compte d'administration (sudo) et préfixe de nom. */
+export const LINUX_SERVER_USER = 'admin'
+export const LINUX_SERVER_NAME_PREFIX = 'LSRV'
 
 /** Fonctionnalités présentes dès l'installation d'un serveur. */
 export const DEFAULT_SERVER_FEATURES = ['FS-FileServer', 'PowerShell']
@@ -64,14 +67,17 @@ export function createHost(kind: 'server' | 'client', os: HostOs = 'windows'): H
     os,
     workgroup: 'WORKGROUP',
     domain: null,
-    features: kind === 'server' ? [...DEFAULT_SERVER_FEATURES] : os === 'linux' ? [] : ['PowerShell'],
+    features: os === 'linux' ? [] : kind === 'server' ? [...DEFAULT_SERVER_FEATURES] : ['PowerShell'],
     pendingReboot: false,
     adminTargets: [],
     controlled: false,
     pendingName: null,
     pendingDomain: null,
     localAdminPassword: 'P@ssw0rd',
-    session: { user: os === 'linux' ? LINUX_USER : DEFAULT_LOCAL_USER[kind], domain: null },
+    session: {
+      user: os === 'linux' ? (kind === 'server' ? LINUX_SERVER_USER : LINUX_USER) : DEFAULT_LOCAL_USER[kind],
+      domain: null
+    },
     bootedAt: 0,
     clockOffsetSeconds: 0,
     policy: { computer: null, user: null, attempt: null },
@@ -154,7 +160,12 @@ export function nextDeviceName(
   os: HostOs = 'windows'
 ): string {
   const used = new Set(Object.values(state.devices).map((d) => d.name.toUpperCase()))
-  const prefix = os === 'linux' ? LINUX_NAME_PREFIX : DEVICE_KIND_INFO[kind].namePrefix
+  const prefix =
+    os === 'linux'
+      ? kind === 'server'
+        ? LINUX_SERVER_NAME_PREFIX
+        : LINUX_NAME_PREFIX
+      : DEVICE_KIND_INFO[kind].namePrefix
   for (let n = 1; ; n++) {
     const candidate = `${prefix}${n}`
     if (!used.has(candidate)) return candidate
@@ -167,12 +178,12 @@ export function buildDevice(
   kind: DeviceKind,
   position: Position,
   name?: string,
-  /** Poste Linux (Ubuntu simulé) : kind « client » et os « linux ». */
+  /** Poste Linux (Ubuntu) ou serveur Linux (Debian 12) : os « linux » sur un client ou un serveur. */
   os: HostOs = 'windows',
   /** Équipement Cisco IOS (routeur ou switch du même type que `kind`). */
   model?: IosModel
 ): Device {
-  const linux = kind === 'client' && os === 'linux'
+  const linux = (kind === 'client' || kind === 'server') && os === 'linux'
   const id = `d${nextSeq(draft)}`
   const deviceName = name ?? nextDeviceName(draft, kind, linux ? 'linux' : 'windows')
   const ios = model && IOS_MODEL_INFO[model].kind === kind ? model : undefined
@@ -188,7 +199,9 @@ export function buildDevice(
       return {
         ...base,
         kind,
-        host: createHost('server'),
+        host: linux
+          ? { ...createHost('server', 'linux'), linux: { distro: 'debian12' as const } }
+          : createHost('server'),
         roles: {},
         storage: { rootAcl: defaultRootAcl(), nodes: defaultFsNodes(), shares: [] }
       }

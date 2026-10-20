@@ -530,6 +530,15 @@ archivé « NET TIME and w32time » (lignes `Current time at \\DC-01.mydomain.co
 - La tolérance Kerberos est fixée à 300 s (pas de lecture de la stratégie « Maximum tolerance » du domaine).
 - `Set-Date` : paramètres `-Date` et `-Adjust` seuls (`-DisplayHint`, `-Date` objet DateTime et `Set-Date` hors droits administrateur non simulés).
 
+## v2.9 — Serveurs Linux
+
+Le serveur Linux (#234) réutilise la console bash du poste Linux : aucune commande nouvelle. Seul le texte d'accueil
+change selon le système.
+
+| ID   | Commande                                       | Statut                                                                                                                                                                                                                                                                         |
+| ---- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| L-01 | Bannière de la console bash d'un serveur Linux | Ajouté : « Debian GNU/Linux 12 (simulé) — ServerLab » (« Ubuntu 24.04 LTS » si `host.linux.distro` vaut `ubuntu2404`) à la place de la bannière du poste Ubuntu 22.04. Texte propre à ServerLab (comme celle du poste), pas une sortie de système réel ; compte `admin` (sudo) |
+
 ## Équipements Cisco IOS (v2.5)
 
 Écarts connus avec le vrai IOS (IOS 15.x sur 1921 / 2811 / 2960, IOS-XE 17 sur 9200). Même règle : on

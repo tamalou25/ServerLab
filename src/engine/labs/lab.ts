@@ -25,6 +25,8 @@ export const LabDeviceSchema = z.object({
   name: z.string(),
   /** Routeur ou switch Cisco IOS (1921, 2811, 2960, 9200) : console IOS à la place de la configuration graphique. */
   model: z.enum(IOS_MODELS).optional(),
+  /** Système Linux (serveur Debian 12 ou poste Ubuntu) à la place de Windows. */
+  os: z.literal('linux').optional(),
   /**
    * Configuration IOS de départ : lignes saisies dans la console, comme à la main (« enable »,
    * « configure terminal », « interface Gi0/0 »… « end »).
@@ -271,7 +273,8 @@ function buildDeclarativeStart(start: LabDeclarativeStart): LabState {
         kind: d.kind,
         position: { x: d.x, y: d.y },
         name: d.name,
-        ...(d.model ? { model: d.model } : {})
+        ...(d.model ? { model: d.model } : {}),
+        ...(d.os ? { os: d.os } : {})
       })
     )
     ids.set(d.name.toLowerCase(), id)

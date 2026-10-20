@@ -26,7 +26,7 @@ interface PaletteGroup {
 }
 
 const GROUPS: PaletteGroup[] = [
-  { id: 'servers', kinds: ['server'] },
+  { id: 'servers', kinds: ['server', 'linux-server'] },
   { id: 'clients', kinds: ['client', 'linux'] },
   { id: 'network', kinds: ['switch', 'router'] },
   { id: 'cisco', kinds: ['c1921', 'c2811', 'c2960', 'c9200'] },

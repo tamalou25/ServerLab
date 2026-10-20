@@ -5,6 +5,7 @@
 export * from './model/kinds'
 export * from './model/schema'
 export * from './model/factory'
+export * from './model/host'
 export * from './ios/models'
 export * from './core/result'
 export * from './net/ipv4'

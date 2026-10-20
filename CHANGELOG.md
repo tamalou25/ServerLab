@@ -4,6 +4,18 @@ Toutes les évolutions notables de ServerLab sont consignées ici.
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · versions : [SemVer](https://semver.org/lang/fr/).
 La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
+## [Non publié]
+
+### v2.9 (serveurs Linux) — format `.slab` 27
+
+- Serveur Linux (#234) : `host.os = 'linux'` autorisé sur `kind: 'server'` (Debian 12 simulé, préfixe `LSRV`, carte
+  `eth0`, compte `admin` avec sudo, aucune fonctionnalité Windows). Console bash, `ip`, montage SMB et `realm` du poste
+  Linux réutilisés ; prédicat unique `isLinuxHost(device)` (`src/engine/model/host.ts`) à la place des tests
+  `kind === 'client' && os === 'linux'`.
+- Format `.slab` 27 : champ facultatif `host.linux { distro: 'debian12' | 'ubuntu2404' }` ; migration 26 → 27 (la version
+  seule change), fichier de référence `v27.slab` (serveur LSRV1).
+- Palette : entrée « Serveur Linux » (groupe Serveurs). Labs déclaratifs : champ facultatif `os: "linux"` d'un équipement.
+
 ## [2.8.0] — 2026-10-19
 
 Services à état et mode panne. Format `.slab` 26 (migration 25 → 26 : horloge par ordinateur). Les sorties sans source

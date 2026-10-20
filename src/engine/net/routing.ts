@@ -1,6 +1,7 @@
 /**
  * Tables de routage : routes connectées, statiques et passerelle par défaut.
  */
+import { isLinuxHost } from '../model/host'
 import type { Device, LabState } from '../model/schema'
 import { effectiveIpv4 } from './addressing'
 import { inNetwork, networkAddress, parseIpv4, prefixToMaskInt } from './ipv4'
@@ -27,7 +28,7 @@ export interface Route {
 export function initialTtl(device: Device): number {
   if (device.kind === 'router' || device.kind === 'switch' || device.kind === 'cloud') return 255
   // Linux : net.ipv4.ip_default_ttl = 64 ; Windows : 128
-  return device.kind === 'client' && device.host.os === 'linux' ? 64 : 128
+  return isLinuxHost(device) ? 64 : 128
 }
 
 /**
