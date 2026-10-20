@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/passwd/passwd.1.en.html (invites de saisie non reproduites)
+# Commande: passwd
+Changing password for etudiant.
+passwd: password updated successfully

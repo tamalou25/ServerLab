@@ -1,0 +1,5 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/ls.1.en.html ; mise en forme réelle, valeurs d'exemple du lab (liens, dates)
+# Commande: ls -la /home/etudiant
+total 8
+drwxr-x--- 2 etudiant etudiant 4096 Jan  5 08:00 .
+drwxr-xr-x 3 root     root     4096 Jan  5 08:00 ..

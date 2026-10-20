@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/passwd/groupadd.8.en.html
+# Commande: sudo groupadd sudo
+groupadd: group 'sudo' already exists

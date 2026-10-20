@@ -1,0 +1,2 @@
+# Source: https://manpages.debian.org/bookworm/passwd/useradd.8.en.html
+# Commande: sudo useradd -m bob

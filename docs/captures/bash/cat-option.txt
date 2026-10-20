@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/cat.1.en.html
+# Commande: cat -Q /etc/hostname
+cat: invalid option -- 'Q'
+Try 'cat --help' for more information.

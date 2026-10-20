@@ -7,6 +7,7 @@
  * (`.default(...)`) pour rester compatible avec les fichiers existants.
  */
 import { z } from 'zod'
+import { LinuxNodeSchema } from './linuxnode'
 import { DEVICE_KINDS } from './kinds'
 import { IOS_ROUTER_MODELS, IOS_SWITCH_MODELS } from '../ios/models'
 import { DhcpExclusionSchema, DhcpServerSchema } from './dhcp'
@@ -531,7 +532,13 @@ export type LinuxDistro = (typeof LINUX_DISTROS)[number]
 export const HostSchema = z.object({
   os: z.enum(HOST_OS).default('windows'),
   /** Serveur Linux : distribution (absent = debian12). Sans effet sur un ordinateur Windows. */
-  linux: z.object({ distro: z.enum(LINUX_DISTROS).default('debian12') }).optional(),
+  linux: z
+    .object({
+      distro: z.enum(LINUX_DISTROS).default('debian12'),
+      /** Fichiers modifiés (chemin absolu → nœud), v2.9 ; absent = arborescence par défaut. */
+      files: z.record(z.string(), LinuxNodeSchema).optional()
+    })
+    .optional(),
   workgroup: z.string().default('WORKGROUP'),
   /** Domaine AD rejoint (FQDN) ou null si groupe de travail. */
   domain: z.string().nullable().default(null),

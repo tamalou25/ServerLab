@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/passwd/usermod.8.en.html
+# Commande: usermod -aG sudo etudiant
+usermod: Permission denied.
+usermod: cannot lock /etc/passwd; try again later.

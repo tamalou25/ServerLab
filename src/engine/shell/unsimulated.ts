@@ -28,7 +28,22 @@ const BASH = [
   'ufw',
   'iptables',
   'nmcli',
-  'traceroute'
+  'traceroute',
+  // Éditeurs et commandes de fichiers hors du périmètre simulé (v2.9)
+  'vi',
+  'vim',
+  'emacs',
+  'rm',
+  'cp',
+  'mv',
+  'head',
+  'tail',
+  'wc',
+  'less',
+  'find',
+  'groupdel',
+  'userdel',
+  'visudo'
 ]
 
 const KNOWN = { cmd: new Set(CMD), ps: new Set(PS), bash: new Set(BASH) }

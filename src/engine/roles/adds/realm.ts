@@ -7,6 +7,7 @@ import type { Draft } from 'immer'
 import { transact, type EngineResult } from '../../core/result'
 import type { AdGroup, AdUser, Domain, HostDevice, LabState } from '../../model/schema'
 import { CommandFailure } from '../../shell/context'
+import { runId } from '../../shell/bash/accounts'
 import type { ToolDef } from '../../shell/tools/types'
 import { findPrincipal } from './directory'
 import { accountName, joinDomain } from './join'
@@ -145,15 +146,8 @@ const idTool: ToolDef = {
   synopsis: 'Affiche les identifiants d’un compte (local ou du domaine : id jdupont@lab.local).',
   run(ctx, args) {
     const name = args.find((a) => !a.startsWith('-'))
-    const session = ctx.host.host.session?.user ?? 'etudiant'
-    if (!name || (!name.includes('@') && name === session)) {
-      ctx.write(
-        ctx.root && !name
-          ? 'uid=0(root) gid=0(root) groups=0(root)'
-          : `uid=1000(${session}) gid=1000(${session}) groups=1000(${session}),4(adm),27(sudo)`
-      )
-      return
-    }
+    // Comptes locaux (/etc/passwd) : id de coreutils sur le système de fichiers simulé
+    if (!name?.includes('@')) return runId(ctx, args)
     // Comptes du domaine : nom qualifié (use_fully_qualified_names de sssd)
     const domain = ctx.host.host.domain ? ctx.state.domains[ctx.host.host.domain] : undefined
     const [sam, realm] = name.split('@')
