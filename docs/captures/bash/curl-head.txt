@@ -1,4 +1,12 @@
-# Source: https://manpages.debian.org/bookworm/curl/curl.1.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Source: https://manpages.debian.org/bookworm/curl/curl.1.en.html — en-têtes d’Apache reconstitués d’après modules/http/http_protocol.c et http_etag.c (httpd 2.4.68-1~deb12u1, sources.debian.org) (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
 # Commande: curl -I http://192.168.2.10
 HTTP/1.1 200 OK
+Date: Mon, 05 Jan 2026 08:00:13 GMT
 Server: Apache/2.4.68 (Debian)
+Last-Modified: Mon, 05 Jan 2026 08:00:00 GMT
+ETag: "29cd-6479f721ae000"
+Accept-Ranges: bytes
+Content-Length: 10701
+Vary: Accept-Encoding
+Content-Type: text/html
+

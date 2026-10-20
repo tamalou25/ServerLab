@@ -3,6 +3,7 @@
  * la commande de l'en-tête est rejouée sur un poste Linux préparé et sa sortie (standard + erreurs)
  * est comparée ligne par ligne. Les invites de saisie (mots de passe) ne font pas partie des lignes.
  */
+import { APACHE_STEPS } from './bash-apache-golden.test'
 import { SSH_STEPS } from './bash-ssh-golden.test'
 import { STEPS } from './bash-system-golden.test'
 import { readdirSync } from 'node:fs'
@@ -122,7 +123,9 @@ describe('captures bash (docs/captures/bash)', () => {
     const system = STEPS.map(([name]) => name)
     // Captures SSH, fail2ban et rsyslog (#237) : testées par bash-ssh-golden.test.ts
     const ssh = SSH_STEPS.map(([name]) => name)
-    expect(files).toEqual([...Object.keys(CASES), ...system, ...ssh].sort())
+    // Captures Apache2 (#238) : testées par bash-apache-golden.test.ts
+    const apache = APACHE_STEPS.map(([name]) => name)
+    expect(files).toEqual([...Object.keys(CASES), ...system, ...ssh, ...apache].sort())
   })
 
   it('chaque commande simulée de ce chantier a au moins une capture sourcée', () => {

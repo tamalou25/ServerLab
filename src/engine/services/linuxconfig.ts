@@ -11,8 +11,11 @@
  * (voir `snapshotOnWrite`). Fonctions pures, sans dépendance à la console.
  */
 
+import { APACHE_DIR, APACHE_PROVIDED, buildConfig, withApacheNodes, type ConfigSource } from './linuxapache'
+
 /** Fichiers vus par ce module : le champ `host.linux.files` (absent = arborescence par défaut). */
-export type ConfigFiles = Record<string, { type: 'file' | 'dir'; content?: string }> | undefined
+export type ConfigFiles =
+  Record<string, { type: 'file' | 'dir'; content?: string; link?: string }> | undefined
 
 export const SSHD_CONFIG = '/etc/ssh/sshd_config'
 export const SSHD_DROPIN_DIR = '/etc/ssh/sshd_config.d'
@@ -228,6 +231,7 @@ export const RSYSLOG_CONF_DEFAULT =
 
 /** Contenu fourni par le paquet tant que le fichier n'est pas modifié (chemin → texte). */
 const PROVIDED: Record<string, string> = {
+  ...APACHE_PROVIDED,
   [SSHD_CONFIG]: SSHD_CONFIG_DEFAULT,
   [RSYSLOG_CONF]: RSYSLOG_CONF_DEFAULT,
   [`${JAIL_DIR}/defaults-debian.conf`]: FAIL2BAN_DEFAULTS_DEBIAN
@@ -236,9 +240,23 @@ const PROVIDED: Record<string, string> = {
 /** Contenu par défaut d'un fichier fourni par un paquet (undefined si le chemin n'en a pas). */
 export const providedText = (path: string): string | undefined => PROVIDED[path]
 
-/** Texte d'un fichier de configuration ; null s'il n'existe pas. */
-export function fileText(files: ConfigFiles, path: string): string | null {
+/** Chemin absolu normalisé (., ..) d'une cible de lien relative au dossier du lien. */
+export function resolveLink(linkPath: string, target: string): string {
+  const base = target.startsWith('/') ? target : `${linkPath.replace(/\/[^/]*$/, '')}/${target}`
+  const parts: string[] = []
+  for (const part of base.split('/')) {
+    if (part === '' || part === '.') continue
+    if (part === '..') parts.pop()
+    else parts.push(part)
+  }
+  return `/${parts.join('/')}`
+}
+
+/** Texte d'un fichier de configuration (liens symboliques suivis) ; null s'il n'existe pas. */
+export function fileText(files: ConfigFiles, path: string, depth = 0): string | null {
   const node = files?.[path]
+  if (node?.link !== undefined)
+    return depth > 8 ? null : fileText(files, resolveLink(path, node.link), depth + 1)
   if (node?.type === 'file' && node.content !== undefined) return node.content
   if (path in PROVIDED && (!node || node.type === 'file')) return PROVIDED[path] as string
   return node?.type === 'file' ? '' : null
@@ -489,17 +507,70 @@ export function parseJails(text: string): JailConfig[] {
 }
 
 // ---------------------------------------------------------------------------------------------
+// apache2
+// ---------------------------------------------------------------------------------------------
+
+/** Source de configuration d'Apache lue dans les fichiers (nœuds du paquet compris). */
+export function apacheSource(files: ConfigFiles): ConfigSource {
+  const all = withApacheNodes(files ?? {})
+  return {
+    read: (path) => fileText(all, path),
+    glob: (dir, suffix) => dropIns(all, dir, suffix)
+  }
+}
+
+/** Fichiers de configuration lus par Apache (c'est ce texte qu'il garde en mémoire) ; null sans /etc/apache2. */
+export function apacheBundleText(files: ConfigFiles): string | null {
+  if (!files || !(APACHE_DIR in files)) return null
+  return JSON.stringify(buildConfig(apacheSource(files)).files)
+}
+
+/** Source de configuration relue d'un instantané (`apacheBundleText`). */
+export function bundleSource(text: string): ConfigSource {
+  let bundle: Record<string, string> = {}
+  try {
+    bundle = JSON.parse(text) as Record<string, string>
+  } catch {
+    bundle = {}
+  }
+  return {
+    read: (path) => bundle[path] ?? null,
+    glob: (dir, suffix) =>
+      Object.keys(bundle)
+        .filter(
+          (p) => p.startsWith(`${dir}/`) && !p.slice(dir.length + 1).includes('/') && p.endsWith(suffix)
+        )
+        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+  }
+}
+
+/** Contenu de /etc/hosts (celui du fichier, sinon le contenu par défaut d'un système neuf). */
+export function hostsTextOf(files: ConfigFiles, hostname: string): string {
+  const node = files?.['/etc/hosts']
+  if (node?.content !== undefined) return node.content
+  return [
+    '127.0.0.1 localhost',
+    `127.0.1.1 ${hostname}`,
+    '',
+    '# The following lines are desirable for IPv6 capable hosts',
+    '::1     ip6-localhost ip6-loopback',
+    ''
+  ].join('\n')
+}
+
+// ---------------------------------------------------------------------------------------------
 // Configuration en vigueur
 // ---------------------------------------------------------------------------------------------
 
 /** Unités dont la configuration est lue à leur (re)démarrage. */
-export const CONFIGURED_UNITS = ['ssh', 'rsyslog', 'fail2ban']
+export const CONFIGURED_UNITS = ['ssh', 'rsyslog', 'fail2ban', 'apache2']
 
 /** Texte de configuration actuel (fichiers) d'une unité ; null si l'unité n'a pas de configuration modélisée. */
 export function configTextOf(unit: string, files: ConfigFiles): string | null {
   if (unit === 'ssh') return sshdConfigText(files)
   if (unit === 'rsyslog') return rsyslogConfigText(files)
   if (unit === 'fail2ban') return jailConfigText(files)
+  if (unit === 'apache2') return apacheBundleText(files)
   return null
 }
 

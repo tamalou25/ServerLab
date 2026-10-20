@@ -44,7 +44,17 @@ const BASH = [
   'sshd',
   'rsyslogd',
   'fail2ban-regex',
-  'fail2ban-server'
+  'fail2ban-server',
+  // Apache2 (v2.9, #238) : seuls a2ensite, a2dissite, a2enmod, a2dismod, a2enconf, a2disconf, apache2ctl,
+  // apachectl et curl sont simulés
+  'apache2',
+  'a2query',
+  'htpasswd',
+  'htdigest',
+  'ab',
+  'openssl',
+  'certbot',
+  'ln'
 ]
 
 const KNOWN = { cmd: new Set(CMD), ps: new Set(PS), bash: new Set(BASH) }

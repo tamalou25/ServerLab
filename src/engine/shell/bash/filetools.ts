@@ -4,6 +4,7 @@
  * à chaque accès ; les messages sont ceux de coreutils 9.1 et de sed 4.9 (Debian 12, locale C).
  */
 import { LAB_EPOCH_MS } from '../../core/clock'
+import { resolveLink } from '../../services/linuxconfig'
 import { CommandFailure, type ExecContext } from '../context'
 import type { ToolDef } from '../tools/types'
 import { getopt, type ParsedOpts } from './getopt'
@@ -88,9 +89,13 @@ export function putFile(
   ctx: ExecContext,
   opts: { user: string; clock: number; append?: boolean }
 ): void {
-  const node = files[path]
+  let target = path
+  // Écrire dans un lien symbolique écrit dans sa cible (contrairement à sed -i, qui remplace le lien)
+  for (let i = 0; i < 8 && files[target]?.link !== undefined; i++)
+    target = resolveLink(target, files[target]?.link as string)
+  const node = files[target]
   if (node) {
-    node.content = opts.append ? `${contentOf(ctx, path, node)}${text}` : text
+    node.content = opts.append ? `${contentOf(ctx, target, node)}${text}` : text
     node.mtime = opts.clock
   } else {
     files[path] = {
@@ -133,13 +138,17 @@ interface LsEntry {
 }
 
 const sizeOf = (ctx: ExecContext, e: LsEntry): number =>
-  e.node.type === 'dir' ? 4096 : byteLength(contentOf(ctx, e.path, e.node))
+  e.node.type === 'dir'
+    ? 4096
+    : e.node.link !== undefined
+      ? byteLength(e.node.link)
+      : byteLength(contentOf(ctx, e.path, e.node))
 const blocksOf = (ctx: ExecContext, e: LsEntry): number =>
   e.node.type === 'dir' ? 4 : Math.ceil(sizeOf(ctx, e) / 4096) * 4
 
 function longLines(ctx: ExecContext, files: LinuxFiles, entries: LsEntry[]): string[] {
   const rows = entries.map((e) => ({
-    mode: `${e.node.type === 'dir' ? 'd' : '-'}${modeString(e.node.mode)}`,
+    mode: `${e.node.type === 'dir' ? 'd' : e.node.link !== undefined ? 'l' : '-'}${modeString(e.node.mode)}`,
     links: String(
       e.node.type === 'dir' ? 2 + childrenOf(files, e.path).filter((c) => files[c]?.type === 'dir').length : 1
     ),
@@ -147,7 +156,7 @@ function longLines(ctx: ExecContext, files: LinuxFiles, entries: LsEntry[]): str
     group: e.node.group,
     size: String(sizeOf(ctx, e)),
     date: lsDate(e.node.mtime),
-    name: e.name
+    name: e.node.link !== undefined ? `${e.name} -> ${e.node.link}` : e.name
   }))
   const w = (key: 'links' | 'owner' | 'group' | 'size') => Math.max(0, ...rows.map((r) => r[key].length))
   return rows.map(
@@ -547,6 +556,18 @@ const sedTool: ToolDef = {
           'error'
         )
         continue
+      }
+      // sed -i remplace le fichier (donc un lien symbolique devient un fichier ordinaire)
+      // (le nouveau fichier reprend les droits de la cible, comme le fait GNU sed)
+      const linkTarget = (next[path] as LinuxNode).link
+      if (linkTarget !== undefined) {
+        const source = next[resolveLink(path, linkTarget)]
+        delete (next[path] as LinuxNode).link
+        if (source) {
+          ;(next[path] as LinuxNode).mode = source.mode
+          ;(next[path] as LinuxNode).owner = source.owner
+          ;(next[path] as LinuxNode).group = source.group
+        }
       }
       ;(next[path] as LinuxNode).content = out
       ;(next[path] as LinuxNode).mtime = ctx.state.clock

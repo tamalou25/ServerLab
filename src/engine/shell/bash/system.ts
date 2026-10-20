@@ -304,7 +304,9 @@ const unitFile = (ctx: ExecContext, unit: LinuxUnit) =>
   `${linuxRelease(ctx.host) === 'ubuntu2404' ? '/usr/lib' : '/lib'}/systemd/system/${unit.name}.service`
 
 function journalLine(ctx: ExecContext, clock: number, message: string): string {
-  return `${journalStamp(ctx.host, clock)} ${ctx.host.name} systemd[1]: ${message}`
+  // Messages d'un processus de l'unité (« apachectl[1000]: … ») : leur propre nom de programme
+  const own = /^[\w-]+\[\d+\]: /.test(message)
+  return `${journalStamp(ctx.host, clock)} ${ctx.host.name} ${own ? '' : 'systemd[1]: '}${message}`
 }
 
 /** Les utilisateurs de Debian hors groupe adm ne lisent pas le journal sans sudo. */

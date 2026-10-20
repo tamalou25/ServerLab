@@ -1,0 +1,5 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/ls.1.en.html — lien symbolique relatif posé par a2ensite (debian/a2enmod : add_link) sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: ls -l /etc/apache2/sites-enabled
+total 8
+lrwxrwxrwx 1 root root 35 Jan  5 08:00 000-default.conf -> ../sites-available/000-default.conf
+lrwxrwxrwx 1 root root 29 Jan  5 08:00 site1.conf -> ../sites-available/site1.conf

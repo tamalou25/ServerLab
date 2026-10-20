@@ -1,0 +1,9 @@
+# Source: https://manpages.debian.org/bookworm/curl/curl.1.en.html — réponse d’Apache reconstituée d’après modules/mappers/mod_dir.c (redirection vers le dossier avec « / ») (httpd 2.4.68-1~deb12u1) (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: curl -I http://192.168.2.10/docs
+HTTP/1.1 301 Moved Permanently
+Date: Mon, 05 Jan 2026 08:00:10 GMT
+Server: Apache/2.4.68 (Debian)
+Location: http://192.168.2.10/docs/
+Content-Length: 351
+Content-Type: text/html; charset=iso-8859-1
+

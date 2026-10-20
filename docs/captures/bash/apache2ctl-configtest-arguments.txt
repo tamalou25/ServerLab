@@ -1,0 +1,6 @@
+# Source: https://manpages.debian.org/bookworm/apache2/apache2ctl.8.en.html — https://sources.debian.org/data/main/a/apache2/2.4.68-1~deb12u1/debian/apache2ctl et server/config.c (invoke_cmd : « takes one argument ») et server/core.c (aide de ServerName) (httpd 2.4.68-1~deb12u1), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo apache2ctl configtest
+AH00526: Syntax error on line 1 of /etc/apache2/sites-enabled/args.conf:
+ServerName takes one argument, The hostname and port of the server
+Action 'configtest' failed.
+The Apache error log may have more information.

@@ -78,7 +78,7 @@ export function Browser({ device }: { device: HostDevice }) {
                 </div>
               ) : (
                 <div>
-                  <h1 className="mb-2 text-xl">{result.file?.split('\\').pop()}</h1>
+                  <h1 className="mb-2 text-xl">{result.file?.split(/[\\/]/).pop()}</h1>
                   <p className="text-[#555]">{result.body}</p>
                 </div>
               )

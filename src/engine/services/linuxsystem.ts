@@ -21,31 +21,22 @@ import { LAB_EPOCH_MS } from '../core/clock'
 import { raise, transact, type EngineResult } from '../core/result'
 import { effectiveIpv4 } from '../net/addressing'
 import type { EventLogEntry, HostDevice, LabState } from '../model/schema'
-import { PACKAGES, UNITS, findPackage, findUnit, type LinuxRelease, type LinuxUnit } from './linuxcatalog'
+import { UNITS, findPackage, findUnit, type LinuxUnit } from './linuxcatalog'
+import { configTest, configuredLogs } from './linuxapache'
+import {
+  apacheConfig,
+  appendErrorLog,
+  pushUntimed,
+  serverDescription,
+  touchLogFiles
+} from './linuxapachehost'
+import { installedPackages, isInstalled } from './linuxpackages'
 import { parseSshd, runningConfigText } from './linuxconfig'
 import { isDefaultServiceState, serviceState } from './servicestate'
 
 type AnyHost = HostDevice | Draft<HostDevice>
 
-/** Version du système : serveur = distribution du champ `linux` (Debian 12 par défaut), poste = Ubuntu 22.04. */
-export function linuxRelease(host: AnyHost): LinuxRelease {
-  if (host.kind === 'client') return 'ubuntu2204'
-  return host.host.linux?.distro === 'ubuntu2404' ? 'ubuntu2404' : 'debian12'
-}
-
-/** Paquets installés d'office (système neuf). */
-export function basePackages(host: AnyHost): string[] {
-  return PACKAGES.filter((p) => p.base === 'all' || (p.base === 'server' && host.kind === 'server')).map(
-    (p) => p.name
-  )
-}
-
-/** Paquets installés, triés par nom. */
-export function installedPackages(host: AnyHost): string[] {
-  return [...(host.host.linux?.packages ?? basePackages(host))].sort()
-}
-
-export const isInstalled = (host: AnyHost, pkg: string) => installedPackages(host).includes(pkg)
+export { basePackages, installedPackages, isInstalled, linuxRelease } from './linuxpackages'
 
 /** Unités des paquets installés. */
 export function installedUnits(host: AnyHost): LinuxUnit[] {
@@ -107,7 +98,9 @@ export interface LinuxSocket {
   pid: number
 }
 
-function bindAddresses(host: AnyHost, bind: LinuxUnit['listens'][number]['bind']): string[] {
+function bindAddresses(host: AnyHost, spec: LinuxUnit['listens'][number]): string[] {
+  if (spec.address !== undefined) return [spec.address]
+  const bind = spec.bind
   switch (bind) {
     case 'any4':
       return ['0.0.0.0']
@@ -129,6 +122,16 @@ function bindAddresses(host: AnyHost, bind: LinuxUnit['listens'][number]['bind']
 
 /** Sockets ouverts par l'unité : ceux du catalogue, sauf sshd dont les ports viennent de sa configuration en vigueur. */
 export function listensOf(host: AnyHost, unit: LinuxUnit): LinuxUnit['listens'] {
+  if (unit.name === 'apache2') {
+    // Directives Listen de la configuration en vigueur (ports.conf et sites) ; v2.9, #238
+    return apacheConfig(host, 'running').listens.map((l) => ({
+      proto: 'tcp' as const,
+      port: l.port,
+      bind: l.host === null ? ('any6' as const) : ('any4' as const),
+      backlog: 511,
+      ...(l.host === null ? {} : { address: l.host })
+    }))
+  }
   if (unit.name !== 'ssh') return unit.listens
   const ports = parseSshd(runningConfigText(host.host.linux, 'ssh')).ports
   return ports.map((port) => ({ proto: 'tcp' as const, port, bind: 'dual' as const, backlog: 128 }))
@@ -141,7 +144,7 @@ export function linuxSockets(host: AnyHost): LinuxSocket[] {
     .filter((u) => unitStatus(host, u).active)
     .flatMap((unit) =>
       listensOf(host, unit).flatMap((l) =>
-        bindAddresses(host, l.bind).map((address) => ({
+        bindAddresses(host, l).map((address) => ({
           proto: l.proto,
           address,
           port: l.port,
@@ -212,26 +215,123 @@ function journal(
   logEvent(draft, deviceId, { level, source: 'systemd', eventId: 0, message, account: unit.name })
 }
 
+/** Ligne d'un processus de l'unité (apachectl) : même instant que l'évènement qui l'a provoquée. */
+function journalUntimed(draft: Draft<LabState>, deviceId: string, unit: LinuxUnit, message: string) {
+  pushUntimed(draft, deviceId, { level: 'error', source: 'systemd', eventId: 0, message, account: unit.name })
+}
+
+/**
+ * Apache refuse de démarrer : configuration invalide, aucun Listen ou port déjà pris (v2.9, #238).
+ * Renvoie les lignes que `apachectl` écrit dans le journal de l'unité, ou null si le démarrage est possible.
+ */
+function apacheStartProblem(
+  host: Draft<HostDevice>,
+  unit: LinuxUnit,
+  conflict: LinuxUnit | undefined,
+  action: string
+): string[] | null {
+  const test = configTest(apacheConfig(host, 'live'))
+  const tail = [`Action '${action}' failed.`, 'The Apache error log may have more information.']
+  if (!test.ok) return [...test.stderr, ...tail]
+  const specs = listensOf(host, unit)
+  if (specs.length > 0 && !conflict) return null
+  const lines = conflict
+    ? specs.flatMap((l) =>
+        l.address === undefined ? [`[::]:${l.port}`, `0.0.0.0:${l.port}`] : [`${l.address}:${l.port}`]
+      )
+    : []
+  return [
+    ...lines.map((a) => `(98)Address already in use: AH00072: make_sock: could not bind to address ${a}`),
+    'no listening sockets available, shutting down',
+    'AH00015: Unable to open logs',
+    ...tail
+  ]
+}
+
+/** error.log à la mise en route d'Apache : AH00489 puis AH00094 (+ création des journaux des sites). */
+function apacheStarted(draft: Draft<LabState>, deviceId: string, unit: LinuxUnit, graceful: boolean) {
+  const host = hostOf(draft, deviceId)
+  const pid = unitPid(host, unit)
+  touchLogFiles(draft, deviceId, configuredLogs(apacheConfig(host, 'live')))
+  if (graceful)
+    appendErrorLog(draft, deviceId, {
+      module: 'mpm_event',
+      level: 'notice',
+      pid,
+      message: 'AH00493: SIGUSR1 received.  Doing graceful restart'
+    })
+  appendErrorLog(draft, deviceId, {
+    module: 'mpm_event',
+    level: 'notice',
+    pid,
+    message: `AH00489: ${serverDescription(host)} configured -- resuming normal operations`
+  })
+  appendErrorLog(draft, deviceId, {
+    module: 'core',
+    level: 'notice',
+    pid,
+    message: "AH00094: Command line: '/usr/sbin/apache2'"
+  })
+}
+
 /** Démarre l'unité ; renvoie false (et journalise l'échec) si le port est déjà pris. */
 function startUnit(draft: Draft<LabState>, deviceId: string, unit: LinuxUnit): boolean {
   const host = hostOf(draft, deviceId)
   journal(draft, deviceId, unit, `Starting ${unitTitle(unit)}...`)
   forgetLoadedConfig(host, unit)
-  if (portConflict(host, unit)) {
+  const conflict = portConflict(host, unit)
+  const problem = unit.name === 'apache2' ? apacheStartProblem(host, unit, conflict, 'start') : null
+  if (conflict || problem) {
+    // Les messages d'apachectl arrivent dans le journal de l'unité sous leur propre nom de programme
+    const pid = 1000 + startCount(host, unit.name) * 7
+    for (const line of problem ?? []) journalUntimed(draft, deviceId, unit, `apachectl[${pid}]: ${line}`)
     journal(draft, deviceId, unit, `${unit.name}.service: Failed with result 'exit-code'.`, 'error')
     journal(draft, deviceId, unit, `Failed to start ${unitTitle(unit)}.`, 'error')
     return false
   }
   setUnitState(host, unit, { active: true })
   journal(draft, deviceId, unit, `Started ${unitTitle(unit)}.`)
+  if (unit.name === 'apache2') apacheStarted(draft, deviceId, unit, false)
   return true
 }
 
 function stopUnit(draft: Draft<LabState>, deviceId: string, unit: LinuxUnit) {
   const host = hostOf(draft, deviceId)
   journal(draft, deviceId, unit, `Stopping ${unitTitle(unit)}...`)
+  if (unit.name === 'apache2')
+    appendErrorLog(draft, deviceId, {
+      module: 'mpm_event',
+      level: 'notice',
+      pid: unitPid(host, unit),
+      message: 'AH00492: caught SIGWINCH, shutting down gracefully'
+    })
   setUnitState(host, unit, { active: false })
   journal(draft, deviceId, unit, `Stopped ${unitTitle(unit)}.`)
+}
+
+/**
+ * `systemctl reload apache2` (apachectl graceful) : configuration contrôlée d'abord ; si elle est invalide,
+ * Apache garde l'ancienne (instantané conservé) et le rechargement échoue. Renvoie false en cas d'échec.
+ */
+function reloadApache(draft: Draft<LabState>, deviceId: string, unit: LinuxUnit): boolean {
+  const host = hostOf(draft, deviceId)
+  journal(draft, deviceId, unit, `Reloading ${unitTitle(unit)}...`)
+  const test = configTest(apacheConfig(host, 'live'))
+  if (!test.ok) {
+    const pid = 1000 + startCount(host, unit.name) * 7
+    for (const line of [
+      ...test.stderr,
+      "Action 'graceful' failed.",
+      'The Apache error log may have more information.'
+    ])
+      journalUntimed(draft, deviceId, unit, `apachectl[${pid}]: ${line}`)
+    journal(draft, deviceId, unit, `Reload failed for ${unitTitle(unit)}.`, 'error')
+    return false
+  }
+  forgetLoadedConfig(host, unit)
+  journal(draft, deviceId, unit, `Reloaded ${unitTitle(unit)}.`)
+  apacheStarted(draft, deviceId, unit, true)
+  return true
 }
 
 /** Message de systemctl quand le démarrage échoue (conflit de port). */
@@ -292,6 +392,10 @@ export function unitAction(
             'JobNotApplicable',
             `Failed to reload ${unit.name}.service: Job type reload is not applicable for unit ${unit.name}.service.`
           )
+        if (unit.name === 'apache2') {
+          result.startFailed = !reloadApache(draft, deviceId, unit)
+          break
+        }
         journal(draft, deviceId, unit, `Reloading ${unitTitle(unit)}...`)
         forgetLoadedConfig(host, unit)
         journal(draft, deviceId, unit, `Reloaded ${unitTitle(unit)}.`)

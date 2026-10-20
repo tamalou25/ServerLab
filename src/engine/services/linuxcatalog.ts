@@ -71,6 +71,8 @@ export interface ListenSpec {
    * chaque adresse IPv4 des cartes).
    */
   bind: 'any4' | 'any6' | 'dual' | 'loopback' | 'ifaces'
+  /** Adresse précise d'écoute (Listen 192.168.2.10:8080 d'Apache) : remplace `bind` dans ss. */
+  address?: string
 }
 
 export interface LinuxUnit {

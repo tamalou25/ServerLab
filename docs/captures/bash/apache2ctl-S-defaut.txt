@@ -1,0 +1,16 @@
+# Source: https://manpages.debian.org/bookworm/apache2/apache2ctl.8.en.html — https://sources.debian.org/data/main/a/apache2/2.4.68-1~deb12u1/debian/apache2ctl et server/vhost.c (dump_a_vhost), server/core.c (core_dump_config), server/util_mutex.c, server/mpm_common.c (httpd 2.4.68-1~deb12u1), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo apache2ctl -S
+AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 127.0.1.1. Set the 'ServerName' directive globally to suppress this message
+VirtualHost configuration:
+*:80                   127.0.1.1 (/etc/apache2/sites-enabled/000-default.conf:1)
+ServerRoot: "/etc/apache2"
+Main DocumentRoot: "/etc/apache2/htdocs"
+Main ErrorLog: "/var/log/apache2/error.log"
+Mutex default: dir="/var/run/apache2/" mechanism=default 
+Mutex mpm-accept: using_defaults
+Mutex watchdog-callback: using_defaults
+PidFile: "/var/run/apache2/apache2.pid"
+Define: DUMP_VHOSTS
+Define: DUMP_RUN_CFG
+User: name="www-data" id=33
+Group: name="www-data" id=33
