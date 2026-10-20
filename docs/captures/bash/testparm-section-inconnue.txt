@@ -1,0 +1,7 @@
+# Source: https://manpages.debian.org/bookworm/samba/testparm.1.en.html — https://sources.debian.org/src/samba/2:4.17.12+dfsg-0+deb12u4/source3/utils/testparm.c, lib/param/loadparm.c, lib/util/tini.c et debian/smb.conf (samba 4.17.12), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo testparm -s --section-name=nexiste
+Load smb config files from /etc/samba/smb.conf
+Loaded services file OK.
+Weak crypto is allowed by GnuTLS (e.g. NTLM as a compatibility fallback)
+
+Unknown section nexiste

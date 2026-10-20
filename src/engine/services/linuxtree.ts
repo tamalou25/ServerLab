@@ -139,6 +139,18 @@ const PACKAGE_NODES: Record<string, [string, LinuxNode][]> = {
     ['/etc/ssh/sshd_config.d', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
     ['/etc/ssh/sshd_config', { type: 'file', mode: 0o644, owner: 'root', group: 'root', mtime: 0 }]
   ],
+  samba: [
+    ['/etc/samba', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
+    ['/etc/samba/smb.conf', { type: 'file', mode: 0o644, owner: 'root', group: 'root', mtime: 0 }],
+    ['/var/lib', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
+    ['/var/lib/samba', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
+    ['/var/lib/samba/private', { type: 'dir', mode: 0o700, owner: 'root', group: 'root', mtime: 0 }],
+    [
+      '/var/lib/samba/private/passdb.tdb',
+      { type: 'file', mode: 0o600, owner: 'root', group: 'root', mtime: 0 }
+    ],
+    ['/var/log/samba', { type: 'dir', mode: 0o750, owner: 'root', group: 'adm', mtime: 0 }]
+  ],
   fail2ban: [
     ['/etc/fail2ban', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],
     ['/etc/fail2ban/jail.d', { type: 'dir', mode: 0o755, owner: 'root', group: 'root', mtime: 0 }],

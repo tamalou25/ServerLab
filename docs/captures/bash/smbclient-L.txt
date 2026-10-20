@@ -1,0 +1,10 @@
+# Source: https://manpages.debian.org/bookworm/samba/smbclient.1.en.html — https://sources.debian.org/src/samba/2:4.17.12+dfsg-0+deb12u4/source3/client/client.c et source3/libsmb/clidfs.c (samba 4.17.12), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: smbclient -L //192.168.2.10 -U alice%Passw0rd
+
+	Sharename       Type      Comment
+	---------       ----      -------
+	print$          Disk      Printer Drivers
+	public          Disk      Documents partages
+	lecture         Disk      
+	IPC$            IPC       IPC Service (Samba 4.17.12-Debian)
+SMB1 disabled -- no workgroup available

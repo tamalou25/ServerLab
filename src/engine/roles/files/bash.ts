@@ -18,6 +18,19 @@ import { isLockedOut } from '../adds/lockout'
 import { domainToken, type AccessToken } from './acl'
 import { adminShares, createItem } from './actions'
 import { openUnc, type UncTarget } from './smb'
+import { isLinuxServer } from './linuxshare'
+import { byteLength, commitFilesOf } from '../../shell/bash/linuxfs'
+import {
+  authenticate as sambaAuthenticate,
+  connect as sambaConnect,
+  createInShare,
+  listShareDir,
+  listedShares,
+  sambaServer,
+  sharePath
+} from '../../shell/bash/sambaaccess'
+import { serverExchange } from '../adds/locator'
+import { sourceAddressFor } from '../../sim/forward'
 
 /** //srv1/Compta/Budget → \\srv1\Compta\Budget */
 const toUnc = (source: string) => source.replace(/\//g, '\\')
@@ -132,6 +145,11 @@ const mountTool: ToolDef = {
       throw new CommandFailure(`mount: ${target}: mount point does not exist.`, 'NotFound')
     if (ctx.host.host.mounts.some((m) => m.target === target))
       throw new CommandFailure(`mount error(16): Device or resource busy\n${SUGGEST}`, 'Busy')
+    if (linuxServerNamed(ctx.state, source.replace(/^\/\//, '').split('/')[0] ?? ''))
+      throw new CommandFailure(
+        'mount -t cifs vers un serveur Samba n’est pas simulé dans ServerLab : utilisez smbclient //serveur/partage -U compte pour tester l’accès.',
+        'NotSupported'
+      )
     const username = option(opts, 'username') ?? option(opts, 'user')
     if (!username) throw new CommandFailure(`mount error(13): Permission denied\n${SUGGEST}`, 'AccessDenied')
     const password = option(opts, 'password') ?? ctx.ask(`Password for ${username}@${source}: `, true)
@@ -345,6 +363,138 @@ function smbUser(args: string[]): { account: string; password?: string } | null 
   return { account, ...(password !== undefined ? { password } : {}) }
 }
 
+/** Serveur Linux désigné par son nom ou son adresse IPv4 (smbclient //hôte/partage). */
+function linuxServerNamed(state: LabState, name: string): ServerDevice | undefined {
+  return Object.values(state.devices).find(
+    (d): d is ServerDevice =>
+      d.kind === 'server' &&
+      isLinuxServer(d) &&
+      (d.name.toLowerCase() === name.toLowerCase() ||
+        d.interfaces.some((i) => effectiveIpv4(i)?.address === name))
+  )
+}
+
+/**
+ * smbclient vers un serveur Samba (v2.9, #239) : mêmes messages que smbclient 4.17 (source3/client/client.c,
+ * source3/libsmb/clidfs.c). Authentification et droits : shell/bash/sambaaccess.ts.
+ */
+function smbclientLinux(
+  ctx: ExecContext,
+  args: string[],
+  server: ServerDevice,
+  target: string,
+  list: boolean,
+  user: { account: string; password?: string } | null,
+  workgroup: string | undefined
+): void {
+  const serverName = target.replace(/^\/\//, '').split('/')[0] ?? ''
+  const ip = server.interfaces.map((i) => effectiveIpv4(i)?.address).find((a) => !!a) ?? null
+  const reachable = ip
+    ? serverExchange(ctx.state, ctx.deviceId, ip, {
+        protocol: 'SMB',
+        port: 445,
+        request: 'SMB2 : négociation du dialecte',
+        reply: 'SMB2 : réponse du serveur Samba',
+        fields: [['Hôte', serverName]]
+      })
+    : null
+  if (!reachable?.ok)
+    throw new CommandFailure(
+      `do_connect: Connection to ${serverName} failed (Error ${server.powered && !sambaServer(server) && reachable !== null ? 'NT_STATUS_CONNECTION_REFUSED' : 'NT_STATUS_HOST_UNREACHABLE'})`,
+      'Unreachable'
+    )
+  ctx.addTrace(reachable.trace)
+  const srv = sambaServer(server)
+  if (!srv)
+    throw new CommandFailure(
+      `do_connect: Connection to ${serverName} failed (Error NT_STATUS_CONNECTION_REFUSED)`,
+      'Refused'
+    )
+  const anonymous = args.includes('-N') && !user
+  const account = anonymous ? null : (user?.account ?? ctx.user.name)
+  const shown = `${workgroup ?? 'WORKGROUP'}\\${account ?? ''}`
+  const password = anonymous ? null : (user?.password ?? ctx.ask(`Password for [${shown}]:`, true))
+  const auth = sambaAuthenticate(srv, account ? (account.split('\\').pop() ?? account) : null, password)
+  if (auth.kind === 'failed') throw new CommandFailure(`session setup failed: ${auth.status}`, 'LogonFailure')
+  if (list) {
+    ctx.writeLines([
+      '',
+      '\tSharename       Type      Comment',
+      '\t---------       ----      -------',
+      ...listedShares(srv).map((s) => `\t${s.name.padEnd(15)} ${s.type.padEnd(10)}${s.comment}`),
+      'SMB1 disabled -- no workgroup available'
+    ])
+    return
+  }
+  const clientIp = ip ? sourceAddressFor(ctx.state, ctx.host, ip) : null
+  const share = target.replace(/^\/\/[^/]+\//, '').split('/')[0] ?? ''
+  const connected = sambaConnect(srv, share, auth, clientIp)
+  if (!connected.ok) throw new CommandFailure(`tree connect failed: ${connected.status}`, 'TreeConnect')
+  const conn = connected.conn
+  const command = args.includes('-c') ? (args[args.indexOf('-c') + 1] ?? '') : null
+  if (command === null)
+    throw new CommandFailure(
+      "Mode interactif non simulé : utilisez -c 'ls' (ex. smbclient //srv1/Partage -U compte -c 'ls').",
+      'NotSupported'
+    )
+  let cwd: string[] = []
+  for (const part of command.split(';')) {
+    const [verb = '', ...rest] = part.trim().split(/\s+/)
+    const operand = rest.join(' ').replace(/^\\/, '')
+    if (verb === 'ls' || verb === 'dir') {
+      const parts = [...cwd, ...operand.split(/[\\/]/).filter((x) => x !== '' && x !== '*')]
+      const path = sharePath(conn, parts)
+      const mask = `\\${[...parts, '*'].join('\\')}`
+      const entries = path ? listShareDir(srv, conn, path) : null
+      if (!entries) {
+        ctx.write(
+          `${path && srv.files[path] ? 'NT_STATUS_ACCESS_DENIED' : 'NT_STATUS_NO_SUCH_FILE'} listing ${mask}`
+        )
+        continue
+      }
+      const asc = (at: number) => ctimeDate(at, LAB_EPOCH_MS)
+      const row = (name: string, attr: string, size: number, at: number) =>
+        `  ${name.padEnd(30)}${attr.padStart(7)} ${String(size).padStart(8)}  ${asc(at)}`
+      const here = path ? (srv.files[path]?.mtime ?? 0) : 0
+      ctx.writeLines([
+        row('.', 'D', 0, here),
+        row('..', 'D', 0, here),
+        ...entries
+          .filter((e) => !e.name.startsWith('.'))
+          .map((e) =>
+            row(
+              e.name,
+              e.node.type === 'dir' ? 'D' : 'N',
+              e.node.type === 'dir' ? 0 : byteLength(e.node.content ?? ''),
+              e.node.mtime
+            )
+          ),
+        '',
+        '\t\t1018576 blocks of size 4096. 996720 blocks available'
+      ])
+    } else if (verb === 'cd') {
+      const next = operand.split(/[\\/]/).filter(Boolean)
+      cwd = operand.startsWith('\\') ? next : [...cwd, ...next]
+    } else if (verb === 'mkdir') {
+      const parts = [...cwd, ...operand.split(/[\\/]/).filter(Boolean)]
+      const path = sharePath(conn, parts)
+      const made = path ? createInShare(srv, conn, path, 'dir', ctx.state.clock) : null
+      if (!made || 'error' in made) {
+        const why =
+          made && 'error' in made && made.error === 'exists'
+            ? 'NT_STATUS_OBJECT_NAME_COLLISION'
+            : made && 'error' in made && made.error === 'missing'
+              ? 'NT_STATUS_OBJECT_PATH_NOT_FOUND'
+              : 'NT_STATUS_ACCESS_DENIED'
+        ctx.write(`${why} making remote directory \\${parts.join('\\')}`)
+        continue
+      }
+      commitFilesOf(ctx, server.id, made.files)
+      srv.files = made.files
+    } else ctx.write(`${verb}: command not found`)
+  }
+}
+
 const smbclientTool: ToolDef = {
   name: 'smbclient',
   synopsis: "Client SMB : smbclient -L //srv1 -U compte, smbclient //srv1/Partage -U compte -c 'ls'.",
@@ -358,6 +508,8 @@ const smbclientTool: ToolDef = {
         'Usage: smbclient [-L //server] [//server/share] [-U user] [-c command]',
         'Usage'
       )
+    const linux = linuxServerNamed(ctx.state, target.replace(/^\/\//, '').split('/')[0] ?? '')
+    if (linux) return smbclientLinux(ctx, args, linux, target, list, user, workgroup)
     const account = user?.account ?? ctx.host.host.session?.user ?? 'etudiant'
     const domain = domainFor(ctx.state, ctx.host, account, workgroup)
     const shown = `${domain?.netbios ?? 'WORKGROUP'}\\${samOf(account) || account}`

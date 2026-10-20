@@ -20,6 +20,7 @@ import { apacheBashTools } from './bash/apache'
 import { coreBashTools } from './bash/core'
 import { loggingBashTools } from './bash/logging'
 import { netBashTools } from './bash/net'
+import { sambaBashTools } from './bash/samba'
 import { sshBashTools, sshWindowsTool } from './bash/ssh'
 import { systemBashTools } from './bash/system'
 
@@ -60,6 +61,7 @@ export function shellCatalog(): CommandCatalog {
       ...sshBashTools,
       ...loggingBashTools,
       ...apacheBashTools,
+      ...sambaBashTools,
       ...roles.flatMap((m) => m.bashTools ?? [])
     ]
   }
