@@ -17,7 +17,9 @@ import { netshTool } from './tools/netsh'
 import { diagTools } from './tools/diag'
 import { w32tmTool } from './tools/time'
 import { coreBashTools } from './bash/core'
+import { loggingBashTools } from './bash/logging'
 import { netBashTools } from './bash/net'
+import { sshBashTools, sshWindowsTool } from './bash/ssh'
 import { systemBashTools } from './bash/system'
 
 let catalog: CommandCatalog | null = null
@@ -47,12 +49,15 @@ export function shellCatalog(): CommandCatalog {
       netshTool,
       ...diagTools,
       w32tmTool,
+      sshWindowsTool,
       ...roles.flatMap((m) => m.tools)
     ],
     bashTools: [
       ...coreBashTools,
       ...systemBashTools,
       ...netBashTools,
+      ...sshBashTools,
+      ...loggingBashTools,
       ...roles.flatMap((m) => m.bashTools ?? [])
     ]
   }

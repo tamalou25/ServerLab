@@ -58,10 +58,10 @@ const shadowFields = (files: LinuxFiles, user: string): string[] | null => {
 }
 
 /** Mot de passe défini par passwd (marqueur simulé) ? Sinon compte verrouillé ou sans mot de passe. */
-const hasPassword = (files: LinuxFiles, user: string): boolean =>
+export const hasPassword = (files: LinuxFiles, user: string): boolean =>
   (shadowFields(files, user)?.[1] ?? '').startsWith(SHADOW_MARK)
 
-const passwordOk = (files: LinuxFiles, user: string, password: string): boolean =>
+export const passwordOk = (files: LinuxFiles, user: string, password: string): boolean =>
   hasPassword(files, user) && (shadowFields(files, user)?.[1] ?? '') === `${SHADOW_MARK}${password}`
 
 function setShadowHash(files: LinuxFiles, user: string, hash: string, days: number, clock: number): void {

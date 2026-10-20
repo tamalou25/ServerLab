@@ -41,6 +41,15 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 - Format `.slab` 27 inchangé : champ facultatif `host.linux.packages` (absent = paquets de base de la distribution).
 - Fidélité : captures `docs/captures/bash/` (comparaison golden, console `bash` ajoutée à `golden.ts`), section v2.9 de
   `docs/fidelite.md` (L-40 à L-51) et « À vérifier (v2.9 — Linux) » (captures reconstituées d'après les manpages).
+- SSH, fail2ban et rsyslog (#237) : `ssh` (consoles bash, cmd et PowerShell), `ssh-keygen`, `ssh-copy-id`, `fail2ban-client`
+  (`status`, `set banip/unbanip`, `reload`…) et `logger`. `/etc/ssh/sshd_config` (`PermitRootLogin`, `PasswordAuthentication`,
+  `PubkeyAuthentication`, `Port`) décide de l'accès, relu seulement au redémarrage du service ; fail2ban (prison `sshd`)
+  bannit après `maxretry` échecs saisis par l'élève (bannissement abstrait, aucune attaque générée) ; `/var/log/auth.log`,
+  `/var/log/syslog` et `/var/log/fail2ban.log` sont calculés depuis le journal de l'ordinateur ; rsyslog envoie les
+  journaux à un collecteur (`*.* @@hôte:514`). `scp`, `sftp`, `sshd` : message honnête de non-simulation.
+  Format `.slab` 27 inchangé : champs facultatifs `host.linux.loaded`, `bans` et `knownHosts` ; 34 captures `docs/captures/bash/`
+  (L-60 à L-67 de `docs/fidelite.md`) comparées par `tests/engine/shell/bash-ssh-golden.test.ts`. Correction : `apt install` et
+  l'écriture d'un fichier (`tee`, `sed -i`) ne s'effacent plus mutuellement dans `host.linux`.
 
 ## [2.8.0] — 2026-10-19
 

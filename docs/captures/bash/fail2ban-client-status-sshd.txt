@@ -1,0 +1,11 @@
+# Source: https://manpages.debian.org/bookworm/fail2ban/fail2ban-client.1.en.html (https://sources.debian.org/src/fail2ban/1.0.2-2/fail2ban/client/beautifier.py) — sortie reconstituée d’après la page de manuel et le code source Debian (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo fail2ban-client status sshd
+Status for the jail: sshd
+|- Filter
+|  |- Currently failed:	0
+|  |- Total failed:	0
+|  `- File list:	/var/log/auth.log
+`- Actions
+   |- Currently banned:	0
+   |- Total banned:	0
+   `- Banned IP list:	

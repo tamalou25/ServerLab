@@ -6,7 +6,7 @@
  * Versions relevées sur packages.debian.org (bookworm) et packages.ubuntu.com (jammy, noble) le
  * 2026-10-20 ; descriptions courtes : champ « Description » de ces mêmes pages. Descriptions
  * `Description=` des unités : fichiers `debian/*.service` des sources Debian
- * (sources.debian.org) pour apache2, cron, rsyslog et vsftpd ; les autres sont à vérifier
+ * (sources.debian.org) pour apache2, cron, fail2ban, rsyslog et vsftpd ; les autres sont à vérifier
  * (docs/fidelite.md, « À vérifier (v2.9 — Linux) »).
  */
 
@@ -141,6 +141,11 @@ export const PACKAGES: LinuxPackage[] = [
       ubuntu2404: '8.5.0-2ubuntu10.16'
     },
     base: 'all'
+  },
+  {
+    name: 'fail2ban',
+    description: 'ban hosts that cause multiple authentication errors',
+    versions: { debian12: '1.0.2-2', ubuntu2204: '0.11.2-6', ubuntu2404: '1.0.2-3' }
   },
   {
     name: 'isc-dhcp-server',
@@ -322,6 +327,15 @@ export const UNITS: LinuxUnit[] = [
     process: 'vsftpd',
     command: '/usr/sbin/vsftpd /etc/vsftpd.conf',
     listens: [{ proto: 'tcp', port: 21, bind: 'any6', backlog: 32 }]
+  },
+  // En dernier : unitPid() dérive le PID du rang de l'unité, les unités existantes gardent le leur
+  {
+    name: 'fail2ban',
+    description: 'Fail2Ban Service',
+    pkg: 'fail2ban',
+    process: 'fail2ban-server',
+    command: '/usr/bin/python3 /usr/bin/fail2ban-server -xf start',
+    listens: []
   }
 ]
 

@@ -1,0 +1,12 @@
+# Source: https://manpages.debian.org/bookworm/rsyslog/rsyslogd.8.en.html (https://manpages.debian.org/bookworm/openssh-server/sshd.8.en.html) — sortie reconstituée d’après la page de manuel et le code source Debian (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo cat /var/log/auth.log
+2026-01-05T08:00:01.000000+00:00 LSRV1 sshd[2005]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.168.2.20  user=bob
+2026-01-05T08:00:02.000000+00:00 LSRV1 sshd[2005]: Failed password for bob from 192.168.2.20 port 34063 ssh2
+2026-01-05T08:00:03.000000+00:00 LSRV1 sshd[2005]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.168.2.20  user=bob
+2026-01-05T08:00:04.000000+00:00 LSRV1 sshd[2005]: Failed password for bob from 192.168.2.20 port 34063 ssh2
+2026-01-05T08:00:05.000000+00:00 LSRV1 sshd[2005]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=192.168.2.20  user=bob
+2026-01-05T08:00:06.000000+00:00 LSRV1 sshd[2005]: Failed password for bob from 192.168.2.20 port 34063 ssh2
+2026-01-05T08:00:07.000000+00:00 LSRV1 sshd[2005]: Connection closed by authenticating user bob 192.168.2.20 port 34063 [preauth]
+2026-01-05T08:00:08.000000+00:00 LSRV1 sshd[2012]: Accepted password for bob from 192.168.2.20 port 34322 ssh2
+2026-01-05T08:00:09.000000+00:00 LSRV1 sshd[2012]: pam_unix(sshd:session): session opened for user bob(uid=1001) by (uid=0)
+2026-01-05T08:00:10.000000+00:00 LSRV1 sshd[2012]: pam_unix(sshd:session): session closed for user bob

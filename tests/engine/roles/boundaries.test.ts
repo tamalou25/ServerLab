@@ -30,9 +30,11 @@ const ALLOWED_CORE_TO_ROLE = [
   'index.ts', // API publique du moteur
   'labs/lab.ts', // construction des labs : jeton d'administrateur local, Default Domain Policy
   'serialization/migrations.ts', // migration 1 → 2 : GPO par défaut
+  'services/linuxlog.ts', // envoi distant de rsyslog : résolution du nom du collecteur (v2.9, #237)
   'services/system.ts', // redémarrage : inscription DNS du poste joint
   'shell/bash/core.ts', // console bash : dhclient, résolution de noms (comme shell/tools/net.ts)
   'shell/bash/net.ts', // console bash : curl, nslookup, traceroute (résolveur DNS, échange TCP tracé, IIS)
+  'shell/bash/ssh.ts', // console bash : ssh (résolution du nom du serveur joint)
   'shell/cmd/builtins.ts', // copy, move, ren, type, cd (système de fichiers du serveur)
   'shell/cmd/interpreter.ts', // redirections > et >> (contenu des fichiers)
   'shell/filesystem.ts', // chemins, partages et jetons d'accès
