@@ -673,6 +673,12 @@ describe('catalogue des commandes', () => {
     done(r)
   })
 
+  it('serveur Linux : paquets installés au départ d’un lab', () => {
+    const r = runner()
+    r.run(command('linux.installPackages', r.id('LSRV1'), ['apache2']))
+    done(r)
+  })
+
   // Registre de scénarios vide : la commande est testée avec un scénario factice dans cyber/scenario.test.ts
   covered.add('cyber.playStep')
   covered.add('cyber.applyCountermeasure') // testée dans cyber/countermeasures.test.ts

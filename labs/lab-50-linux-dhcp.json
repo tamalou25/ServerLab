@@ -1,0 +1,104 @@
+{
+  "formatVersion": 1,
+  "id": "lab-50-linux-dhcp",
+  "title": "Linux : un serveur DHCP avec isc-dhcp-server",
+  "difficulty": "Intermédiaire",
+  "duration": "35 min",
+  "summary": "Configurez isc-dhcp-server sur Debian pour distribuer des adresses à un poste Windows.",
+  "statement": "## Contexte\n\n**LSRV1** (192.168.20.10/24) a isc-dhcp-server installé, sans configuration. **PC1** est un poste Windows en DHCP.\n\n## Travail demandé\n\n1. Dans `/etc/default/isc-dhcp-server`, indiquez l'interface d'écoute (`INTERFACESv4`).\n2. Dans `/etc/dhcp/dhcpd.conf`, déclarez le sous-réseau 192.168.20.0/24, la plage **192.168.20.100 à 192.168.20.110**, la passerelle 192.168.20.254, le DNS 192.168.20.10, `authoritative`.\n3. Contrôlez avec `dhcpd -t`, puis redémarrez le service.\n4. Sur PC1, demandez un bail (`ipconfig /renew`), vérifiez avec `ipconfig /all`, puis consultez les baux sur LSRV1.\n\nÀ rendre : dhcpd.conf, la sortie d'`ipconfig /all` et le fichier des baux.",
+  "start": {
+    "devices": [
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 330,
+        "y": 300
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "LSRV1",
+        "x": 330,
+        "y": 100,
+        "ip": "192.168.20.10/24",
+        "packages": ["isc-dhcp-server"]
+      },
+      {
+        "kind": "client",
+        "os": "linux",
+        "name": "LNX1",
+        "x": 130,
+        "y": 470,
+        "ip": "192.168.20.20/24"
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 530,
+        "y": 470,
+        "dhcp": true
+      }
+    ],
+    "links": [
+      ["LSRV1:eth0", "SW1:Fa0/1"],
+      ["LNX1:eth0", "SW1:Fa0/2"],
+      ["PC1:Ethernet0", "SW1:Fa0/3"]
+    ]
+  },
+  "criteria": [
+    {
+      "id": "interfaces",
+      "label": "dhcpd écoute sur eth0",
+      "hint": "Debian indique les interfaces d’écoute dans un fichier de /etc/default.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/default/isc-dhcp-server",
+        "text": "^INTERFACESv4=\"eth0\"",
+        "regex": true
+      }
+    },
+    {
+      "id": "plage",
+      "label": "La plage 192.168.20.100 à .110 est déclarée",
+      "hint": "La plage se déclare dans le bloc du sous-réseau, avec le mot-clé range.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/dhcp/dhcpd.conf",
+        "text": "range 192.168.20.100 192.168.20.110;"
+      }
+    },
+    {
+      "id": "options",
+      "label": "Passerelle et DNS sont distribués",
+      "hint": "Les options routers et domain-name-servers accompagnent le bail.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/dhcp/dhcpd.conf",
+        "text": "option domain-name-servers 192.168.20.10;"
+      }
+    },
+    {
+      "id": "service",
+      "label": "Le service isc-dhcp-server est actif",
+      "hint": "dhcpd refuse de démarrer si sa configuration est invalide : lisez dhcpd -t.",
+      "check": {
+        "type": "linuxServiceActive",
+        "device": "LSRV1",
+        "unit": "isc-dhcp-server"
+      }
+    },
+    {
+      "id": "bail",
+      "label": "PC1 a obtenu un bail de LSRV1",
+      "hint": "Le poste doit redemander une adresse une fois le serveur prêt.",
+      "check": {
+        "type": "dhcpLease",
+        "client": "PC1",
+        "server": "LSRV1"
+      }
+    }
+  ]
+}

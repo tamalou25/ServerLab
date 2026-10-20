@@ -54,6 +54,7 @@ import {
   removeLocalUser,
   setLocalUser
 } from '../services/localaccounts'
+import { installPackages } from '../services/linuxsystem'
 import { renameComputer, restartComputer } from '../services/system'
 import { useHint } from '../troubleshoot/hints'
 import { executeLine } from '../shell/exec'
@@ -301,6 +302,12 @@ const CORE_COMMANDS = {
   'system.uninstallFeatures': def(
     uninstallFeatures,
     (s, id, names) => `Supprimer ${names.join(', ')}${on(s, id)}`
+  ),
+
+  // Serveur Linux : paquets installés au départ d'un lab (comme `apt install`, sans dépôt distant)
+  'linux.installPackages': def(
+    installPackages,
+    (s, id, names) => `Installer ${names.join(', ')}${on(s, id)}`
   ),
 
   // Mode panne : un indice de plus (le compteur sert au bilan)
