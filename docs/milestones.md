@@ -474,9 +474,20 @@ issues n'ont ajouté que des champs facultatifs.
 
 ## v2.9 — Serveurs Linux
 
-| Issue | Sujet                                                        | Branche | PR  | État    |
-| ----- | ------------------------------------------------------------ | ------- | --- | ------- |
-| —     | Chantier B : serveur Linux, 7 services, 9 labs, pannes Linux | —       | —   | à faire |
+Milestone terminé : `CHANGELOG.md` [2.9.0], `package.json` 2.9.0 ; tag `v2.9.0` à pousser par Gary.
+Format `.slab` : v2.9 → format 27 (migration 26 → 27, issue #234) ; les autres issues n'ont ajouté que des champs
+facultatifs de `host.linux`.
+
+| Issue | Sujet                                               | Branche                          | PR   | État     |
+| ----- | --------------------------------------------------- | -------------------------------- | ---- | -------- |
+| #234  | Serveur Linux (Debian 12 / Ubuntu 24.04), format 27 | `feat/234-serveur-linux`         | #275 | fusionné |
+| #235  | Fichiers, utilisateurs et droits                    | `feat/235-fichiers-droits-linux` | #276 | fusionné |
+| #236  | apt, systemctl, journalctl, ss, diagnostic          | `feat/236-apt-systemctl`         | #277 | fusionné |
+| #237  | SSH, fail2ban, rsyslog                              | `feat/237-ssh-fail2ban-rsyslog`  | #278 | fusionné |
+| #238  | Apache2                                             | `feat/238-apache2`               | #279 | fusionné |
+| #239  | Samba et interopérabilité Windows                   | `feat/239-samba`                 | #280 | fusionné |
+| #240  | Bind9 et isc-dhcp-server                            | `feat/240-bind9-dhcp`            | #281 | fusionné |
+| #241  | Labs 46 à 53 et pannes Linux                        | `feat/241-labs-pannes-linux`     | #282 | fusionné |
 
 ## v2.10 — Pare-feu pfSense
 
