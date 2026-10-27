@@ -42,7 +42,8 @@ const MINIMAP_COLORS: Record<DeviceKind, string> = {
   client: 'var(--sl-kind-client)',
   switch: 'var(--sl-kind-switch)',
   router: 'var(--sl-kind-router)',
-  cloud: 'var(--sl-kind-cloud)'
+  cloud: 'var(--sl-kind-cloud)',
+  firewall: 'var(--sl-kind-firewall)'
 }
 
 export function TopologyCanvas() {

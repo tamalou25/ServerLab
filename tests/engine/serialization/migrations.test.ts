@@ -66,13 +66,15 @@ describe('fichiers .slab de référence', () => {
             .map((d) => d.name)
             .sort()
         ).toEqual(
-          version >= 27
-            ? ['CR1', 'CSW1', 'LSRV1', 'PC1', 'PC2', 'R1', 'SRV1', 'SW1']
-            : version >= 9
-              ? ['CR1', 'CSW1', 'PC1', 'PC2', 'R1', 'SRV1', 'SW1']
-              : ['PC1', 'PC2', 'R1', 'SRV1', 'SW1']
+          version >= 28
+            ? ['CR1', 'CSW1', 'FW1', 'LSRV1', 'PC1', 'PC2', 'R1', 'SRV1', 'SW1']
+            : version >= 27
+              ? ['CR1', 'CSW1', 'LSRV1', 'PC1', 'PC2', 'R1', 'SRV1', 'SW1']
+              : version >= 9
+                ? ['CR1', 'CSW1', 'PC1', 'PC2', 'R1', 'SRV1', 'SW1']
+                : ['PC1', 'PC2', 'R1', 'SRV1', 'SW1']
         )
-        expect(Object.keys(lab.links)).toHaveLength(version >= 9 ? 5 : 4)
+        expect(Object.keys(lab.links)).toHaveLength(version >= 28 ? 6 : version >= 9 ? 5 : 4)
         const domain = lab.domains['lab.local']
         expect(domain?.users.map((u) => u.sam)).toContain('jdupont')
         expect(domain?.groups.find((g) => g.name === 'GG_Compta')?.members).toHaveLength(1)
@@ -115,6 +117,40 @@ describe('fichiers .slab de référence', () => {
       })
     })
   }
+})
+
+describe('migration 27 → 28 (pare-feu de la v2.10)', () => {
+  it('change seulement la version ; un lab 27 n’a aucun pare-feu', () => {
+    const doc = JSON.parse(readFixture(27)) as Record<string, unknown>
+    expect(migrations[27]!(doc)).toEqual({ ...doc, schemaVersion: 28 })
+    expect(Object.values(open(27).lab.devices).some((d) => d.kind === 'firewall')).toBe(false)
+  })
+
+  it('v28.slab : garde le pare-feu FW1 (em0 WAN, em1 LAN câblé, em2 DMZ, état de base)', () => {
+    const lab = open(28).lab
+    const fw = Object.values(lab.devices).find((d) => d.name === 'FW1')
+    expect(fw?.kind).toBe('firewall')
+    if (fw?.kind !== 'firewall') return
+    expect(fw.interfaces.map((i) => i.name)).toEqual(['em0', 'em1', 'em2'])
+    expect(
+      fw.pf.assignments.map((a) => [
+        a.key,
+        a.descr,
+        a.ifaceId === fw.interfaces[fw.pf.assignments.indexOf(a)]!.id
+      ])
+    ).toEqual([
+      ['wan', 'WAN', true],
+      ['lan', 'LAN', true],
+      ['opt1', 'DMZ', true]
+    ])
+    expect(fw.pf.hostname).toBe('FW1')
+    const lanId = fw.interfaces[1]!.id
+    expect(
+      Object.values(lab.links).some((l) =>
+        [l.a, l.b].some((e) => e.deviceId === fw.id && e.ifaceId === lanId)
+      )
+    ).toBe(true)
+  })
 })
 
 describe('migration 26 → 27 (serveurs Linux de la v2.9)', () => {

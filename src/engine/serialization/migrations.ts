@@ -5,7 +5,7 @@
  */
 import { DEFAULT_DC_POLICY_ID, DEFAULT_DOMAIN_POLICY_ID, defaultDomainGpos } from '../roles/gpo/defaults'
 
-export const CURRENT_SCHEMA_VERSION = 27
+export const CURRENT_SCHEMA_VERSION = 28
 
 type RawDocument = Record<string, unknown>
 
@@ -267,6 +267,15 @@ function addV29LinuxServers(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 27 }
 }
 
+/**
+ * 27 → 28 (v2.10, pare-feu) : nouveau type d'équipement `kind: 'firewall'` avec son état `pf`
+ * (affectations WAN/LAN/OPT1, règles, NAT, services, journal). Les fichiers 27 n'ont aucun pare-feu :
+ * seul le numéro change. Les issues suivantes de la v2.10 n'ajoutent que des champs facultatifs (format 28).
+ */
+function addV210Firewall(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 28 }
+}
+
 /** migrations[n] migre un document de la version n vers n + 1. */
 export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   1: addDefaultGpos,
@@ -294,7 +303,8 @@ export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   23: addV27Services,
   24: addV27LocalAccountsRegistry,
   25: addV28HostClock,
-  26: addV29LinuxServers
+  26: addV29LinuxServers,
+  27: addV210Firewall
 }
 
 export type MigrationResult = { ok: true; doc: RawDocument } | { ok: false; message: string }

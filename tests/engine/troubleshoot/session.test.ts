@@ -129,7 +129,7 @@ describe('persistance et labs', () => {
   it('v26.slab s’ouvre sans dépannage', () => {
     const parsed = parseSlab(readFixture(26))
     if (!parsed.ok) throw new Error(parsed.message)
-    expect(parsed.doc.schemaVersion).toBe(27)
+    expect(parsed.doc.schemaVersion).toBe(28)
     expect(parsed.doc.lab.troubleshooting).toBeUndefined()
   })
 

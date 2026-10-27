@@ -4,6 +4,7 @@
  */
 export * from './model/kinds'
 export * from './model/schema'
+export * from './model/firewall'
 export * from './model/factory'
 export * from './model/host'
 export * from './ios/models'

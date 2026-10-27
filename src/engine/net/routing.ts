@@ -27,6 +27,8 @@ export interface Route {
 /** TTL initial selon le type d'équipement. */
 export function initialTtl(device: Device): number {
   if (device.kind === 'router' || device.kind === 'switch' || device.kind === 'cloud') return 255
+  // FreeBSD (pfSense) : net.inet.ip.ttl = 64 (à vérifier : docs/fidelite.md, P-03)
+  if (device.kind === 'firewall') return 64
   // Linux : net.ipv4.ip_default_ttl = 64 ; Windows : 128
   return isLinuxHost(device) ? 64 : 128
 }

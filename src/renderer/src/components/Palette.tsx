@@ -21,7 +21,7 @@ export const DND_DEVICE_MIME = 'application/x-serverlab-device'
 
 interface PaletteGroup {
   /** Identifiant (préférence des groupes repliés) ; libellé : `palette.group.<id>`. */
-  id: 'servers' | 'clients' | 'network' | 'cisco' | 'internet'
+  id: 'servers' | 'clients' | 'network' | 'cisco' | 'firewall' | 'internet'
   kinds: PaletteKind[]
 }
 
@@ -30,6 +30,7 @@ const GROUPS: PaletteGroup[] = [
   { id: 'clients', kinds: ['client', 'linux'] },
   { id: 'network', kinds: ['switch', 'router'] },
   { id: 'cisco', kinds: ['c1921', 'c2811', 'c2960', 'c9200'] },
+  { id: 'firewall', kinds: ['firewall'] },
   { id: 'internet', kinds: ['cloud'] }
 ]
 

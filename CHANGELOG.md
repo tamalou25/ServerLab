@@ -6,6 +6,19 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+### v2.10 (pare-feu)
+
+- Équipement pare-feu pfSense CE 2.7 (#242) : nouveau type de nœud `firewall` (préfixe `FW`, icône lucide `BrickWall`,
+  groupe « Pare-feu » de la palette), trois cartes `em0` (WAN), `em1` (LAN, 192.168.1.1/24) et `em2` (OPT1 nommée DMZ),
+  posable, câblable, copiable et enregistrable ; le nom d'hôte pfSense suit le nom de l'équipement.
+- Modèle d'état `pf` (`src/engine/model/firewall.ts`) : affectations des interfaces, règles par interface (Pass,
+  Block, Reject, protocole, source/destination, ports, journalisation), alias, NAT sortant et redirections de port,
+  DHCP par interface, résolveur DNS, passerelles, routes statiques, journal et table d'états. Tous ces champs sont
+  facultatifs ou vides : #243 à #248 les exploitent sans nouvelle migration.
+- Format `.slab` 28 : migration 27 → 28 (seul le numéro change), fichier de référence `fixtures/v28.slab` (pare-feu
+  FW1 câblé à SW1), tests dans `migrations.test.ts` et `tests/engine/model/firewall-device.test.ts`.
+- `docs/fidelite.md` : section « À vérifier (v2.10 — pare-feu) », identifiants P-01 à P-06.
+
 ## [2.9.0] — 2026-10-27
 
 Serveurs Linux (Debian 12, Ubuntu 24.04). Format `.slab` 27 (migration 26 → 27 : serveur Linux, #234) ; les autres
