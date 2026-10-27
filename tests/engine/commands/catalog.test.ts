@@ -281,6 +281,7 @@ describe('catalogue des commandes', () => {
     r.run(command('pf.resetAdminPassword', fw), false)
     r.run(command('pf.reboot', fw), false)
     r.run(command('pf.factoryReset', fw))
+    r.run(command('pf.webRequest', r.id('PC1'), 'https://192.168.1.1'), false)
     done(r)
   })
 

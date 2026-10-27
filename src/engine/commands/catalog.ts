@@ -55,6 +55,7 @@ import {
   updatePfOutboundNat,
   updatePfPortForward
 } from '../net/pf-nat'
+import { pfWebRequest } from '../roles/iis/pfweb'
 import { addStaticRoute, removeStaticRoute, setHelperAddresses, setInterfaceIpv4 } from '../net/config'
 import {
   addSubinterface,
@@ -349,6 +350,8 @@ const CORE_COMMANDS = {
     removePfPortForward,
     (s, id, natId) => `Supprimer la redirection de port ${natId}${on(s, id)}`
   ),
+  // Accès web : alimente le journal et les états du pare-feu (exécutée sans entrée d'historique)
+  'pf.webRequest': def(pfWebRequest, (_s, _id, url) => `Accéder à l’interface web du pare-feu (${url})`),
   'pf.clearLog': def(clearPfLog, (s, id) => `Vider le journal du pare-feu${on(s, id)}`),
   'pf.resetStates': def(resetPfStates, (s, id) => `Réinitialiser la table d’états${on(s, id)}`),
 

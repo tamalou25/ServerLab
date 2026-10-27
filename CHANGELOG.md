@@ -38,6 +38,10 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   FreeBSD limité (`pfctl -sr` / `-ss` / `-si` / `-d` / `-e`, `ifconfig`, `netstat -rn`, `cat` / `tail` du journal
   `filter.log`, `ping`) ; commandes `pf.assignInterfaces`, `pf.setInterfaceFromConsole`, `pf.resetAdminPassword`,
   `pf.factoryReset`, `pf.reboot`, `pf.setFilterEnabled` ; captures `docs/captures/pfsense/` ; `docs/fidelite.md` P-50 à P-57.
+- Interface web du pare-feu (#246) : le navigateur d'un poste joint `https://<adresse du pare-feu>` à travers le filtre (LAN par
+  l'anti-verrouillage, WAN et DMZ selon les règles), page de connexion admin / pfsense, tableau de bord, Interfaces,
+  Firewall > Rules / Aliases / NAT, Services > DHCP Server / DNS Resolver, System > Routing (Save puis Apply Changes), Status > System Logs > Firewall, Diagnostics > States ;
+  commandes `pf.webRequest` et `pfAuthenticate` (`roles/iis/pfweb.ts`), `docs/fidelite.md` P-40 à P-48.
 
 ## [2.9.0] — 2026-10-27
 
