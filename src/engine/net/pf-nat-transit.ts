@@ -13,7 +13,9 @@ import { assignmentOfNic, describeEndpoint, endpointMatches, nicOf, type PfDevic
 import { natOutKey, rdrBackKey, rdrKey, rdrTextKey } from './pf-nat'
 import type { TransitHooks } from '../sim/transit'
 
-const isPf = (device: Device): device is PfDevice => device.kind === 'firewall' && device.powered
+// `pfctl -d` arrête aussi le NAT (docs.netgate.com, « Locked out of the GUI »)
+const isPf = (device: Device): device is PfDevice =>
+  device.kind === 'firewall' && device.powered && !device.pf.filterDisabled
 
 const ifaceLabel = (pf: PfState, key: PfIfaceKey): string =>
   pf.assignments.find((a) => a.key === key)?.descr ?? key.toUpperCase()

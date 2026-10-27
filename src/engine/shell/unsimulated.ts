@@ -81,16 +81,71 @@ const BASH = [
   'omshell'
 ]
 
-const KNOWN = { cmd: new Set(CMD), ps: new Set(PS), bash: new Set(BASH) }
+/**
+ * Commandes réelles du shell FreeBSD (tcsh) du pare-feu pfSense, non simulées (v2.10, #247) : seuls pfctl
+ * (-sr, -ss, -si, -d, -e), ifconfig, netstat -rn, cat / tail / clog sur le journal du filtre, ping, grep,
+ * head et filterparser.php sont simulés.
+ */
+const PFSENSE = [
+  'ls',
+  'cd',
+  'pwd',
+  'vi',
+  'ee',
+  'ps',
+  'top',
+  'sockstat',
+  'arp',
+  'ndp',
+  'route',
+  'sysctl',
+  'dmesg',
+  'df',
+  'uname',
+  'uptime',
+  'date',
+  'kldstat',
+  'pftop',
+  'tcpdump',
+  'traceroute',
+  'host',
+  'drill',
+  'nslookup',
+  'less',
+  'more',
+  'sed',
+  'awk',
+  'php',
+  'pfssh.php',
+  'service',
+  'pkg',
+  'sh',
+  'bash',
+  'nc',
+  'telnet',
+  'ssh',
+  'fetch',
+  'curl',
+  'ping6',
+  'whoami',
+  'id',
+  'hostname',
+  'mount',
+  'rm',
+  'cp',
+  'mv'
+]
+
+const KNOWN = { cmd: new Set(CMD), ps: new Set(PS), bash: new Set(BASH), pfsense: new Set(PFSENSE) }
 
 /** Vrai si `name` est une commande réelle de ce shell, non simulée. */
-export function isUnsimulated(shell: 'cmd' | 'ps' | 'bash', name: string): boolean {
+export function isUnsimulated(shell: 'cmd' | 'ps' | 'bash' | 'pfsense', name: string): boolean {
   return KNOWN[shell].has(name.toLowerCase())
 }
 
 /** Message affiché à la place de « commande introuvable ». */
-export function unsimulatedMessage(shell: 'cmd' | 'ps' | 'bash', name: string): string {
-  return shell === 'bash'
+export function unsimulatedMessage(shell: 'cmd' | 'ps' | 'bash' | 'pfsense', name: string): string {
+  return shell === 'bash' || shell === 'pfsense'
     ? `${name}: commande réelle non simulée dans ServerLab`
     : `« ${name} » est une commande réelle qui n’est pas simulée dans ServerLab.`
 }
@@ -119,4 +174,9 @@ export function unsimulatedIosMessage(name: string): string {
 /** Option réelle d'un outil de la console (`w32tm /config`, `net time /rtsdomain`…) non simulée. */
 export function unsimulatedOptionMessage(tool: string, option: string): string {
   return `L’option « ${option} » de ${tool} existe réellement mais n’est pas simulée dans ServerLab.`
+}
+
+/** Fichier réel d'un outil du shell (journaux du pare-feu autres que filter.log) que ServerLab ne reproduit pas. */
+export function unsimulatedFileMessage(tool: string, file: string): string {
+  return `${tool}: ${file} : ce fichier existe réellement mais n’est pas simulé dans ServerLab.`
 }

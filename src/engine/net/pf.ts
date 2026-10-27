@@ -374,6 +374,8 @@ export const pfTransitHooks: TransitHooks = {
   filter(ctx, device, ingressIfaceId, _egressIfaceId, original): FilterDecision | null {
     // Seul le trafic entrant d'un pare-feu pfSense est filtré ; ses propres paquets ne le sont pas
     if (device.kind !== 'firewall' || ingressIfaceId === null) return null
+    // `pfctl -d` : le filtre est arrêté (docs.netgate.com, « Locked out of the GUI »), tout passe
+    if (device.pf.filterDisabled) return null
     const packet = natReplyView(ctx, device, original)
     const verdict = evaluatePf(device, ingressIfaceId, packet, ctx.effects)
     const key = assignmentOfNic(device.pf, ingressIfaceId)?.key ?? 'lan'
