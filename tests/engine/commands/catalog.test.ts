@@ -221,6 +221,30 @@ describe('catalogue des commandes', () => {
     r.run(command('pf.removeAlias', fw, 'Web'))
     r.run(command('pf.setBlockNetworks', fw, 'wan', { blockPrivate: false, blockBogons: false }))
     r.run(command('pf.removeRule', fw, first))
+    // Services (#245)
+    r.run(
+      command('pf.setDhcp', fw, 'lan', {
+        enabled: true,
+        rangeFrom: '192.168.1.100',
+        rangeTo: '192.168.1.110'
+      })
+    )
+    r.run(
+      command('pf.setGateway', fw, {
+        name: 'GW_DMZ',
+        iface: 'lan',
+        address: '192.168.1.254',
+        isDefault: false
+      })
+    )
+    r.run(command('pf.setDefaultGateway', fw, 'GW_DMZ'))
+    r.run(command('pf.addStaticRoute', fw, { network: '10.9.0.0', prefixLength: 24, gateway: 'GW_DMZ' }))
+    r.run(command('pf.removeStaticRoute', fw, '10.9.0.0', 24))
+    r.run(command('pf.removeGateway', fw, 'GW_DMZ'))
+    r.run(command('pf.setDnsResolver', fw, { forwarding: true }))
+    r.run(command('pf.setDnsServers', fw, ['8.8.8.8']))
+    r.run(command('pf.setHostOverride', fw, { host: 'nas', domain: 'lab.local', address: '192.168.1.50' }))
+    r.run(command('pf.removeHostOverride', fw, 'nas', 'lab.local'))
     // NAT (#244)
     r.run(command('pf.setNatMode', fw, 'hybrid'))
     const nat = r.run<string>(

@@ -256,6 +256,19 @@ export function evaluatePf(
       }
   }
 
+  // Réponse à une requête émise par le pare-feu lui-même (résolution DNS d'Unbound, ping de la console) :
+  // pfSense suit aussi ses propres connexions ; le simulateur ne les enregistre pas dans la table d'états
+  // et laisse passer toute réponse adressée au pare-feu (approximation, docs/fidelite.md, P-39).
+  if (packet.reply && device.interfaces.some((i) => effectiveIpv4(i)?.address === packet.dst))
+    return {
+      action: 'pass',
+      rule: null,
+      source: 'state',
+      note: `${device.name} (pfSense) : ce paquet est la réponse à une requête émise par le pare-feu lui-même, il passe sur ${where}.`,
+      log: false,
+      track: false
+    }
+
   // Règle automatique d'anti-verrouillage : l'interface d'administration reste joignable depuis le LAN
   if (
     key === 'lan' &&
