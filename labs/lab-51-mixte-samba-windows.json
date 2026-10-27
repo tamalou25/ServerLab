@@ -1,0 +1,110 @@
+{
+  "formatVersion": 1,
+  "id": "lab-51-mixte-samba-windows",
+  "title": "Mixte : un poste Windows utilise un partage Samba",
+  "difficulty": "Avancé",
+  "duration": "45 min",
+  "summary": "Un serveur Linux publie un partage Samba ; un poste Windows et un poste Linux s’y connectent, avec droits Unix et compte Samba.",
+  "statement": "## Contexte\n\n**LSRV1** (Debian, 192.168.20.10/24) publie le partage **public** (dossier `/srv/samba/public`, compte Samba `alice`, mot de passe `Passw0rd`). **PC1** (Windows) et **LNX1** (Ubuntu) doivent l'utiliser.\n\n## Travail demandé\n\n1. Depuis PC1, connectez le lecteur **Z:** au partage `\\\\LSRV1\\public` avec le compte alice (`net use`), puis créez un fichier sur Z:.\n2. Retrouvez ce fichier côté Linux : propriétaire, groupe, droits (`ls -l /srv/samba/public`).\n3. Depuis LNX1, listez et ouvrez le partage avec `smbclient`.\n4. Sur LSRV1, ajoutez à smb.conf un second partage **lecture** (`/srv/samba/lecture`, lecture seule, invités permis), redémarrez `smbd` et vérifiez depuis PC1 (`net view \\\\LSRV1`).\n\nÀ rendre : les captures des deux postes et la section `[lecture]`.",
+  "start": {
+    "devices": [
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 330,
+        "y": 300
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "LSRV1",
+        "x": 330,
+        "y": 100,
+        "ip": "192.168.20.10/24",
+        "packages": ["samba"],
+        "bash": [
+          "sudo useradd -m alice",
+          {
+            "line": "sudo smbpasswd -a alice",
+            "answers": ["Passw0rd", "Passw0rd"]
+          },
+          "sudo mkdir -p /srv/samba/public /srv/samba/lecture",
+          "sudo chown alice:alice /srv/samba/public",
+          "echo 'Document public' | sudo tee /srv/samba/lecture/notice.txt",
+          "echo '[public]' | sudo tee -a /etc/samba/smb.conf",
+          "echo '   path = /srv/samba/public' | sudo tee -a /etc/samba/smb.conf",
+          "echo '   read only = no' | sudo tee -a /etc/samba/smb.conf",
+          "echo '   valid users = alice' | sudo tee -a /etc/samba/smb.conf",
+          "sudo systemctl restart smbd"
+        ]
+      },
+      {
+        "kind": "client",
+        "os": "linux",
+        "name": "LNX1",
+        "x": 130,
+        "y": 470,
+        "ip": "192.168.20.20/24"
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 530,
+        "y": 470,
+        "ip": "192.168.20.30/24"
+      }
+    ],
+    "links": [
+      ["LSRV1:eth0", "SW1:Fa0/1"],
+      ["LNX1:eth0", "SW1:Fa0/2"],
+      ["PC1:Ethernet0", "SW1:Fa0/3"]
+    ]
+  },
+  "criteria": [
+    {
+      "id": "lecteur",
+      "label": "Le lecteur Z: de PC1 est connecté au partage public",
+      "hint": "Un lecteur réseau se connecte avec net use, en précisant le compte Samba.",
+      "check": {
+        "type": "driveMapped",
+        "device": "PC1",
+        "letter": "Z",
+        "path": "\\\\LSRV1\\public"
+      }
+    },
+    {
+      "id": "section",
+      "label": "Le partage lecture est déclaré avec son dossier",
+      "hint": "Un second partage est une nouvelle section de smb.conf.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/samba/smb.conf",
+        "text": "\\[lecture\\][^\\[]*path = /srv/samba/lecture",
+        "regex": true
+      }
+    },
+    {
+      "id": "invites",
+      "label": "Les invités peuvent lire le partage lecture",
+      "hint": "Cherchez le paramètre qui autorise les connexions sans compte.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/samba/smb.conf",
+        "text": "\\[lecture\\][^\\[]*guest ok = yes",
+        "regex": true
+      }
+    },
+    {
+      "id": "smbd",
+      "label": "Le service smbd est actif",
+      "hint": "smbd relit smb.conf à son redémarrage.",
+      "check": {
+        "type": "linuxServiceActive",
+        "device": "LSRV1",
+        "unit": "smbd"
+      }
+    }
+  ]
+}

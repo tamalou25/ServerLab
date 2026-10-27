@@ -1,0 +1,117 @@
+{
+  "formatVersion": 1,
+  "id": "lab-47-linux-apache2",
+  "title": "Linux : deux sites web avec Apache2",
+  "difficulty": "Intermédiaire",
+  "duration": "40 min",
+  "summary": "Publiez deux hôtes virtuels par nom sur un serveur Apache2 Debian, avec leurs dossiers et leurs pages.",
+  "statement": "## Contexte\n\nLe serveur **LSRV1** (192.168.20.10/24) héberge Apache2 avec le site par défaut. Vous devez publier **site1.lab.local** et **site2.lab.local**, chacun avec son dossier et sa page d'accueil.\n\n## Travail demandé\n\n1. Créez `/var/www/site1` et `/var/www/site2`, chacun avec un `index.html` (`<h1>Site 1</h1>`, `<h1>Site 2</h1>`).\n2. Écrivez un fichier de site par nom dans `/etc/apache2/sites-available/` (`<VirtualHost *:80>`, `ServerName`, `DocumentRoot`).\n3. Activez les deux sites (`a2ensite`), désactivez le site par défaut (`a2dissite`).\n4. Contrôlez la configuration (`apache2ctl configtest`) puis rechargez Apache.\n5. Testez avec `curl -H \"Host: site2.lab.local\" http://192.168.20.10/` depuis LNX1.\n\nÀ rendre : les deux fichiers de site et le résultat des deux `curl`.",
+  "start": {
+    "devices": [
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 330,
+        "y": 300
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "LSRV1",
+        "x": 330,
+        "y": 100,
+        "ip": "192.168.20.10/24",
+        "packages": ["apache2"]
+      },
+      {
+        "kind": "client",
+        "os": "linux",
+        "name": "LNX1",
+        "x": 130,
+        "y": 470,
+        "ip": "192.168.20.20/24"
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 530,
+        "y": 470,
+        "ip": "192.168.20.30/24"
+      }
+    ],
+    "links": [
+      ["LSRV1:eth0", "SW1:Fa0/1"],
+      ["LNX1:eth0", "SW1:Fa0/2"],
+      ["PC1:Ethernet0", "SW1:Fa0/3"]
+    ]
+  },
+  "criteria": [
+    {
+      "id": "site1",
+      "label": "Le site site1.lab.local est activé avec son dossier",
+      "hint": "Un site est actif quand son fichier est lié dans sites-enabled.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/apache2/sites-enabled/site1.conf",
+        "text": "DocumentRoot /var/www/site1"
+      }
+    },
+    {
+      "id": "site2",
+      "label": "Le site site2.lab.local est activé avec son dossier",
+      "hint": "Un site est actif quand son fichier est lié dans sites-enabled.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/apache2/sites-enabled/site2.conf",
+        "text": "DocumentRoot /var/www/site2"
+      }
+    },
+    {
+      "id": "page1",
+      "label": "La page de site1 existe",
+      "hint": "Chaque DocumentRoot doit contenir une page index.html.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/var/www/site1/index.html",
+        "text": "Site 1"
+      }
+    },
+    {
+      "id": "page2",
+      "label": "La page de site2 existe",
+      "hint": "Chaque DocumentRoot doit contenir une page index.html.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/var/www/site2/index.html",
+        "text": "Site 2"
+      }
+    },
+    {
+      "id": "defaut",
+      "label": "Le site par défaut est désactivé",
+      "hint": "a2dissite retire le lien du site dans sites-enabled.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/apache2/sites-enabled/000-default.conf",
+        "text": "DocumentRoot",
+        "present": false
+      }
+    },
+    {
+      "id": "web",
+      "label": "Le site répond depuis PC1",
+      "hint": "Apache ne prend en compte les sites qu’après un rechargement ; testez avec un navigateur ou curl.",
+      "check": {
+        "type": "httpResponse",
+        "from": "PC1",
+        "url": "http://192.168.20.10/",
+        "status": 200
+      }
+    }
+  ]
+}

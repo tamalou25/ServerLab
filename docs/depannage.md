@@ -104,6 +104,39 @@ Les pannes IOS passent par des lignes de console rejouées en commandes `shell.e
 Les autres pannes réseau viennent avec l'issue #229. Le compte « expiré » n'existe pas : le modèle n'a pas
 de date d'expiration de compte (voir `docs/fidelite.md`, D-20 et suivants).
 
+## Pannes Linux (v2.9, #241)
+
+Domaine `linux` : pannes sur un serveur Debian, cassées et réparées par des **lignes de la console bash** (`sudo sed -i`,
+`sudo chmod`, `sudo systemctl`, `fail2ban-client`, `rndc`…), rendues en commandes nommées `shell.exec` (socle
+`src/engine/troubleshoot/faults/linux-common.ts`, fabrique `linuxFault`). La réparation officielle est donc exactement ce
+que l'élève peut saisir. Le symptôme se lit dans l'état avec les fonctions des consoles (systemctl, `ss`, `apache2ctl
+configtest`, configuration en vigueur relue au redémarrage, droits Unix, `named-checkconf`, réponse de named, `dhcpd -t`,
+bannissements fail2ban) : aucune sortie nouvelle. Le paramètre `service` (nom de l'unité systemd) sert à écarter les tirages
+qui agissent deux fois sur le même service. Tests : `tests/engine/troubleshoot/linux-faults.test.ts` (symptômes vus depuis un
+poste : `curl`, `ssh`, `smbclient`, `dig`).
+
+| Identifiant                  | Diff. | Panne                                                                            | Symptôme                                                                | Réparation                                  |
+| ---------------------------- | ----- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------- |
+| `linux.service-stopped`      | 1     | Service arrêté : ssh, apache2, smbd, named ou isc-dhcp-server (`systemctl stop`) | Connexion refusée, site muet, partage et noms inaccessibles             | `systemctl start`                           |
+| `linux.service-disabled`     | 2     | Service arrêté et désactivé (`systemctl disable --now`)                          | Idem, et le service ne revient pas au démarrage                         | `systemctl enable --now`                    |
+| `linux.sshd-port`            | 2     | `Port 2222` dans `sshd_config`, sshd redémarré                                   | Service actif mais connexion refusée sur le port 22 (`ss -tln`)         | Remettre `Port 22`, redémarrer `ssh`        |
+| `linux.sshd-permitrootlogin` | 2     | `PermitRootLogin yes` passé à `no`, sshd redémarré                               | `ssh root@…` : `Permission denied` avec le bon mot de passe             | Remettre `yes`, redémarrer `ssh`            |
+| `linux.fail2ban-banned`      | 2     | Adresse d'un poste bannie (`fail2ban-client set sshd banip`)                     | Connexion SSH refusée pour ce poste seul, service actif                 | `fail2ban-client set sshd unbanip`          |
+| `linux.apache-syntax`        | 2     | `DocumentRoot` mal orthographié dans le site activé, Apache redémarré            | `apache2ctl configtest` : `Invalid command`, service en échec           | Corriger la directive, redémarrer `apache2` |
+| `linux.apache-vhost`         | 2     | `DocumentRoot` du site vers un dossier inexistant, Apache rechargé               | `404 Not Found` alors qu'Apache tourne                                  | Corriger le chemin, recharger `apache2`     |
+| `linux.apache-docroot-perms` | 2     | `chmod 700` sur le `DocumentRoot` (propriétaire root)                            | `403 Forbidden`, journal d'erreurs d'Apache                             | `chmod` aux droits d'origine                |
+| `linux.smb-wrong-path`       | 2     | `path` d'un partage Samba erroné, smbd redémarré                                 | `NT_STATUS_BAD_NETWORK_NAME`, `testparm`                                | Corriger `path`, redémarrer `smbd`          |
+| `linux.smb-share-perms`      | 2     | `chmod 000` sur le dossier partagé                                               | `NT_STATUS_ACCESS_DENIED` avec un compte autorisé                       | `chmod` aux droits d'origine                |
+| `linux.named-syntax`         | 2     | `;` oublié après `file "…"` dans `named.conf.local`, named redémarré             | `named-checkconf` signale la ligne, service en échec                    | Rétablir le `;`, redémarrer `named`         |
+| `linux.named-missing-record` | 2     | Enregistrement A commenté dans le fichier de zone, `rndc reload`                 | `dig` : `NXDOMAIN` pour ce seul nom                                     | Décommenter, `rndc reload`                  |
+| `linux.dhcpd-interfaces`     | 2     | `INTERFACESv4=""`, service redémarré                                             | Service en échec, journal `Not configured to listen on any interfaces!` | Remettre l'interface, redémarrer le service |
+| `linux.dhcpd-syntax`         | 2     | `;` oublié après `option routers` dans `dhcpd.conf`, service redémarré           | `dhcpd -t` : `semicolon expected`, service en échec                     | Rétablir le `;`, redémarrer le service      |
+
+Non modélisé, donc absent (voir `docs/fidelite.md`, L-100 à L-103) : « serial non incrémenté » (BIND recharge une zone
+primaire dès que son fichier change, le numéro de série ne compte que pour les secondaires, qui n'existent pas ici) et
+« erreur de syntaxe de `smb.conf` qui empêche smbd de démarrer » (smbd simulé ne refuse jamais de démarrer ; `testparm`
+signale l'erreur). Une panne ne s'applique qu'à un lab qui a le service concerné actif : sinon `pick` renvoie `null`.
+
 ## Pannes composées
 
 Une panne composée associe **deux causes dont la première masque la seconde** : la seconde n'est visible
@@ -141,16 +174,17 @@ réparabilité commun (`faults.test.ts`). Labs sains de référence : `tests/eng
 
 ## Labs de dépannage fournis
 
-Fichiers `labs/lab-43-…`, `lab-44-…`, `lab-45-…` : le `start` est un état **sain**, le champ `troubleshooting`
+Fichiers `labs/lab-43-…` à `lab-45-…` et `lab-53-…` : le `start` est un état **sain**, le champ `troubleshooting`
 (graine et pannes fixées) casse le lab au chargement (`buildLabState` : ouverture, reprise et examen). L'énoncé est
 un ticket sans la cause ; les critères combinent `faultRepaired` et des critères ordinaires. Tests :
 `tests/engine/labs/lab-4[345]-*.test.ts` (départ cassé, réparation officielle à 100 %, cas partiels).
 
-| Lab                           | Pannes (graine 2)                                          | Symptômes                                                    | Ce que le lab montre                      |
-| ----------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------- |
-| 43 `lab-43-depannage-reseau`  | `net.wrong-vlan` (port de PC2) + `net.wrong-gateway` (WEB) | PC2 isolé, WEB injoignable de PC1                            | deux causes indépendantes, niveaux 2 et 3 |
-| 44 `lab-44-depannage-windows` | `win.clock-skew` (PC1) + `windows.service-stopped` (DNS)   | « aucun serveur d'ouverture de session », puis écart d'heure | le DNS arrêté cache l'écart d'horloge     |
-| 45 `lab-45-depannage-compose` | `win.combo.dns-stopped-wrong-a`                            | nom non résolu, puis résolu vers une mauvaise adresse        | panne composée, partage inaccessible      |
+| Lab                           | Pannes (graine 2)                                          | Symptômes                                                          | Ce que le lab montre                           |
+| ----------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------- |
+| 43 `lab-43-depannage-reseau`  | `net.wrong-vlan` (port de PC2) + `net.wrong-gateway` (WEB) | PC2 isolé, WEB injoignable de PC1                                  | deux causes indépendantes, niveaux 2 et 3      |
+| 44 `lab-44-depannage-windows` | `win.clock-skew` (PC1) + `windows.service-stopped` (DNS)   | « aucun serveur d'ouverture de session », puis écart d'heure       | le DNS arrêté cache l'écart d'horloge          |
+| 45 `lab-45-depannage-compose` | `win.combo.dns-stopped-wrong-a`                            | nom non résolu, puis résolu vers une mauvaise adresse              | panne composée, partage inaccessible           |
+| 53 `lab-53-depannage-linux`   | `linux.apache-docroot-perms` + `linux.sshd-port`           | site en `403 Forbidden`, SSH refusé alors que le service est actif | deux causes Linux indépendantes (console bash) |
 
 ## Interface
 

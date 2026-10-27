@@ -20,6 +20,18 @@ const ALREADY_MET: Record<string, Record<string, string>> = {
   },
   'lab-19-durcissement-ad': { dupont: 'non-régression : le compte légitime reste actif' },
   'lab-21-durcissement-pare-feu': { ping: 'non-régression : le ping reste autorisé' },
+  'lab-46-linux-ssh-fail2ban': {
+    f2b: 'non-régression : fail2ban installé tourne déjà, il doit rester actif'
+  },
+  'lab-47-linux-apache2': { web: 'non-régression : la page par défaut répond avant les deux sites (200)' },
+  'lab-48-linux-samba': {
+    smbd: 'non-régression : smbd installé tourne déjà, il doit rester actif',
+    port: 'non-régression : le port 445 reste ouvert'
+  },
+  'lab-51-mixte-samba-windows': {
+    smbd: 'non-régression : smbd est déjà démarré avec le partage public, il doit le rester'
+  },
+  'lab-49-linux-bind9': { named: 'non-régression : named installé tourne déjà, il doit rester actif' },
   'lab-28-ios-sujet-e6': {
     'acl-block': 'ping bloqué au départ faute de routage ; les autres critères exigent le routage'
   }

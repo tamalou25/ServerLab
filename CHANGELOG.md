@@ -71,6 +71,15 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   renouvellement, libération, conflit avec un autre serveur DHCP. État en champs facultatifs de `host.linux` (format `.slab` 27
   inchangé), captures `docs/captures/bash`, tests golden et de comportement, L-90 à L-99 dans `docs/fidelite.md`.
 
+- Labs Linux et pannes Linux (#241) : labs 46 à 52 (SSH et fail2ban, Apache2, Samba, Bind9, isc-dhcp-server, et deux labs
+  mixtes Windows / Linux : partage Samba utilisé par un poste Windows, DHCP et DNS Linux pour un poste Windows), lab 53 de
+  dépannage Linux ; 14 pannes du domaine `linux` (service arrêté ou désactivé, port de sshd, `PermitRootLogin`, IP bannie par
+  fail2ban, syntaxe et hôte virtuel Apache, droits du DocumentRoot, chemin et droits d'un partage Samba, syntaxe de named,
+  enregistrement DNS manquant, `INTERFACESv4` vide, syntaxe de dhcpd.conf) cassées et réparées par des lignes de la console
+  bash. Départ déclaratif : champs `packages` et `bash` d'un équipement Linux (commande `linux.installPackages`) ; critères
+  `linuxServiceActive`, `linuxFileContains`, `linuxFileMode`, `linuxPortListening`, `linuxPackageInstalled`. Format `.slab` 27
+  inchangé, aucune fixture modifiée.
+
 ## [2.8.0] — 2026-10-19
 
 Services à état et mode panne. Format `.slab` 26 (migration 25 → 26 : horloge par ordinateur). Les sorties sans source

@@ -35,6 +35,14 @@ export interface CriterionTypeInfo {
 /** Libellés des champs, communs à tous les types (même clé = même sens). */
 const FIELD_LABELS: Record<string, string> = {
   min: 'Score minimal',
+  unit: 'Service (unité systemd)',
+  active: 'Actif',
+  text: 'Texte cherché',
+  regex: 'Expression régulière',
+  owner: 'Propriétaire',
+  proto: 'Protocole de transport',
+  listening: 'En écoute',
+  package: 'Paquet',
   maxSeconds: 'Écart maximal (secondes)',
   line: 'Ligne de configuration',
   present: 'Présente',

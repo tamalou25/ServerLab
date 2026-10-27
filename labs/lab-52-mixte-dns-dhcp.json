@@ -1,0 +1,112 @@
+{
+  "formatVersion": 1,
+  "id": "lab-52-mixte-dns-dhcp",
+  "title": "Mixte : DHCP et DNS Linux pour un poste Windows",
+  "difficulty": "Avancé",
+  "duration": "50 min",
+  "summary": "Un serveur Debian fournit le DNS (Bind9) et le DHCP à un poste Windows : adresse, serveur DNS et résolution des noms de la zone.",
+  "statement": "## Contexte\n\n**LSRV1** (Debian, 192.168.20.10/24) héberge **Bind9** (zone `lab.lan` déjà chargée) et **isc-dhcp-server** (installé, non configuré). **PC1** (Windows) est en DHCP ; **LNX1** (192.168.20.20) porte le nom `www.lab.lan`.\n\n## Travail demandé\n\n1. Configurez isc-dhcp-server : interface `eth0`, plage 192.168.20.100-110, passerelle 192.168.20.254, **serveur DNS 192.168.20.10**, domaine `lab.lan`.\n2. Contrôlez (`dhcpd -t`) et redémarrez le service.\n3. Sur PC1, renouvelez le bail (`ipconfig /renew`) et vérifiez les paramètres reçus (`ipconfig /all`).\n4. Testez la résolution depuis PC1 : `nslookup www.lab.lan`.\n\nÀ rendre : dhcpd.conf et les sorties d'`ipconfig /all` et de `nslookup`.",
+  "start": {
+    "devices": [
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 330,
+        "y": 300
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "LSRV1",
+        "x": 330,
+        "y": 100,
+        "ip": "192.168.20.10/24",
+        "packages": ["bind9", "isc-dhcp-server"],
+        "bash": [
+          "echo '$TTL 604800' | sudo tee /var/cache/bind/db.lab.lan",
+          "echo '@ IN SOA ns1.lab.lan. admin.lab.lan. (' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo '        2         ; Serial' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo '        604800    ; Refresh' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo '        86400     ; Retry' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo '        2419200   ; Expire' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo '        604800 )  ; Negative Cache TTL' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo '@ IN NS ns1.lab.lan.' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo 'ns1 IN A 192.168.20.10' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo 'www IN A 192.168.20.20' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo 'web IN CNAME www' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo '// vide' | sudo tee /etc/bind/named.conf.local",
+          "echo 'zone \"lab.lan\" {' | sudo tee -a /etc/bind/named.conf.local",
+          "echo '    type master;' | sudo tee -a /etc/bind/named.conf.local",
+          "echo '    file \"db.lab.lan\";' | sudo tee -a /etc/bind/named.conf.local",
+          "echo '};' | sudo tee -a /etc/bind/named.conf.local",
+          "sudo rndc reload"
+        ]
+      },
+      {
+        "kind": "client",
+        "os": "linux",
+        "name": "LNX1",
+        "x": 130,
+        "y": 470,
+        "ip": "192.168.20.20/24",
+        "dns": ["192.168.20.10"]
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 530,
+        "y": 470,
+        "dhcp": true
+      }
+    ],
+    "links": [
+      ["LSRV1:eth0", "SW1:Fa0/1"],
+      ["LNX1:eth0", "SW1:Fa0/2"],
+      ["PC1:Ethernet0", "SW1:Fa0/3"]
+    ]
+  },
+  "criteria": [
+    {
+      "id": "dns",
+      "label": "dhcpd distribue le serveur DNS 192.168.20.10",
+      "hint": "Le poste ne trouvera le DNS que si le bail le lui indique : option domain-name-servers.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/dhcp/dhcpd.conf",
+        "text": "option domain-name-servers 192.168.20.10;"
+      }
+    },
+    {
+      "id": "service",
+      "label": "Le service isc-dhcp-server est actif",
+      "hint": "dhcpd refuse de démarrer si sa configuration est invalide : lisez dhcpd -t.",
+      "check": {
+        "type": "linuxServiceActive",
+        "device": "LSRV1",
+        "unit": "isc-dhcp-server"
+      }
+    },
+    {
+      "id": "bail",
+      "label": "PC1 a obtenu un bail de LSRV1",
+      "hint": "Le poste doit redemander une adresse une fois le serveur prêt.",
+      "check": {
+        "type": "dhcpLease",
+        "client": "PC1",
+        "server": "LSRV1"
+      }
+    },
+    {
+      "id": "resolution",
+      "label": "PC1 résout www.lab.lan",
+      "hint": "Le poste interroge le serveur DNS reçu dans son bail.",
+      "check": {
+        "type": "nslookup",
+        "client": "PC1",
+        "name": "www.lab.lan",
+        "address": "192.168.20.20"
+      }
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { command, type Command, type CommandType, type CommandValue } from '../commands/catalog'
 import { dispatch } from '../commands/dispatch'
 import { runIosScript } from '../ios/cli'
+import { createShellSession } from '../shell/exec'
 import type { CyberConfigPatch } from '../cyber/config'
 import { IOS_MODELS } from '../ios/models'
 import { createLab } from '../model/factory'
@@ -83,7 +84,18 @@ export const LabDeviceSchema = z.object({
     )
     .optional(),
   /** Fichiers présents au départ (dossiers parents créés au besoin) : chemin local et contenu texte. */
-  files: z.array(z.object({ path: z.string(), content: z.string() })).optional()
+  files: z.array(z.object({ path: z.string(), content: z.string() })).optional(),
+  /** Serveur Linux : paquets installés au départ (apache2, bind9…), leurs services démarrés comme avec `apt install`. */
+  packages: z.array(z.string()).optional(),
+  /**
+   * Serveur ou poste Linux : lignes saisies dans la console bash (compte `admin`, `sudo` permis) pour
+   * préparer l'ordinateur (écriture de fichiers avec `echo … | sudo tee`, `systemctl restart`…). Une ligne
+   * qui échoue interrompt la construction du lab : le départ est sain ou n'existe pas. Une ligne qui
+   * demande une saisie (mot de passe de `smbpasswd`) s'écrit { line, answers }.
+   */
+  bash: z
+    .array(z.union([z.string(), z.object({ line: z.string(), answers: z.array(z.string()) })]))
+    .optional()
 })
 
 export const LabDomainSchema = z.object({
@@ -355,6 +367,23 @@ function buildDeclarativeStart(start: LabDeclarativeStart): LabState {
         })
       )
     if (d.ios?.length) state = runIosScript(state, id, d.ios)
+  }
+  // Ordinateurs Linux : paquets puis lignes de console, une fois toutes les cartes configurées
+  for (const d of start.devices) {
+    const id = idOf(d.name)
+    if (d.packages?.length) apply(command('linux.installPackages', id, d.packages))
+    if (!d.bash?.length) continue
+    let session = createShellSession(state, id, 'cmd')
+    for (const entry of d.bash) {
+      const line = typeof entry === 'string' ? entry : entry.line
+      const outcome = apply(
+        command('shell.exec', session, line, typeof entry === 'string' ? [] : entry.answers)
+      )
+      session = outcome.session
+      const failure = outcome.output.find((o) => o.kind === 'error')
+      if (failure || outcome.prompt)
+        throw new Error(`${d.name} : « ${line} » a échoué (${failure?.text ?? 'saisie demandée'}).`)
+    }
   }
   const domain = start.domain
   if (domain) {
