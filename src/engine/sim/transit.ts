@@ -81,6 +81,16 @@ export interface TransitHooks {
     packet: TransitPacket
   ): { src: string; note: string } | null
   /**
+   * Redirection de port (pare-feu pfSense) : nouvelle destination d'un paquet entrant, appliquée AVANT
+   * le filtrage (les règles voient l'adresse interne), ou null.
+   */
+  redirect?(
+    ctx: TransitContext,
+    device: Device,
+    ingressIfaceId: string | null,
+    packet: FilterPacket
+  ): { dst: string; dstPort: number; note: string } | null
+  /**
    * Filtrage du paquet à l'entrée (`ingressIfaceId`) ou à la sortie (`egressIfaceId`) d'une
    * interface (listes d'accès, pare-feu) : explication du refus (texte) ou décision d'un filtre à
    * états, ou null s'il passe.

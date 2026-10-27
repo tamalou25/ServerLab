@@ -51,6 +51,12 @@ export function serverExchange(
   const from = state.devices[fromId]
   const src = from ? sourceAddressFor(state, from, dstIp) : null
   if (!from || !src) return { trace: { title: protocol, events: [] }, ok: false, src: null }
+  // Les effets durables (journal, états et traductions d'un pare-feu pfSense) accompagnent la trace
+  const traceOf = (): PacketTrace => ({
+    title: protocol,
+    events: rec.events,
+    ...(ctx.effects.length > 0 ? { effects: ctx.effects } : {})
+  })
   const tcp = port !== 389 || !request.startsWith('LDAP ping')
   const layer = (kind: string): PduLayer[] => [
     { layer: 4, name: tcp ? 'TCP' : 'UDP', fields: [['Port destination', String(port)]] },
@@ -68,10 +74,9 @@ export function serverExchange(
     transport: tcp ? 'TCP' : 'UDP',
     port
   })
-  if (req.kind !== 'delivered')
-    return { trace: { title: protocol, events: rec.events }, ok: false, src: null }
+  if (req.kind !== 'delivered') return { trace: traceOf(), ok: false, src: null }
   const dc = state.devices[req.deviceId]
-  if (!dc) return { trace: { title: protocol, events: rec.events }, ok: false, src: null }
+  if (!dc) return { trace: traceOf(), ok: false, src: null }
   const rep = sendIp(ctx, dc.id, {
     src: dstIp,
     dst: req.src,
@@ -82,7 +87,7 @@ export function serverExchange(
     upper: layer(reply),
     reply: true
   })
-  return { trace: { title: protocol, events: rec.events }, ok: rep.kind === 'delivered', src: req.src }
+  return { trace: traceOf(), ok: rep.kind === 'delivered', src: req.src }
 }
 
 export function exchange(
