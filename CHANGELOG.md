@@ -6,6 +6,14 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+## [2.10.0] — 2026-10-27
+
+Pare-feu pfSense CE 2.7 simulé : règles, NAT, services, interface web, console. Format `.slab` 28 (migration 27 → 28,
+#242) ; les autres issues n'ajoutent que des champs facultatifs de `pf`. Sorties et comportements non confirmés par
+la documentation Netgate listés « à vérifier » dans `docs/fidelite.md` (section v2.10, P-01 à P-62).
+
+Labs 54 à 59.
+
 ### v2.10 (pare-feu)
 
 - Équipement pare-feu pfSense CE 2.7 (#242) : nouveau type de nœud `firewall` (préfixe `FW`, icône lucide `BrickWall`,
