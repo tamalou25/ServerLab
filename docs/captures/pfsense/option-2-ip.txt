@@ -1,0 +1,84 @@
+# Source: https://github.com/pfsense/pfsense/tree/RELENG_2_7_2/src/etc (scripts de la console pfSense CE 2.7.2 : rc.initial, rc.banner, rc.initial.setports, config.console.inc, rc.initial.setlanip, rc.initial.password, rc.initial.defaults, rc.initial.reboot, rc.initial.ping) ; https://docs.netgate.com/pfsense/en/latest/config/console-menu.html. Noms de cartes, adresses et durées du lab ServerLab
+# Commande: 2 [réponses : 2, n, 192.168.10.1, 24, (vide), n, (vide), y, 192.168.10.100, 192.168.10.199, n, (vide)]
+*** Welcome to pfSense 2.7.2-RELEASE (amd64) on FW1 ***
+
+ WAN (wan)       -> em0        -> v4: 203.0.113.2/24
+ LAN (lan)       -> em1        -> v4: 192.168.1.1/24
+ DMZ (opt1)      -> em2        -> v4: 172.16.0.1/24
+
+ 0) Logout (SSH only)                  9) pfTop
+ 1) Assign Interfaces                 10) Filter Logs
+ 2) Set interface(s) IP address       11) Restart webConfigurator
+ 3) Reset webConfigurator password    12) PHP shell + pfSense tools
+ 4) Reset to factory defaults         13) Update from console
+ 5) Reboot system                     14) Enable Secure Shell (sshd)
+ 6) Halt system                       15) Restore recent configuration
+ 7) Ping host                         16) Restart PHP-FPM
+ 8) Shell
+
+Enter an option: 2
+
+Available interfaces:
+
+1 - WAN (em0 - static)
+2 - LAN (em1 - static)
+3 - DMZ (em2 - static)
+
+Enter the number of the interface you wish to configure: 2
+
+Configure IPv4 address LAN interface via DHCP? (y/n) n
+
+Enter the new LAN IPv4 address.  Press <ENTER> for none:
+> 192.168.10.1
+
+Subnet masks are entered as bit counts (as in CIDR notation) in pfSense.
+e.g. 255.255.255.0 = 24
+     255.255.0.0   = 16
+     255.0.0.0     = 8
+
+Enter the new LAN IPv4 subnet bit count (1 to 32):
+> 24
+
+For a WAN, enter the new LAN IPv4 upstream gateway address.
+For a LAN, press <ENTER> for none:
+> 
+
+Configure IPv6 address LAN interface via DHCP6? (y/n) n
+
+Enter the new LAN IPv6 address.  Press <ENTER> for none:
+> 
+
+Do you want to enable the DHCP server on LAN? (y/n) y
+Enter the start address of the IPv4 client address range: 192.168.10.100
+Enter the end address of the IPv4 client address range: 192.168.10.199
+Disabling IPv6 DHCPD...
+
+Do you want to revert to HTTP as the webConfigurator protocol? (y/n) n
+
+Please wait while the changes are saved to LAN...
+ Reloading filter...
+ Reloading routing configuration...
+ DHCPD...
+
+The IPv4 LAN address has been set to 192.168.10.1/24
+You can now access the webConfigurator by opening the following URL in your web browser:
+		https://192.168.10.1/
+
+Press <ENTER> to continue.
+*** Welcome to pfSense 2.7.2-RELEASE (amd64) on FW1 ***
+
+ WAN (wan)       -> em0        -> v4: 203.0.113.2/24
+ LAN (lan)       -> em1        -> v4: 192.168.10.1/24
+ DMZ (opt1)      -> em2        -> v4: 172.16.0.1/24
+
+ 0) Logout (SSH only)                  9) pfTop
+ 1) Assign Interfaces                 10) Filter Logs
+ 2) Set interface(s) IP address       11) Restart webConfigurator
+ 3) Reset webConfigurator password    12) PHP shell + pfSense tools
+ 4) Reset to factory defaults         13) Update from console
+ 5) Reboot system                     14) Enable Secure Shell (sshd)
+ 6) Halt system                       15) Restore recent configuration
+ 7) Ping host                         16) Restart PHP-FPM
+ 8) Shell
+
+Enter an option: 

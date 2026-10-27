@@ -27,6 +27,14 @@ import {
   updatePfRule
 } from '../net/pf-rules'
 import {
+  assignPfInterfaces,
+  factoryResetPf,
+  rebootPf,
+  resetPfAdminPassword,
+  setPfFilterEnabled,
+  setPfInterfaceFromConsole
+} from '../net/pf-console'
+import {
   addPfStaticRoute,
   removePfGateway,
   removePfHostOverride,
@@ -346,6 +354,23 @@ const CORE_COMMANDS = {
   'pf.webRequest': def(pfWebRequest, (_s, _id, url) => `Accéder à l’interface web du pare-feu (${url})`),
   'pf.clearLog': def(clearPfLog, (s, id) => `Vider le journal du pare-feu${on(s, id)}`),
   'pf.resetStates': def(resetPfStates, (s, id) => `Réinitialiser la table d’états${on(s, id)}`),
+
+  // Console du pare-feu (v2.10, #247)
+  'pf.assignInterfaces': def(assignPfInterfaces, (s, id) => `Affecter les interfaces${on(s, id)}`),
+  'pf.setInterfaceFromConsole': def(
+    setPfInterfaceFromConsole,
+    (s, id, input) => `Définir l’adresse de l’interface ${input.key.toUpperCase()}${on(s, id)}`
+  ),
+  'pf.resetAdminPassword': def(
+    resetPfAdminPassword,
+    (s, id) => `Réinitialiser le mot de passe du webConfigurator${on(s, id)}`
+  ),
+  'pf.factoryReset': def(factoryResetPf, (s, id) => `Réinitialiser aux valeurs d’usine${on(s, id)}`),
+  'pf.reboot': def(rebootPf, (s, id) => `Redémarrer le pare-feu${on(s, id)}`),
+  'pf.setFilterEnabled': def(
+    setPfFilterEnabled,
+    (s, id, enabled) => `${enabled ? 'Activer' : 'Désactiver'} le filtre pf${on(s, id)}`
+  ),
 
   // Système
   'system.restartComputer': def(restartComputer, (s, id) => `Redémarrer ${deviceName(s, id)}`),

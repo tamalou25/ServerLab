@@ -29,6 +29,9 @@ export const PF_IFACE_LABEL: Record<PfIfaceKey, string> = {
 /** Description donnée à l'interface OPT1 de la topologie (pfSense permet de renommer toute interface). */
 export const PF_DMZ_DESCR = 'DMZ'
 
+/** Mot de passe d'usine du compte admin du webConfigurator (option 3 de la console, docs/fidelite.md, P-51). */
+export const PF_DEFAULT_ADMIN_PASSWORD = 'pfsense'
+
 /** Adresse LAN d'un pare-feu neuf (à vérifier : docs/fidelite.md, P-01). */
 export const PF_LAN_ADDRESS = '192.168.1.1'
 export const PF_LAN_PREFIX = 24
@@ -248,6 +251,15 @@ export const PfStateSchema = z.object({
   gateways: z.array(PfGatewaySchema).default([]),
   staticRoutes: z.array(PfStaticRouteSchema).default([]),
   log: z.array(PfLogEntrySchema).default([]),
-  states: z.array(PfStateEntrySchema).default([])
+  states: z.array(PfStateEntrySchema).default([]),
+  // --- Console (#247) : champs facultatifs, absents d'un pare-feu neuf (aucune migration) ---
+  /** Filtre désactivé par `pfctl -d` (absent : actif) ; désactive aussi le NAT, comme pf. */
+  filterDisabled: z.boolean().optional(),
+  /** Horloge du lab (ms) du démarrage du filtre (redémarrage, `pfctl -e`) ; absent : début du lab. */
+  filterSince: z.number().optional(),
+  /** Protocole du webConfigurator (absent : https) ; la console (option 2) propose de passer en http. */
+  webProtocol: z.enum(['https', 'http']).optional(),
+  /** Mot de passe du compte admin du webConfigurator (absent : valeur d'usine). */
+  adminPassword: z.string().optional()
 })
 export type PfState = z.infer<typeof PfStateSchema>
