@@ -52,6 +52,15 @@ export function IosConsoleTab({ deviceId }: { deviceId: string }) {
   )
 }
 
+/** Console du pare-feu pfSense : menu numéroté puis shell. */
+export function PfsenseConsoleTab({ deviceId }: { deviceId: string }) {
+  return (
+    <div className="h-full" data-testid="console-pfsense">
+      <Terminal key={k(deviceId, 'pfsense')} deviceId={deviceId} kind="pfsense" autoFocus />
+    </div>
+  )
+}
+
 function k(deviceId: string, kind: ShellKind): string {
   return `${deviceId}-${kind}`
 }

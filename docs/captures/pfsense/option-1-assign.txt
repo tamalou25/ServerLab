@@ -1,0 +1,75 @@
+# Source: https://github.com/pfsense/pfsense/tree/RELENG_2_7_2/src/etc (scripts de la console pfSense CE 2.7.2 : rc.initial, rc.banner, rc.initial.setports, config.console.inc, rc.initial.setlanip, rc.initial.password, rc.initial.defaults, rc.initial.reboot, rc.initial.ping) ; https://docs.netgate.com/pfsense/en/latest/config/console-menu.html. Noms de cartes, adresses et durées du lab ServerLab
+# Commande: 1 [réponses : n, em0, em1, em2, y]
+*** Welcome to pfSense 2.7.2-RELEASE (amd64) on FW1 ***
+
+ WAN (wan)       -> em0        -> v4: 203.0.113.2/24
+ LAN (lan)       -> em1        -> v4: 192.168.1.1/24
+ DMZ (opt1)      -> em2        -> v4: 172.16.0.1/24
+
+ 0) Logout (SSH only)                  9) pfTop
+ 1) Assign Interfaces                 10) Filter Logs
+ 2) Set interface(s) IP address       11) Restart webConfigurator
+ 3) Reset webConfigurator password    12) PHP shell + pfSense tools
+ 4) Reset to factory defaults         13) Update from console
+ 5) Reboot system                     14) Enable Secure Shell (sshd)
+ 6) Halt system                       15) Restore recent configuration
+ 7) Ping host                         16) Restart PHP-FPM
+ 8) Shell
+
+Enter an option: 1
+
+
+Valid interfaces are:
+
+em0     02:53:4c:00:00:02   (up) Intel(R) Legacy PRO/1000 MT 82540EM
+em1     02:53:4c:00:00:03   (up) Intel(R) Legacy PRO/1000 MT 82540EM
+em2     02:53:4c:00:00:04 (down) Intel(R) Legacy PRO/1000 MT 82540EM
+
+Do VLANs need to be set up first?
+If VLANs will not be used, or only for optional interfaces, it is typical to
+say no here and use the webConfigurator to configure VLANs later, if required.
+
+Should VLANs be set up now [y|n]? n
+
+If the names of the interfaces are not known, auto-detection can
+be used instead. To use auto-detection, please disconnect all
+interfaces before pressing 'a' to begin the process.
+
+Enter the WAN interface name or 'a' for auto-detection 
+(em0 em1 em2 or a): em0
+
+Enter the LAN interface name or 'a' for auto-detection 
+NOTE: this enables full Firewalling/NAT mode.
+(em1 em2 a or nothing if finished): em1
+
+Optional interface 1 description found: DMZ
+Enter the Optional 1 interface name or 'a' for auto-detection
+(em2 a or nothing if finished): em2
+
+The interfaces will be assigned as follows:
+
+WAN  -> em0
+LAN  -> em1
+OPT1 -> em2
+
+Do you want to proceed [y|n]? y
+
+Writing configuration...done.
+One moment while the settings are reloading... done!
+*** Welcome to pfSense 2.7.2-RELEASE (amd64) on FW1 ***
+
+ WAN (wan)       -> em0        -> v4: 203.0.113.2/24
+ LAN (lan)       -> em1        -> v4: 192.168.1.1/24
+ DMZ (opt1)      -> em2        -> v4: 172.16.0.1/24
+
+ 0) Logout (SSH only)                  9) pfTop
+ 1) Assign Interfaces                 10) Filter Logs
+ 2) Set interface(s) IP address       11) Restart webConfigurator
+ 3) Reset webConfigurator password    12) PHP shell + pfSense tools
+ 4) Reset to factory defaults         13) Update from console
+ 5) Reboot system                     14) Enable Secure Shell (sshd)
+ 6) Halt system                       15) Restore recent configuration
+ 7) Ping host                         16) Restart PHP-FPM
+ 8) Shell
+
+Enter an option: 

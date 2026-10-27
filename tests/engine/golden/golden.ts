@@ -14,7 +14,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 export const CAPTURES_DIR = resolve(__dirname, '../../../docs/captures')
-export const CONSOLES = ['cmd', 'ps', 'ios', 'bash'] as const
+export const CONSOLES = ['cmd', 'ps', 'ios', 'bash', 'pfsense'] as const
 export type Console = (typeof CONSOLES)[number]
 
 /** Valeurs dynamiques normalisables (jamais implicites). */
