@@ -167,12 +167,18 @@ export function setPfInterfaceFromConsole(
   const device = state.devices[deviceId]
   if (!device) return { ok: false, error: { code: 'DeviceNotFound', message: 'Équipement introuvable.' } }
   if (device.kind !== 'firewall')
-    return { ok: false, error: { code: 'NotAFirewall', message: `${device.name} n’est pas un pare-feu pfSense.` } }
+    return {
+      ok: false,
+      error: { code: 'NotAFirewall', message: `${device.name} n’est pas un pare-feu pfSense.` }
+    }
   const nicId = device.pf.assignments.find((a) => a.key === input.key)?.ifaceId
   if (!nicId)
     return {
       ok: false,
-      error: { code: 'InterfaceNotFound', message: `L’interface ${input.key.toUpperCase()} n’est pas affectée.` }
+      error: {
+        code: 'InterfaceNotFound',
+        message: `L’interface ${input.key.toUpperCase()} n’est pas affectée.`
+      }
     }
   if (input.address !== null && !isIpv4(input.address))
     return {
@@ -258,8 +264,7 @@ export function rebootPf(state: LabState, deviceId: string): EngineResult<void> 
 export function setPfFilterEnabled(state: LabState, deviceId: string, enabled: boolean): EngineResult<void> {
   return transact(state, (draft) => {
     const pf = requirePf(draft, deviceId)
-    if (enabled === !pf.filterDisabled)
-      raise('PfState', enabled ? 'pf already enabled' : 'pf not enabled')
+    if (enabled === !pf.filterDisabled) raise('PfState', enabled ? 'pf already enabled' : 'pf not enabled')
     if (enabled) {
       delete pf.filterDisabled
       pf.filterSince = draft.clock

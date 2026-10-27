@@ -42,6 +42,14 @@ const THEMES: Record<
     warning: 'text-neutral-200',
     verbose: 'text-neutral-200'
   },
+  // Console série du pare-feu pfSense
+  pfsense: {
+    root: 'bg-black',
+    text: 'text-neutral-200',
+    error: 'text-red-400',
+    warning: 'text-yellow-300',
+    verbose: 'text-cyan-300'
+  },
   // Terminal d'Ubuntu (profil par défaut)
   bash: {
     root: 'bg-[#300a24]',

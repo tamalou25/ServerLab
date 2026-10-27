@@ -68,7 +68,8 @@ export function rawLogLine(device: PfDevice, entry: LogEntry, index: number): st
     dst.ip
   ]
   let tail: (string | number)[] = []
-  if (entry.protocol === 'tcp') tail = [sport, dst.port ?? 0, 0, 'S', 1000000000 + index, '', 65535, '', 'mss']
+  if (entry.protocol === 'tcp')
+    tail = [sport, dst.port ?? 0, 0, 'S', 1000000000 + index, '', 65535, '', 'mss']
   else if (entry.protocol === 'udp') tail = [sport, dst.port ?? 0, 0]
   else if (entry.protocol === 'icmp') tail = ['request', 1 + index, 1]
   return `${syslogStamp(entry.at)} ${device.pf.hostname} filterlog: ${[...head, ...tail].join(',')}`

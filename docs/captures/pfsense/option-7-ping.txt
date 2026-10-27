@@ -1,0 +1,51 @@
+# Source: https://github.com/pfsense/pfsense/tree/RELENG_2_7_2/src/etc (scripts de la console pfSense CE 2.7.2 : rc.initial, rc.banner, rc.initial.setports, config.console.inc, rc.initial.setlanip, rc.initial.password, rc.initial.defaults, rc.initial.reboot, rc.initial.ping) ; https://docs.netgate.com/pfsense/en/latest/config/console-menu.html. Noms de cartes, adresses et durées du lab ServerLab ; https://github.com/freebsd/freebsd-src/tree/stable/14/sbin/ping (ping.c, main.c : pr_summary)
+# Commande: 7 [réponses : 192.168.1.10, (vide)]
+*** Welcome to pfSense 2.7.2-RELEASE (amd64) on FW1 ***
+
+ WAN (wan)       -> em0        -> v4: 203.0.113.2/24
+ LAN (lan)       -> em1        -> v4: 192.168.1.1/24
+ DMZ (opt1)      -> em2        -> v4: 172.16.0.1/24
+
+ 0) Logout (SSH only)                  9) pfTop
+ 1) Assign Interfaces                 10) Filter Logs
+ 2) Set interface(s) IP address       11) Restart webConfigurator
+ 3) Reset webConfigurator password    12) PHP shell + pfSense tools
+ 4) Reset to factory defaults         13) Update from console
+ 5) Reboot system                     14) Enable Secure Shell (sshd)
+ 6) Halt system                       15) Restore recent configuration
+ 7) Ping host                         16) Restart PHP-FPM
+ 8) Shell
+
+Enter an option: 7
+
+
+Enter a host name or IP address: 192.168.1.10
+
+PING 192.168.1.10 (192.168.1.10): 56 data bytes
+64 bytes from 192.168.1.10: icmp_seq=0 ttl=128 time=0.000 ms
+64 bytes from 192.168.1.10: icmp_seq=1 ttl=128 time=0.000 ms
+64 bytes from 192.168.1.10: icmp_seq=2 ttl=128 time=0.000 ms
+
+--- 192.168.1.10 ping statistics ---
+3 packets transmitted, 3 packets received, 0.0% packet loss
+round-trip min/avg/max/stddev = 0.000/0.000/0.000/0.000 ms
+
+Press ENTER to continue.
+
+*** Welcome to pfSense 2.7.2-RELEASE (amd64) on FW1 ***
+
+ WAN (wan)       -> em0        -> v4: 203.0.113.2/24
+ LAN (lan)       -> em1        -> v4: 192.168.1.1/24
+ DMZ (opt1)      -> em2        -> v4: 172.16.0.1/24
+
+ 0) Logout (SSH only)                  9) pfTop
+ 1) Assign Interfaces                 10) Filter Logs
+ 2) Set interface(s) IP address       11) Restart webConfigurator
+ 3) Reset webConfigurator password    12) PHP shell + pfSense tools
+ 4) Reset to factory defaults         13) Update from console
+ 5) Reboot system                     14) Enable Secure Shell (sshd)
+ 6) Halt system                       15) Restore recent configuration
+ 7) Ping host                         16) Restart PHP-FPM
+ 8) Shell
+
+Enter an option: 

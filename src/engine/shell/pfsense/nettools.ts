@@ -56,7 +56,8 @@ function nicLines(state: LabState, device: PfDevice, nic: NetInterface): string[
     const mask = prefixToMaskInt(eff.prefixLength)
     let line = `\tinet ${eff.address} netmask 0x${mask.toString(16)}`
     const ip = parseIpv4(eff.address)
-    if (ip !== null && eff.prefixLength < 31) line += ` broadcast ${formatIpv4(broadcastInt(ip, eff.prefixLength))}`
+    if (ip !== null && eff.prefixLength < 31)
+      line += ` broadcast ${formatIpv4(broadcastInt(ip, eff.prefixLength))}`
     lines.push(line)
   }
   lines.push(
@@ -106,7 +107,8 @@ export function netstatRoutes(device: PfDevice): string[] {
   const gwNic = (iface: string) => nics.find((n) => assignmentOfNic(device.pf, n.id)?.key === iface)
   if (defaultGw) {
     const nic = gwNic(defaultGw.iface)
-    if (nic) rows.push({ dest: 'default', gateway: defaultGw.address, flags: 'UGS', netif: nic.name, key: [-1, 0] })
+    if (nic)
+      rows.push({ dest: 'default', gateway: defaultGw.address, flags: 'UGS', netif: nic.name, key: [-1, 0] })
   }
   rows.push({ dest: '127.0.0.1', gateway: loLink, flags: 'UH', netif: 'lo0', key: key('127.0.0.1', 32) })
   for (const nic of nics) {
@@ -120,7 +122,13 @@ export function netstatRoutes(device: PfDevice): string[] {
       netif: nic.name,
       key: key(net, eff.prefixLength)
     })
-    rows.push({ dest: eff.address, gateway: linkOf(nic), flags: 'UHS', netif: 'lo0', key: key(eff.address, 32) })
+    rows.push({
+      dest: eff.address,
+      gateway: linkOf(nic),
+      flags: 'UHS',
+      netif: 'lo0',
+      key: key(eff.address, 32)
+    })
   }
   for (const route of device.pf.staticRoutes) {
     if (route.disabled) continue

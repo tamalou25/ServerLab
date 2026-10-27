@@ -1,0 +1,3 @@
+# Source: https://github.com/freebsd/freebsd-src/tree/stable/14/sbin/pfctl (pfctl.c, pfctl_parser.c : print_rule, print_status ; pf_print_state.c : print_state), https://github.com/pfsense/pfsense/blob/RELENG_2_7_2/src/etc/inc/filter.inc (règles générées), https://docs.netgate.com/pfsense/en/latest/firewall/pf-ruleset.html. Jeu de règles réduit (docs/fidelite.md, P-52) ; valeurs du lab ServerLab
+# Commande: pfctl -d (deuxième fois)
+pfctl: pf not enabled

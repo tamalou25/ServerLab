@@ -34,6 +34,7 @@ import {
   setPfFilterEnabled,
   setPfInterfaceFromConsole
 } from '../net/pf-console'
+import {
   addPfStaticRoute,
   removePfGateway,
   removePfHostOverride,

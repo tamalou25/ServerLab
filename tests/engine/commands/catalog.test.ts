@@ -263,6 +263,24 @@ describe('catalogue des commandes', () => {
     r.run(command('pf.removePortForward', fw, pfn))
     r.run(command('pf.clearLog', fw), false)
     r.run(command('pf.resetStates', fw), false)
+    // Console (#247)
+    r.run(command('pf.assignInterfaces', fw, { wan: 'em0', lan: 'em1', opt1: 'em2' }))
+    r.run(
+      command('pf.setInterfaceFromConsole', fw, {
+        key: 'lan',
+        address: '192.168.1.1',
+        prefixLength: 24,
+        gateway: null,
+        gatewayIsDefault: false,
+        dhcp: { enabled: false },
+        revertToHttp: false
+      })
+    )
+    r.run(command('pf.setFilterEnabled', fw, false))
+    r.run(command('pf.setFilterEnabled', fw, true))
+    r.run(command('pf.resetAdminPassword', fw), false)
+    r.run(command('pf.reboot', fw), false)
+    r.run(command('pf.factoryReset', fw))
     done(r)
   })
 

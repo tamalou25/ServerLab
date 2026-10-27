@@ -12,6 +12,7 @@ import { CmdContext, executePowerShell } from './ps/interpreter'
 import { executeIos, iosPrompt, IOS_BANNER } from '../ios/cli'
 import { isIosDevice } from '../ios/device'
 import { applyTraceEffects } from '../ios/registry'
+import { isPfsenseDevice, pfsenseBanner, pfsensePrompt, runPfsenseLine } from './pfsense'
 import { NeedInput, type ShellKind, type ShellResult, type ShellSession } from './types'
 
 function sessionUser(state: LabState, deviceId: string): string {
@@ -27,6 +28,8 @@ export function isLinuxDeviceId(state: LabState, deviceId: string): boolean {
 
 export function createShellSession(state: LabState, deviceId: string, kind: ShellKind): ShellSession {
   if (isIosDevice(state, deviceId)) return { deviceId, stack: ['ios'], cwd: '', variables: {} }
+  if (isPfsenseDevice(state, deviceId))
+    return { deviceId, stack: ['pfsense'], cwd: '', variables: {}, pfsense: { mode: 'menu' } }
   if (isLinuxDeviceId(state, deviceId))
     return { deviceId, stack: ['bash'], cwd: `/home/${sessionUser(state, deviceId)}`, variables: {} }
   return { deviceId, stack: [kind], cwd: `C:\\Users\\${sessionUser(state, deviceId)}`, variables: {} }
@@ -41,6 +44,7 @@ export function activeShell(session: ShellSession): ShellKind {
 export function shellPrompt(session: ShellSession, state?: LabState): string {
   const kind = activeShell(session)
   if (kind === 'ios') return iosPrompt(session, state)
+  if (kind === 'pfsense') return pfsensePrompt(session, state)
   if (kind === 'bash') {
     const d = state?.devices[session.deviceId]
     const host = d?.name ?? 'ubuntu'
@@ -74,6 +78,7 @@ export function cmdDisabledByPolicy(state: LabState, deviceId: string): boolean 
 /** Texte d'accueil d'une nouvelle console. */
 export function shellBanner(kind: ShellKind, state?: LabState, deviceId?: string): string[] {
   if (kind === 'ios') return IOS_BANNER
+  if (kind === 'pfsense') return state && deviceId ? pfsenseBanner(state, deviceId) : []
   if (kind === 'bash') {
     const d = state && deviceId ? state.devices[deviceId] : undefined
     const system =
@@ -116,7 +121,9 @@ export function executeLine(
   const ctx = new CmdContext(state, session, answers, shellCatalog(), line)
   try {
     const kind = activeShell(session)
-    if (kind === 'bash') {
+    if (kind === 'pfsense') {
+      runPfsenseLine(ctx, line)
+    } else if (kind === 'bash') {
       executeBash(ctx, line, shellCatalog().bashTools)
     } else if (kind === 'powershell') {
       if (line.trim().toLowerCase() === 'exit') {

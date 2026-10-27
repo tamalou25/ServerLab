@@ -8,7 +8,7 @@ import { useLabStore } from '../../store/lab'
 import { useUiStore, type DeviceTab, type DeviceWindowState } from '../../store/ui'
 import { DEVICE_COLORS, deviceIcon, deviceLabel, iosModel, isLinux } from '../../lib/devices'
 import { ConfigTab } from './ConfigTab'
-import { ConsoleTab, IosConsoleTab } from '../console/ConsoleTab'
+import { ConsoleTab, IosConsoleTab, PfsenseConsoleTab } from '../console/ConsoleTab'
 import { DesktopShell } from '../desktop/DesktopShell'
 import { isHostDevice } from '@engine/index'
 import { t } from '../../lib/i18n'
@@ -52,11 +52,13 @@ export function DeviceWindow({ win }: { win: DeviceWindowState }) {
   // Poste Linux : configuration et console bash (pas de Bureau Windows)
   const tabs = ios
     ? TABS.filter((t) => t.id === 'console')
-    : !isHost
-      ? TABS.filter((t) => t.id === 'config')
-      : isLinux(device)
-        ? TABS.filter((t) => t.id !== 'desktop')
-        : TABS
+    : device.kind === 'firewall'
+      ? TABS.filter((t) => t.id === 'config' || t.id === 'console')
+      : !isHost
+        ? TABS.filter((t) => t.id === 'config')
+        : isLinux(device)
+          ? TABS.filter((t) => t.id !== 'desktop')
+          : TABS
   const tab = tabs.some((t) => t.id === win.tab) ? win.tab : (tabs[0]?.id ?? 'config')
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
@@ -156,6 +158,9 @@ export function DeviceWindow({ win }: { win: DeviceWindowState }) {
         {tab === 'console' &&
           isHostDevice(device) &&
           (device.powered ? <ConsoleTab device={device} /> : <Placeholder text={t('win.off')} />)}
+        {tab === 'console' &&
+          device.kind === 'firewall' &&
+          (device.powered ? <PfsenseConsoleTab deviceId={device.id} /> : <Placeholder text={t('win.off')} />)}
         {tab === 'console' &&
           ios &&
           (device.powered ? <IosConsoleTab deviceId={device.id} /> : <Placeholder text={t('win.off')} />)}

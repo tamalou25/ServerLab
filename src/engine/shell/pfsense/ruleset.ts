@@ -12,13 +12,7 @@
  */
 import { effectiveIpv4 } from '../../net/addressing'
 import { inNetwork, networkAddress } from '../../net/ipv4'
-import {
-  isBogonAddress,
-  isPrivateAddress,
-  nicOf,
-  PF_ANTI_LOCKOUT_PORTS,
-  type PfDevice
-} from '../../net/pf'
+import { isBogonAddress, isPrivateAddress, nicOf, PF_ANTI_LOCKOUT_PORTS, type PfDevice } from '../../net/pf'
 import {
   PF_DEFAULT_LAN_RULE_ID,
   PF_IFACE_KEYS,
@@ -146,7 +140,9 @@ function userRuleLines(device: PfDevice, rule: PfRule): PfRulesetLine[] {
       : ` from ${src}${portText(rule.sourcePort)} to ${dst}${portText(rule.destinationPort)}`
     // Règles Pass : « flags S/SA » par défaut pour TCP (ou tout protocole), puis « keep state »
     const state =
-      rule.action === 'pass' ? `${protocol === 'any' || protocol === 'tcp' ? ' flags S/SA' : ''} keep state` : ''
+      rule.action === 'pass'
+        ? `${protocol === 'any' || protocol === 'tcp' ? ' flags S/SA' : ''} keep state`
+        : ''
     return {
       text:
         `${action} in${rule.log ? ' log' : ''} quick on ${nic.name}${replyTo} inet${proto}${fromTo}` +
@@ -167,7 +163,7 @@ export function pfRuleset(device: PfDevice): PfRulesetLine[] {
   add('pass in quick on lo0 inet6 all flags S/SA keep state label "pass IPv6 loopback"', ++t)
   add('pass out quick on lo0 inet6 all flags S/SA keep state label "pass IPv6 loopback"', ++t)
   add('block drop in log quick inet6 all label "Block all IPv6"', ++t)
-  add('block drop out log quick inet6 all label "Block all IPv6"', ++t)
+  add('block drop out log quick inet6 all label "Block all IPv6"', t + 1)
   // Adresses link-local (RFC 3927)
   t = TRACKER_DEFAULT + 100
   add('block drop in log quick inet from 169.254.0.0/16 to any label "Block IPv4 link-local"', ++t)
@@ -176,7 +172,7 @@ export function pfRuleset(device: PfDevice): PfRulesetLine[] {
   add('block drop in log inet all label "Default deny rule IPv4"', ++t)
   add('block drop out log inet all label "Default deny rule IPv4"', ++t)
   add('block drop in log inet6 all label "Default deny rule IPv6"', ++t)
-  add('block drop out log inet6 all label "Default deny rule IPv6"', ++t)
+  add('block drop out log inet6 all label "Default deny rule IPv6"', t + 1)
 
   // Par interface : bogons puis réseaux privés (compteurs d'identifiants communs à toutes les interfaces)
   let bogons = BOGONS_TRACKER

@@ -33,6 +33,11 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   de port avec règle de filtrage associée créée et suivie automatiquement (destination traduite avant le filtrage,
   serveur de la DMZ joignable depuis le WAN), traduction visible dans la trace du mode Simulation et dans la table
   d'états ; commandes `pf.setNatMode`, `pf.addOutboundNat`, `pf.addPortForward`… ; `docs/fidelite.md` P-20 à P-27.
+- Console du pare-feu pfSense (#247) : menu numéroté 0 à 16 transcrit des scripts de pfSense CE 2.7.2 (affecter les
+  interfaces, adresses IP, mot de passe du webConfigurator, valeurs d'usine, redémarrage, ping, shell) puis shell
+  FreeBSD limité (`pfctl -sr` / `-ss` / `-si` / `-d` / `-e`, `ifconfig`, `netstat -rn`, `cat` / `tail` du journal
+  `filter.log`, `ping`) ; commandes `pf.assignInterfaces`, `pf.setInterfaceFromConsole`, `pf.resetAdminPassword`,
+  `pf.factoryReset`, `pf.reboot`, `pf.setFilterEnabled` ; captures `docs/captures/pfsense/` ; `docs/fidelite.md` P-50 à P-57.
 
 ## [2.9.0] — 2026-10-27
 

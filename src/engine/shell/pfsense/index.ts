@@ -14,7 +14,8 @@ export { PFSENSE_RELEASE } from './nettools'
 export { filterLogLines, FILTER_LOG_PATH } from './filterlog'
 export { pfRuleset } from './ruleset'
 
-const isFirewall = (state: LabState, deviceId: string): boolean => state.devices[deviceId]?.kind === 'firewall'
+const isFirewall = (state: LabState, deviceId: string): boolean =>
+  state.devices[deviceId]?.kind === 'firewall'
 
 /** Vrai si l'équipement est un pare-feu pfSense (sa console est celle de pfSense). */
 export const isPfsenseDevice = isFirewall

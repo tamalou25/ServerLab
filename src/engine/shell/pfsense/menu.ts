@@ -29,7 +29,8 @@ export const MENU_PROMPT = 'Enter an option: '
 
 function firewall(ctx: ExecContext): PfDevice {
   const d = ctx.device
-  if (d.kind !== 'firewall') throw new CommandFailure('Console indisponible sur cet équipement.', 'NotSupported')
+  if (d.kind !== 'firewall')
+    throw new CommandFailure('Console indisponible sur cet équipement.', 'NotSupported')
   return d
 }
 
@@ -104,7 +105,7 @@ function assignInterfaces(ctx: ExecContext, t: PfTerm): void {
   )
   if (/^[yY]$/.test(t.read())) return refuse(t, 'Assign Interfaces', 'VLAN')
   t.echo(
-    "\nIf the names of the interfaces are not known, auto-detection can\n" +
+    '\nIf the names of the interfaces are not known, auto-detection can\n' +
       'be used instead. To use auto-detection, please disconnect all\n' +
       "interfaces before pressing 'a' to begin the process.\n"
   )
@@ -223,10 +224,12 @@ function setInterfaceIp(ctx: ExecContext, t: PfTerm): void {
   if (askYesNo(t, `Configure IPv4 address ${upper} interface via DHCP?`))
     return refuse(t, 'Set interface(s) IP address', 'client DHCP')
   let ip = ''
+  // eslint-disable-next-line no-useless-assignment
   let bits = 0
   let gateway = ''
   let gatewayIsDefault = false
   for (;;) {
+    // eslint-disable-next-line no-useless-assignment
     let accepted = false
     do {
       t.echo(`\nEnter the new ${upper} IPv4 address.  Press <ENTER> for none:\n> `)
@@ -238,8 +241,7 @@ function setInterfaceIp(ctx: ExecContext, t: PfTerm): void {
         bits = Number(suffix)
       // Adresse déjà portée par une autre interface du pare-feu
       const conflict =
-        isIpv4(ip) &&
-        device.interfaces.some((o) => o.id !== nic.id && effectiveIpv4(o)?.address === ip)
+        isIpv4(ip) && device.interfaces.some((o) => o.id !== nic.id && effectiveIpv4(o)?.address === ip)
       if (conflict) t.echo('This IP address conflicts with another interface or a VIP\n')
       accepted = !conflict && (isIpv4(ip) || ip === '')
     } while (!accepted)
@@ -271,9 +273,9 @@ function setInterfaceIp(ctx: ExecContext, t: PfTerm): void {
       }
     }
     if (restart) {
-      bits = 0
       continue
     }
+    // eslint-disable-next-line no-useless-assignment
     let again = false
     do {
       t.echo(
@@ -309,7 +311,9 @@ function setInterfaceIp(ctx: ExecContext, t: PfTerm): void {
       const n = parseIpv4(a)
       return n !== null && n >= first && n <= last
     }
+    // eslint-disable-next-line no-useless-assignment
     let from = ''
+    // eslint-disable-next-line no-useless-assignment
     let to = ''
     do {
       do {
@@ -498,9 +502,11 @@ export function runMenuOption(ctx: ExecContext, t: PfTerm, option: string): void
       filterLogs(ctx, t)
       break
     default:
-      if (UNSIMULATED[option]) t.note(`« ${UNSIMULATED[option]} » existe réellement sur pfSense mais n’est pas simulé dans ServerLab.`)
+      if (UNSIMULATED[option])
+        t.note(
+          `« ${UNSIMULATED[option]} » existe réellement sur pfSense mais n’est pas simulé dans ServerLab.`
+        )
   }
   t.flush()
   if (!ctx.exit) for (const line of menuScreen(firewall(ctx))) ctx.write(line)
 }
-

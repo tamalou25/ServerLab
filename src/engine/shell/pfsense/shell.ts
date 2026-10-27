@@ -60,7 +60,8 @@ function runSimple(ctx: ExecContext, t: PfTerm, args: string[], stdin: string[] 
       return
     case 'ifconfig': {
       const names = rest.filter((a) => a !== '-a')
-      if (names.some((n) => n.startsWith('-'))) return t.note(unsimulatedOptionMessage('ifconfig', names.join(' ')))
+      if (names.some((n) => n.startsWith('-')))
+        return t.note(unsimulatedOptionMessage('ifconfig', names.join(' ')))
       if (names.length > 1) return t.note(unsimulatedOptionMessage('ifconfig', names.join(' ')))
       const lines = ifconfigLines(ctx.state, device, names[0])
       if (!lines) return t.note(`ifconfig: interface ${names[0]} does not exist`, 'error')
@@ -92,7 +93,8 @@ function runSimple(ctx: ExecContext, t: PfTerm, args: string[], stdin: string[] 
         else if (a.startsWith('-')) return t.note(unsimulatedOptionMessage('tail', a))
         else file = a
       }
-      if (!Number.isFinite(count) || count < 0) return t.note('tail: illegal offset -- ' + String(count), 'error')
+      if (!Number.isFinite(count) || count < 0)
+        return t.note('tail: illegal offset -- ' + String(count), 'error')
       const lines = file === undefined && stdin ? stdin : readFile(t, 'tail', file)
       if (lines) for (const l of count === 0 ? [] : lines.slice(-count)) ctx.write(l)
       if (rest.includes('-F') || rest.includes('-f'))
@@ -144,7 +146,8 @@ function runSimple(ctx: ExecContext, t: PfTerm, args: string[], stdin: string[] 
         else if (a.startsWith('-')) return t.note(unsimulatedOptionMessage('ping', a))
         else host = a
       }
-      if (host === '') return t.note('usage: ping [-4AaDdfHnoQqRrSv] [-C pcp] [-c count] [-G sweepmaxsize] ...', 'error')
+      if (host === '')
+        return t.note('usage: ping [-4AaDdfHnoQqRrSv] [-C pcp] [-c count] [-G sweepmaxsize] ...', 'error')
       if (!isIpv4(host)) return t.note(unsimulatedOptionMessage('ping', 'résolution de noms'))
       if (!Number.isInteger(count) || count < 1 || count > 20)
         return t.note(unsimulatedOptionMessage('ping', '-c (1 à 20)'))
@@ -174,7 +177,7 @@ export function runShellLine(ctx: ExecContext, t: PfTerm, line: string): void {
   let stdin: string[] | null = null
   for (let i = 0; i < stages.length; i++) {
     const args = splitBashArgs(stages[i] as string)
-    if (!args) return t.note('Unmatched \'"\'.', 'error')
+    if (!args) return t.note("Unmatched '\"'.", 'error')
     if (args.length === 0) return
     const last = i === stages.length - 1
     const start = ctx.output.length
