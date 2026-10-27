@@ -1,10 +1,9 @@
 /**
- * Status > Dashboard et pages de lecture des services (Services > DHCP Server / DNS Resolver,
- * System > Routing) : la modification de ces services relève de l'issue #245 (commandes à venir).
+ * Status > Dashboard (informations système et interfaces).
  */
 import { effectiveIpv4, linkOnInterface, nicOf, PFSENSE_VERSION } from '@engine/index'
 import { formatSimTime } from '../../../../lib/format'
-import { Alert, Panel, Table, Td, ifaceName, useSession } from './ui'
+import { Panel, Table, Td, ifaceName, useSession } from './ui'
 
 export function DashboardPage() {
   const s = useSession()
@@ -46,103 +45,5 @@ export function DashboardPage() {
         </Table>
       </Panel>
     </div>
-  )
-}
-
-const PENDING = (
-  <Alert kind="info">
-    Modification of this service will be available with the services update (issue #245): this page shows the
-    current configuration.
-  </Alert>
-)
-
-export function DhcpPage() {
-  const s = useSession()
-  const pf = s.firewall.pf
-  return (
-    <Panel title="Services / DHCP Server">
-      {PENDING}
-      <Table head={['Interface', 'Enabled', 'Range', 'Gateway', 'DNS servers', 'Leases']}>
-        {pf.assignments.map((a) => {
-          const dhcp = pf.dhcp[a.key]
-          return (
-            <tr key={a.key}>
-              <Td>{ifaceName(pf, a.key)}</Td>
-              <Td>{dhcp?.enabled ? 'yes' : 'no'}</Td>
-              <Td>{dhcp?.rangeFrom && dhcp.rangeTo ? `${dhcp.rangeFrom} - ${dhcp.rangeTo}` : '-'}</Td>
-              <Td>{dhcp?.gateway ?? '-'}</Td>
-              <Td>{dhcp?.dnsServers.join(', ') || '-'}</Td>
-              <Td>{dhcp?.leases.length ?? 0}</Td>
-            </tr>
-          )
-        })}
-      </Table>
-    </Panel>
-  )
-}
-
-export function DnsPage() {
-  const s = useSession()
-  const r = s.firewall.pf.dnsResolver
-  return (
-    <Panel title="Services / DNS Resolver">
-      {PENDING}
-      <p className="mb-2 text-[12px]">
-        Enable DNS resolver: {r.enabled ? 'yes' : 'no'} - DNS Query Forwarding: {r.forwarding ? 'yes' : 'no'}
-      </p>
-      <Table head={['Host', 'Domain', 'IP']}>
-        {r.hostOverrides.map((h) => (
-          <tr key={`${h.host}.${h.domain}`}>
-            <Td>{h.host}</Td>
-            <Td>{h.domain}</Td>
-            <Td>{h.address}</Td>
-          </tr>
-        ))}
-        {r.hostOverrides.length === 0 && (
-          <tr>
-            <Td className="text-[#666]">No host overrides.</Td>
-          </tr>
-        )}
-      </Table>
-    </Panel>
-  )
-}
-
-export function RoutingPage() {
-  const s = useSession()
-  const pf = s.firewall.pf
-  return (
-    <Panel title="System / Routing">
-      {PENDING}
-      <Table head={['Gateway', 'Interface', 'Address', 'Default']}>
-        {pf.gateways.map((g) => (
-          <tr key={g.name}>
-            <Td>{g.name}</Td>
-            <Td>{ifaceName(pf, g.iface)}</Td>
-            <Td>{g.address}</Td>
-            <Td>{g.isDefault ? 'yes' : ''}</Td>
-          </tr>
-        ))}
-        {pf.gateways.length === 0 && (
-          <tr>
-            <Td className="text-[#666]">No gateways are defined.</Td>
-          </tr>
-        )}
-      </Table>
-      <h3 className="mb-1 mt-4 text-[12px] font-semibold">Static Routes</h3>
-      <Table head={['Network', 'Gateway']}>
-        {pf.staticRoutes.map((r) => (
-          <tr key={`${r.network}/${r.prefixLength}`}>
-            <Td>{`${r.network}/${r.prefixLength}`}</Td>
-            <Td>{r.gateway}</Td>
-          </tr>
-        ))}
-        {pf.staticRoutes.length === 0 && (
-          <tr>
-            <Td className="text-[#666]">No static routes.</Td>
-          </tr>
-        )}
-      </Table>
-    </Panel>
   )
 }

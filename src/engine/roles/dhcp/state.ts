@@ -10,6 +10,7 @@ import { findUnit } from '../../services/linuxcatalog'
 import { linuxDhcpServer } from '../../services/linuxdhcp'
 import { isInstalled } from '../../services/linuxpackages'
 import { unitStatus } from '../../services/linuxsystem'
+import { pfDhcpServer } from '../../net/pf-services'
 
 /** Serveur DHCP tel qu'après l'installation du rôle. */
 export function createDhcpServer(): DhcpServer {
@@ -60,6 +61,8 @@ export function dhcpServiceOf(device: Device | undefined): DhcpServer | null {
   // Serveur Linux : les étendues viennent de dhcpd.conf, les baux de dhcpd.leases (services/linuxdhcp.ts)
   if (device.kind === 'server' && device.host.os === 'linux')
     return linuxDhcpServer(device, linuxDhcpActive(device))
+  // Pare-feu pfSense : étendues dérivées de Services > DHCP Server (v2.10, #245)
+  if (device.kind === 'firewall') return pfDhcpServer(device)
   if (device.kind === 'server')
     return device.host.features.includes('DHCP') && serviceRunning(device, 'DHCPServer')
       ? dhcpServerOf(device)

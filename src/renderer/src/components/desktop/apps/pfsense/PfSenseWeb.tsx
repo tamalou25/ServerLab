@@ -15,10 +15,11 @@ import { batch, dispatch, pfAuthenticate, type AnyCommand, type LabState, type P
 import { runCommandOk } from '../../../../lib/run'
 import { useLabStore } from '../../../../store/lab'
 import { AliasesPage } from './Aliases'
-import { DashboardPage, DhcpPage, DnsPage, RoutingPage } from './Dashboard'
+import { DashboardPage } from './Dashboard'
 import { AssignmentsPage, InterfacePage } from './Interfaces'
 import { NatPage } from './Nat'
 import { RulesPage } from './Rules'
+import { DhcpPage, DnsPage, RoutingPage } from './Services'
 import { FirewallLogPage, StatesPage } from './Status'
 import { Alert, Btn, Panel, SessionContext, inputCls, type PfPage, type PfSession } from './ui'
 
@@ -66,6 +67,9 @@ function areaOf(page: PfPage): string {
   if (page === 'aliases') return 'alias'
   if (page === 'nat') return 'NAT'
   if (page.startsWith('interface')) return 'interface'
+  if (page === 'dhcp') return 'DHCP server'
+  if (page === 'dns') return 'DNS resolver'
+  if (page === 'routing') return 'routing'
   return 'firewall'
 }
 

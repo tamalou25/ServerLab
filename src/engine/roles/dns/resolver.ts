@@ -4,6 +4,8 @@
  * Les requêtes et réponses sont acheminées comme de vrais paquets (traçables).
  */
 import type { Device, LabState, ServerDevice } from '../../model/schema'
+
+type FirewallDevice = Extract<Device, { kind: 'firewall' }>
 import type { DnsRecord, DnsRecordType } from './schema'
 import { effectiveIpv4 } from '../../net/addressing'
 import { PUBLIC_DNS, PUBLIC_RESOLVERS, ROOT_HINT_IP } from '../../net/internet'
@@ -93,9 +95,14 @@ function isBindServer(device: Device | undefined): boolean {
   )
 }
 
+/** Pare-feu pfSense dont le résolveur Unbound est activé (Services > DNS Resolver, v2.10 #245). */
+function isPfResolver(device: Device | undefined): device is FirewallDevice {
+  return !!device && device.kind === 'firewall' && device.powered && device.pf.dnsResolver.enabled
+}
+
 /** Le serveur exécute-t-il le service DNS ? */
-function isDnsServer(device: Device | undefined): device is ServerDevice {
-  if (isBindServer(device)) return true
+function isDnsServer(device: Device | undefined): device is ServerDevice | FirewallDevice {
+  if (isBindServer(device) || isPfResolver(device)) return true
   return (
     !!device &&
     device.kind === 'server' &&
@@ -150,12 +157,13 @@ function publicLookup(qname: string, qtype: DnsQueryType): DnsResult {
 /** Résolution effectuée par un serveur DNS du lab. */
 function serverLookup(
   ctx: SimContext,
-  server: ServerDevice,
+  server: ServerDevice | FirewallDevice,
   qname: string,
   qtype: DnsQueryType,
   depth: number,
   clientIp = '127.0.0.1'
 ): DnsResult {
+  if (server.kind === 'firewall') return pfLookup(ctx, server, qname, qtype, depth)
   if (isBindServer(server)) return bindLookup(ctx, server, qname, qtype, depth, clientIp)
   const dns = dnsServerOf(server)
   const name = normalizeName(qname)
@@ -181,6 +189,37 @@ function serverLookup(
     return { kind: 'nxdomain', qname: name, authoritative: true }
   }
   return recurse(ctx, server, name, qtype, depth)
+}
+
+/**
+ * Réponse du résolveur Unbound de pfSense : Host Overrides (réponse locale), puis redirection vers les
+ * serveurs DNS généraux (mode forwarding) ou résolution depuis les indications de racine.
+ */
+function pfLookup(
+  ctx: SimContext,
+  server: FirewallDevice,
+  qname: string,
+  qtype: DnsQueryType,
+  depth: number
+): DnsResult {
+  const name = normalizeName(qname)
+  if (depth > MAX_DEPTH) return { kind: 'servfail', qname: name }
+  const dns = server.pf.dnsResolver
+  const local = dns.hostOverrides.filter((o) => (o.host ? `${o.host}.${o.domain}` : o.domain) === name)
+  if (local.length > 0)
+    return {
+      kind: 'answer',
+      qname: name,
+      authoritative: true,
+      records:
+        qtype === 'A' ? local.map((o) => ({ name, type: 'A' as const, data: o.address, ttl: 3600 })) : []
+    }
+  const upstream = dns.forwarding ? server.pf.dnsServers : [ROOT_HINT_IP]
+  for (const s of upstream) {
+    const r = queryServer(ctx, server.id, s, name, qtype, depth + 1)
+    if (r.kind !== 'timeout') return r.kind === 'answer' ? { ...r, authoritative: false } : r
+  }
+  return { kind: 'servfail', qname: name }
 }
 
 const asAnswer = (r: { name: string; type: string; data: string; ttl: number }): DnsAnswerRecord => ({
@@ -329,6 +368,7 @@ export function queryServer(
 
 /** Serveurs DNS configurés sur l'ordinateur (première carte qui en possède). */
 export function dnsServersOf(device: Device): string[] {
+  if (device.kind === 'firewall') return device.pf.dnsServers
   for (const iface of device.interfaces) {
     const eff = effectiveIpv4(iface)
     if (eff && eff.dnsServers.length > 0) return eff.dnsServers

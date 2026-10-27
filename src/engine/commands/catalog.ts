@@ -27,6 +27,18 @@ import {
   updatePfRule
 } from '../net/pf-rules'
 import {
+  addPfStaticRoute,
+  removePfGateway,
+  removePfHostOverride,
+  removePfStaticRoute,
+  setPfDefaultGateway,
+  setPfDhcp,
+  setPfDnsResolver,
+  setPfDnsServers,
+  setPfGateway,
+  setPfHostOverride
+} from '../net/pf-services'
+import {
   addPfOutboundNat,
   addPfPortForward,
   removePfOutboundNat,
@@ -279,6 +291,34 @@ const CORE_COMMANDS = {
   'pf.setBlockNetworks': def(
     setPfBlockNetworks,
     (s, id, key) => `Blocage des réseaux privés et bogons de ${key.toUpperCase()}${on(s, id)}`
+  ),
+  'pf.setDhcp': def(
+    setPfDhcp,
+    (s, id, key) => `Configurer le serveur DHCP de l’interface ${key.toUpperCase()}${on(s, id)}`
+  ),
+  'pf.setGateway': def(setPfGateway, (s, id, gw) => `Définir la passerelle ${gw.name}${on(s, id)}`),
+  'pf.removeGateway': def(removePfGateway, (s, id, name) => `Supprimer la passerelle ${name}${on(s, id)}`),
+  'pf.setDefaultGateway': def(
+    setPfDefaultGateway,
+    (s, id, name) => `Définir la passerelle par défaut ${name ?? '(automatique)'}${on(s, id)}`
+  ),
+  'pf.addStaticRoute': def(
+    addPfStaticRoute,
+    (s, id, r) => `Ajouter la route statique ${r.network}/${r.prefixLength}${on(s, id)}`
+  ),
+  'pf.removeStaticRoute': def(
+    removePfStaticRoute,
+    (s, id, network, prefix) => `Supprimer la route statique ${network}/${prefix}${on(s, id)}`
+  ),
+  'pf.setDnsResolver': def(setPfDnsResolver, (s, id) => `Configurer le résolveur DNS${on(s, id)}`),
+  'pf.setDnsServers': def(setPfDnsServers, (s, id) => `Définir les serveurs DNS${on(s, id)}`),
+  'pf.setHostOverride': def(
+    setPfHostOverride,
+    (s, id, e) => `Définir le Host Override ${e.host ? `${e.host}.` : ''}${e.domain}${on(s, id)}`
+  ),
+  'pf.removeHostOverride': def(
+    removePfHostOverride,
+    (s, id, host, domain) => `Supprimer le Host Override ${host ? `${host}.` : ''}${domain}${on(s, id)}`
   ),
   'pf.setNatMode': def(setPfNatMode, (s, id, mode) => `Mode de NAT sortant : ${mode}${on(s, id)}`),
   'pf.addOutboundNat': def(addPfOutboundNat, (s, id) => `Ajouter une règle de NAT sortant${on(s, id)}`),

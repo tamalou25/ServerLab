@@ -6,6 +6,7 @@ import type { Device, LabState } from '../model/schema'
 import { effectiveIpv4 } from './addressing'
 import { inNetwork, networkAddress, parseIpv4, prefixToMaskInt } from './ipv4'
 import { l2Segment } from './segment'
+import { pfRoutes } from './pf-services'
 import { iosDynamicRoutes, iosInterfaceRoutes } from '../ios/registry'
 
 export type RouteSource = 'connected' | 'static' | 'default' | 'ospf' | 'rip'
@@ -92,6 +93,9 @@ export function routingTable(state: LabState, device: Device): Route[] {
     const known = new Set(routes.map((r) => `${r.network}/${r.prefixLength}`))
     for (const r of iosDynamicRoutes(state, device))
       if (!known.has(`${r.network}/${r.prefixLength}`)) routes.push(r)
+  } else if (device.kind === 'firewall') {
+    // Routes statiques et passerelle par défaut (System > Routing, v2.10 #245)
+    routes.push(...pfRoutes(device, connected))
   } else if (device.kind === 'cloud') {
     // Le FAI renvoie tout le trafic vers le premier équipement adressé de son lien WAN
     const wan = device.interfaces[0]
