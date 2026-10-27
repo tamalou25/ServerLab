@@ -10,6 +10,7 @@ import { missingRoute } from './faults/missing-route'
 import { portErrDisabled } from './faults/port-err-disabled'
 import { serviceStopped } from './faults/service-stopped'
 import { LINUX_FAULTS } from './faults/linux'
+import { PF_FAULTS } from './faults/pf'
 import { WINDOWS_FAULTS } from './faults/windows'
 import { trunkMissingVlan } from './faults/trunk-missing-vlan'
 import { wrongGateway } from './faults/wrong-gateway'
@@ -34,7 +35,8 @@ export const FAULTS: readonly FaultDef[] = [
   wrongStpRoot,
   etherchannelDown,
   ...WINDOWS_FAULTS,
-  ...LINUX_FAULTS
+  ...LINUX_FAULTS,
+  ...PF_FAULTS
 ]
 
 /** Panne du catalogue par identifiant (undefined : identifiant inconnu, p. ex. fichier d'une version future). */

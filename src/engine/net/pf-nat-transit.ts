@@ -5,7 +5,7 @@
  * et inscrites dans la table d'états (effet `pf-nat`, appliqué par `applyPfEffects`).
  * Les ports sources ne sont pas modélisés (docs/fidelite.md, P-17 et P-23).
  */
-import type { Device } from '../model/schema'
+import type { Device, LabState } from '../model/schema'
 import type { PfIfaceKey, PfOutboundNat, PfState } from '../model/firewall'
 import { effectiveIpv4 } from './addressing'
 import { inNetwork, networkAddress } from './ipv4'
@@ -126,4 +126,28 @@ export const pfNatTransitHooks: TransitHooks = {
       note: `${device.name} (pfSense, NAT sortant) retraduit l’adresse de destination ${packet.dst} en ${original} d’après la table d’états et transmet la réponse.`
     }
   }
+}
+
+/**
+ * Cible d'une redirection de port pour une connexion TCP vers `dstIp:port` (adresse d'une interface d'un
+ * pare-feu pfSense) : adresse et port de la machine interne, ou null si aucune redirection active ne
+ * correspond. Même choix que le crochet `redirect` du transit (première redirection qui correspond) ; sert
+ * aux clients applicatifs (curl, navigateur) pour savoir quel serveur répond derrière le NAT.
+ */
+export function pfRedirectTarget(
+  state: LabState,
+  dstIp: string,
+  port: number
+): { address: string; port: number } | null {
+  for (const device of Object.values(state.devices)) {
+    if (!isPf(device) || !device.interfaces.some((i) => effectiveIpv4(i)?.address === dstIp)) continue
+    for (const fwd of device.pf.nat.portForwards) {
+      const range = fwd.destinationPort
+      if (fwd.disabled || !range || fwd.protocol === 'udp') continue
+      if (port < range.from || port > range.to) continue
+      if (!endpointMatches(device, fwd.destination, dstIp)) continue
+      return { address: fwd.targetAddress, port: (fwd.targetPort ?? range.from) + (port - range.from) }
+    }
+  }
+  return null
 }

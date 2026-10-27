@@ -1,0 +1,198 @@
+{
+  "formatVersion": 1,
+  "id": "lab-58-pfsense-mixte-windows-linux",
+  "title": "pfSense : LAN Windows, DMZ Linux et publication du site",
+  "difficulty": "Avancé",
+  "duration": "60 min",
+  "summary": "Un pare-feu protège un LAN Windows (poste et serveur DNS) et une DMZ Linux : alias, règles minimales entre zones et publication du site Apache.",
+  "statement": "## Contexte\n\n| Zone | Machine | Adresse | Rôle |\n| --- | --- | --- | --- |\n| LAN | PC1 (Windows) | 192.168.1.10 | poste de travail |\n| LAN | WSRV1 (Windows Server) | 192.168.1.20 | serveur DNS et de fichiers interne |\n| DMZ | WEB1 (Debian, Apache2) | 172.16.0.10 | site web de l'entreprise |\n| WAN | INTERNET (Debian) | 45.10.0.2 | un visiteur extérieur |\n\nLe WAN de **FW1** est en 45.10.0.1/30.\n\n## Politique\n\n1. Créez l'alias d'hôtes **SRV_WEB** (172.16.0.10) et utilisez-le dans vos règles.\n2. **Publication** : le site de WEB1 est accessible depuis Internet sur l'adresse WAN (TCP 80).\n3. **LAN vers DMZ** : le LAN n'atteint WEB1 qu'en TCP 80 (alias SRV_WEB). Le LAN garde l'accès à Internet.\n4. **DMZ vers LAN** : WEB1 interroge uniquement le DNS interne de **WSRV1** (UDP 53). Tout le reste vers le LAN est bloqué (pas de SMB, pas de ping).\n5. **DMZ vers Internet** : WEB1 se met à jour en HTTP (TCP 80).\n\n## À rendre\n\nLe tableau des règles (interface, action, source, destination, port) dans l'ordre, et les tests qui prouvent chaque ligne de la politique.",
+  "start": {
+    "devices": [
+      {
+        "kind": "firewall",
+        "name": "FW1",
+        "x": 420,
+        "y": 230,
+        "interfaces": {
+          "em0": "45.10.0.1/30",
+          "em2": "172.16.0.1/24"
+        }
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "INTERNET",
+        "x": 420,
+        "y": 40,
+        "ip": "45.10.0.2/30",
+        "packages": ["apache2"]
+      },
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 160,
+        "y": 230
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 40,
+        "y": 330,
+        "ip": "192.168.1.10/24",
+        "gateway": "192.168.1.1",
+        "dns": ["192.168.1.1"],
+        "firewallDisabled": ["Domain", "Private", "Public"]
+      },
+      {
+        "kind": "server",
+        "name": "WSRV1",
+        "x": 160,
+        "y": 340,
+        "ip": "192.168.1.20/24",
+        "gateway": "192.168.1.1",
+        "features": ["DNS"],
+        "firewallDisabled": ["Domain", "Private", "Public"]
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "WEB1",
+        "x": 700,
+        "y": 330,
+        "ip": "172.16.0.10/24",
+        "gateway": "172.16.0.1",
+        "packages": ["apache2"]
+      }
+    ],
+    "links": [
+      ["INTERNET:eth0", "FW1:em0"],
+      ["SW1:Fa0/1", "FW1:em1"],
+      ["PC1:Ethernet0", "SW1:Fa0/2"],
+      ["WSRV1:Ethernet0", "SW1:Fa0/3"],
+      ["WEB1:eth0", "FW1:em2"]
+    ]
+  },
+  "criteria": [
+    {
+      "id": "c1",
+      "label": "L’alias SRV_WEB contient 172.16.0.10",
+      "hint": "Firewall > Aliases : type Host(s).",
+      "check": {
+        "type": "pfAlias",
+        "device": "FW1",
+        "name": "SRV_WEB",
+        "aliasType": "host",
+        "values": ["172.16.0.10"]
+      }
+    },
+    {
+      "id": "c2",
+      "label": "Le site est publié sur l’adresse WAN (redirection du port 80)",
+      "hint": "Firewall > NAT > Port Forward vers le serveur de la DMZ.",
+      "check": {
+        "type": "pfPortForward",
+        "device": "FW1",
+        "port": 80,
+        "protocol": "tcp",
+        "target": "172.16.0.10"
+      }
+    },
+    {
+      "id": "c3",
+      "label": "INTERNET ouvre le site publié (TCP 80 sur 45.10.0.1)",
+      "hint": "Testez avec curl depuis INTERNET.",
+      "check": {
+        "type": "pfReachable",
+        "from": "INTERNET",
+        "to": "45.10.0.1",
+        "protocol": "tcp",
+        "port": 80
+      }
+    },
+    {
+      "id": "c4",
+      "label": "PC1 ouvre le site de WEB1 (TCP 80)",
+      "hint": "Une règle du LAN vers l’alias SRV_WEB.",
+      "check": {
+        "type": "pfReachable",
+        "from": "PC1",
+        "to": "WEB1",
+        "protocol": "tcp",
+        "port": 80
+      }
+    },
+    {
+      "id": "c5",
+      "label": "PC1 ne peut plus pinguer WEB1",
+      "hint": "Seul le port 80 est permis du LAN vers la DMZ.",
+      "check": {
+        "type": "pfReachable",
+        "from": "PC1",
+        "to": "WEB1",
+        "protocol": "icmp",
+        "success": false
+      }
+    },
+    {
+      "id": "c6",
+      "label": "PC1 garde l’accès à Internet",
+      "hint": "Ne supprimez pas la règle d’usine du LAN.",
+      "check": {
+        "type": "pfReachable",
+        "from": "PC1",
+        "to": "INTERNET",
+        "protocol": "tcp",
+        "port": 80
+      }
+    },
+    {
+      "id": "c7",
+      "label": "WEB1 interroge le DNS de WSRV1 (UDP 53)",
+      "hint": "La DMZ refuse tout par défaut : ouvrez uniquement ce flux vers WSRV1.",
+      "check": {
+        "type": "pfReachable",
+        "from": "WEB1",
+        "to": "WSRV1",
+        "protocol": "udp",
+        "port": 53
+      }
+    },
+    {
+      "id": "c8",
+      "label": "WEB1 n’atteint pas le partage SMB de WSRV1 (TCP 445)",
+      "hint": "Un blocage explicite du LAN doit précéder toute règle large de la DMZ.",
+      "check": {
+        "type": "pfReachable",
+        "from": "WEB1",
+        "to": "WSRV1",
+        "protocol": "tcp",
+        "port": 445,
+        "success": false
+      }
+    },
+    {
+      "id": "c9",
+      "label": "WEB1 ne peut pas pinguer PC1",
+      "hint": "La DMZ ne doit rien initier vers le LAN.",
+      "check": {
+        "type": "pfReachable",
+        "from": "WEB1",
+        "to": "PC1",
+        "protocol": "icmp",
+        "success": false
+      }
+    },
+    {
+      "id": "c10",
+      "label": "WEB1 télécharge ses mises à jour en HTTP",
+      "hint": "Sortie de la DMZ vers Internet, traduite par le NAT.",
+      "check": {
+        "type": "pfReachable",
+        "from": "WEB1",
+        "to": "INTERNET",
+        "protocol": "tcp",
+        "port": 80
+      }
+    }
+  ]
+}

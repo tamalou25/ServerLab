@@ -7,6 +7,7 @@
 import { effectiveIpv4 } from '../../net/addressing'
 import { tracert } from '../../net/diagnostics'
 import { isIpv4 } from '../../net/ipv4'
+import { pfRedirectTarget } from '../../net/pf-nat-transit'
 import type { HostDevice } from '../../model/schema'
 import { serverExchange } from '../../roles/adds/locator'
 import { dnsServersOf, firstAddress, resolveName, reverseLookup } from '../../roles/dns/resolver'
@@ -258,6 +259,10 @@ const curlTool: ToolDef = {
         if (!found) throw new CommandFailure(`curl: (6) Could not resolve host: ${host}`, 'HostNotFound')
         ip = found
       }
+      // Redirection de port d'un pare-feu pfSense : le serveur qui répond est la cible traduite (v2.10, #248)
+      const redirect = isLocal ? null : pfRedirectTarget(ctx.state, ip, port)
+      const servedIp = redirect?.address ?? ip
+      const servedPort = redirect?.port ?? port
       const refused = () =>
         new CommandFailure(
           `curl: (7) Failed to connect to ${host} port ${port} after 0 ms: Couldn't connect to server`,
@@ -269,7 +274,7 @@ const curlTool: ToolDef = {
             (d): d is HostDevice =>
               (d.kind === 'server' || d.kind === 'client') &&
               d.powered &&
-              d.interfaces.some((i) => effectiveIpv4(i)?.address === ip)
+              d.interfaces.some((i) => effectiveIpv4(i)?.address === servedIp)
           )
       // Cible Windows : IIS (httpGet)
       if (target && !isLinuxHost(target)) {
@@ -298,10 +303,10 @@ const curlTool: ToolDef = {
         if (!exchange.ok) throw refused()
       }
       if (!target) throw refused()
-      const dstIp = isLocal && (host === 'localhost' || host === '127.0.0.1') ? '127.0.0.1' : ip
+      const dstIp = isLocal && (host === 'localhost' || host === '127.0.0.1') ? '127.0.0.1' : servedIp
 
       // Apache2 : la réponse vient de sa configuration en vigueur (services/linuxhttp.ts)
-      if (apacheListening(target, port, dstIp)) {
+      if (apacheListening(target, servedPort, dstIp)) {
         const files = hostFiles(target)
         const clientIp = isLocal ? dstIp : (sourceAddressFor(ctx.state, here, ip) ?? '127.0.0.1')
         const web = webRespond(
@@ -311,7 +316,7 @@ const curlTool: ToolDef = {
           {
             scheme: https ? 'https' : 'http',
             host: requested,
-            port,
+            port: servedPort,
             dstIp,
             path,
             method: head ? 'HEAD' : 'GET',

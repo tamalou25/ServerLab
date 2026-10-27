@@ -37,6 +37,10 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   l'anti-verrouillage, WAN et DMZ selon les règles), page de connexion admin / pfsense, tableau de bord, Interfaces,
   Firewall > Rules / Aliases / NAT, Services > DHCP Server / DNS Resolver, System > Routing (Save puis Apply Changes), Status > System Logs > Firewall, Diagnostics > States ;
   commandes `pf.webRequest` et `pfAuthenticate` (`roles/iis/pfweb.ts`), `docs/fidelite.md` P-40 à P-48.
+- Labs et pannes du pare-feu (#248) : labs 54 à 59 (règles LAN/DMZ, site de la DMZ publié, NAT sortant, DHCP et DNS, lab
+  mixte Windows/Linux, dépannage), départ déclaratif `pf` des labs, critères `pfReachable`, `pfRuleExists`,
+  `pfPortForward`, `pfNatMode`, `pfOutboundNat`, `pfAlias`, `pfDhcp`, `pfDnsResolver`, `pfGateway`, 8 pannes du domaine
+  `pare-feu` (`pf.*`), `curl` et navigateur à travers une redirection de port ; `docs/fidelite.md` P-50 à P-52.
 
 ## [2.9.0] — 2026-10-27
 

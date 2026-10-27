@@ -3,7 +3,13 @@
  * l'état de départ avec les actions du moteur (déterministe : même lab = même état).
  */
 import { z } from 'zod'
-import { command, type Command, type CommandType, type CommandValue } from '../commands/catalog'
+import {
+  command,
+  isCommandType,
+  type Command,
+  type CommandType,
+  type CommandValue
+} from '../commands/catalog'
 import { dispatch } from '../commands/dispatch'
 import { runIosScript } from '../ios/cli'
 import { createShellSession } from '../shell/exec'
@@ -95,6 +101,14 @@ export const LabDeviceSchema = z.object({
    */
   bash: z
     .array(z.union([z.string(), z.object({ line: z.string(), answers: z.array(z.string()) })]))
+    .optional(),
+  /**
+   * Pare-feu pfSense : configuration de départ en commandes nommées `pf.*` (mêmes commandes que l'interface
+   * web), appliquées après les adresses des cartes : { "type": "pf.addRule", "args": [{ "iface": "opt1", … }] }.
+   * L'identifiant du pare-feu est ajouté en premier argument.
+   */
+  pf: z
+    .array(z.object({ type: z.string().regex(/^pf\./), args: z.array(z.unknown()).default([]) }))
     .optional()
 })
 
@@ -368,6 +382,12 @@ function buildDeclarativeStart(start: LabDeclarativeStart): LabState {
       )
     if (d.ios?.length) state = runIosScript(state, id, d.ios)
   }
+  // Pare-feu pfSense : règles, NAT et services, une fois toutes les cartes adressées
+  for (const d of start.devices)
+    for (const step of d.pf ?? []) {
+      if (!isCommandType(step.type)) throw new Error(`Commande pare-feu inconnue : ${step.type}.`)
+      apply({ type: step.type, args: [idOf(d.name), ...step.args] } as unknown as Command)
+    }
   // Ordinateurs Linux : paquets puis lignes de console, une fois toutes les cartes configurées
   for (const d of start.devices) {
     const id = idOf(d.name)

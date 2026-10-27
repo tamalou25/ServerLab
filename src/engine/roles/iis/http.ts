@@ -17,6 +17,7 @@ import { findNode } from '../files/paths'
 import type { IisBinding, IisSite } from './schema'
 import { DEFAULT_DOCUMENTS, iisServerOf } from './state'
 import { serviceRunning } from '../../services/servicestate'
+import { pfRedirectTarget } from '../../net/pf-nat-transit'
 
 export interface ParsedUrl {
   protocol: 'http' | 'https'
@@ -162,7 +163,9 @@ function linuxGet(
   local: boolean,
   resolution: PacketTrace | null,
   display: string,
-  failure: (code: HttpFailure, message: string, trace?: PacketTrace | null) => HttpResult
+  failure: (code: HttpFailure, message: string, trace?: PacketTrace | null) => HttpResult,
+  /** Adresse et port vus par le serveur quand une redirection de port du pare-feu a traduit la destination. */
+  target: { address: string; port: number } | null = null
 ): HttpResult {
   const files = hostFiles(server)
   const web = webRespond(
@@ -172,8 +175,8 @@ function linuxGet(
     {
       scheme: url.protocol,
       host: url.host,
-      port: url.port,
-      dstIp: ip,
+      port: target?.port ?? url.port,
+      dstIp: target?.address ?? ip,
       path: `/${url.path}`,
       method: 'GET',
       clientIp: local ? ip : (sourceAddressFor(state, client, ip) ?? '127.0.0.1'),
@@ -253,16 +256,22 @@ export function httpGet(state: LabState, clientId: string, urlText: string): Htt
     if (!ip) return failure('NameNotResolved', `Le nom distant n’a pas pu être résolu: '${url.host}'`, trace)
   }
 
-  const server = local ? (client.kind === 'server' ? client : null) : serverAt(state, ip)
+  // Redirection de port d'un pare-feu pfSense : le serveur qui répond est celui de la cible traduite (v2.10, #248)
+  const redirect = local ? null : pfRedirectTarget(state, ip, url.port)
+  const servedIp = redirect?.address ?? ip
+  const servedUrl = redirect ? { ...url, port: redirect.port } : url
+  const server = local ? (client.kind === 'server' ? client : null) : serverAt(state, servedIp)
   // Serveur Linux : Apache2 répond d'après sa configuration en vigueur (v2.9, #238)
   if (server && server.host.os === 'linux')
-    return linuxGet(state, client, server, url, ip, local, trace, display, failure)
+    return linuxGet(state, client, server, url, ip, local, trace, display, failure, redirect)
   // Service de publication World Wide Web (W3SVC) arrêté : aucun site n'écoute
   const iis =
     server?.host.features.includes('Web-Server') && serviceRunning(server, 'W3SVC')
       ? iisServerOf(server)
       : null
-  const match = iis ? matchSite(iis.sites, url, ip) : { listening: false, site: null, binding: null }
+  const match = iis
+    ? matchSite(iis.sites, servedUrl, servedIp)
+    : { listening: false, site: null, binding: null }
 
   // Connexion TCP (et requête HTTP si un site écoute sur ce port)
   const requestLine = `GET /${url.path} HTTP/1.1`

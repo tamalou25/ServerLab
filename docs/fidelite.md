@@ -832,6 +832,17 @@ tenues pour exactes. Aucune sortie de console n'est codée sur ces points.
 | P-47 | Services > DHCP Server (LAN, DMZ), Services > DNS Resolver (activation, redirection, serveurs DNS, Host Overrides) et System > Routing (passerelles, passerelle par défaut, routes statiques) passent par les commandes `pf.*` de #245 avec Save puis Apply Changes ; Diagnostics > Ping et les widgets du tableau de bord ne sont pas simulés                                                                        | Périmètre : #247 (console) ; widgets réels (Traffic Graphs, Gateways, Services Status…) et pages complètes (options DHCP avancées, mappages statiques, ACL du résolveur) à vérifier                                                |
 | P-48 | Diagnostics / States : colonnes Interface, Proto, Source -> Destination (avec la traduction entre parenthèses) et état fixe (ESTABLISHED:ESTABLISHED en TCP, MULTIPLE:MULTIPLE sinon)                                                                                                                                                                                                                                 | Format de la page : non sourcé, à vérifier ; pas d'expiration des états (voir P-11)                                                                                                                                                |
 
+### Labs et pannes du pare-feu (#248)
+
+Aucune sortie de console nouvelle : les critères et les pannes lisent l'état par la sonde `net/pf-probe.ts` (le moteur
+de paquets, comme `ping` ou `curl`).
+
+| Id   | Comportement simulé                                                                                                                                                                                  | Statut                                  |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| P-50 | Sonde TCP / UDP des critères `pfReachable` et des pannes : requête et réponse acheminées, la destination doit écouter sur le port visé (après redirection) ; les ports sources ne sont pas modélisés | Approximation du simulateur (voir P-17) |
+| P-51 | `curl` et le navigateur d'un poste suivent une redirection de port du pare-feu (la machine de la DMZ répond à l'adresse WAN) ; Test-NetConnection et nmap n'en tiennent pas compte                   | Approximation du simulateur             |
+| P-52 | Pannes `pf.*` : DHCP « mauvaise plage » non modélisé (la plage doit appartenir au sous-réseau, P-30) ; remplacé par DHCP désactivé, passerelle ou DNS distribués erronés                             | Choix de conception                     |
+
 ## Équipements Cisco IOS (v2.5)
 
 Écarts connus avec le vrai IOS (IOS 15.x sur 1921 / 2811 / 2960, IOS-XE 17 sur 9200). Même règle : on

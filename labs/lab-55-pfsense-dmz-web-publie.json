@@ -1,0 +1,139 @@
+{
+  "formatVersion": 1,
+  "id": "lab-55-pfsense-dmz-web-publie",
+  "title": "pfSense : publier le serveur web de la DMZ (redirection de port)",
+  "difficulty": "Intermédiaire",
+  "duration": "35 min",
+  "summary": "Rendez le site de WEB1 accessible depuis Internet par une redirection de port sur l’adresse WAN du pare-feu, sans exposer le reste de la DMZ.",
+  "statement": "## Contexte\n\nLe site de l'entreprise tourne sur **WEB1** (172.16.0.10, DMZ, Apache2). Le pare-feu **FW1** a l'adresse WAN publique **45.10.0.1/30** ; le serveur **INTERNET** (45.10.0.2) représente un visiteur extérieur. Les adresses de la DMZ sont privées : Internet ne peut pas joindre WEB1 directement.\n\n## Travail demandé\n\n1. Publiez le site : un visiteur doit pouvoir ouvrir **http://45.10.0.1/** et arriver sur WEB1 (Firewall > NAT > Port Forward). Laissez pfSense créer la règle de filtrage associée.\n2. Ne publiez **que** le port 80 : le port SSH de WEB1 ne doit pas être accessible depuis Internet.\n3. Contrôlez que le LAN atteint toujours WEB1 et que WEB1 ne peut toujours pas joindre le LAN.\n\n## Pour tester\n\nDepuis le serveur INTERNET (console bash) : `curl -I http://45.10.0.1/`. Dans pfSense : Status > System Logs > Firewall et Diagnostics > States.\n\n## À rendre\n\nLa redirection créée, la règle associée sur le WAN et, en une phrase, pourquoi la redirection est traduite *avant* le filtrage.",
+  "start": {
+    "devices": [
+      {
+        "kind": "firewall",
+        "name": "FW1",
+        "x": 420,
+        "y": 230,
+        "interfaces": {
+          "em0": "45.10.0.1/30",
+          "em2": "172.16.0.1/24"
+        }
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "INTERNET",
+        "x": 420,
+        "y": 40,
+        "ip": "45.10.0.2/30",
+        "packages": ["apache2"]
+      },
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 160,
+        "y": 230
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 40,
+        "y": 330,
+        "ip": "192.168.1.10/24",
+        "gateway": "192.168.1.1",
+        "dns": ["192.168.1.1"],
+        "firewallDisabled": ["Domain", "Private", "Public"]
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "WEB1",
+        "x": 700,
+        "y": 330,
+        "ip": "172.16.0.10/24",
+        "gateway": "172.16.0.1",
+        "packages": ["apache2"]
+      }
+    ],
+    "links": [
+      ["INTERNET:eth0", "FW1:em0"],
+      ["SW1:Fa0/1", "FW1:em1"],
+      ["PC1:Ethernet0", "SW1:Fa0/2"],
+      ["WEB1:eth0", "FW1:em2"]
+    ]
+  },
+  "criteria": [
+    {
+      "id": "c1",
+      "label": "Une redirection du port 80 du WAN vers WEB1 (172.16.0.10) existe",
+      "hint": "Firewall > NAT > Port Forward : l’interface d’arrivée est le WAN, la cible est le serveur de la DMZ.",
+      "check": {
+        "type": "pfPortForward",
+        "device": "FW1",
+        "port": 80,
+        "protocol": "tcp",
+        "target": "172.16.0.10"
+      }
+    },
+    {
+      "id": "c2",
+      "label": "La règle de filtrage associée autorise le flux sur le WAN",
+      "hint": "Une redirection ne suffit pas : le WAN refuse par défaut tout ce qui n’est pas autorisé.",
+      "check": {
+        "type": "pfRuleExists",
+        "device": "FW1",
+        "iface": "wan",
+        "action": "pass",
+        "port": 80
+      }
+    },
+    {
+      "id": "c3",
+      "label": "Le site répond depuis Internet sur l’adresse WAN (TCP 80)",
+      "hint": "Testez avec curl depuis INTERNET et regardez le journal du pare-feu.",
+      "check": {
+        "type": "pfReachable",
+        "from": "INTERNET",
+        "to": "45.10.0.1",
+        "protocol": "tcp",
+        "port": 80
+      }
+    },
+    {
+      "id": "c4",
+      "label": "Le port SSH n’est pas exposé sur l’adresse WAN",
+      "hint": "Ne redirigez que les ports nécessaires au service publié.",
+      "check": {
+        "type": "pfReachable",
+        "from": "INTERNET",
+        "to": "45.10.0.1",
+        "protocol": "tcp",
+        "port": 22,
+        "success": false
+      }
+    },
+    {
+      "id": "c5",
+      "label": "Le LAN atteint toujours WEB1 (TCP 80)",
+      "hint": "La publication ne doit pas perturber le trafic interne.",
+      "check": {
+        "type": "pfReachable",
+        "from": "PC1",
+        "to": "WEB1",
+        "protocol": "tcp",
+        "port": 80
+      }
+    },
+    {
+      "id": "c6",
+      "label": "La DMZ reste isolée du LAN",
+      "hint": "N’ajoutez pas de règle « tout autoriser » sur la DMZ.",
+      "check": {
+        "type": "pfReachable",
+        "from": "WEB1",
+        "to": "PC1",
+        "protocol": "icmp",
+        "success": false
+      }
+    }
+  ]
+}
