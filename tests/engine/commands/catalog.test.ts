@@ -206,6 +206,26 @@ describe('catalogue des commandes', () => {
     done(r)
   })
 
+  it('pare-feu pfSense : règles, ordre, alias, blocages automatiques, journal, états', () => {
+    const r = runner()
+    const fw = r.id('FW1')
+    const first = r.run<string>(
+      command('pf.addRule', fw, { iface: 'lan', action: 'block', protocol: 'icmp', descr: 'Pas de ping' })
+    )
+    const second = r.run<string>(
+      command('pf.addRule', fw, { iface: 'lan', action: 'pass', log: true }, first)
+    )
+    r.run(command('pf.updateRule', fw, first, { action: 'reject', protocol: 'tcp' }))
+    r.run(command('pf.moveRule', fw, second, null))
+    r.run(command('pf.setAlias', fw, { name: 'Web', type: 'host', values: ['172.16.0.10'], descr: '' }))
+    r.run(command('pf.removeAlias', fw, 'Web'))
+    r.run(command('pf.setBlockNetworks', fw, 'wan', { blockPrivate: false, blockBogons: false }))
+    r.run(command('pf.removeRule', fw, first))
+    r.run(command('pf.clearLog', fw), false)
+    r.run(command('pf.resetStates', fw), false)
+    done(r)
+  })
+
   it('accès à distance : NAT, VPN, connexion d’un client', () => {
     const r = runner()
     const srv = r.id('SRV1')

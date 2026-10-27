@@ -15,6 +15,17 @@ import { applyCountermeasure, getCountermeasure } from '../cyber/countermeasures
 import { fail, type EngineResult } from '../core/result'
 import { nextDeviceName } from '../model/factory'
 import type { LabState, Position } from '../model/schema'
+import {
+  addPfRule,
+  clearPfLog,
+  movePfRule,
+  removePfAlias,
+  removePfRule,
+  resetPfStates,
+  setPfAlias,
+  setPfBlockNetworks,
+  updatePfRule
+} from '../net/pf-rules'
 import { addStaticRoute, removeStaticRoute, setHelperAddresses, setInterfaceIpv4 } from '../net/config'
 import {
   addSubinterface,
@@ -243,6 +254,24 @@ const CORE_COMMANDS = {
     const target = selector.displayName ?? selector.group ?? selector.name ?? ''
     return `Supprimer la règle de pare-feu « ${target} »${on(s, id)}`
   }),
+
+  // Pare-feu pfSense (v2.10)
+  'pf.addRule': def(
+    addPfRule,
+    (s, id, input) =>
+      `Ajouter une règle ${input.action ?? 'pass'} sur ${input.iface.toUpperCase()}${on(s, id)}`
+  ),
+  'pf.updateRule': def(updatePfRule, (s, id, ruleId) => `Modifier la règle ${ruleId}${on(s, id)}`),
+  'pf.removeRule': def(removePfRule, (s, id, ruleId) => `Supprimer la règle ${ruleId}${on(s, id)}`),
+  'pf.moveRule': def(movePfRule, (s, id, ruleId) => `Déplacer la règle ${ruleId}${on(s, id)}`),
+  'pf.setAlias': def(setPfAlias, (s, id, alias) => `Définir l’alias ${alias.name}${on(s, id)}`),
+  'pf.removeAlias': def(removePfAlias, (s, id, name) => `Supprimer l’alias ${name}${on(s, id)}`),
+  'pf.setBlockNetworks': def(
+    setPfBlockNetworks,
+    (s, id, key) => `Blocage des réseaux privés et bogons de ${key.toUpperCase()}${on(s, id)}`
+  ),
+  'pf.clearLog': def(clearPfLog, (s, id) => `Vider le journal du pare-feu${on(s, id)}`),
+  'pf.resetStates': def(resetPfStates, (s, id) => `Réinitialiser la table d’états${on(s, id)}`),
 
   // Système
   'system.restartComputer': def(restartComputer, (s, id) => `Redémarrer ${deviceName(s, id)}`),

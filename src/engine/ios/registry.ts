@@ -12,6 +12,7 @@ import { switchportOf } from '../net/switchport'
 import type { BackgroundTask } from '../roles/types'
 import type { TransitHooks } from '../sim/transit'
 import { produce, type Draft } from 'immer'
+import { applyPfEffects } from '../net/pf'
 import type { PacketTrace } from '../sim/trace'
 import { isIos, type IosDevice } from './device'
 import type { IosFeature, L2Frame } from './feature'
@@ -86,6 +87,8 @@ export function applyTraceEffects(state: LabState, trace: PacketTrace | null): L
     learnMacs(draft, trace)
     // Compteurs d'interface, cache ARP et débogage des routeurs IOS
     recordTraffic(draft, trace)
+    // Journal et table d'états des pare-feu pfSense traversés
+    applyPfEffects(draft, effects)
     for (const effect of effects) {
       const device = draft.devices[effect.deviceId]
       if (!isIos(device as Device | undefined)) continue

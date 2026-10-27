@@ -18,6 +18,12 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 - Format `.slab` 28 : migration 27 → 28 (seul le numéro change), fichier de référence `fixtures/v28.slab` (pare-feu
   FW1 câblé à SW1), tests dans `migrations.test.ts` et `tests/engine/model/firewall-device.test.ts`.
 - `docs/fidelite.md` : section « À vérifier (v2.10 — pare-feu) », identifiants P-01 à P-06.
+- Moteur de règles pfSense (#243) : filtrage à l'entrée de chaque interface branché sur le transit
+  (`sim/forward.ts`, `net/pf.ts`) : première règle qui correspond, refus par défaut, table d'états (réponses
+  autorisées), Pass / Block / Reject (TCP RST ou ICMP visible côté client), règle d'usine « Default allow LAN to any »,
+  anti-verrouillage, blocage des réseaux privés et bogons du WAN, alias, journal `pf.log` plafonné ; commandes
+  `pf.addRule`, `pf.updateRule`, `pf.removeRule`, `pf.moveRule`, `pf.setAlias`… ; règle appliquée visible dans la
+  trace du mode Simulation ; `docs/fidelite.md` P-10 à P-17.
 
 ## [2.9.0] — 2026-10-27
 

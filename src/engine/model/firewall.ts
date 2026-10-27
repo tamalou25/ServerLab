@@ -214,6 +214,9 @@ export const PfStateEntrySchema = z.object({
   createdAt: z.number()
 })
 
+/** Identifiant de la règle d'usine « Default allow LAN to any rule ». */
+export const PF_DEFAULT_LAN_RULE_ID = 'pf-default-lan'
+
 /** Plafond du journal (les plus anciennes entrées sont éliminées) : borne la taille d'un fichier .slab. */
 export const PF_LOG_LIMIT = 500
 
