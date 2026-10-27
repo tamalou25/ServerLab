@@ -26,7 +26,8 @@ const SEVERITY_CLASS: Record<AuditSeverity, string> = {
   faible: 'bg-info-soft text-info-text'
 }
 
-const scoreClass = (score: number) => (score >= 80 ? 'text-ok-text' : score >= 50 ? 'text-warn-text' : 'text-danger-text')
+const scoreClass = (score: number) =>
+  score >= 80 ? 'text-ok-text' : score >= 50 ? 'text-warn-text' : 'text-danger-text'
 
 export function AuditPanel() {
   const lab = useLabStore((s) => s.lab)

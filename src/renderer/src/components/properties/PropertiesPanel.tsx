@@ -522,7 +522,9 @@ function LabOverview({ lab }: { lab: LabState }) {
                       {byStatus.degraded > 0 && (
                         <span className="text-warn-text"> · {byStatus.degraded} à vérifier</span>
                       )}
-                      {byStatus.down > 0 && <span className="text-danger-text"> · {byStatus.down} inactifs</span>}
+                      {byStatus.down > 0 && (
+                        <span className="text-danger-text"> · {byStatus.down} inactifs</span>
+                      )}
                     </span>
                   )}
                 </>

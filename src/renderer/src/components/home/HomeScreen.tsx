@@ -193,9 +193,7 @@ function HomePage() {
 }
 
 function SectionTitle({ children }: { children: ReactNode }) {
-  return (
-    <h2 className="mb-2 text-meta font-semibold tracking-wider text-fg-subtle uppercase">{children}</h2>
-  )
+  return <h2 className="mb-2 text-meta font-semibold tracking-wider text-fg-subtle uppercase">{children}</h2>
 }
 
 function Action({
@@ -226,9 +224,7 @@ function Action({
         <span className="block text-ui font-medium text-fg">{label}</span>
         <span className="block text-meta text-fg-muted">{detail}</span>
       </span>
-      <kbd className="font-mono text-meta text-fg-subtle">
-        {formatShortcut(accelerator(shortcut), lang)}
-      </kbd>
+      <kbd className="font-mono text-meta text-fg-subtle">{formatShortcut(accelerator(shortcut), lang)}</kbd>
     </button>
   )
 }

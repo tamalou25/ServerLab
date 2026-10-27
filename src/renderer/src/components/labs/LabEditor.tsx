@@ -257,7 +257,8 @@ function CriterionCard({
             <CircleDashed size={15} className="text-fg-subtle" />
           ) : criterion.tested ? (
             <>
-              <CircleCheck size={15} className="text-ok-text" /> <span className="text-ok-text">{t('lab.valide')}</span>
+              <CircleCheck size={15} className="text-ok-text" />{' '}
+              <span className="text-ok-text">{t('lab.valide')}</span>
             </>
           ) : (
             <>

@@ -83,8 +83,7 @@ export function PortTray({ device, interactive, onMouseEnter, onMouseLeave }: Po
               <span className={state === 'disabled' ? 'line-through' : ''}>{iface.name}</span>
             </>
           )
-          const base =
-            'flex items-center gap-1.5 rounded px-1.5 py-0.5 font-mono text-meta whitespace-nowrap'
+          const base = 'flex items-center gap-1.5 rounded px-1.5 py-0.5 font-mono text-meta whitespace-nowrap'
           if (!interactive)
             return (
               <div key={iface.id} className={`${base} text-fg-muted`} title={title}>
