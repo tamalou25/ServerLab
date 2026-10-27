@@ -28,6 +28,10 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   de port avec règle de filtrage associée créée et suivie automatiquement (destination traduite avant le filtrage,
   serveur de la DMZ joignable depuis le WAN), traduction visible dans la trace du mode Simulation et dans la table
   d'états ; commandes `pf.setNatMode`, `pf.addOutboundNat`, `pf.addPortForward`… ; `docs/fidelite.md` P-20 à P-27.
+- Interface web du pare-feu (#246) : le navigateur d'un poste joint `https://<adresse du pare-feu>` à travers le filtre (LAN par
+  l'anti-verrouillage, WAN et DMZ selon les règles), page de connexion admin / pfsense, tableau de bord, Interfaces,
+  Firewall > Rules / Aliases / NAT (Save puis Apply Changes), Status > System Logs > Firewall, Diagnostics > States ;
+  commandes `pf.webRequest` et `pfAuthenticate` (`roles/iis/pfweb.ts`), `docs/fidelite.md` P-40 à P-48.
 
 ## [2.9.0] — 2026-10-27
 
