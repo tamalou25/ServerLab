@@ -263,6 +263,7 @@ describe('catalogue des commandes', () => {
     r.run(command('pf.removePortForward', fw, pfn))
     r.run(command('pf.clearLog', fw), false)
     r.run(command('pf.resetStates', fw), false)
+    r.run(command('pf.webRequest', r.id('PC1'), 'https://192.168.1.1'), false)
     done(r)
   })
 
