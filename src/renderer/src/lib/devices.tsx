@@ -2,6 +2,7 @@
  * Apparence des équipements (icônes lucide, couleurs) — purement visuel.
  */
 import {
+  BrickWall,
   Cloud,
   Monitor,
   Network,
@@ -78,6 +79,7 @@ export const DEVICE_ICONS: Record<PaletteKind, LucideIcon> = {
   switch: Network,
   router: Router,
   cloud: Cloud,
+  firewall: BrickWall,
   c1921: Router,
   c2811: Router,
   c2960: Network,
@@ -96,6 +98,7 @@ export const KIND_STRIPE: Record<PaletteKind, string> = {
   switch: 'bg-kind-switch',
   router: 'bg-kind-router',
   cloud: 'bg-kind-cloud',
+  firewall: 'bg-kind-firewall',
   c1921: 'bg-kind-router',
   c2811: 'bg-kind-router',
   c2960: 'bg-kind-switch',
@@ -108,5 +111,6 @@ export const DEVICE_COLORS: Record<DeviceKind, string> = {
   client: 'bg-kind-client text-white',
   switch: 'bg-kind-switch text-white',
   router: 'bg-kind-router text-white',
-  cloud: 'bg-kind-cloud text-white'
+  cloud: 'bg-kind-cloud text-white',
+  firewall: 'bg-kind-firewall text-white'
 }

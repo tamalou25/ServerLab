@@ -361,7 +361,7 @@ describe('état et format .slab', () => {
     const text = serializeSlab(c.state, { savedAt: '2026-10-20T00:00:00.000Z', appVersion: '2.9.0' })
     const back = parseSlab(text)
     expect(back.ok).toBe(true)
-    expect(JSON.parse(text).schemaVersion).toBe(27)
+    expect(JSON.parse(text).schemaVersion).toBe(28)
     expect(text).toContain('smbLogins')
     if (back.ok) expect(back.doc.lab).toEqual(c.state)
   })

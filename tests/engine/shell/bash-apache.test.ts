@@ -1040,7 +1040,7 @@ describe('commandes hors périmètre, désinstallation, sérialisation', () => {
       '../sites-available/site1.conf'
     )
     expect(srv.host.linux?.loaded?.['apache2']).toBeDefined()
-    expect(JSON.parse(text).schemaVersion).toBe(27)
+    expect(JSON.parse(text).schemaVersion).toBe(28)
   })
 
   it('un serveur Ubuntu 24.04 annonce (Ubuntu) et sa version d’Apache', () => {

@@ -57,6 +57,7 @@
   --color-kind-switch: var(--sl-kind-switch);
   --color-kind-router: var(--sl-kind-router);
   --color-kind-cloud: var(--sl-kind-cloud);
+  --color-kind-firewall: var(--sl-kind-firewall);
 
   /* Ombres très légères */
   --shadow-xs: var(--sl-shadow-xs);
@@ -104,6 +105,7 @@
   --sl-kind-switch: #3cc48f;
   --sl-kind-router: #f0a443;
   --sl-kind-cloud: #9aa6b8;
+  --sl-kind-firewall: #ec6b6b;
   --sl-shadow-xs: 0 1px 1px rgb(0 0 0 / 0.25);
   --sl-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
   --sl-shadow-md: 0 4px 12px rgb(0 0 0 / 0.28);
@@ -146,6 +148,7 @@
   --sl-kind-switch: #1c9a69;
   --sl-kind-router: #d57d1f;
   --sl-kind-cloud: #6b7a90;
+  --sl-kind-firewall: #cf4a4a;
   --sl-shadow-xs: 0 1px 1px rgb(16 24 40 / 0.04);
   --sl-shadow-sm: 0 1px 2px rgb(16 24 40 / 0.06);
   --sl-shadow-md: 0 4px 12px rgb(16 24 40 / 0.08);

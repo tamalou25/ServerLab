@@ -13,6 +13,7 @@
  * Depuis la v22 : RIP v2 de CR1 et default-information originate d'OSPF.
  * Depuis la v19 : spanning-tree de CSW1 (rapid-pvst, priorité du VLAN 30, BPDU Guard).
  * Depuis la v27 : serveur Linux LSRV1 (Debian 12 simulé).
+ * Depuis la v28 : pare-feu FW1 (pfSense CE 2.7 simulé), LAN câblé sur le port Fa0/10 de SW1.
  * Le même scénario a servi à produire chaque fichier vN.slab avec le code de la version N.
  */
 import {
@@ -239,6 +240,15 @@ export function buildReferenceLab(): LabState {
   s = unwrap(setHostClock(s, id('PC2'), 90)).state
   // v27 : serveur Linux (Debian 12 simulé) LSRV1, non câblé
   s = unwrap(addDevice(s, { kind: 'server', os: 'linux', position: { x: 0, y: 200 }, name: 'LSRV1' })).state
+  // v28 : pare-feu pfSense FW1, LAN (em1) relié au switch SW1
+  device('firewall', 'FW1', 200, -200)
+  s = unwrap(
+    connect(
+      s,
+      { deviceId: id('FW1'), ifaceId: iface('FW1', 'em1') },
+      { deviceId: id('SW1'), ifaceId: iface('SW1', 'Fa0/10') }
+    )
+  ).state
   return runIosScript(s, id('CR1'), [
     'enable',
     'configure terminal',

@@ -2,6 +2,16 @@
  * Fabriques : création d'un lab vide et d'équipements avec leurs valeurs par défaut.
  */
 import type { Draft } from 'immer'
+import {
+  PF_DMZ_DESCR,
+  PF_IFACE_KEYS,
+  PF_IFACE_LABEL,
+  PF_LAN_ADDRESS,
+  PF_LAN_PREFIX,
+  PF_PORTS,
+  PFSENSE_VERSION,
+  type PfState
+} from './firewall'
 import { DEVICE_KIND_INFO, type DeviceKind } from './kinds'
 import { IOS_MODEL_INFO, type IosModel } from '../ios/models'
 import {
@@ -111,6 +121,37 @@ export function defaultFirewall(): Host['firewall'] {
   }
 }
 
+/**
+ * État de base d'un pare-feu neuf : WAN sur la première carte, LAN sur la deuxième, OPT1 (DMZ) sur la
+ * troisième, toutes activées ; WAN avec blocage des réseaux privés et bogons (cases cochées par défaut
+ * sur le WAN). Aucune règle ni NAT : les issues suivantes de la v2.10 les alimentent.
+ */
+export function defaultPfState(hostname: string, interfaces: NetInterface[]): PfState {
+  return {
+    version: PFSENSE_VERSION,
+    hostname,
+    domain: '',
+    assignments: PF_IFACE_KEYS.map((key, i) => ({
+      key,
+      ifaceId: interfaces[i]?.id ?? null,
+      descr: key === 'opt1' ? PF_DMZ_DESCR : PF_IFACE_LABEL[key],
+      enabled: true,
+      blockPrivate: key === 'wan',
+      blockBogons: key === 'wan'
+    })),
+    rules: [],
+    aliases: [],
+    nat: { outboundMode: 'automatic', outbound: [], portForwards: [] },
+    dhcp: {},
+    dnsResolver: { enabled: true, forwarding: false, hostOverrides: [] },
+    dnsServers: [],
+    gateways: [],
+    staticRoutes: [],
+    log: [],
+    states: []
+  }
+}
+
 /** Crée une carte réseau avec un identifiant et une MAC uniques. */
 export function createInterface(draft: Draft<LabState>, name: string, kind: DeviceKind): NetInterface {
   const seq = nextSeq(draft)
@@ -150,6 +191,8 @@ export function defaultInterfaceNames(kind: DeviceKind): string[] {
       return Array.from({ length: ROUTER_INTERFACE_COUNT }, (_, i) => `Gi0/${i}`)
     case 'cloud':
       return ['WAN']
+    case 'firewall':
+      return [...PF_PORTS]
   }
 }
 
@@ -191,7 +234,11 @@ export function buildDevice(
   // Routeur IOS : interfaces administrativement coupées en sortie d'usine (no shutdown requis)
   const interfaces = names.map((n) => ({
     ...createInterface(draft, n, kind),
-    ...(ios && kind === 'router' ? { enabled: false } : {})
+    ...(ios && kind === 'router' ? { enabled: false } : {}),
+    // Pare-feu : LAN préconfiguré (192.168.1.1/24), WAN et OPT1 sans adresse
+    ...(kind === 'firewall' && n === PF_PORTS[1]
+      ? { address: PF_LAN_ADDRESS, prefixLength: PF_LAN_PREFIX }
+      : {})
   }))
   const base = { id, name: deviceName, position: { ...position }, powered: true, interfaces, hostedBy: null }
   switch (kind) {
@@ -218,5 +265,7 @@ export function buildDevice(
       return { ...base, kind, routes: [], ...(ios === 'c1921' || ios === 'c2811' ? { model: ios } : {}) }
     case 'cloud':
       return { ...base, kind }
+    case 'firewall':
+      return { ...base, kind, pf: defaultPfState(deviceName, interfaces) }
   }
 }

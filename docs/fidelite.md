@@ -775,6 +775,28 @@ Aucune sortie nouvelle : les labs 46 à 53 et les pannes `linux.*` n'utilisent q
 | L-102 | Départ des labs Linux (`packages`, `bash`)                       | Les paquets sont posés sans dépôt distant (comme un `apt install` réussi) ; les lignes `bash` sont saisies par le compte `admin` avec `sudo`, une ligne en erreur interrompt la construction |
 | L-103 | Réparations des pannes (`sed -i` sur le texte exact de la ligne) | Une réparation rejouée sur un lab déjà sain n'est pas idempotente (elle suppose la panne injectée) ; le tirage ne la rejoue que sur l'état cassé                                             |
 
+## v2.10 — Pare-feu (pfSense CE 2.7)
+
+L'équipement pare-feu (#242) n'affiche aucune sortie de console : il pose le modèle d'état (interfaces WAN, LAN,
+OPT1/DMZ, règles, NAT, services, journal) que les issues #243 à #248 exploitent. Libellés repris de la documentation
+Netgate (docs.netgate.com/pfsense) : _Interfaces > Assignments_ (WAN, LAN, OPTx, renommage d'une interface), _System >
+General Setup_ (nom d'hôte : commence par une lettre, lettres, chiffres, tiret), _Firewall > Rules_ (règles évaluées par
+interface, sens entrant, table d'états : « all reply traffic is automatically permitted »).
+
+### À vérifier (v2.10 — pare-feu)
+
+Valeurs d'usine non retrouvées dans les pages de documentation consultées ; elles restent à confirmer avant d'être
+tenues pour exactes. Aucune sortie de console n'est codée sur ces points.
+
+| ID   | Comportement simulé                                                                       | Doute / source à consulter                                                                    |
+| ---- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| P-01 | Adresse LAN d'un pare-feu neuf : 192.168.1.1/24 ; WAN et OPT1 sans adresse                | Valeur d'usine de l'assistant de configuration (docs Netgate, _Initial Configuration_)        |
+| P-02 | WAN en adressage statique sans adresse (le client DHCP du WAN relève de #245)             | WAN en DHCP par défaut sur l'équipement réel                                                  |
+| P-03 | TTL initial d'un paquet émis par le pare-feu : 64                                         | Valeur FreeBSD `net.inet.ip.ttl` ; à confirmer sur pfSense CE 2.7                             |
+| P-04 | Cartes `em0` (WAN), `em1` (LAN), `em2` (OPT1) ; OPT1 nommée « DMZ » dans la topologie     | Noms de pilotes de l'équipement virtualisé ; pfSense autorise le renommage de toute interface |
+| P-05 | Aucune règle à la création (la règle d'usine « Default allow LAN to any » relève de #243) | Page _Firewall Rules_ / _Anti-Lockout Rule_ de la documentation                               |
+| P-06 | Blocage des réseaux privés et des bogons coché sur le WAN seulement                       | Page _Interface Configuration_ (Block private networks / Block bogon networks)                |
+
 ## Équipements Cisco IOS (v2.5)
 
 Écarts connus avec le vrai IOS (IOS 15.x sur 1921 / 2811 / 2960, IOS-XE 17 sur 9200). Même règle : on

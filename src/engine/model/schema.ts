@@ -8,6 +8,7 @@
  */
 import { z } from 'zod'
 import { LinuxNodeSchema } from './linuxnode'
+import { PfStateSchema } from './firewall'
 import { DEVICE_KINDS } from './kinds'
 import { IOS_ROUTER_MODELS, IOS_SWITCH_MODELS } from '../ios/models'
 import { DhcpExclusionSchema, DhcpServerSchema } from './dhcp'
@@ -1102,6 +1103,12 @@ export const RouterDeviceSchema = z.object({
   /** Configuration IOS (équipement Cisco ; absente : valeurs d'usine). */
   ios: IosStateSchema.optional()
 })
+/** Pare-feu pfSense CE 2.7 simulé (v2.10, format 28) : trois cartes em0 (WAN), em1 (LAN), em2 (OPT1/DMZ). */
+export const PfDeviceSchema = z.object({
+  ...deviceBase,
+  kind: z.literal('firewall'),
+  pf: PfStateSchema
+})
 export const CloudDeviceSchema = z.object({ ...deviceBase, kind: z.literal('cloud') })
 
 export const DeviceSchema = z.discriminatedUnion('kind', [
@@ -1109,7 +1116,8 @@ export const DeviceSchema = z.discriminatedUnion('kind', [
   ClientDeviceSchema,
   SwitchDeviceSchema,
   RouterDeviceSchema,
-  CloudDeviceSchema
+  CloudDeviceSchema,
+  PfDeviceSchema
 ])
 
 /** Extrémité d'un câble : un port précis d'un équipement. */
