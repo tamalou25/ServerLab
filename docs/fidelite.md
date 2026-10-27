@@ -847,9 +847,9 @@ de paquets, comme `ping` ou `curl`).
 
 | Id   | Comportement simulé                                                                                                                                                                                  | Statut                                  |
 | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| P-50 | Sonde TCP / UDP des critères `pfReachable` et des pannes : requête et réponse acheminées, la destination doit écouter sur le port visé (après redirection) ; les ports sources ne sont pas modélisés | Approximation du simulateur (voir P-17) |
-| P-51 | `curl` et le navigateur d'un poste suivent une redirection de port du pare-feu (la machine de la DMZ répond à l'adresse WAN) ; Test-NetConnection et nmap n'en tiennent pas compte                   | Approximation du simulateur             |
-| P-52 | Pannes `pf.*` : DHCP « mauvaise plage » non modélisé (la plage doit appartenir au sous-réseau, P-30) ; remplacé par DHCP désactivé, passerelle ou DNS distribués erronés                             | Choix de conception                     |
+| P-60 | Sonde TCP / UDP des critères `pfReachable` et des pannes : requête et réponse acheminées, la destination doit écouter sur le port visé (après redirection) ; les ports sources ne sont pas modélisés | Approximation du simulateur (voir P-17) |
+| P-61 | `curl` et le navigateur d'un poste suivent une redirection de port du pare-feu (la machine de la DMZ répond à l'adresse WAN) ; Test-NetConnection et nmap n'en tiennent pas compte                   | Approximation du simulateur             |
+| P-62 | Pannes `pf.*` : DHCP « mauvaise plage » non modélisé (la plage doit appartenir au sous-réseau, P-30) ; remplacé par DHCP désactivé, passerelle ou DNS distribués erronés                             | Choix de conception                     |
 
 ## Équipements Cisco IOS (v2.5)
 
