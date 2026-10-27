@@ -840,6 +840,17 @@ tenues pour exactes. Aucune sortie de console n'est codée sur ces points.
 | P-56 | Redémarrage (option 5) : installation sur ZFS supposée (pas de choix « F » : contrôle du système de fichiers) ; le redémarrage vide la table d'états et garde configuration et journal ; `pfctl -d` désactive aussi le NAT et la désactivation n'est pas levée par un rechargement du filtre depuis l'interface                                                                                                                                          | Pages _Rebooting the Firewall_ et _Locked out of the GUI_ ; script `rc.initial.reboot`                                                                                                                                             |
 | P-57 | Shell (option 8) : invite `[2.7.2-RELEASE][root@hôte]/root: ` ; `ping` sans `-c` limité à 3 paquets ; durées de ping en millisecondes entières avec trois décimales ; adresses ICMP inaccessibles sans l'en-tête IP détaillé ; tubes limités à `grep`, `head`, `filterparser.php` ; description du pilote `em` : « Intel(R) Legacy PRO/1000 MT 82540EM »                                                                                                 | Aucune source consultée pour l'invite (apprise de l'usage) ni pour la description du pilote ; sorties de `ping` d'après `ping.c` et `main.c` (FreeBSD 14)                                                                          |
 
+### Labs et pannes du pare-feu (#248)
+
+Aucune sortie de console nouvelle : les critères et les pannes lisent l'état par la sonde `net/pf-probe.ts` (le moteur
+de paquets, comme `ping` ou `curl`).
+
+| Id   | Comportement simulé                                                                                                                                                                                  | Statut                                  |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| P-60 | Sonde TCP / UDP des critères `pfReachable` et des pannes : requête et réponse acheminées, la destination doit écouter sur le port visé (après redirection) ; les ports sources ne sont pas modélisés | Approximation du simulateur (voir P-17) |
+| P-61 | `curl` et le navigateur d'un poste suivent une redirection de port du pare-feu (la machine de la DMZ répond à l'adresse WAN) ; Test-NetConnection et nmap n'en tiennent pas compte                   | Approximation du simulateur             |
+| P-62 | Pannes `pf.*` : DHCP « mauvaise plage » non modélisé (la plage doit appartenir au sous-réseau, P-30) ; remplacé par DHCP désactivé, passerelle ou DNS distribués erronés                             | Choix de conception                     |
+
 ## Équipements Cisco IOS (v2.5)
 
 Écarts connus avec le vrai IOS (IOS 15.x sur 1921 / 2811 / 2960, IOS-XE 17 sur 9200). Même règle : on

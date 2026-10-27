@@ -32,6 +32,26 @@ const ALREADY_MET: Record<string, Record<string, string>> = {
     smbd: 'non-régression : smbd est déjà démarré avec le partage public, il doit le rester'
   },
   'lab-49-linux-bind9': { named: 'non-régression : named installé tourne déjà, il doit rester actif' },
+  'lab-54-pfsense-regles-lan-dmz': {
+    c1: 'non-régression : le LAN atteint déjà WEB1 (règle d’usine du LAN)',
+    c4: 'non-régression : le LAN a déjà accès à Internet',
+    c6: 'non-régression : la DMZ est isolée par le refus par défaut (aucune règle)',
+    c7: 'non-régression : la DMZ n’atteint pas PC1 (refus par défaut)'
+  },
+  'lab-55-pfsense-dmz-web-publie': {
+    c4: 'non-régression : seul le port 80 sera publié : SSH est fermé au départ',
+    c5: 'non-régression : le LAN atteint déjà WEB1 (règle d’usine du LAN)',
+    c6: 'non-régression : la DMZ est isolée par le refus par défaut'
+  },
+  'lab-58-pfsense-mixte-windows-linux': {
+    c4: 'non-régression : le LAN atteint déjà WEB1 (règle d’usine du LAN)',
+    c6: 'non-régression : le LAN a déjà accès à Internet',
+    c8: 'non-régression : la DMZ est isolée par le refus par défaut',
+    c9: 'non-régression : la DMZ est isolée par le refus par défaut'
+  },
+  'lab-59-depannage-pare-feu': {
+    c5: 'non-régression : la DMZ est isolée du LAN, elle doit le rester après la réparation'
+  },
   'lab-28-ios-sujet-e6': {
     'acl-block': 'ping bloqué au départ faute de routage ; les autres critères exigent le routage'
   }

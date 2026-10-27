@@ -137,6 +137,29 @@ primaire dès que son fichier change, le numéro de série ne compte que pour le
 « erreur de syntaxe de `smb.conf` qui empêche smbd de démarrer » (smbd simulé ne refuse jamais de démarrer ; `testparm`
 signale l'erreur). Une panne ne s'applique qu'à un lab qui a le service concerné actif : sinon `pick` renvoie `null`.
 
+## Pannes du pare-feu (v2.10, #248)
+
+Domaine `pare-feu` (fichiers `faults/pf-*.ts`). Cassées et réparées par les commandes `pf.*` (celles de l'interface
+web et de la console du pare-feu). Le symptôme est lu par la sonde `pfProbe` (`net/pf-probe.ts`) : ping ou échange
+TCP / UDP routé comme un vrai paquet (filtrage, NAT, routage), la destination devant écouter sur le port. Aucune sortie
+nouvelle. Lab sain de référence : le départ du lab 59 (`tests/engine/troubleshoot/bases-pf.ts`).
+
+| Identifiant             | Diff. | Panne                                                               | Symptôme                                           | Réparation                      |
+| ----------------------- | ----- | ------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------- |
+| `pf.rule-disabled`      | 1     | Règle Pass désactivée (`pf.updateRule`)                             | Flux refusé, journal : refus par défaut            | Réactiver la règle              |
+| `pf.rule-removed`       | 2     | Règle Pass supprimée (`pf.removeRule`)                              | Idem                                               | Recréer la règle (`pf.addRule`) |
+| `pf.rule-order`         | 3     | Règle Block insérée avant la règle Pass (`pf.addRule`)              | Flux bloqué par la règle Block                     | Supprimer ou replacer la règle  |
+| `pf.alias-wrong`        | 3     | Alias d'hôtes avec une mauvaise adresse (`pf.setAlias`)             | Flux vers la machine refusé malgré la règle        | Restaurer l'alias               |
+| `pf.forward-target`     | 2     | Redirection vers une mauvaise adresse ou un mauvais port            | Site publié muet depuis l'extérieur                | Restaurer la cible              |
+| `pf.nat-disabled`       | 2     | NAT sortant désactivé ou manuel sans règle (`pf.setNatMode`)        | Ping vers l'extérieur sans réponse                 | Restaurer le mode               |
+| `pf.no-default-gateway` | 2     | Passerelle par défaut supprimée (`pf.removeGateway`)                | « Impossible de joindre le réseau de destination » | `pf.setGateway` par défaut      |
+| `pf.dhcp-options`       | 2     | DHCP désactivé, passerelle ou DNS distribués erronés (`pf.setDhcp`) | Pas de bail, ou bail aux paramètres faux           | Restaurer le serveur DHCP       |
+
+Non modélisé : « DHCP sur mauvaise plage » (la plage doit appartenir au sous-réseau, voir `docs/fidelite.md` P-52).
+Tests : `tests/engine/troubleshoot/pf-faults.test.ts` et `faults.test.ts` (base `pfsense-dmz-publie`). Lab fourni :
+`lab-59-depannage-pare-feu` (`pf.rule-order` + `pf.nat-disabled`, test `tests/engine/labs/lab-59-depannage-pare-feu.test.ts`).
+Labs 54 à 58 (règles LAN/DMZ, site publié, NAT sortant, DHCP et DNS, lab mixte) : `tests/engine/labs/pf-labs.test.ts`.
+
 ## Pannes composées
 
 Une panne composée associe **deux causes dont la première masque la seconde** : la seconde n'est visible

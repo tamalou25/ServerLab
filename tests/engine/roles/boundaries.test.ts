@@ -44,6 +44,7 @@ const ALLOWED_CORE_TO_ROLE = [
   'shell/ps/cmdlets/system.ts', // Restart-Computer -ComputerName : administrateur du domaine
   'shell/tools/net.ts', // ipconfig /renew, résolution de noms, whoami /groups
   'troubleshoot/faults/domain-probe.ts',
+  'troubleshoot/faults/pf-dhcp.ts', // panne DHCP du pare-feu : bail obtenu par le client DHCP (comme win-dhcp)
   'troubleshoot/faults/service-probes.ts',
   'troubleshoot/faults/win-account.ts',
   'troubleshoot/faults/win-dhcp.ts',

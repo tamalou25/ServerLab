@@ -19,6 +19,7 @@ import lab1 from '../../../labs/lab-01-adressage.json'
 import lab3 from '../../../labs/lab-03-dns.json'
 import { WINDOWS_BASES } from './bases-windows'
 import { buildLinuxHealthy } from './bases-linux'
+import { buildPfHealthy } from './bases-pf'
 import lab13 from '../../../labs/lab-13-vlan.json'
 import lab23 from '../../../labs/lab-23-ios-vlan.json'
 import lab24 from '../../../labs/lab-24-ios-routage.json'
@@ -202,5 +203,6 @@ export const BASES: { name: string; build: () => LabState }[] = [
   { name: 'lab-25-ios-nat', build: healthyLab25 },
   { name: 'lab-38-stp-etherchannel', build: healthyLab38 },
   ...WINDOWS_BASES,
-  { name: 'linux-serveur-debian', build: buildLinuxHealthy }
+  { name: 'linux-serveur-debian', build: buildLinuxHealthy },
+  { name: 'pfsense-dmz-publie', build: buildPfHealthy }
 ]

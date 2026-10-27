@@ -22,6 +22,7 @@ import { IOS_CRITERIA } from '../ios/criteria'
 import { roleCriteria } from '../roles/registry'
 import { defineCriterion, type CriterionType } from '../roles/types'
 import { LINUX_CRITERIA } from './linuxcriteria'
+import { PF_CRITERIA } from './pfcriteria'
 import { byName, hostByName, sameName, targetIp } from './lookup'
 
 /** Critères du système de base (adressage, connectivité, rôles installés). */
@@ -209,10 +210,14 @@ let types: Map<string, CriterionType> | null = null
 /** Types de critères disponibles (système de base + modules de rôles), par nom. */
 export function criterionTypes(): Map<string, CriterionType> {
   return (types ??= new Map(
-    [...CORE_CRITERIA, ...roleCriteria(), ...IOS_CRITERIA, ...CYBER_CRITERIA, ...LINUX_CRITERIA].map((c) => [
-      c.type,
-      c
-    ])
+    [
+      ...CORE_CRITERIA,
+      ...roleCriteria(),
+      ...IOS_CRITERIA,
+      ...CYBER_CRITERIA,
+      ...LINUX_CRITERIA,
+      ...PF_CRITERIA
+    ].map((c) => [c.type, c])
   ))
 }
 
