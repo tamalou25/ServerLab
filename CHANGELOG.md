@@ -6,6 +6,14 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+## [2.9.0] — 2026-10-27
+
+Serveurs Linux (Debian 12, Ubuntu 24.04). Format `.slab` 27 (migration 26 → 27 : serveur Linux, #234) ; les autres
+issues n'ajoutent que des champs facultatifs. Captures reconstituées depuis les pages de manuel et sources Debian
+bookworm, sans VM : points listés « à vérifier » dans `docs/fidelite.md` (section v2.9).
+
+Labs 46 à 53.
+
 ### v2.9 (serveurs Linux)
 
 - Système de fichiers, utilisateurs et droits de la console bash (#235) : arborescence `/etc`, `/var/www`,
