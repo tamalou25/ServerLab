@@ -21,12 +21,12 @@ import { t } from '../../lib/i18n'
 
 const SEVERITY_CLASS: Record<AuditSeverity, string> = {
   critique: 'bg-danger text-on-danger',
-  élevée: 'bg-danger-soft text-danger',
-  moyenne: 'bg-warn-soft text-warn',
-  faible: 'bg-info-soft text-info'
+  élevée: 'bg-danger-soft text-danger-text',
+  moyenne: 'bg-warn-soft text-warn-text',
+  faible: 'bg-info-soft text-info-text'
 }
 
-const scoreClass = (score: number) => (score >= 80 ? 'text-ok' : score >= 50 ? 'text-warn' : 'text-danger')
+const scoreClass = (score: number) => (score >= 80 ? 'text-ok-text' : score >= 50 ? 'text-warn-text' : 'text-danger-text')
 
 export function AuditPanel() {
   const lab = useLabStore((s) => s.lab)
@@ -42,19 +42,19 @@ export function AuditPanel() {
     <div className="flex min-h-0 flex-1 flex-col" data-testid="audit-panel">
       <div className="flex items-center gap-3 border-b border-line px-4 py-3">
         {report.recommendations.length === 0 ? (
-          <ShieldCheck size={28} className="text-ok" />
+          <ShieldCheck size={28} className="text-ok-text" />
         ) : (
           <ShieldAlert size={28} className={scoreClass(report.score)} />
         )}
         <div>
-          <div className="text-[11px] font-semibold tracking-wider text-fg-subtle uppercase">
+          <div className="text-meta font-semibold tracking-wider text-fg-subtle uppercase">
             {t('audit.scoreDeSecurite')}
           </div>
           <div className={`text-2xl font-semibold ${scoreClass(report.score)}`} data-testid="audit-score">
             {report.score}
-            <span className="text-sm text-fg-subtle"> / 100</span>
+            <span className="text-ui text-fg-subtle"> / 100</span>
           </div>
-          <div className="text-[11px] text-fg-muted" data-testid="audit-baseline">
+          <div className="text-meta text-fg-muted" data-testid="audit-baseline">
             Au chargement : {baseline.score} / 100 · {corrected} recommandation(s) corrigée(s)
           </div>
         </div>
@@ -80,7 +80,7 @@ export function AuditPanel() {
               >
                 <div className="mb-1 flex items-center gap-2">
                   <span
-                    className={`rounded-sm px-1.5 py-0.5 text-[11px] font-semibold ${SEVERITY_CLASS[r.severity]}`}
+                    className={`rounded-sm px-1.5 py-0.5 text-meta font-semibold ${SEVERITY_CLASS[r.severity]}`}
                   >
                     {r.severity}
                   </span>
@@ -88,17 +88,17 @@ export function AuditPanel() {
                 </div>
                 <ul className="mb-2 flex flex-col gap-0.5">
                   {r.findings.map((f) => (
-                    <li key={f.object} className="text-[11px] text-fg-muted">
+                    <li key={f.object} className="text-meta text-fg-muted">
                       <span className="font-mono text-fg">{f.object}</span> — {f.detail}
                     </li>
                   ))}
                 </ul>
-                <p className="text-[11px] text-fg-muted">
+                <p className="text-meta text-fg-muted">
                   <span className="font-semibold text-fg">{t('audit.correction')} </span>
                   {r.fix}
                 </p>
                 {r.refs.length > 0 && (
-                  <p className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-fg-muted">
+                  <p className="mt-1 flex flex-wrap items-center gap-1 text-meta text-fg-muted">
                     <span className="font-semibold text-fg">{t('audit.references')}</span>
                     {r.refs.map((key) => {
                       const ref = AUDIT_REFERENCES[key]
@@ -134,14 +134,14 @@ export function AuditPanel() {
                   className="rounded-md border border-line bg-surface p-2"
                   data-testid={`detection-${a.rule}`}
                 >
-                  <div className="text-xs font-semibold text-warn">{t(`detection.rule.${a.rule}`)}</div>
-                  <p className="text-[11px] text-fg-muted">{a.detail}</p>
+                  <div className="text-xs font-semibold text-warn-text">{t(`detection.rule.${a.rule}`)}</div>
+                  <p className="text-meta text-fg-muted">{a.detail}</p>
                 </li>
               ))}
             </ul>
           )}
         </section>
-        <p className="mt-4 text-[11px] text-fg-subtle">
+        <p className="mt-4 text-meta text-fg-subtle">
           {report.passed.length} règle(s) respectée(s). Chaque règle enfreinte retire des points selon sa
           gravité (critique 25, élevée 15, moyenne 10, faible 5).
         </p>

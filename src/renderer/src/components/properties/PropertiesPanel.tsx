@@ -91,7 +91,7 @@ function IconAction({
   const tones = {
     default: 'text-fg-muted hover:bg-surface-2 hover:text-fg',
     primary: 'bg-accent text-on-accent hover:bg-accent-hover',
-    danger: 'text-danger hover:bg-danger-soft'
+    danger: 'text-danger-text hover:bg-danger-soft'
   }
   return (
     <button
@@ -139,7 +139,7 @@ function DeviceProperties({ device }: { device: Device }) {
             <Icon size={20} strokeWidth={1.5} />
           </span>
           <div className="min-w-0">
-            <div className="truncate text-[15px] font-semibold text-fg">{device.name}</div>
+            <div className="truncate text-title font-semibold text-fg">{device.name}</div>
             <div className="flex items-center gap-1.5 text-xs text-fg-muted" title={health.label}>
               {deviceLabel(device)}
               <span className="text-fg-subtle">·</span>
@@ -263,7 +263,7 @@ function generalRows(lab: LabState, device: Device): [string, ReactNode][] {
       )
     ])
     if (host.pendingReboot)
-      rows.push([t('props.reboot'), <span className="text-warn">{t('props.required')}</span>])
+      rows.push([t('props.reboot'), <span className="text-warn-text">{t('props.required')}</span>])
   }
   if (device.kind === 'switch') {
     rows.push([
@@ -287,7 +287,7 @@ function RolesSection({ device }: { device: HostDevice }) {
           {roles.map((r) => (
             <li
               key={r.name}
-              className="rounded border border-line bg-surface px-1.5 py-0.5 text-[11px] text-fg"
+              className="rounded border border-line bg-surface px-1.5 py-0.5 text-meta text-fg"
               title={r.name}
             >
               {r.displayName}
@@ -311,7 +311,7 @@ function ServicesSection({ lab, device }: { lab: LabState; device: HostDevice })
         <>
           {scopes} étendue{scopes > 1 ? 's' : ''} · {leases} bail{leases > 1 ? 'x' : ''}
           {device.host.domain && (
-            <span className={dhcp.authorized ? 'text-ok' : 'text-warn'}>
+            <span className={dhcp.authorized ? 'text-ok-text' : 'text-warn-text'}>
               {dhcp.authorized ? t('props.authorized') : t('props.notAuthorized')}
             </span>
           )}
@@ -360,7 +360,7 @@ function RoutesSection({ device }: { device: RouterDevice }) {
       {device.routes.length === 0 ? (
         <p className="text-xs text-fg-subtle">{t('props.aucuneRouteStatique')}</p>
       ) : (
-        <ul className="flex flex-col gap-0.5 font-mono text-[11px] text-fg">
+        <ul className="flex flex-col gap-0.5 font-mono text-meta text-fg">
           {device.routes.map((r) => (
             <li key={`${r.network}/${r.prefixLength}-${r.nextHop}`} className="selectable">
               {r.network}/{r.prefixLength} → {r.nextHop}
@@ -373,9 +373,9 @@ function RoutesSection({ device }: { device: RouterDevice }) {
 }
 
 const LEVELS = {
-  information: { icon: Info, cls: 'text-info', label: 'Information' },
-  warning: { icon: TriangleAlert, cls: 'text-warn', label: 'Avertissement' },
-  error: { icon: CircleAlert, cls: 'text-danger', label: 'Erreur' }
+  information: { icon: Info, cls: 'text-info-text', label: 'Information' },
+  warning: { icon: TriangleAlert, cls: 'text-warn-text', label: 'Avertissement' },
+  error: { icon: CircleAlert, cls: 'text-danger-text', label: 'Erreur' }
 } as const
 
 function EventsSection({ device }: { device: HostDevice }) {
@@ -393,7 +393,7 @@ function EventsSection({ device }: { device: HostDevice }) {
               <li key={e.id} className="flex gap-2 text-xs" title={e.message}>
                 <LevelIcon size={13} className={`mt-0.5 shrink-0 ${level.cls}`} aria-label={level.label} />
                 <div className="min-w-0">
-                  <div className="flex gap-1.5 text-[11px] text-fg-muted">
+                  <div className="flex gap-1.5 text-meta text-fg-muted">
                     <span className="font-mono">{formatSimTime(e.time).slice(-8)}</span>
                     <span className="truncate">
                       {e.source} · {e.eventId}
@@ -409,7 +409,7 @@ function EventsSection({ device }: { device: HostDevice }) {
       <button
         type="button"
         onClick={() => useUiStore.getState().openWindow(device.id, 'config')}
-        className="mt-2 text-[11px] text-accent-text hover:underline"
+        className="mt-2 text-meta text-accent-text hover:underline"
       >
         {t('props.ouvrirLeJournalComplet')}
       </button>
@@ -420,7 +420,7 @@ function EventsSection({ device }: { device: HostDevice }) {
 function MultiProperties({ devices }: { devices: Device[] }) {
   return (
     <PanelSection id="multi" title={t('props.selected', { count: devices.length })}>
-      <ul className="mb-3 flex flex-col gap-1 text-[13px]">
+      <ul className="mb-3 flex flex-col gap-1 text-ui">
         {devices.map((d) => (
           <li key={d.id}>
             {d.name} <span className="text-xs text-fg-subtle">— {deviceLabel(d)}</span>
@@ -460,7 +460,7 @@ function LinkProperties({ link }: { link: Link }) {
     <PanelSection id="link" title={t('props.cableEthernet')}>
       <ul className="mb-3 flex flex-col gap-2">
         {ends.map((e, i) => (
-          <li key={i} className="flex items-center gap-2 text-[13px]">
+          <li key={i} className="flex items-center gap-2 text-ui">
             <StatusDot status={e.status} />
             <span className="font-semibold">{e.device?.name}</span>
             <span className="font-mono text-xs text-fg-muted">{e.iface?.name}</span>
@@ -518,11 +518,11 @@ function LabOverview({ lab }: { lab: LabState }) {
                   {links.length > 0 && (
                     <span className="text-fg-muted">
                       {' '}
-                      · <span className="text-ok">{byStatus.up} actifs</span>
+                      · <span className="text-ok-text">{byStatus.up} actifs</span>
                       {byStatus.degraded > 0 && (
-                        <span className="text-warn"> · {byStatus.degraded} à vérifier</span>
+                        <span className="text-warn-text"> · {byStatus.degraded} à vérifier</span>
                       )}
-                      {byStatus.down > 0 && <span className="text-danger"> · {byStatus.down} inactifs</span>}
+                      {byStatus.down > 0 && <span className="text-danger-text"> · {byStatus.down} inactifs</span>}
                     </span>
                   )}
                 </>

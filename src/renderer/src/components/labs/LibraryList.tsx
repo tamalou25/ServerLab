@@ -32,13 +32,13 @@ export function LibraryList() {
   }
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="library">
-      <p className="flex items-start gap-1.5 px-5 pt-3 text-[12px] text-fg-muted">
-        <ShieldCheck size={14} className="mt-0.5 shrink-0 text-ok" />
+      <p className="flex items-start gap-1.5 px-5 pt-3 text-dense text-fg-muted">
+        <ShieldCheck size={14} className="mt-0.5 shrink-0 text-ok-text" />
         {t('lab.libraryHelp')}
       </p>
       {error && (
         <p
-          className="mx-5 mt-2 rounded-md bg-danger-soft px-3 py-2 text-[12px] text-danger"
+          className="mx-5 mt-2 rounded-md bg-danger-soft px-3 py-2 text-dense text-danger-text"
           data-testid="library-error"
         >
           {error}
@@ -46,12 +46,12 @@ export function LibraryList() {
       )}
       <div className="min-h-0 flex-1 overflow-y-auto p-5">
         {state.kind === 'loading' ? (
-          <p className="text-[13px] text-fg-muted" data-testid="library-loading">
+          <p className="text-ui text-fg-muted" data-testid="library-loading">
             {t('lab.chargementDeLaBibliotheque')}
           </p>
         ) : state.kind === 'error' ? (
           <div className="flex flex-col items-start gap-2">
-            <p className="text-[13px] text-danger" data-testid="library-index-error">
+            <p className="text-ui text-danger-text" data-testid="library-index-error">
               {state.message}
             </p>
             <Button onClick={load} data-testid="library-retry">
@@ -59,7 +59,7 @@ export function LibraryList() {
             </Button>
           </div>
         ) : state.index.labs.length === 0 ? (
-          <p className="text-[13px] text-fg-muted">{t('lab.laBibliothequeNeContient')}</p>
+          <p className="text-ui text-fg-muted">{t('lab.laBibliothequeNeContient')}</p>
         ) : (
           <ul className="flex flex-col gap-3">
             {state.index.labs.map((entry) => (
@@ -70,12 +70,12 @@ export function LibraryList() {
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[13px] font-semibold text-fg">{entry.title}</span>
+                    <span className="text-ui font-semibold text-fg">{entry.title}</span>
                     <DifficultyBadge difficulty={entry.difficulty} />
-                    <span className="font-mono text-[11px] text-fg-subtle">v{entry.version}</span>
+                    <span className="font-mono text-meta text-fg-subtle">v{entry.version}</span>
                   </div>
-                  <p className="mt-0.5 text-[11px] text-fg-subtle">par {entry.author}</p>
-                  {entry.summary && <p className="mt-1 text-[12px] text-fg-muted">{entry.summary}</p>}
+                  <p className="mt-0.5 text-meta text-fg-subtle">par {entry.author}</p>
+                  {entry.summary && <p className="mt-1 text-dense text-fg-muted">{entry.summary}</p>}
                 </div>
                 <Button
                   variant="primary"

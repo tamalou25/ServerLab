@@ -13,6 +13,12 @@
   --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', 'Noto Sans', sans-serif;
   --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', 'Cascadia Mono', 'Consolas', monospace;
 
+  /* Échelle typographique stricte du chrome : métadonnées, listes denses, base, titres de panneaux */
+  --text-meta: 11px;
+  --text-dense: 12px;
+  --text-ui: 13px;
+  --text-title: 15px;
+
   /* Fonds, du plus profond au plus élevé */
   --color-canvas: var(--sl-canvas);
   --color-canvas-grid: var(--sl-canvas-grid);
@@ -40,6 +46,8 @@
   --color-accent-text: var(--sl-accent-text);
   --color-on-accent: var(--sl-on-accent);
   --color-on-danger: var(--sl-on-danger);
+  --color-on-kind: var(--sl-on-kind);
+  --color-focus: var(--sl-focus);
 
   /* États */
   --color-ok: var(--sl-ok);
@@ -50,6 +58,12 @@
   --color-danger-soft: var(--sl-danger-soft);
   --color-info: var(--sl-info);
   --color-info-soft: var(--sl-info-soft);
+  --color-idle: var(--sl-idle);
+  /* Variantes de texte des états (contraste AA sur panel, surface et canvas) */
+  --color-ok-text: var(--sl-ok-text);
+  --color-warn-text: var(--sl-warn-text);
+  --color-danger-text: var(--sl-danger-text);
+  --color-info-text: var(--sl-info-text);
 
   /* Catégories d'équipements */
   --color-kind-server: var(--sl-kind-server);
@@ -72,34 +86,43 @@
 :root,
 [data-theme='dark'] {
   color-scheme: dark;
-  --sl-canvas: #111318;
-  --sl-canvas-grid: #262a31;
-  --sl-app: #0d0f13;
-  --sl-panel: #171a1f;
-  --sl-surface: #1d2026;
-  --sl-surface-2: #252930;
-  --sl-surface-3: #2e333b;
-  --sl-overlay: #1f2228;
+  --sl-canvas: #0f131b;
+  --sl-canvas-grid: #2a3140;
+  --sl-app: #0b0e14;
+  --sl-panel: #121620;
+  --sl-surface: #1a1f2b;
+  --sl-surface-2: #222836;
+  --sl-surface-3: #2b3242;
+  --sl-overlay: #1a1f2b;
   --sl-scrim: rgb(5 7 10 / 0.6);
-  --sl-line: #2a2e36;
-  --sl-line-strong: #3a3f49;
-  --sl-fg: #dfe3ea;
-  --sl-fg-muted: #9ca4b0;
-  --sl-fg-subtle: #8a919c;
-  --sl-accent: #2f6fdb;
-  --sl-accent-hover: #2a62c4;
-  --sl-accent-soft: rgb(61 132 247 / 0.16);
-  --sl-accent-text: #7fb0ff;
+  --sl-line: #2b3240;
+  --sl-line-strong: #3a4252;
+  --sl-fg: #e5e9f0;
+  --sl-fg-muted: #a3acba;
+  --sl-fg-subtle: #8590a0;
+  /* Accent unique : fond des actions (texte blanc AA), sélection ; --sl-focus pour l'anneau de focus */
+  --sl-accent: #2563eb;
+  --sl-accent-hover: #1d4ed8;
+  --sl-accent-soft: rgb(59 130 246 / 0.16);
+  --sl-accent-text: #93c5fd;
+  --sl-focus: #3b82f6;
   --sl-on-accent: #ffffff;
-  --sl-on-danger: #14161a;
-  --sl-ok: #3fb950;
-  --sl-ok-soft: rgb(63 185 80 / 0.14);
-  --sl-warn: #e3a52f;
-  --sl-warn-soft: rgb(227 165 47 / 0.14);
-  --sl-danger: #f2555a;
-  --sl-danger-soft: rgb(242 85 90 / 0.14);
-  --sl-info: #58a6ff;
-  --sl-info-soft: rgb(88 166 255 / 0.14);
+  --sl-on-danger: #111827;
+  --sl-on-kind: #ffffff;
+  /* États : LED, pastilles et traits (jamais seuls : forme, icône ou texte en second indice) */
+  --sl-ok: #22c55e;
+  --sl-ok-soft: rgb(34 197 94 / 0.14);
+  --sl-warn: #f59e0b;
+  --sl-warn-soft: rgb(245 158 11 / 0.14);
+  --sl-danger: #ef4444;
+  --sl-danger-soft: rgb(239 68 68 / 0.14);
+  --sl-info: #3b82f6;
+  --sl-info-soft: rgb(59 130 246 / 0.14);
+  --sl-idle: #6b7280;
+  --sl-ok-text: #4ade80;
+  --sl-warn-text: #fbbf24;
+  --sl-danger-text: #f87171;
+  --sl-info-text: #93c5fd;
   --sl-kind-server: #9b87f5;
   --sl-kind-client: #4fa3f7;
   --sl-kind-switch: #3cc48f;
@@ -115,34 +138,41 @@
 /* Thème clair */
 [data-theme='light'] {
   color-scheme: light;
-  --sl-canvas: #f5f6f8;
-  --sl-canvas-grid: #d6dae0;
-  --sl-app: #eceef2;
+  --sl-canvas: #f8f9fb;
+  --sl-canvas-grid: #c9ced6;
+  --sl-app: #f3f4f6;
   --sl-panel: #ffffff;
   --sl-surface: #ffffff;
-  --sl-surface-2: #f2f4f7;
-  --sl-surface-3: #e7eaef;
+  --sl-surface-2: #f3f4f6;
+  --sl-surface-3: #e5e7eb;
   --sl-overlay: #ffffff;
   --sl-scrim: rgb(15 23 42 / 0.32);
-  --sl-line: #e1e4e9;
-  --sl-line-strong: #cbd0d8;
-  --sl-fg: #1d2329;
-  --sl-fg-muted: #57606b;
-  --sl-fg-subtle: #626a75;
+  --sl-line: #d9dde3;
+  --sl-line-strong: #c2c8d0;
+  --sl-fg: #111827;
+  --sl-fg-muted: #4b5563;
+  --sl-fg-subtle: #5f6773;
   --sl-accent: #2563eb;
-  --sl-accent-hover: #1d4fd0;
+  --sl-accent-hover: #1d4ed8;
   --sl-accent-soft: rgb(37 99 235 / 0.1);
-  --sl-accent-text: #1d4fd0;
+  --sl-accent-text: #1d4ed8;
+  --sl-focus: #2563eb;
   --sl-on-accent: #ffffff;
-  --sl-on-danger: #ffffff;
-  --sl-ok: #1a7f37;
-  --sl-ok-soft: rgb(26 127 55 / 0.1);
-  --sl-warn: #9a6400;
-  --sl-warn-soft: rgb(212 140 0 / 0.12);
-  --sl-danger: #cf222e;
-  --sl-danger-soft: rgb(207 34 46 / 0.08);
-  --sl-info: #0969da;
-  --sl-info-soft: rgb(9 105 218 / 0.08);
+  --sl-on-danger: #111827;
+  --sl-on-kind: #ffffff;
+  --sl-ok: #16a34a; /* #22c55e < 3:1 sur blanc (WCAG 1.4.11) */
+  --sl-ok-soft: rgb(34 197 94 / 0.12);
+  --sl-warn: #d97706; /* #f59e0b < 3:1 sur blanc */
+  --sl-warn-soft: rgb(245 158 11 / 0.14);
+  --sl-danger: #ef4444;
+  --sl-danger-soft: rgb(239 68 68 / 0.1);
+  --sl-info: #3b82f6;
+  --sl-info-soft: rgb(59 130 246 / 0.1);
+  --sl-idle: #6b7280;
+  --sl-ok-text: #15803d;
+  --sl-warn-text: #b45309;
+  --sl-danger-text: #b91c1c;
+  --sl-info-text: #1d4ed8;
   --sl-kind-server: #7458e0;
   --sl-kind-client: #2f7fd6;
   --sl-kind-switch: #1c9a69;
@@ -174,7 +204,7 @@
   }
 
   body {
-    @apply bg-app font-sans text-[13px] text-fg antialiased select-none;
+    @apply bg-app font-sans text-ui text-fg antialiased select-none;
     font-feature-settings: 'cv11', 'ss01';
   }
 
@@ -188,7 +218,7 @@
 
   /* Focus clavier visible et discret */
   :focus-visible {
-    outline: 2px solid var(--sl-accent);
+    outline: 2px solid var(--sl-focus);
     outline-offset: 1px;
   }
 }

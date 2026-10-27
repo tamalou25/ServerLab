@@ -45,7 +45,7 @@ export function RightPanel() {
             aria-selected={tab === item.id}
             data-testid={`right-tab-${item.id}`}
             onClick={() => setTab(item.id)}
-            className={`flex-1 border-b-2 px-3 py-2 text-[11px] font-semibold tracking-wider uppercase ${
+            className={`flex-1 border-b-2 px-3 py-2 text-meta font-semibold tracking-wider uppercase ${
               tab === item.id
                 ? 'border-accent text-fg'
                 : 'border-transparent text-fg-subtle hover:text-fg-muted'

@@ -24,7 +24,7 @@ export function SimulationPanel() {
 
   if (mode !== 'simulation') {
     return (
-      <div className="p-6 text-center text-sm text-fg-muted">
+      <div className="p-6 text-center text-ui text-fg-muted">
         {rich(t('sim.switchMode'), { mode: <b>{t('sim.switchMode.mode')}</b> })}
       </div>
     )
@@ -75,7 +75,7 @@ export function SimulationPanel() {
             key={p}
             type="button"
             onClick={() => sim().toggleFilter(p)}
-            className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+            className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-meta font-medium ${
               filters[p]
                 ? 'border-line-strong bg-surface text-fg'
                 : 'border-transparent bg-surface-2 text-fg-subtle line-through'
@@ -88,7 +88,7 @@ export function SimulationPanel() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <table className="w-full text-[11px]" data-testid="sim-events">
+        <table className="w-full text-meta" data-testid="sim-events">
           <thead className="sticky top-0 bg-surface-2 text-left text-fg-muted">
             <tr>
               <th className="px-2 py-1 font-medium">#</th>
@@ -141,7 +141,7 @@ export function SimulationPanel() {
               <div className="border-b border-line px-2 py-1 font-semibold text-fg-muted">
                 {t('sim.layer', { layer: layer.layer, name: layer.name })}
               </div>
-              <dl className="selectable grid grid-cols-[auto_1fr] gap-x-3 px-2 py-1 font-mono text-[11px]">
+              <dl className="selectable grid grid-cols-[auto_1fr] gap-x-3 px-2 py-1 font-mono text-meta">
                 {layer.fields.map(([k, v]) => (
                   <div key={k} className="contents">
                     <dt className="text-fg-muted">{k}</dt>

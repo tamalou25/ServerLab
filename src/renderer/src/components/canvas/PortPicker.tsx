@@ -71,7 +71,7 @@ export function PortPicker({ picker, onPick, onClose }: PortPickerProps) {
               disabled={!!link}
               onClick={() => onPick(iface.id)}
               data-testid={`port-${iface.name}`}
-              className="flex w-full items-center justify-between px-3 py-1.5 text-left text-[13px] text-fg hover:bg-accent-soft disabled:cursor-not-allowed disabled:text-fg-subtle disabled:hover:bg-transparent"
+              className="flex w-full items-center justify-between px-3 py-1.5 text-left text-ui text-fg hover:bg-accent-soft disabled:cursor-not-allowed disabled:text-fg-subtle disabled:hover:bg-transparent"
             >
               <span className="font-mono text-xs font-medium">{iface.name}</span>
               <span className="text-xs text-fg-muted">{link ? `→ ${peer?.name ?? '?'}` : 'libre'}</span>

@@ -88,7 +88,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
     <>
       <Section title={t('win.tcpip', { iface: iface.name })}>
         <div className="flex max-w-lg flex-col gap-3">
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-ui">
             <input
               type="checkbox"
               checked={iface.enabled}
@@ -99,7 +99,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
             {t('win.carteActivee')}
           </label>
           <fieldset className="flex flex-col gap-2 rounded-md border border-line p-3">
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 text-ui">
               <input
                 type="radio"
                 checked={!staticIp}
@@ -108,7 +108,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
               />
               {t('win.obtenirUneAdresseIp')}
             </label>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 text-ui">
               <input
                 type="radio"
                 checked={staticIp}
@@ -150,7 +150,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
             </div>
           </fieldset>
           <fieldset className="flex flex-col gap-2 rounded-md border border-line p-3">
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 text-ui">
               <input
                 type="radio"
                 disabled={staticIp}
@@ -159,7 +159,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
               />
               {t('win.obtenirLesAdressesDes')}
             </label>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 text-ui">
               <input type="radio" checked={dnsStatic} onChange={() => set('dnsMode', 'static')} />
               {t('win.utiliserLadresseDeServeur')}
             </label>

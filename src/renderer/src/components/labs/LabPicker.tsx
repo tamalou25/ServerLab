@@ -36,7 +36,7 @@ export function LabPicker() {
       >
         <div className="flex items-center gap-2 border-b border-line px-5 py-3">
           <GraduationCap size={18} className="text-accent" />
-          <h2 id={titleId} className="text-base font-semibold text-fg">
+          <h2 id={titleId} className="text-title font-semibold text-fg">
             {t('lab.ouvrirUnLab')}
           </h2>
           <button
@@ -62,7 +62,7 @@ export function LabPicker() {
               aria-selected={tab === id}
               onClick={() => setTab(id)}
               data-testid={`picker-tab-${id}`}
-              className={`border-b-2 px-3 py-2 text-[12px] font-semibold ${
+              className={`border-b-2 px-3 py-2 text-dense font-semibold ${
                 tab === id ? 'border-accent text-fg' : 'border-transparent text-fg-subtle hover:text-fg-muted'
               }`}
             >
@@ -74,7 +74,7 @@ export function LabPicker() {
           <LibraryList />
         ) : (
           <>
-            <p className="px-5 pt-3 text-[13px] text-fg-muted">
+            <p className="px-5 pt-3 text-ui text-fg-muted">
               {rich(t('lab.pickerHelp'), { check: <strong className="text-fg">{t('lab.verifier')}</strong> })}
             </p>
             <ul className="min-h-0 flex-1 overflow-y-auto p-5">
@@ -83,16 +83,16 @@ export function LabPicker() {
                   key={lab.id}
                   className="mb-3 flex items-start gap-3 rounded-md border border-line bg-surface p-3"
                 >
-                  <span className="mt-0.5 font-mono text-[12px] text-fg-subtle">
+                  <span className="mt-0.5 font-mono text-dense text-fg-subtle">
                     {String(i + 1).padStart(2, '0')}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[13px] font-semibold text-fg">{lab.title}</span>
+                      <span className="text-ui font-semibold text-fg">{lab.title}</span>
                       <DifficultyBadge difficulty={lab.difficulty} />
-                      <span className="text-[11px] text-fg-subtle">{lab.duration}</span>
+                      <span className="text-meta text-fg-subtle">{lab.duration}</span>
                     </div>
-                    <p className="mt-1 text-[12px] text-fg-muted">{lab.summary}</p>
+                    <p className="mt-1 text-dense text-fg-muted">{lab.summary}</p>
                   </div>
                   <Button
                     variant="primary"

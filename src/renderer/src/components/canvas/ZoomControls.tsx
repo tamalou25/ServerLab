@@ -35,7 +35,7 @@ export function ZoomControls() {
         </button>
         <button
           type="button"
-          className="flex-1 px-1 font-mono text-[11px] text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+          className="flex-1 px-1 font-mono text-meta text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
           onClick={() => void flow.zoomTo(1, ANIMATION)}
           title={t('zoom.reset')}
           data-testid="zoom-level"

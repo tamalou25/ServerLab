@@ -24,10 +24,10 @@ export function Toasts() {
                 ? TriangleAlert
                 : Info
         const accent = {
-          error: 'text-danger',
-          success: 'text-ok',
-          warning: 'text-warn',
-          info: 'text-info'
+          error: 'text-danger-text',
+          success: 'text-ok-text',
+          warning: 'text-warn-text',
+          info: 'text-info-text'
         }[t.kind]
         return (
           <div
@@ -37,7 +37,7 @@ export function Toasts() {
             className="pointer-events-auto flex items-start gap-2 rounded-md border border-line bg-overlay px-3 py-2 text-fg shadow-md"
           >
             <Icon size={16} className={`mt-0.5 shrink-0 ${accent}`} />
-            <p className="flex-1 text-[13px]">{t.message}</p>
+            <p className="flex-1 text-ui">{t.message}</p>
             <button
               type="button"
               onClick={() => dismiss(t.id)}

@@ -49,7 +49,7 @@ export function ConfigTab({ device }: { device: Device }) {
   return (
     <div className="flex h-full">
       <nav className="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-line bg-panel p-2 text-xs">
-        <div className="px-2 pt-1 pb-0.5 text-[10px] font-semibold tracking-wider text-fg-subtle uppercase">
+        <div className="px-2 pt-1 pb-0.5 text-meta font-semibold tracking-wider text-fg-subtle uppercase">
           Global
         </div>
         {navItem(t('win.general'), { kind: 'general' })}
@@ -58,7 +58,7 @@ export function ConfigTab({ device }: { device: Device }) {
         {device.kind === 'switch' && !device.hostedBy && navItem('VLAN', { kind: 'vlans' }, 'nav-vlans')}
         {isHostDevice(device) && navItem(t('win.eventLog'), { kind: 'events' }, 'nav-events')}
         {l3.length > 0 && (
-          <div className="px-2 pt-2 pb-0.5 text-[10px] font-semibold tracking-wider text-fg-subtle uppercase">
+          <div className="px-2 pt-2 pb-0.5 text-meta font-semibold tracking-wider text-fg-subtle uppercase">
             Interfaces
           </div>
         )}

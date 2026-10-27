@@ -29,16 +29,16 @@ export function ExamBanner() {
   return (
     <div className="border-b border-line bg-accent-soft px-4 py-2" data-testid="exam-banner">
       <div className="flex items-center gap-2">
-        <Timer size={16} className={left < 5 * 60_000 ? 'text-danger' : 'text-accent'} />
-        <span className="text-[12px] font-semibold text-fg">{t('lab.examenEnCours')}</span>
+        <Timer size={16} className={left < 5 * 60_000 ? 'text-danger-text' : 'text-accent'} />
+        <span className="text-dense font-semibold text-fg">{t('lab.examenEnCours')}</span>
         <span
-          className={`ml-auto font-mono text-base font-semibold ${left < 5 * 60_000 ? 'text-danger' : 'text-fg'}`}
+          className={`ml-auto font-mono text-title font-semibold ${left < 5 * 60_000 ? 'text-danger-text' : 'text-fg'}`}
           data-testid="exam-timer"
         >
           {clock(left)}
         </span>
       </div>
-      <p className="mt-0.5 text-[11px] text-fg-muted">
+      <p className="mt-0.5 text-meta text-fg-muted">
         {t('lab.indicesDesactivesVerificationFinale')}
         {exits > 0 ? t('exam.exits', { count: exits }) : ''}
       </p>
@@ -71,16 +71,16 @@ const EXITS: Partial<Record<ExamResult['exits'][number]['type'], string>> = {
 }
 
 export function ExamResultPanel({ result }: { result: ExamResult }) {
-  const gradeClass = result.grade >= 10 ? 'text-ok' : 'text-danger'
+  const gradeClass = result.grade >= 10 ? 'text-ok-text' : 'text-danger-text'
   const time = (at: number) => new Date(at).toLocaleTimeString('fr-FR')
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="exam-result">
       <div className="flex items-start gap-2 border-b border-line px-4 py-3">
         <div className="min-w-0">
-          <div className="text-[11px] font-semibold tracking-wider text-fg-subtle uppercase">
+          <div className="text-meta font-semibold tracking-wider text-fg-subtle uppercase">
             {t('lab.resultatDeLexamen')}
           </div>
-          <h2 className="text-sm font-semibold text-fg">{result.labTitle}</h2>
+          <h2 className="text-ui font-semibold text-fg">{result.labTitle}</h2>
         </div>
         <button
           type="button"
@@ -95,9 +95,9 @@ export function ExamResultPanel({ result }: { result: ExamResult }) {
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         <div className={`text-2xl font-semibold ${gradeClass}`} data-testid="exam-grade">
           {String(result.grade).replace('.', ',')}
-          <span className="text-sm text-fg-subtle"> / 20</span>
+          <span className="text-ui text-fg-subtle"> / 20</span>
         </div>
-        <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[12px]">
+        <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-dense">
           <dt className="text-fg-subtle">{t('lab.criteres')}</dt>
           <dd className="text-fg">
             {result.passed} / {result.total} validé(s)
@@ -113,11 +113,11 @@ export function ExamResultPanel({ result }: { result: ExamResult }) {
         </dl>
         <ul className="mt-3 flex flex-col gap-1.5" data-testid="exam-criteria">
           {result.criteria.map((c) => (
-            <li key={c.id} className="flex gap-2 text-[13px]" data-state={c.ok ? 'ok' : 'ko'}>
+            <li key={c.id} className="flex gap-2 text-ui" data-state={c.ok ? 'ok' : 'ko'}>
               {c.ok ? (
-                <CircleCheck size={15} className="mt-0.5 shrink-0 text-ok" />
+                <CircleCheck size={15} className="mt-0.5 shrink-0 text-ok-text" />
               ) : (
-                <CircleX size={15} className="mt-0.5 shrink-0 text-danger" />
+                <CircleX size={15} className="mt-0.5 shrink-0 text-danger-text" />
               )}
               <span className={c.ok ? 'text-fg' : 'text-fg-muted'}>{c.label}</span>
             </li>
@@ -125,13 +125,13 @@ export function ExamResultPanel({ result }: { result: ExamResult }) {
         </ul>
         <div className="mt-3" data-testid="exam-exits">
           {result.exits.length === 0 ? (
-            <p className="text-[12px] text-fg-muted">{t('lab.aucuneSortieDuMode')}</p>
+            <p className="text-dense text-fg-muted">{t('lab.aucuneSortieDuMode')}</p>
           ) : (
             <>
-              <p className="flex items-center gap-1 text-[12px] font-semibold text-warn">
+              <p className="flex items-center gap-1 text-dense font-semibold text-warn-text">
                 <TriangleAlert size={13} /> Sorties du mode examen ({result.exits.length})
               </p>
-              <ul className="mt-1 flex flex-col gap-0.5 text-[12px] text-fg-muted">
+              <ul className="mt-1 flex flex-col gap-0.5 text-dense text-fg-muted">
                 {result.exits.map((e, i) => (
                   <li key={i}>
                     {time(e.at)} — {EXITS[e.type] ?? e.type}

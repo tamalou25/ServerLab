@@ -90,7 +90,7 @@ function HomePage() {
           </div>
           <div className="min-w-0">
             <h1 className="text-xl font-semibold text-fg">ServerLab</h1>
-            <p className="text-[12px] text-fg-muted">{t('home.subtitle', { version })}</p>
+            <p className="text-dense text-fg-muted">{t('home.subtitle', { version })}</p>
           </div>
           <button
             type="button"
@@ -131,7 +131,7 @@ function HomePage() {
             <section>
               <SectionTitle>{t('home.recent')}</SectionTitle>
               {recent && recent.length === 0 && (
-                <p className="text-[12px] text-fg-muted" data-testid="home-recent-empty">
+                <p className="text-dense text-fg-muted" data-testid="home-recent-empty">
                   {t('home.recent.empty')}
                 </p>
               )}
@@ -160,14 +160,14 @@ function HomePage() {
                     data-testid={`home-lab-${lab.id}`}
                   >
                     <span className="flex flex-wrap items-center gap-2">
-                      <span className="text-[13px] font-semibold text-fg">{lab.title}</span>
+                      <span className="text-ui font-semibold text-fg">{lab.title}</span>
                       <DifficultyBadge difficulty={lab.difficulty} />
-                      <span className="inline-flex items-center gap-1 text-[11px] text-fg-subtle">
+                      <span className="inline-flex items-center gap-1 text-meta text-fg-subtle">
                         <Clock size={12} aria-hidden />
                         {lab.duration}
                       </span>
                     </span>
-                    <span className="mt-1 line-clamp-2 block text-[12px] text-fg-muted">{lab.summary}</span>
+                    <span className="mt-1 line-clamp-2 block text-dense text-fg-muted">{lab.summary}</span>
                   </button>
                 </li>
               ))}
@@ -176,7 +176,7 @@ function HomePage() {
         </div>
 
         <footer className="mt-8 border-t border-line pt-4">
-          <label className="inline-flex items-center gap-2 text-[12px] text-fg-muted">
+          <label className="inline-flex items-center gap-2 text-dense text-fg-muted">
             <input
               type="checkbox"
               checked={atStartup ?? true}
@@ -194,7 +194,7 @@ function HomePage() {
 
 function SectionTitle({ children }: { children: ReactNode }) {
   return (
-    <h2 className="mb-2 text-[11px] font-semibold tracking-wider text-fg-subtle uppercase">{children}</h2>
+    <h2 className="mb-2 text-meta font-semibold tracking-wider text-fg-subtle uppercase">{children}</h2>
   )
 }
 
@@ -223,10 +223,10 @@ function Action({
     >
       <Icon size={18} className="shrink-0 text-accent" aria-hidden />
       <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-medium text-fg">{label}</span>
-        <span className="block text-[11px] text-fg-muted">{detail}</span>
+        <span className="block text-ui font-medium text-fg">{label}</span>
+        <span className="block text-meta text-fg-muted">{detail}</span>
       </span>
-      <kbd className="font-mono text-[11px] text-fg-subtle">
+      <kbd className="font-mono text-meta text-fg-subtle">
         {formatShortcut(accelerator(shortcut), lang)}
       </kbd>
     </button>
@@ -266,18 +266,18 @@ function RecentRow({
         />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <span className={`truncate text-[13px] font-medium ${missing ? 'text-fg-muted' : 'text-fg'}`}>
+            <span className={`truncate text-ui font-medium ${missing ? 'text-fg-muted' : 'text-fg'}`}>
               {entry.name}
             </span>
             {missing && (
-              <span className="shrink-0 rounded-sm bg-danger-soft px-1.5 py-0.5 text-[11px] font-semibold text-danger">
+              <span className="shrink-0 rounded-sm bg-danger-soft px-1.5 py-0.5 text-meta font-semibold text-danger-text">
                 {t('home.recent.missing')}
               </span>
             )}
           </span>
-          <span className="block truncate font-mono text-[11px] text-fg-subtle">{folder}</span>
+          <span className="block truncate font-mono text-meta text-fg-subtle">{folder}</span>
         </span>
-        <span className="shrink-0 text-[11px] text-fg-subtle">
+        <span className="shrink-0 text-meta text-fg-subtle">
           {formatOpenedAt(entry.openedAt, new Date(), lang)}
         </span>
       </button>

@@ -17,7 +17,7 @@ export function ConsoleTab({ device }: { device: HostDevice }) {
     )
   if (!device.host.session)
     return (
-      <div className="flex h-full items-center justify-center p-8 text-center text-sm text-fg-muted">
+      <div className="flex h-full items-center justify-center p-8 text-center text-ui text-fg-muted">
         {t('console.aucuneSessionOuverteConnectez')}
       </div>
     )

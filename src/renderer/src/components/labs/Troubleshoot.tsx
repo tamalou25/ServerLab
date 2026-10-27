@@ -77,7 +77,7 @@ export function TroubleshootDialog() {
       >
         <div className="flex items-center gap-2 border-b border-line px-5 py-3">
           <Wrench size={18} className="text-accent" />
-          <h2 id={titleId} className="text-base font-semibold text-fg">
+          <h2 id={titleId} className="text-title font-semibold text-fg">
             Lancer un dépannage
           </h2>
           <button
@@ -90,7 +90,7 @@ export function TroubleshootDialog() {
           </button>
         </div>
         <div className="flex flex-col gap-3 overflow-y-auto px-5 py-4">
-          <p className="text-[13px] text-fg-muted">
+          <p className="text-ui text-fg-muted">
             Une ou plusieurs pannes sont injectées dans le lab ouvert (il doit fonctionner). Vous recevez le
             ticket d’un utilisateur : à vous de diagnostiquer et de réparer.
           </p>
@@ -153,7 +153,7 @@ export function TroubleshootDialog() {
               </span>
             </Field>
           </div>
-          <label className="flex items-center gap-2 text-[13px] text-fg">
+          <label className="flex items-center gap-2 text-ui text-fg">
             <input
               type="checkbox"
               checked={exam}
@@ -175,7 +175,7 @@ export function TroubleshootDialog() {
           )}
           {error && (
             <p
-              className="rounded-md bg-danger-soft px-3 py-2 text-[13px] text-danger"
+              className="rounded-md bg-danger-soft px-3 py-2 text-ui text-danger-text"
               data-testid="tshoot-error"
             >
               {error}
@@ -225,29 +225,29 @@ export function TroubleshootPanel() {
       <div className="border-b border-line px-4 py-3">
         <div className="flex items-center gap-2">
           <Wrench size={15} className="text-accent" />
-          <h2 className="text-sm font-semibold text-fg">Dépannage</h2>
-          <span className="ml-auto font-mono text-[11px] text-fg-subtle" data-testid="tshoot-seed-shown">
+          <h2 className="text-ui font-semibold text-fg">Dépannage</h2>
+          <span className="ml-auto font-mono text-meta text-fg-subtle" data-testid="tshoot-seed-shown">
             graine {session.seed}
           </span>
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-        <h3 className="mb-2 flex items-center gap-1 text-[11px] font-semibold tracking-wider text-fg-subtle uppercase">
+        <h3 className="mb-2 flex items-center gap-1 text-meta font-semibold tracking-wider text-fg-subtle uppercase">
           <Ticket size={12} /> {tickets.length > 1 ? 'Tickets' : 'Ticket'}
         </h3>
         <ul className="flex flex-col gap-2" data-testid="tshoot-tickets">
           {tickets.map((text, i) => (
-            <li key={i} className="rounded-md border border-line bg-surface px-3 py-2 text-[13px] text-fg">
+            <li key={i} className="rounded-md border border-line bg-surface px-3 py-2 text-ui text-fg">
               {tickets.length > 1 && <span className="font-semibold">Ticket {i + 1} — </span>}
               {text}
             </li>
           ))}
         </ul>
-        <p className="mt-2 text-[12px] text-fg-muted">
+        <p className="mt-2 text-dense text-fg-muted">
           Reproduisez le symptôme avec les consoles et l’interface, trouvez la cause puis réparez.
         </p>
         {hints.length > 0 && (
-          <ul className="mt-3 flex flex-col gap-1 text-[12px] text-warn" data-testid="tshoot-hints">
+          <ul className="mt-3 flex flex-col gap-1 text-dense text-warn-text" data-testid="tshoot-hints">
             {hints.map((h) => (
               <li key={`${h.fault}-${h.level}`}>
                 Indice {h.level}
@@ -256,7 +256,7 @@ export function TroubleshootPanel() {
             ))}
           </ul>
         )}
-        <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[12px]">
+        <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-dense">
           <dt className="text-fg-subtle">Commandes jouées</dt>
           <dd className="font-mono text-fg" data-testid="tshoot-played">
             {session.played}
@@ -269,11 +269,11 @@ export function TroubleshootPanel() {
           <dd className="font-mono text-fg">{clock(now - session.startedAt)}</dd>
         </dl>
         <details className="mt-3">
-          <summary className="flex cursor-pointer items-center gap-1 text-[12px] text-fg-muted">
+          <summary className="flex cursor-pointer items-center gap-1 text-dense text-fg-muted">
             <ListOrdered size={12} /> Journal des commandes ({journal.length})
           </summary>
           <ol
-            className="mt-1 list-decimal pl-5 font-mono text-[11px] text-fg-muted"
+            className="mt-1 list-decimal pl-5 font-mono text-meta text-fg-muted"
             data-testid="tshoot-journal"
           >
             {journal.slice(-50).map((e, i) => (
@@ -285,7 +285,7 @@ export function TroubleshootPanel() {
       <div className="border-t border-line px-4 py-3">
         {session.failedChecks > 0 && !session.exam && (
           <p
-            className="mb-2 flex items-center gap-1 text-[12px] font-semibold text-danger"
+            className="mb-2 flex items-center gap-1 text-dense font-semibold text-danger-text"
             data-testid="tshoot-persists"
           >
             <CircleX size={13} /> Le problème persiste.
@@ -319,16 +319,16 @@ export function TroubleshootSummaryPanel() {
   const summary = useTroubleshootStore((s) => s.summary)
   const exam = useExamStore((s) => s.result)
   if (!summary) return null
-  const scoreClass = summary.score >= 50 ? 'text-ok' : 'text-danger'
+  const scoreClass = summary.score >= 50 ? 'text-ok-text' : 'text-danger-text'
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="tshoot-summary">
       <div className="flex items-start gap-2 border-b border-line px-4 py-3">
         <div className="min-w-0">
-          <div className="text-[11px] font-semibold tracking-wider text-fg-subtle uppercase">
+          <div className="text-meta font-semibold tracking-wider text-fg-subtle uppercase">
             Bilan du dépannage
           </div>
           <h2
-            className={`flex items-center gap-1 text-sm font-semibold ${summary.repaired ? 'text-ok' : 'text-danger'}`}
+            className={`flex items-center gap-1 text-ui font-semibold ${summary.repaired ? 'text-ok-text' : 'text-danger-text'}`}
             data-testid="tshoot-outcome"
           >
             {summary.repaired ? <CircleCheck size={15} /> : <CircleX size={15} />}
@@ -348,12 +348,12 @@ export function TroubleshootSummaryPanel() {
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         <div className={`text-2xl font-semibold ${scoreClass}`} data-testid="tshoot-score">
           {summary.score}
-          <span className="text-sm text-fg-subtle"> / 100</span>
+          <span className="text-ui text-fg-subtle"> / 100</span>
         </div>
-        <p className="mt-1 text-[13px] text-fg" data-testid="tshoot-verdict">
+        <p className="mt-1 text-ui text-fg" data-testid="tshoot-verdict">
           {summary.verdict}
         </p>
-        <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[12px]">
+        <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-dense">
           <dt className="text-fg-subtle">Chemin le plus court</dt>
           <dd className="text-fg" data-testid="tshoot-official">
             {summary.officialCommands} commande(s)
@@ -377,16 +377,16 @@ export function TroubleshootSummaryPanel() {
         </dl>
         {summary.faults.map((f, i) => (
           <section key={i} className="mt-4 rounded-md border border-line bg-surface px-3 py-2">
-            <h3 className="text-[13px] font-semibold text-fg">{f.title}</h3>
-            <p className="mt-1 text-[12px] text-fg-muted">
+            <h3 className="text-ui font-semibold text-fg">{f.title}</h3>
+            <p className="mt-1 text-dense text-fg-muted">
               <span className="font-semibold text-fg">Symptôme : </span>
               {f.symptom}
             </p>
-            <p className="mt-1 text-[12px] text-fg-muted" data-testid="tshoot-cause">
+            <p className="mt-1 text-dense text-fg-muted" data-testid="tshoot-cause">
               <span className="font-semibold text-fg">Cause : </span>
               {f.cause}
             </p>
-            <div className="mt-1 text-[12px] text-fg-muted">
+            <div className="mt-1 text-dense text-fg-muted">
               <span className="font-semibold text-fg">Correction officielle :</span>
               <ol className="list-decimal pl-5" data-testid="tshoot-repair-steps">
                 {f.repairSteps.map((step, k) => (

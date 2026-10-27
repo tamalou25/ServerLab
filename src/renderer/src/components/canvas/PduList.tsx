@@ -30,11 +30,11 @@ export function PduList() {
         {results.map((r) => (
           <li key={r.id} className="flex items-center gap-2 px-3 py-1">
             {r.success ? (
-              <CircleCheck size={13} className="text-ok" />
+              <CircleCheck size={13} className="text-ok-text" />
             ) : (
-              <CircleX size={13} className="text-danger" />
+              <CircleX size={13} className="text-danger-text" />
             )}
-            <span className={r.success ? 'text-ok' : 'text-danger'}>
+            <span className={r.success ? 'text-ok-text' : 'text-danger-text'}>
               {r.success ? t('pdu.success') : t('pdu.failure')}
             </span>
             <span className="truncate text-fg-muted">
