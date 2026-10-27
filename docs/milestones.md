@@ -491,6 +491,16 @@ facultatifs de `host.linux`.
 
 ## v2.10 — Pare-feu pfSense
 
-| Issue | Sujet                                                            | Branche | PR  | État    |
-| ----- | ---------------------------------------------------------------- | ------- | --- | ------- |
-| —     | Chantier C : pfSense (règles, NAT, interface web, console, labs) | —       | —   | à faire |
+Milestone terminé : `CHANGELOG.md` [2.10.0], `package.json` 2.10.0 ; tag `v2.10.0` à pousser par Gary.
+Format `.slab` : v2.10 → format 28 (migration 27 → 28, issue #242) ; les autres issues n'ont ajouté que des champs
+facultatifs de `pf`.
+
+| Issue | Sujet                           | Branche                           | PR   | État     |
+| ----- | ------------------------------- | --------------------------------- | ---- | -------- |
+| #242  | Équipement pare-feu, format 28  | `feat/242-equipement-pare-feu`    | #284 | fusionné |
+| #243  | Moteur de règles                | `feat/243-moteur-regles`          | #285 | fusionné |
+| #244  | NAT                             | `feat/244-nat-pare-feu`           | #286 | fusionné |
+| #245  | Passerelles, routes, DHCP, DNS  | `feat/245-services-pare-feu`      | #287 | fusionné |
+| #246  | Interface web                   | `feat/246-interface-web-pare-feu` | #288 | fusionné |
+| #247  | Console                         | `feat/247-console-pare-feu`       | #289 | fusionné |
+| #248  | Labs 54 à 59 et pannes pare-feu | `feat/248-labs-pannes-pare-feu`   | #290 | fusionné |
