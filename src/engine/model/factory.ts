@@ -3,6 +3,7 @@
  */
 import type { Draft } from 'immer'
 import {
+  PF_DEFAULT_LAN_RULE_ID,
   PF_DMZ_DESCR,
   PF_IFACE_KEYS,
   PF_IFACE_LABEL,
@@ -139,7 +140,22 @@ export function defaultPfState(hostname: string, interfaces: NetInterface[]): Pf
       blockPrivate: key === 'wan',
       blockBogons: key === 'wan'
     })),
-    rules: [],
+    // Règle d'usine du LAN (docs/fidelite.md, P-05) ; l'anti-verrouillage est une règle automatique du moteur
+    rules: [
+      {
+        id: PF_DEFAULT_LAN_RULE_ID,
+        iface: 'lan',
+        action: 'pass',
+        disabled: false,
+        protocol: 'any',
+        source: { type: 'interface', key: 'lan', what: 'net' },
+        sourcePort: null,
+        destination: { type: 'any' },
+        destinationPort: null,
+        log: false,
+        descr: 'Default allow LAN to any rule'
+      }
+    ],
     aliases: [],
     nat: { outboundMode: 'automatic', outbound: [], portForwards: [] },
     dhcp: {},

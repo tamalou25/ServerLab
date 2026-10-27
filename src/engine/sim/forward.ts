@@ -9,6 +9,7 @@ import { initialTtl, lookupRoute, routingTable } from '../net/routing'
 import { evaluateFirewall, PROFILE_LABELS, type FirewallTransport } from '../services/firewall'
 import { roleModules } from '../roles/registry'
 import { iosL2Inspect, iosTransitHooks } from '../ios/registry'
+import { pfTransitHooks } from '../net/pf'
 import type { FilterPacket, TransitHooks } from './transit'
 import { l2Segment, reversePath, type PortRef, type SegmentMember } from '../net/segment'
 import {
@@ -381,7 +382,13 @@ export type Delivery =
   | { kind: 'no-route'; deviceId: string; ingress: PortRef | null; latency: number }
   | { kind: 'unresolved'; deviceId: string; ingress: PortRef | null; nextHop: string; latency: number }
   | { kind: 'ttl-expired'; deviceId: string; ingress: PortRef | null; latency: number }
-  | { kind: 'dropped'; deviceId: string; latency: number }
+  | {
+      kind: 'dropped'
+      deviceId: string
+      latency: number
+      /** Rejeté par un pare-feu (TCP RST ou ICMP renvoyé à l'émetteur), et non détruit en silence. */
+      rejected?: boolean
+    }
 
 /** Vue d'un paquet pour les filtres (listes d'accès) : transport et port de destination. */
 function filterView(packet: IpPacket): FilterPacket {
@@ -395,11 +402,18 @@ function filterView(packet: IpPacket): FilterPacket {
     dst: packet.dst,
     summary: packet.summary,
     protocol,
-    ...(port !== null ? { dstPort: port } : {})
+    ...(port !== null ? { dstPort: port } : {}),
+    ...(packet.reply ? { reply: true } : {})
   }
 }
 
-/** Refus d'un filtre (liste d'accès) à l'entrée ou à la sortie d'une interface, ou null. */
+/** Refus d'un filtre (liste d'accès, pare-feu) et explications des paquets autorisés. */
+interface FilterOutcome {
+  refused: { note: string; rejectWith?: 'tcp-rst' | 'icmp-port-unreachable' } | null
+  /** Règle appliquée à un paquet autorisé (pare-feu à états), à placer dans la trace. */
+  passNote: string
+}
+
 function filtered(
   ctx: SimContext,
   hooks: TransitHooks[],
@@ -407,13 +421,64 @@ function filtered(
   ingressIfaceId: string | null,
   egressIfaceId: string | null,
   packet: IpPacket
-): string | null {
+): FilterOutcome {
   const view = filterView(packet)
+  let passNote = ''
   for (const hook of hooks) {
-    const note = hook.filter?.(ctx, device, ingressIfaceId, egressIfaceId, view)
-    if (note) return note
+    const verdict = hook.filter?.(ctx, device, ingressIfaceId, egressIfaceId, view)
+    if (!verdict) continue
+    if (typeof verdict === 'string') return { refused: { note: verdict }, passNote }
+    if (verdict.action === 'pass') {
+      passNote += `${verdict.note} `
+      continue
+    }
+    return {
+      refused: {
+        note: verdict.note,
+        ...(verdict.rejectWith ? { rejectWith: verdict.rejectWith } : {})
+      },
+      passNote
+    }
   }
-  return null
+  return { refused: null, passNote }
+}
+
+/** Réponse d'un pare-feu à un paquet rejeté : TCP RST ou ICMP « port inaccessible » vers la source. */
+function rejectionReply(packet: IpPacket, how: 'tcp-rst' | 'icmp-port-unreachable'): IpPacket {
+  const port = packet.port ?? DEFAULT_PORTS[packet.protocol]?.port ?? null
+  const tcp = how === 'tcp-rst'
+  return {
+    src: packet.dst,
+    dst: packet.src,
+    ttl: 64,
+    protocol: tcp ? packet.protocol : 'ICMP',
+    ipProtocol: tcp ? '6 (TCP)' : '1 (ICMP)',
+    summary: tcp
+      ? `TCP RST ${packet.dst} → ${packet.src} (connexion rejetée)`
+      : `ICMP Destination inaccessible — port (${packet.dst} → ${packet.src})`,
+    upper: tcp
+      ? [
+          {
+            layer: 4,
+            name: 'TCP',
+            fields: [
+              ['Port source', port === null ? '?' : String(port)],
+              ['Drapeaux', 'RST, ACK']
+            ]
+          }
+        ]
+      : [
+          {
+            layer: 4,
+            name: 'ICMP',
+            fields: [
+              ['Type', '3 (Destination inaccessible)'],
+              ['Code', '3 (Port inaccessible)']
+            ]
+          }
+        ],
+    reply: true
+  }
 }
 
 /** Latence ajoutée par la traversée d'un équipement (ms, aller simple). */
@@ -425,7 +490,11 @@ function hopLatency(device: Device): number {
 
 /** Crochets de transit déclarés par les modules de rôles et les fonctionnalités IOS (routage, NAT, tunnels). */
 function transitHooks(): TransitHooks[] {
-  return [...roleModules().flatMap((m) => (m.transit ? [m.transit] : [])), ...iosTransitHooks()]
+  return [
+    ...roleModules().flatMap((m) => (m.transit ? [m.transit] : [])),
+    ...iosTransitHooks(),
+    pfTransitHooks
+  ]
 }
 
 /**
@@ -456,13 +525,23 @@ export function sendIp(ctx: SimContext, fromDeviceId: string, original: IpPacket
     const device = ctx.state.devices[current]
     if (!device || !device.powered) return { kind: 'dropped', deviceId: current, latency }
 
-    // Liste d'accès en entrée de l'interface de réception
+    // Liste d'accès ou règles de pare-feu en entrée de l'interface de réception
+    let filterNote = ''
     if (transit && ingress) {
-      const refused = filtered(ctx, hooks, device, ingress.ifaceId, null, packet)
-      if (refused) {
-        setLastOutcome(ctx, 'dropped', refused)
-        return { kind: 'dropped', deviceId: current, latency }
+      const outcome = filtered(ctx, hooks, device, ingress.ifaceId, null, packet)
+      if (outcome.refused) {
+        setLastOutcome(ctx, 'dropped', outcome.refused.note)
+        // Reject : le pare-feu répond à l'émetteur (TCP RST ou ICMP), visible dans la trace
+        if (outcome.refused.rejectWith)
+          sendIp(ctx, device.id, rejectionReply(packet, outcome.refused.rejectWith))
+        return {
+          kind: 'dropped',
+          deviceId: current,
+          latency,
+          ...(outcome.refused.rejectWith ? { rejected: true } : {})
+        }
       }
+      filterNote = outcome.passNote
     }
 
     // Retraduction NAT d'une réponse adressée à l'adresse publique
@@ -471,7 +550,7 @@ export function sendIp(ctx: SimContext, fromDeviceId: string, original: IpPacket
         const back = hook.untranslate?.(ctx, device, packet)
         if (back) {
           setLastOutcome(ctx, 'forwarded', back.note)
-          arrival = `${back.note} `
+          arrival += `${back.note} `
           packet = { ...packet, dst: back.dst }
           break
         }
@@ -487,7 +566,7 @@ export function sendIp(ctx: SimContext, fromDeviceId: string, original: IpPacket
         setLastOutcome(
           ctx,
           'delivered',
-          `${device.name} est le destinataire (${packet.dst}) : le paquet est traité.`
+          `${filterNote}${device.name} est le destinataire (${packet.dst}) : le paquet est traité.`
         )
       }
       return { kind: 'delivered', deviceId: current, ingress, ttl, latency, src: packet.src }
@@ -598,15 +677,16 @@ export function sendIp(ctx: SimContext, fromDeviceId: string, original: IpPacket
         }
       }
       // Liste d'accès en sortie (après la traduction d'adresse)
-      const refused = filtered(ctx, hooks, device, null, route.ifaceId, packet)
-      if (refused) {
-        setLastOutcome(ctx, 'dropped', arrival + refused)
+      const egressFilter = filtered(ctx, hooks, device, null, route.ifaceId, packet)
+      if (egressFilter.refused) {
+        setLastOutcome(ctx, 'dropped', arrival + egressFilter.refused.note)
         return { kind: 'dropped', deviceId: current, latency }
       }
       setLastOutcome(
         ctx,
         'forwarded',
-        arrival +
+        filterNote +
+          arrival +
           (route.gateway
             ? `${device.name} route le paquet vers ${packet.dst} par ${egressName}, via la passerelle ${route.gateway} (TTL ${ttl}).`
             : `${device.name} route le paquet vers ${packet.dst} : réseau directement connecté sur ${egressName} (TTL ${ttl}).`) +

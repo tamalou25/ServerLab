@@ -34,7 +34,9 @@ describe('pare-feu', () => {
       ['opt1', 'DMZ', fw.interfaces[2]!.id]
     ])
     expect(fw.pf.nat.outboundMode).toBe('automatic')
-    expect(fw.pf.rules).toEqual([])
+    expect(fw.pf.rules.map((r) => [r.iface, r.action, r.descr])).toEqual([
+      ['lan', 'pass', 'Default allow LAN to any rule']
+    ])
   })
 
   it('les noms suivent : FW1, FW2', () => {

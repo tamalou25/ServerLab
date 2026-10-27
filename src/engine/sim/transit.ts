@@ -18,6 +18,19 @@ export interface FilterPacket extends TransitPacket {
   protocol: 'icmp' | 'tcp' | 'udp' | 'other'
   /** Port de destination TCP / UDP (absent pour une réponse ou un autre protocole). */
   dstPort?: number
+  /** Réponse à un échange autorisé (les filtres à états la laissent passer). */
+  reply?: boolean
+}
+
+/**
+ * Décision d'un filtre à états (pare-feu pfSense) : le paquet est autorisé (`pass`, la note explique
+ * la règle appliquée), détruit en silence (`block`) ou rejeté (`reject` : l'émetteur reçoit un
+ * TCP RST ou un ICMP « port inaccessible »).
+ */
+export interface FilterDecision {
+  action: 'pass' | 'block' | 'reject'
+  note: string
+  rejectWith?: 'tcp-rst' | 'icmp-port-unreachable'
 }
 
 /** Tunnel : le paquet est encapsulé jusqu'à `endpointId`. */
@@ -69,7 +82,8 @@ export interface TransitHooks {
   ): { src: string; note: string } | null
   /**
    * Filtrage du paquet à l'entrée (`ingressIfaceId`) ou à la sortie (`egressIfaceId`) d'une
-   * interface (listes d'accès) : explication du refus, ou null s'il passe.
+   * interface (listes d'accès, pare-feu) : explication du refus (texte) ou décision d'un filtre à
+   * états, ou null s'il passe.
    */
   filter?(
     ctx: TransitContext,
@@ -77,7 +91,7 @@ export interface TransitHooks {
     ingressIfaceId: string | null,
     egressIfaceId: string | null,
     packet: FilterPacket
-  ): string | null
+  ): string | FilterDecision | null
   /** Tunnel à emprunter depuis cet équipement pour ce paquet (VPN), ou null. */
   tunnel?(state: LabState, device: Device, packet: TransitPacket): Tunnel | null
 }
