@@ -53,6 +53,17 @@ test('pfSense : interface web depuis le LAN, connexion, règle ajoutée puis app
     await pc.getByTestId('pf-apply').click()
     await expect(pc.getByTestId('pf-apply-banner')).toHaveCount(0)
 
+    // Services > DNS Resolver : Host Override mis en attente puis appliqué
+    await pc.getByTestId('pf-menu-Services').click()
+    await pc.getByTestId('pf-nav-dns').click()
+    await pc.getByTestId('pf-override-host').fill('intranet')
+    await pc.getByTestId('pf-override-domain').fill('lab.local')
+    await pc.getByTestId('pf-override-address').fill('172.16.0.10')
+    await pc.getByTestId('pf-override-add').click()
+    await expect(pc.getByTestId('pf-override-row')).toContainText('intranet')
+    await pc.getByTestId('pf-apply').click()
+    await expect(pc.getByTestId('pf-apply-banner')).toHaveCount(0)
+
     // La connexion à l'administration a laissé une entrée dans la table d'états
     await pc.getByTestId('pf-menu-Diagnostics').click()
     await pc.getByTestId('pf-nav-states').click()
