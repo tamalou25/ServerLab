@@ -10,6 +10,7 @@ import { evaluateFirewall, PROFILE_LABELS, type FirewallTransport } from '../ser
 import { roleModules } from '../roles/registry'
 import { iosL2Inspect, iosTransitHooks } from '../ios/registry'
 import { pfTransitHooks } from '../net/pf'
+import { pfNatTransitHooks } from '../net/pf-nat-transit'
 import type { FilterPacket, TransitHooks } from './transit'
 import { l2Segment, reversePath, type PortRef, type SegmentMember } from '../net/segment'
 import {
@@ -493,6 +494,7 @@ function transitHooks(): TransitHooks[] {
   return [
     ...roleModules().flatMap((m) => (m.transit ? [m.transit] : [])),
     ...iosTransitHooks(),
+    pfNatTransitHooks,
     pfTransitHooks
   ]
 }
@@ -528,9 +530,30 @@ export function sendIp(ctx: SimContext, fromDeviceId: string, original: IpPacket
     // Liste d'accès ou règles de pare-feu en entrée de l'interface de réception
     let filterNote = ''
     if (transit && ingress) {
+      // Redirection de port (pare-feu) : la destination est traduite avant le filtrage
+      let redirectNote = ''
+      for (const hook of hooks) {
+        const rdr = hook.redirect?.(ctx, device, ingress.ifaceId, filterView(packet))
+        if (!rdr) continue
+        redirectNote = `${rdr.note} `
+        packet = {
+          ...packet,
+          dst: rdr.dst,
+          port: rdr.dstPort,
+          upper: packet.upper.map((l) =>
+            l.layer === 4
+              ? {
+                  ...l,
+                  fields: l.fields.map((f) => (f[0] === 'Port destination' ? [f[0], String(rdr.dstPort)] : f))
+                }
+              : l
+          ) as typeof packet.upper
+        }
+        break
+      }
       const outcome = filtered(ctx, hooks, device, ingress.ifaceId, null, packet)
       if (outcome.refused) {
-        setLastOutcome(ctx, 'dropped', outcome.refused.note)
+        setLastOutcome(ctx, 'dropped', redirectNote + outcome.refused.note)
         // Reject : le pare-feu répond à l'émetteur (TCP RST ou ICMP), visible dans la trace
         if (outcome.refused.rejectWith)
           sendIp(ctx, device.id, rejectionReply(packet, outcome.refused.rejectWith))
@@ -541,7 +564,7 @@ export function sendIp(ctx: SimContext, fromDeviceId: string, original: IpPacket
           ...(outcome.refused.rejectWith ? { rejected: true } : {})
         }
       }
-      filterNote = outcome.passNote
+      filterNote = redirectNote + outcome.passNote
     }
 
     // Retraduction NAT d'une réponse adressée à l'adresse publique

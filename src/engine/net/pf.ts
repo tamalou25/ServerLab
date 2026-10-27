@@ -23,8 +23,9 @@ import { effectiveIpv4 } from './addressing'
 import { inNetwork, isIpv4, networkAddress } from './ipv4'
 import type { FilterDecision, FilterPacket, TransitHooks } from '../sim/transit'
 import type { TraceEffect } from '../sim/trace'
+import { natOutKey, rdrBackKey, rdrTextKey } from './pf-nat'
 
-type PfDevice = Extract<Device, { kind: 'firewall' }>
+export type PfDevice = Extract<Device, { kind: 'firewall' }>
 
 /** Ports de l'interface d'administration protégés par la règle anti-verrouillage (HTTPS, HTTP, SSH). */
 export const PF_ANTI_LOCKOUT_PORTS = [443, 80, 22] as const
@@ -62,13 +63,13 @@ export const isBogonAddress = (ip: string): boolean => inAny(ip, BOGON_NETWORKS)
 // --- Résolution des interfaces et des alias -----------------------------------------------------
 
 /** Interface physique affectée à une interface logique (WAN, LAN, OPTx). */
-function nicOf(device: PfDevice, key: PfIfaceKey): NetInterface | undefined {
+export function nicOf(device: PfDevice, key: PfIfaceKey): NetInterface | undefined {
   const id = device.pf.assignments.find((a) => a.key === key)?.ifaceId
   return id ? device.interfaces.find((i) => i.id === id) : undefined
 }
 
 /** Affectation à laquelle appartient une carte (undefined : non affectée). */
-function assignmentOfNic(pf: PfState, ifaceId: string) {
+export function assignmentOfNic(pf: PfState, ifaceId: string) {
   return pf.assignments.find((a) => a.ifaceId === ifaceId)
 }
 
@@ -86,7 +87,7 @@ function aliasMatches(pf: PfState, name: string, ip: string, depth: number): boo
   })
 }
 
-function endpointMatches(device: PfDevice, endpoint: PfEndpoint, ip: string): boolean {
+export function endpointMatches(device: PfDevice, endpoint: PfEndpoint, ip: string): boolean {
   switch (endpoint.type) {
     case 'any':
       return true
@@ -350,12 +351,30 @@ export function evaluatePf(
 const dstWithPort = (packet: FilterPacket): string =>
   packet.dstPort === undefined ? packet.dst : `${packet.dst}:${packet.dstPort}`
 
+/**
+ * Vue d'une réponse pour la table d'états : le filtre voit le paquet avant sa retraduction, alors que
+ * l'état a été créé avec les adresses d'origine (NAT sortant : destination d'origine du client ;
+ * redirection de port : source interne du serveur).
+ */
+function natReplyView(
+  ctx: Parameters<NonNullable<TransitHooks['filter']>>[0],
+  device: PfDevice,
+  packet: FilterPacket
+): FilterPacket {
+  if (!packet.reply) return packet
+  const client = ctx.nat.get(natOutKey(device.id, packet.dst, packet.src))
+  if (client) return { ...packet, dst: client }
+  const internal = ctx.nat.get(rdrBackKey(device.id, packet.dst, packet.src))
+  return internal ? { ...packet, src: internal } : packet
+}
+
 export const pfTransitHooks: TransitHooks = {
   forwards: (_state, device) => device.kind === 'firewall' && device.powered,
 
-  filter(ctx, device, ingressIfaceId, _egressIfaceId, packet): FilterDecision | null {
+  filter(ctx, device, ingressIfaceId, _egressIfaceId, original): FilterDecision | null {
     // Seul le trafic entrant d'un pare-feu pfSense est filtré ; ses propres paquets ne le sont pas
     if (device.kind !== 'firewall' || ingressIfaceId === null) return null
+    const packet = natReplyView(ctx, device, original)
     const verdict = evaluatePf(device, ingressIfaceId, packet, ctx.effects)
     const key = assignmentOfNic(device.pf, ingressIfaceId)?.key ?? 'lan'
     if (verdict.log)
@@ -371,12 +390,21 @@ export const pfTransitHooks: TransitHooks = {
           dst: dstWithPort(packet)
         }
       })
-    if (verdict.track)
+    if (verdict.track) {
+      // Redirection de port : la traduction est inscrite dans l'état (Diagnostics > States)
+      const translation = ctx.nat.get(rdrTextKey(device.id, packet.src, packet.dst))
       ctx.effects.push({
         kind: 'pf-state',
         deviceId: device.id,
-        data: { iface: key, protocol: packet.protocol, src: packet.src, dst: dstWithPort(packet) }
+        data: {
+          iface: key,
+          protocol: packet.protocol,
+          src: packet.src,
+          dst: dstWithPort(packet),
+          ...(translation ? { translation } : {})
+        }
       })
+    }
     return {
       action: verdict.action,
       note: verdict.note,
@@ -393,10 +421,22 @@ export const pfTransitHooks: TransitHooks = {
  */
 export function applyPfEffects(draft: Draft<LabState>, effects: readonly TraceEffect[]): void {
   for (const effect of effects) {
-    if (effect.kind !== 'pf-log' && effect.kind !== 'pf-state') continue
+    if (effect.kind !== 'pf-log' && effect.kind !== 'pf-state' && effect.kind !== 'pf-nat') continue
     const device = draft.devices[effect.deviceId]
     if (!device || device.kind !== 'firewall') continue
     const d = effect.data
+    if (effect.kind === 'pf-nat') {
+      // NAT sortant : la traduction est rattachée à l'état de la connexion (créé à l'entrée, avant le routage)
+      const states = device.pf.states
+      for (let i = states.length - 1; i >= 0; i--) {
+        const s = states[i]!
+        if (s.src === String(d.src) && stripPort(s.dst) === String(d.dst)) {
+          s.translation = String(d.translation)
+          break
+        }
+      }
+      continue
+    }
     const iface = String(d.iface) as PfIfaceKey
     if (effect.kind === 'pf-log') {
       device.pf.log.push({
@@ -416,7 +456,11 @@ export function applyPfEffects(draft: Draft<LabState>, effects: readonly TraceEf
       (s) => s.iface === iface && s.protocol === entry.protocol && s.src === entry.src && s.dst === entry.dst
     )
     if (known) continue
-    device.pf.states.push({ ...entry, createdAt: draft.clock })
+    device.pf.states.push({
+      ...entry,
+      createdAt: draft.clock,
+      ...(d.translation ? { translation: String(d.translation) } : {})
+    })
     if (device.pf.states.length > PF_LOG_LIMIT)
       device.pf.states.splice(0, device.pf.states.length - PF_LOG_LIMIT)
   }

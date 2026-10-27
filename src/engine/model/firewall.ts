@@ -125,6 +125,7 @@ export const PfOutboundNatSchema = z.object({
   disabled: z.boolean().default(false),
   descr: z.string().default('')
 })
+export type PfOutboundNat = z.infer<typeof PfOutboundNatSchema>
 
 export const PfPortForwardSchema = z.object({
   id: z.string(),
@@ -139,9 +140,12 @@ export const PfPortForwardSchema = z.object({
   targetPort: z.number().int().min(1).max(65535).nullable().default(null),
   /** Crée la règle de filtrage associée (Filter rule association : Add associated filter rule). */
   associatedRule: z.boolean().default(true),
+  /** Règle de filtrage créée par l'association (facultatif : absent des fichiers antérieurs à #244). */
+  ruleId: z.string().nullable().optional(),
   disabled: z.boolean().default(false),
   descr: z.string().default('')
 })
+export type PfPortForward = z.infer<typeof PfPortForwardSchema>
 
 export const PfNatSchema = z.object({
   /** Mode de NAT sortant : automatique par défaut. */
@@ -211,7 +215,9 @@ export const PfStateEntrySchema = z.object({
   protocol: z.string(),
   src: z.string(),
   dst: z.string(),
-  createdAt: z.number()
+  createdAt: z.number(),
+  /** Traduction d'adresse appliquée à la connexion (NAT sortant ou redirection), #244. */
+  translation: z.string().optional()
 })
 
 /** Identifiant de la règle d'usine « Default allow LAN to any rule ». */

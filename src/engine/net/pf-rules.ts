@@ -24,7 +24,7 @@ export type PfRuleInput = Partial<Omit<PfRule, 'id' | 'iface'>> & { iface: PfIfa
 export type PfRulePatch = Partial<Omit<PfRule, 'id'>>
 
 /** Pare-feu de l'état, ou erreur métier si l'équipement n'en est pas un. */
-function requirePf(draft: Draft<LabState>, deviceId: string): PfState {
+export function requirePf(draft: Draft<LabState>, deviceId: string): PfState {
   const device = draft.devices[deviceId]
   if (!device) raise('DeviceNotFound', 'Équipement introuvable.')
   if (device.kind !== 'firewall') raise('NotAFirewall', `${device.name} n’est pas un pare-feu pfSense.`)
@@ -33,7 +33,7 @@ function requirePf(draft: Draft<LabState>, deviceId: string): PfState {
 
 const PORT_PROTOCOLS = ['tcp', 'udp', 'tcp/udp']
 
-function validateEndpoint(pf: PfState, endpoint: PfEndpoint, role: 'source' | 'destination'): void {
+export function validateEndpoint(pf: PfState, endpoint: PfEndpoint, role: 'source' | 'destination'): void {
   const where = role === 'source' ? 'source' : 'destination'
   if (endpoint.type === 'address' && !isIpv4(endpoint.address))
     raise('InvalidAddress', `L’adresse ${where} « ${endpoint.address} » n’est pas une adresse IPv4 valide.`)
