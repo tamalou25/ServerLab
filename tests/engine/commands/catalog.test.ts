@@ -245,6 +245,22 @@ describe('catalogue des commandes', () => {
     r.run(command('pf.setDnsServers', fw, ['8.8.8.8']))
     r.run(command('pf.setHostOverride', fw, { host: 'nas', domain: 'lab.local', address: '192.168.1.50' }))
     r.run(command('pf.removeHostOverride', fw, 'nas', 'lab.local'))
+    // NAT (#244)
+    r.run(command('pf.setNatMode', fw, 'hybrid'))
+    const nat = r.run<string>(
+      command('pf.addOutboundNat', fw, { source: { type: 'any' }, descr: 'Tout vers le WAN' })
+    )
+    r.run(command('pf.updateOutboundNat', fw, nat, { disabled: true }))
+    r.run(command('pf.removeOutboundNat', fw, nat))
+    const pfn = r.run<string>(
+      command('pf.addPortForward', fw, {
+        protocol: 'tcp',
+        destinationPort: { from: 80, to: 80 },
+        targetAddress: '172.16.0.10'
+      })
+    )
+    r.run(command('pf.updatePortForward', fw, pfn, { targetPort: 8080 }))
+    r.run(command('pf.removePortForward', fw, pfn))
     r.run(command('pf.clearLog', fw), false)
     r.run(command('pf.resetStates', fw), false)
     done(r)

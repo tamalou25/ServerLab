@@ -29,6 +29,10 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   redirection vers `pf.dnsServers`, branché sur `roles/dns/resolver.ts`), passerelles (passerelle par défaut, WAN
   statique ou DHCP) et routes statiques dans la table de routage du pare-feu ; commandes `pf.setDhcp`,
   `pf.setGateway`, `pf.addStaticRoute`, `pf.setDnsResolver`, `pf.setHostOverride`… ; `docs/fidelite.md` P-30 à P-39.
+- NAT pfSense (#244) : NAT sortant automatique, hybride, manuel ou désactivé (`net/pf-nat-transit.ts`), redirections
+  de port avec règle de filtrage associée créée et suivie automatiquement (destination traduite avant le filtrage,
+  serveur de la DMZ joignable depuis le WAN), traduction visible dans la trace du mode Simulation et dans la table
+  d'états ; commandes `pf.setNatMode`, `pf.addOutboundNat`, `pf.addPortForward`… ; `docs/fidelite.md` P-20 à P-27.
 
 ## [2.9.0] — 2026-10-27
 

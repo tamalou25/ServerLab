@@ -38,6 +38,15 @@ import {
   setPfGateway,
   setPfHostOverride
 } from '../net/pf-services'
+import {
+  addPfOutboundNat,
+  addPfPortForward,
+  removePfOutboundNat,
+  removePfPortForward,
+  setPfNatMode,
+  updatePfOutboundNat,
+  updatePfPortForward
+} from '../net/pf-nat'
 import { addStaticRoute, removeStaticRoute, setHelperAddresses, setInterfaceIpv4 } from '../net/config'
 import {
   addSubinterface,
@@ -309,6 +318,28 @@ const CORE_COMMANDS = {
   'pf.removeHostOverride': def(
     removePfHostOverride,
     (s, id, host, domain) => `Supprimer le Host Override ${host ? `${host}.` : ''}${domain}${on(s, id)}`
+  ),
+  'pf.setNatMode': def(setPfNatMode, (s, id, mode) => `Mode de NAT sortant : ${mode}${on(s, id)}`),
+  'pf.addOutboundNat': def(addPfOutboundNat, (s, id) => `Ajouter une règle de NAT sortant${on(s, id)}`),
+  'pf.updateOutboundNat': def(
+    updatePfOutboundNat,
+    (s, id, natId) => `Modifier la règle de NAT sortant ${natId}${on(s, id)}`
+  ),
+  'pf.removeOutboundNat': def(
+    removePfOutboundNat,
+    (s, id, natId) => `Supprimer la règle de NAT sortant ${natId}${on(s, id)}`
+  ),
+  'pf.addPortForward': def(
+    addPfPortForward,
+    (s, id, input) => `Ajouter une redirection de port vers ${input.targetAddress}${on(s, id)}`
+  ),
+  'pf.updatePortForward': def(
+    updatePfPortForward,
+    (s, id, natId) => `Modifier la redirection de port ${natId}${on(s, id)}`
+  ),
+  'pf.removePortForward': def(
+    removePfPortForward,
+    (s, id, natId) => `Supprimer la redirection de port ${natId}${on(s, id)}`
   ),
   'pf.clearLog': def(clearPfLog, (s, id) => `Vider le journal du pare-feu${on(s, id)}`),
   'pf.resetStates': def(resetPfStates, (s, id) => `Réinitialiser la table d’états${on(s, id)}`),

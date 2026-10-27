@@ -33,7 +33,7 @@ export function requirePf(draft: Draft<LabState>, deviceId: string): PfState {
 
 const PORT_PROTOCOLS = ['tcp', 'udp', 'tcp/udp']
 
-function validateEndpoint(pf: PfState, endpoint: PfEndpoint, role: 'source' | 'destination'): void {
+export function validateEndpoint(pf: PfState, endpoint: PfEndpoint, role: 'source' | 'destination'): void {
   const where = role === 'source' ? 'source' : 'destination'
   if (endpoint.type === 'address' && !isIpv4(endpoint.address))
     raise('InvalidAddress', `L’adresse ${where} « ${endpoint.address} » n’est pas une adresse IPv4 valide.`)
