@@ -6,7 +6,7 @@ export default defineConfig({
   expect: {
     timeout: 10_000,
     // Références visuelles (visual.spec.ts) : une seule par capture, quelle que soit la plateforme (CI Linux)
-    toHaveScreenshot: { animations: 'disabled', caret: 'hide', threshold: 0.01, maxDiffPixelRatio: 0.01 }
+    toHaveScreenshot: { animations: 'disabled', caret: 'hide', threshold: 0.01, maxDiffPixelRatio: 0.002 }
   },
   snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}{ext}',
   fullyParallel: false,
