@@ -308,6 +308,7 @@ export const fr = {
   'port.tray.free.other': '{count}/{total} libres',
   'port.tray.connect': '{title} — cliquer pour raccorder',
   'toolbar.label': 'Outils',
+  'toolbar.main': 'Barre d’outils principale',
   'toolbar.pdu': 'PDU simple (ping)',
   'toolbar.hint.cable.first': 'Choisissez un port du premier équipement',
   'toolbar.hint.cable.second': 'Choisissez le port du second équipement',

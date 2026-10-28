@@ -32,8 +32,11 @@ export function useKeyboardShortcuts(): void {
       const ctrl = e.ctrlKey || e.metaKey
       const key = e.key.toLowerCase()
       const plain = !ctrl && !e.altKey && !e.shiftKey
+      // Fenêtre d'équipement (Bureau, console, configuration) : ses touches ne touchent pas au
+      // canvas derrière elle (Ctrl+Z, Suppr, Ctrl+A… : constat U-01). Le menu natif reste disponible.
+      if (inDeviceWindow(e.target)) return
       const tool = TOOL_KEYS[key]
-      if (plain && tool && !inDeviceWindow(e.target)) {
+      if (plain && tool) {
         e.preventDefault()
         useUiStore.getState().setTool(tool)
         return
@@ -57,7 +60,7 @@ export function useKeyboardShortcuts(): void {
         const { selection, setTool } = useUiStore.getState()
         // Suppr sans sélection : outil Supprimer (comme indiqué dans la barre d'outils)
         if (selection.devices.length === 0 && !selection.link) {
-          if (e.key === 'Delete' && !inDeviceWindow(e.target)) setTool('delete')
+          if (e.key === 'Delete') setTool('delete')
           return
         }
         deleteSelection()
