@@ -53,7 +53,8 @@ export function SimulationPanel() {
 
   return (
     <section
-      className={`flex shrink-0 flex-col border-t border-line bg-panel ${collapsed ? '' : 'h-60'}`}
+      // Au-dessus des fenêtres d'équipement (calque z-40) : les commandes restent accessibles
+      className={`relative z-[45] flex shrink-0 flex-col border-t border-line bg-panel ${collapsed ? '' : 'h-60'}`}
       aria-label={t('sim.title')}
       data-testid="simulation-panel"
     >
