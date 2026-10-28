@@ -119,7 +119,7 @@ export async function launchTroubleshoot(o: TroubleshootOptions): Promise<string
   resetDocumentUi()
   useLabStore.getState().load(r.state, { path: null, name: `${lab.id}.slab` })
   useLabsStore.getState().setActive(lab)
-  useUiStore.getState().setRightTab('lab')
+  useUiStore.getState().setRightTab('troubleshoot')
   seen = new WeakSet()
   const store = useTroubleshootStore.getState()
   const labState = useLabStore.getState()

@@ -31,7 +31,6 @@ import {
   linkStatus,
   usedInterfaces,
   type Device,
-  type DeviceHealth,
   type HostDevice,
   type LabState,
   type Link,
@@ -40,20 +39,14 @@ import {
 import { useLabStore } from '../../store/lab'
 import { useUiStore } from '../../store/ui'
 import { runCommand } from '../../lib/run'
-import { DEVICE_ICONS, deviceIcon, deviceLabel, iosModel, isLinux, KIND_STRIPE } from '../../lib/devices'
+import { StatusLed } from '../../assets/icons/StatusLed'
+import { DEVICE_ICONS, deviceIcon, deviceLabel, iosModel, isLinux } from '../../lib/devices'
 import { formatSimTime } from '../../lib/format'
 import { EditableName } from '../common/EditableName'
 import { Button, StatusDot } from '../common/ui'
 import { InterfaceList } from './InterfaceList'
 import { PanelSection } from './PanelSection'
 import { t } from '../../lib/i18n'
-
-const HEALTH_DOT: Record<DeviceHealth, string> = {
-  ok: 'bg-ok',
-  warn: 'bg-warn',
-  off: 'bg-danger',
-  idle: 'bg-fg-subtle'
-}
 
 export function PropertiesPanel() {
   const selection = useUiStore((s) => s.selection)
@@ -134,16 +127,15 @@ function DeviceProperties({ device }: { device: Device }) {
     <>
       <div className="border-b border-line px-4 pt-3 pb-2">
         <div className="flex items-center gap-3">
-          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-line-strong bg-surface text-fg-muted">
-            <span className={`absolute inset-y-0 left-0 w-[3px] ${KIND_STRIPE[device.kind]}`} />
-            <Icon size={20} strokeWidth={1.5} />
+          <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-line-strong bg-surface text-fg-muted">
+            <Icon size={34} />
           </span>
           <div className="min-w-0">
             <div className="truncate text-title font-semibold text-fg">{device.name}</div>
             <div className="flex items-center gap-1.5 text-xs text-fg-muted" title={health.label}>
               {deviceLabel(device)}
               <span className="text-fg-subtle">·</span>
-              <span className={`h-1.5 w-1.5 rounded-full ${HEALTH_DOT[health.status]}`} />
+              <StatusLed status={health.status} label={health.label} />
               <span className="truncate" data-testid="properties-health">
                 {health.label}
               </span>
@@ -475,7 +467,7 @@ function LinkProperties({ link }: { link: Link }) {
           useUiStore.getState().clearSelection()
         }}
       >
-        <Unplug size={14} /> Débrancher le câble
+        <Unplug size={14} /> {t('props.unplug')}
       </Button>
     </PanelSection>
   )
@@ -497,11 +489,10 @@ function LabOverview({ lab }: { lab: LabState }) {
             return (
               <div
                 key={kind}
-                className="relative flex flex-col items-center gap-0.5 overflow-hidden rounded-md border border-line bg-surface py-1.5"
+                className="flex flex-col items-center gap-0.5 rounded-md border border-line bg-surface py-1.5 text-fg-muted"
                 title={DEVICE_KIND_INFO[kind].label}
               >
-                <span className={`absolute inset-x-0 top-0 h-[2px] ${KIND_STRIPE[kind]}`} />
-                <Icon size={15} className="text-fg-muted" />
+                <Icon size={24} />
                 <span className="text-xs font-medium text-fg">{n}</span>
               </div>
             )
@@ -518,12 +509,18 @@ function LabOverview({ lab }: { lab: LabState }) {
                   {links.length > 0 && (
                     <span className="text-fg-muted">
                       {' '}
-                      · <span className="text-ok-text">{byStatus.up} actifs</span>
+                      · <span className="text-ok-text">{t('props.linksUp', { n: byStatus.up })}</span>
                       {byStatus.degraded > 0 && (
-                        <span className="text-warn-text"> · {byStatus.degraded} à vérifier</span>
+                        <span className="text-warn-text">
+                          {' '}
+                          · {t('props.linksDegraded', { n: byStatus.degraded })}
+                        </span>
                       )}
                       {byStatus.down > 0 && (
-                        <span className="text-danger-text"> · {byStatus.down} inactifs</span>
+                        <span className="text-danger-text">
+                          {' '}
+                          · {t('props.linksDown', { n: byStatus.down })}
+                        </span>
                       )}
                     </span>
                   )}
