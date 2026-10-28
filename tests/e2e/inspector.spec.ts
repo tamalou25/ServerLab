@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test'
 import { launchApp, placeDevice } from './helpers'
 
-test('Inspecteur : onglets Résumé, Audit, Dépannage, Simulation ; voyant d’état dans le résumé', async () => {
+test('Inspecteur : onglets Résumé, Audit, Dépannage ; voyant d’état dans le résumé', async () => {
   const { close, page, consoleErrors } = await launchApp()
   try {
     const tabs = page.getByRole('tablist', { name: 'Panneau latéral' }).getByRole('tab')
-    await expect(tabs).toHaveText(['Résumé', 'Audit', 'Dépannage', 'Simulation'])
+    await expect(tabs).toHaveText(['Résumé', 'Audit', 'Dépannage'])
     await expect(page.getByTestId('right-tab-properties')).toHaveAttribute('aria-selected', 'true')
 
     await placeDevice(page, 'server', 300, 200)

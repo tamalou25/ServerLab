@@ -57,7 +57,6 @@ for (const theme of THEMES) {
         )
 
         await page.getByTestId('mode-simulation').click()
-        await page.getByTestId('right-tab-simulation').click()
         await expect(page.getByTestId('simulation-panel')).toHaveScreenshot(`simulation-${theme.id}.png`)
         await page.getByTestId('mode-realtime').click()
 

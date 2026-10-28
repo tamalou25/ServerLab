@@ -1,6 +1,7 @@
 /**
  * Inspecteur (panneau de droite) à onglets : Résumé (équipement, câble ou vue d'ensemble du lab),
- * Lab (quand un lab ou un résultat d'examen est ouvert), Audit, Dépannage, et Simulation.
+ * Lab (quand un lab ou un résultat d'examen est ouvert), Audit et Dépannage. La Simulation a son
+ * panneau en bas de la fenêtre (SimulationPanel).
  */
 import { AuditPanel } from './audit/AuditPanel'
 import { ExamResultPanel } from './labs/Exam'
@@ -8,7 +9,6 @@ import { LabPanel } from './labs/LabPanel'
 import { TroubleshootPanel, TroubleshootSummaryPanel } from './labs/Troubleshoot'
 import { openTroubleshootDialog } from '../lib/troubleshoot'
 import { Button } from './common/ui'
-import { SimulationPanel } from './simulation/SimulationPanel'
 import { PropertiesPanel } from './properties/PropertiesPanel'
 import { useT } from '../lib/i18n'
 import { useExamStore } from '../store/exam'
@@ -33,8 +33,7 @@ export function RightPanel() {
     { id: 'properties', label: t('panel.properties') },
     ...(showLab ? [{ id: 'lab' as const, label: t('panel.lab') }] : []),
     { id: 'audit', label: t('panel.audit') },
-    { id: 'troubleshoot', label: t('panel.troubleshoot') },
-    { id: 'simulation', label: t('panel.simulation') }
+    { id: 'troubleshoot', label: t('panel.troubleshoot') }
   ]
   // Onglet Lab demandé sans lab (ou pendant un dépannage) : onglet correspondant
   const tab = selected === 'lab' && !showLab ? (inTshoot ? 'troubleshoot' : 'properties') : selected
@@ -83,10 +82,8 @@ export function RightPanel() {
         )
       ) : tab === 'properties' ? (
         <PropertiesPanel />
-      ) : tab === 'audit' ? (
-        <AuditPanel />
       ) : (
-        <SimulationPanel />
+        <AuditPanel />
       )}
     </aside>
   )

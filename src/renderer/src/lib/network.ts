@@ -18,8 +18,8 @@ export function runNetworkOperation(trace: PacketTrace, onComplete: () => void):
     onComplete()
     return
   }
+  // Le panneau Simulation (en bas) est toujours visible en mode Simulation
   useSimStore.getState().enqueue({ trace, onComplete })
-  ui.setRightTab('simulation')
 }
 
 /** Première adresse IP exploitable d'un équipement (cible d'un PDU simple). */
