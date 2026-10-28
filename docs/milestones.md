@@ -504,3 +504,12 @@ facultatifs de `pf`.
 | #246  | Interface web                   | `feat/246-interface-web-pare-feu` | #288 | fusionné |
 | #247  | Console                         | `feat/247-console-pare-feu`       | #289 | fusionné |
 | #248  | Labs 54 à 59 et pannes pare-feu | `feat/248-labs-pannes-pare-feu`   | #290 | fusionné |
+
+## v2.11 — Interface v2
+
+Issues #292 (maquettes et plan) à #301 (finitions), une PR empilée par étape (#302 à #311). Refonte du chrome de
+l'application sans changement du moteur ni du format `.slab` : tokens v2 et contrastes AA, icônes et nœuds de 64 px,
+barre d'outils principale, palette à onglets, câbles et légende des protocoles, inspecteur à onglets, panneau
+Simulation inférieur, fenêtres d'équipement et menu contextuel. Documentation : [ui-v2.md](ui-v2.md).
+
+Milestone terminé : `CHANGELOG.md` [2.11.0], `package.json` 2.11.0 ; tag `v2.11.0` à pousser par Gary.

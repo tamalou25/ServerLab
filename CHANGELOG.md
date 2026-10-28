@@ -6,6 +6,33 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+## [2.11.0] — 2026-10-28
+
+Interface v2 : refonte graphique du chrome de l'application (« console d'ingénierie »), sans changement du moteur,
+du format `.slab` ni des raccourcis. Documentation : [docs/ui-v2.md](docs/ui-v2.md).
+
+### Interface
+
+- Tokens v2 sombre et clair, variantes de texte d'état AA, accent unique, échelle typographique 11 / 12 / 13 / 15 px,
+  tableau des contrastes calculé (#293).
+- Icônes d'équipements dessinées pour ServerLab, nœuds de 64 px, voyant d'état à double indice (couleur + forme),
+  bandeau « IOS » des modèles Cisco (#294).
+- Barre d'outils principale (fichier, annuler / rétablir, outils, zoom, Temps réel / Simulation) ; les raccourcis
+  du canvas n'agissent plus depuis une fenêtre d'équipement (U-01) (#295).
+- Palette à onglets par famille et vignettes de 48 px (#296).
+- Câbles : voyants à forme, infobulle en texte (extrémités, débit, état) ; couleurs de protocoles en tokens, nom
+  du protocole sur chaque enveloppe, légende en mode Simulation (#297).
+- Inspecteur à onglets Résumé, Lab, Audit, Dépannage (#298).
+- Panneau Simulation en bas de la fenêtre, rétractable : vitesse de lecture, table des événements (pas, couche,
+  info), détail du PDU (#299).
+- Barre de titre uniforme des fenêtres d'équipement (IP, accès rapides) et menu contextuel des nœuds accessible
+  au clavier (#300).
+
+### Qualité
+
+- Tests visuels Playwright des écrans clés dans les deux thèmes ; nouveaux tests E2E de l'interface.
+- Liens du dépôt mis à jour : `tamalou25/packetracer-windows` → `tamalou25/ServerLab` (#301).
+
 ## [2.10.0] — 2026-10-27
 
 Pare-feu pfSense CE 2.7 simulé : règles, NAT, services, interface web, console. Format `.slab` 28 (migration 27 → 28,
@@ -558,17 +585,18 @@ Première release publique (installeur Windows NSIS et AppImage Linux).
 - Thèmes sombre et clair, interface compacte.
 - Mises à jour automatiques (electron-updater) et workflow de release sur tag.
 
+[2.11.0]: https://github.com/tamalou25/ServerLab/compare/v2.10.0...v2.11.0
 [2.8.0]: https://github.com/tamalou25/ServerLab/compare/v2.7.0...v2.8.0
-[2.7.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.2...v2.7.0
-[2.6.2]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.1...v2.6.2
-[2.6.1]: https://github.com/tamalou25/packetracer-windows/compare/v2.6.0...v2.6.1
-[2.6.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.5.0...v2.6.0
-[2.5.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.4.0...v2.5.0
-[2.4.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.3.0...v2.4.0
-[2.3.0]: https://github.com/tamalou25/packetracer-windows/compare/cbfd1a9...v2.3.0
-[2.2.0]: https://github.com/tamalou25/packetracer-windows/compare/0111fcc...cbfd1a9
-[2.1.0]: https://github.com/tamalou25/packetracer-windows/compare/v2.0.1...0111fcc
-[2.0.1]: https://github.com/tamalou25/packetracer-windows/compare/v2.0.0...v2.0.1
-[2.0.0]: https://github.com/tamalou25/packetracer-windows/compare/dc9b76c...v2.0.0
-[1.0.0]: https://github.com/tamalou25/packetracer-windows/compare/v0.1.1...dc9b76c
-[0.1.1]: https://github.com/tamalou25/packetracer-windows/releases/tag/v0.1.1
+[2.7.0]: https://github.com/tamalou25/ServerLab/compare/v2.6.2...v2.7.0
+[2.6.2]: https://github.com/tamalou25/ServerLab/compare/v2.6.1...v2.6.2
+[2.6.1]: https://github.com/tamalou25/ServerLab/compare/v2.6.0...v2.6.1
+[2.6.0]: https://github.com/tamalou25/ServerLab/compare/v2.5.0...v2.6.0
+[2.5.0]: https://github.com/tamalou25/ServerLab/compare/v2.4.0...v2.5.0
+[2.4.0]: https://github.com/tamalou25/ServerLab/compare/v2.3.0...v2.4.0
+[2.3.0]: https://github.com/tamalou25/ServerLab/compare/cbfd1a9...v2.3.0
+[2.2.0]: https://github.com/tamalou25/ServerLab/compare/0111fcc...cbfd1a9
+[2.1.0]: https://github.com/tamalou25/ServerLab/compare/v2.0.1...0111fcc
+[2.0.1]: https://github.com/tamalou25/ServerLab/compare/v2.0.0...v2.0.1
+[2.0.0]: https://github.com/tamalou25/ServerLab/compare/dc9b76c...v2.0.0
+[1.0.0]: https://github.com/tamalou25/ServerLab/compare/v0.1.1...dc9b76c
+[0.1.1]: https://github.com/tamalou25/ServerLab/releases/tag/v0.1.1

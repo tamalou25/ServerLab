@@ -78,6 +78,6 @@ linux:
 publish:
   provider: github
   owner: tamalou25
-  repo: packetracer-windows
+  repo: ServerLab
   # Brouillon créé par release.yml puis publié une fois les deux installeurs envoyés
   releaseType: draft

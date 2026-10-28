@@ -170,7 +170,7 @@
       "title": "Bouton « Signaler un bug »",
       "milestone": "v1.1",
       "labels": ["feature", "ui", "security"],
-      "body": "## Objectif\n\nFaciliter les retours avec un rapport prérempli.\n\n## Critères d'acceptation\n\n- [ ] Aide > Signaler un bug ouvre le navigateur sur une issue GitHub préremplie : version, OS, version d'Electron, étapes à compléter\n- [ ] Ouverture par le process principal avec liste blanche (uniquement `https://github.com/tamalou25/packetracer-windows/issues/new`)\n- [ ] Aucune donnée du lab ni donnée personnelle envoyée automatiquement\n- [ ] Test E2E (ouverture externe simulée)\n- [ ] Tests Vitest de la logique du moteur, CI verte\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
+      "body": "## Objectif\n\nFaciliter les retours avec un rapport prérempli.\n\n## Critères d'acceptation\n\n- [ ] Aide > Signaler un bug ouvre le navigateur sur une issue GitHub préremplie : version, OS, version d'Electron, étapes à compléter\n- [ ] Ouverture par le process principal avec liste blanche (uniquement `https://github.com/tamalou25/ServerLab/issues/new`)\n- [ ] Aucune donnée du lab ni donnée personnelle envoyée automatiquement\n- [ ] Test E2E (ouverture externe simulée)\n- [ ] Tests Vitest de la logique du moteur, CI verte\n\n---\n_Issue créée par la synchronisation de la roadmap (`.github/roadmap/roadmap.json`)._"
     },
     {
       "title": "Performance : topologie de 100 équipements fluide",
