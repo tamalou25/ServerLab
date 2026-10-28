@@ -311,7 +311,7 @@ export const en: Record<MessageKey, string> = {
   'sim.title': 'Simulation',
   'sim.collapse': 'Collapse the Simulation panel',
   'sim.expand': 'Expand the Simulation panel',
-  'sim.speed': 'Playback speed',
+  'sim.speed': 'Speed',
   'sim.col.step': 'Step',
   'sim.col.protocol': 'Protocol',
   'sim.col.layer': 'Layer',

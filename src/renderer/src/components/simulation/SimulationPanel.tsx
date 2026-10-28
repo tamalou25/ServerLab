@@ -98,7 +98,7 @@ export function SimulationPanel() {
             <StepForward size={14} />
           </button>
         </Tooltip>
-        <label className="ml-2 flex items-center gap-1.5 text-fg-muted">
+        <label className="ml-2 flex shrink-0 items-center gap-1.5 whitespace-nowrap text-fg-muted">
           {t('sim.speed')}
           <select
             value={speed}

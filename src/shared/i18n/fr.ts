@@ -316,7 +316,7 @@ export const fr = {
   'sim.title': 'Simulation',
   'sim.collapse': 'Réduire le panneau Simulation',
   'sim.expand': 'Agrandir le panneau Simulation',
-  'sim.speed': 'Vitesse de lecture',
+  'sim.speed': 'Vitesse',
   'sim.col.step': 'Pas',
   'sim.col.protocol': 'Protocole',
   'sim.col.layer': 'Couche',
