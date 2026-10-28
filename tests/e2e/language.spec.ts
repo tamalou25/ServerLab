@@ -12,7 +12,7 @@ test('Affichage › Langue : interface et menus en anglais, choix conservé au r
     await expect(first.page.getByTestId('palette')).toContainText('Équipements')
     await clickMenu(first.app, ['Affichage', 'Langue', 'English'])
     await expect(first.page.getByTestId('palette')).toContainText('Devices')
-    await expect(first.page.getByTestId('status-bar')).toContainText('Realtime')
+    await expect(first.page.getByTestId('main-toolbar')).toContainText('Realtime')
     expect(await topMenus(first.app)).toEqual(['File', 'Edit', 'View', 'Simulation', 'Help'])
     expect(first.consoleErrors).toEqual([])
   } finally {
