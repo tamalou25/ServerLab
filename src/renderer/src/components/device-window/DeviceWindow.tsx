@@ -1,16 +1,18 @@
 /**
  * Fenêtre flottante d'un équipement (double-clic) avec onglets Config / Bureau / Console.
  * Déplaçable, redimensionnable (coin inférieur droit) et agrandissable (double-clic sur le titre).
+ * Barre de titre uniforme : icône, nom, type, IP principale, accès rapides Console / Bureau, fermer.
+ * Le Bureau simulé garde son thème clair propre (DesktopShell, data-theme="light").
  */
 import { useRef, type PointerEvent } from 'react'
 import { Maximize2, Minimize2, Monitor, Settings, SquareTerminal, X, type LucideIcon } from 'lucide-react'
 import { useLabStore } from '../../store/lab'
 import { useUiStore, type DeviceTab, type DeviceWindowState } from '../../store/ui'
-import { DEVICE_COLORS, deviceIcon, deviceLabel, iosModel, isLinux } from '../../lib/devices'
+import { deviceIcon, deviceLabel, iosModel, isLinux } from '../../lib/devices'
 import { ConfigTab } from './ConfigTab'
 import { ConsoleTab, IosConsoleTab, PfsenseConsoleTab } from '../console/ConsoleTab'
 import { DesktopShell } from '../desktop/DesktopShell'
-import { isHostDevice } from '@engine/index'
+import { canvasStatus, isHostDevice } from '@engine/index'
 import { t } from '../../lib/i18n'
 
 const TABS: { id: DeviceTab; label: string; icon: LucideIcon }[] = [
@@ -39,6 +41,8 @@ const TABS: { id: DeviceTab; label: string; icon: LucideIcon }[] = [
 
 export function DeviceWindow({ win }: { win: DeviceWindowState }) {
   const device = useLabStore((s) => s.lab.devices[win.deviceId])
+  // Adresse principale (même résumé que le nœud du canvas)
+  const ip = useLabStore((s) => canvasStatus(s.lab).devices[win.deviceId]?.ip)
   const { closeWindow, focusWindow, moveWindow, resizeWindow, toggleMaximizeWindow, setWindowTab } =
     useUiStore.getState()
   const drag = useRef<{ dx: number; dy: number } | null>(null)
@@ -109,16 +113,39 @@ export function DeviceWindow({ win }: { win: DeviceWindowState }) {
           if (!(e.target as HTMLElement).closest('button')) toggleMaximizeWindow(win.deviceId)
         }}
       >
-        <span className={`flex h-6 w-6 items-center justify-center rounded-md ${DEVICE_COLORS[device.kind]}`}>
-          <Icon size={14} />
+        <span className="flex h-6 w-6 items-center justify-center text-fg-muted">
+          <Icon size={22} />
         </span>
         <span className="text-ui font-semibold">{device.name}</span>
-        <span className="text-xs text-fg-muted">— {deviceLabel(device)}</span>
+        <span className="text-dense text-fg-muted">{deviceLabel(device)}</span>
+        <span className="font-mono text-meta text-fg-muted" data-testid="device-window-ip">
+          {ip ? ip.text : ''}
+        </span>
+        <div className="ml-auto flex items-center gap-1" role="group" aria-label={t('win.quickActions')}>
+          {tabs
+            .filter((x) => x.id === 'console' || x.id === 'desktop')
+            .map(({ id, label, icon: QuickIcon }) => (
+              <button
+                key={id}
+                type="button"
+                className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-meta ${
+                  tab === id
+                    ? 'bg-accent-soft text-accent-text'
+                    : 'text-fg-muted hover:bg-surface-2 hover:text-fg'
+                }`}
+                onClick={() => setWindowTab(win.deviceId, id)}
+                data-testid={`win-quick-${id}`}
+              >
+                <QuickIcon size={12} aria-hidden="true" /> {label}
+              </button>
+            ))}
+        </div>
         <button
           type="button"
-          className="ml-auto rounded p-1 text-fg-muted hover:bg-surface-2 hover:text-fg"
+          className="rounded p-1 text-fg-muted hover:bg-surface-2 hover:text-fg"
           onClick={() => toggleMaximizeWindow(win.deviceId)}
           title={win.maximized ? t('win.restore') : t('win.maximize')}
+          aria-label={win.maximized ? t('win.restore') : t('win.maximize')}
           data-testid="maximize-device-window"
         >
           {win.maximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
@@ -128,12 +155,13 @@ export function DeviceWindow({ win }: { win: DeviceWindowState }) {
           className="rounded p-1 text-fg-muted hover:bg-danger hover:text-on-danger"
           onClick={() => closeWindow(win.deviceId)}
           title={t('win.fermer')}
+          aria-label={t('win.fermer')}
           data-testid="close-device-window"
         >
           <X size={16} />
         </button>
       </div>
-      <div className="flex border-b border-line bg-panel px-2" role="tablist">
+      <div className="flex border-b border-line bg-panel px-2" role="tablist" aria-label={device.name}>
         {tabs.map(({ id, label, icon: TabIcon }) => (
           <button
             key={id}

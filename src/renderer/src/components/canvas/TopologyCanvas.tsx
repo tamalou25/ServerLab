@@ -26,6 +26,7 @@ import { DND_DEVICE_MIME } from '../Palette'
 import { CableEdge, type CableFlowEdge } from './CableEdge'
 import { CablePreview } from './CablePreview'
 import { CanvasToolbar } from './CanvasToolbar'
+import { NodeContextMenu, type NodeMenuState } from './NodeContextMenu'
 import { PacketAnimation } from './PacketAnimation'
 import { ProtocolLegend } from './ProtocolLegend'
 import { PduList } from './PduList'
@@ -63,6 +64,8 @@ export function TopologyCanvas() {
   const showMinimap = useUiStore((s) => s.showMinimap)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [picker, setPicker] = useState<PortPickerState | null>(null)
+  const [nodeMenu, setNodeMenu] = useState<NodeMenuState | null>(null)
+  const closeNodeMenu = useCallback(() => setNodeMenu(null), [])
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null)
   // Dimensions mesurées par React Flow : à réinjecter dans les nœuds dérivés,
   // sinon chaque nœud recréé est masqué le temps d'être remesuré.
@@ -288,6 +291,16 @@ export function TopologyCanvas() {
       }}
       onDrop={onDrop}
       onMouseMove={onMouseMove}
+      onKeyDown={(e) => {
+        // Touche Menu ou Maj+F10 sur un nœud qui a le focus : menu contextuel au clavier
+        if (e.key !== 'ContextMenu' && !(e.shiftKey && e.key === 'F10')) return
+        const node = (e.target as HTMLElement).closest<HTMLElement>('.react-flow__node')
+        const id = node?.dataset['id']
+        if (!node || !id) return
+        e.preventDefault()
+        const r = node.getBoundingClientRect()
+        setNodeMenu({ deviceId: id, x: r.right, y: r.top })
+      }}
     >
       <ReactFlow<DeviceFlowNode, CableFlowEdge>
         nodes={nodes}
@@ -306,6 +319,10 @@ export function TopologyCanvas() {
           )
         }
         onNodeClick={onNodeClick}
+        onNodeContextMenu={(e, node) => {
+          e.preventDefault()
+          setNodeMenu({ deviceId: node.id, x: e.clientX, y: e.clientY })
+        }}
         onNodeDoubleClick={(_e, node) => useUiStore.getState().openWindow(node.id)}
         onEdgeClick={onEdgeClick}
         onPaneClick={onPaneClick}
@@ -346,6 +363,7 @@ export function TopologyCanvas() {
         <ProtocolLegend />
       </ReactFlow>
       <CanvasToolbar />
+      {nodeMenu && <NodeContextMenu menu={nodeMenu} onClose={closeNodeMenu} />}
       <PduList />
       {picker && <PortPicker picker={picker} onPick={onPickPort} onClose={() => setPicker(null)} />}
       {isEmpty && (

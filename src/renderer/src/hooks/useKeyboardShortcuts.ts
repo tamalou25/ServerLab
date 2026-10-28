@@ -35,6 +35,8 @@ export function useKeyboardShortcuts(): void {
       // Fenêtre d'équipement (Bureau, console, configuration) : ses touches ne touchent pas au
       // canvas derrière elle (Ctrl+Z, Suppr, Ctrl+A… : constat U-01). Le menu natif reste disponible.
       if (inDeviceWindow(e.target)) return
+      // Menu ouvert (menu contextuel d'un nœud) : ses touches lui appartiennent
+      if (e.target instanceof HTMLElement && e.target.closest('[role="menu"]')) return
       const tool = TOOL_KEYS[key]
       if (plain && tool) {
         e.preventDefault()
