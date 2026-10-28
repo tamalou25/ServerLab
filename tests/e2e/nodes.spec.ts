@@ -36,3 +36,24 @@ test('Nœuds : IP principale, LED d’état (opérationnel, à vérifier, non ra
     await close()
   }
 })
+
+test('Nœuds : forme du voyant selon l’état (double indice) et bandeau IOS des équipements Cisco', async () => {
+  const { close, page, consoleErrors } = await launchApp()
+  try {
+    await placeDevice(page, 'server', 240, 160)
+    await placeDevice(page, 'c2960', 520, 290)
+    // Aucun câble : état inactif → anneau, nom accessible = libellé de l'état
+    const led = page.getByTestId('device-SRV1').getByTestId('device-led')
+    await expect(led).toHaveAttribute('data-shape', 'ring')
+    await expect(led).toHaveAccessibleName('Aucun câble raccordé')
+    await expect(page.getByTestId('device-SRV1').getByTestId('device-ios')).toHaveCount(0)
+    const cisco = page
+      .locator('[data-testid^="device-"][data-health]')
+      .filter({ has: page.getByTestId('device-ios') })
+    await expect(cisco).toHaveCount(1)
+    await expect(cisco.getByTestId('device-ios')).toHaveText('IOS')
+    expect(consoleErrors).toEqual([])
+  } finally {
+    await close()
+  }
+})

@@ -316,6 +316,8 @@ export const fr = {
   'toolbar.hint.delete': 'Cliquez sur un équipement ou un câble pour le supprimer',
   'toolbar.hint.cancel': '{hint} · Échap pour annuler',
   'node.virtual': 'Équipement virtuel (Hyper-V)',
+  'node.ios': 'IOS',
+  'node.iosHint': 'Équipement Cisco IOS (CLI simulée)',
   'pdu.title': 'PDU simples',
   'pdu.clear': 'Effacer',
   'pdu.success': 'Réussi',

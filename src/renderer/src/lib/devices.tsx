@@ -1,17 +1,17 @@
 /**
- * Apparence des équipements (icônes lucide, couleurs) — purement visuel.
+ * Apparence des équipements (icônes maison, couleurs) — purement visuel.
  */
 import {
-  BrickWall,
-  Cloud,
-  Monitor,
-  Network,
-  Router,
-  Server,
-  ServerCog,
-  SquareTerminal,
-  type LucideIcon
-} from 'lucide-react'
+  ClientGlyph,
+  CloudGlyph,
+  FirewallGlyph,
+  LinuxClientGlyph,
+  LinuxServerGlyph,
+  RouterGlyph,
+  ServerGlyph,
+  SwitchGlyph,
+  type DeviceGlyph
+} from '../assets/icons/devices'
 import {
   DEVICE_KINDS,
   IOS_MODEL_INFO,
@@ -71,23 +71,27 @@ export const paletteDescription = (kind: PaletteKind): string => t(`device.${kin
 export const paletteModel = (kind: PaletteKind): string => t(`device.${kind}.model`)
 export const deviceLabel = (device: Device): string => paletteLabel(paletteKind(device))
 
-export const DEVICE_ICONS: Record<PaletteKind, LucideIcon> = {
-  server: Server,
-  client: Monitor,
-  linux: SquareTerminal,
-  'linux-server': ServerCog,
-  switch: Network,
-  router: Router,
-  cloud: Cloud,
-  firewall: BrickWall,
-  c1921: Router,
-  c2811: Router,
-  c2960: Network,
-  c9200: Network
+/**
+ * Correspondance type → icône : la forme porte la catégorie (serveur, poste, switch, routeur…) ;
+ * un modèle Cisco garde la forme de sa catégorie, le bandeau « IOS » le distingue sur le canvas.
+ */
+export const DEVICE_ICONS: Record<PaletteKind, DeviceGlyph> = {
+  server: ServerGlyph,
+  client: ClientGlyph,
+  linux: LinuxClientGlyph,
+  'linux-server': LinuxServerGlyph,
+  switch: SwitchGlyph,
+  router: RouterGlyph,
+  cloud: CloudGlyph,
+  firewall: FirewallGlyph,
+  c1921: RouterGlyph,
+  c2811: RouterGlyph,
+  c2960: SwitchGlyph,
+  c9200: SwitchGlyph
 }
 
 /** Icône d'un équipement (poste Linux distingué). */
-export const deviceIcon = (device: Device): LucideIcon => DEVICE_ICONS[paletteKind(device)]
+export const deviceIcon = (device: Device): DeviceGlyph => DEVICE_ICONS[paletteKind(device)]
 
 /** Liseré de catégorie des nœuds du canvas. */
 export const KIND_STRIPE: Record<PaletteKind, string> = {
