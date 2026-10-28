@@ -24,3 +24,12 @@ export function pickCablePort(deviceId: string, ifaceId: string): void {
   const linkId = runCommand(command('topology.connect', start, end))
   if (linkId) ui.select({ link: linkId, devices: [] })
 }
+
+/**
+ * Débit négocié d'un câble, déduit des noms de ports (affichage seulement) : un port FastEthernet
+ * (Fa…) limite le lien à 100 Mbit/s, les autres ports (Gigabit, cartes des serveurs et postes) à 1 Gbit/s.
+ */
+export function linkSpeedMbps(portA: string, portB: string): number {
+  const speed = (port: string) => (/^fa/i.test(port) ? 100 : 1000)
+  return Math.min(speed(portA), speed(portB))
+}

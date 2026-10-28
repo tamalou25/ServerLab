@@ -67,6 +67,20 @@
   --color-danger-text: var(--sl-danger-text);
   --color-info-text: var(--sl-info-text);
 
+  /* Protocoles de la simulation (enveloppes animées, pastilles, légende) */
+  --color-proto-arp: var(--sl-proto-arp);
+  --color-proto-icmp: var(--sl-proto-icmp);
+  --color-proto-dhcp: var(--sl-proto-dhcp);
+  --color-proto-dns: var(--sl-proto-dns);
+  --color-proto-ldap: var(--sl-proto-ldap);
+  --color-proto-kerberos: var(--sl-proto-kerberos);
+  --color-proto-smb: var(--sl-proto-smb);
+  --color-proto-http: var(--sl-proto-http);
+  --color-proto-rdp: var(--sl-proto-rdp);
+  --color-proto-vpn: var(--sl-proto-vpn);
+  --color-proto-radius: var(--sl-proto-radius);
+  --color-proto-dtp: var(--sl-proto-dtp);
+
   /* Catégories d'équipements */
   --color-kind-server: var(--sl-kind-server);
   --color-kind-client: var(--sl-kind-client);
@@ -112,6 +126,18 @@
   --sl-on-danger: #111827;
   --sl-on-kind: #ffffff;
   --sl-icon-accent: #3b82f6;
+  --sl-proto-arp: #eab308;
+  --sl-proto-icmp: #d946ef;
+  --sl-proto-dhcp: #10b981;
+  --sl-proto-dns: #0ea5e9;
+  --sl-proto-ldap: #6366f1;
+  --sl-proto-kerberos: #f43f5e;
+  --sl-proto-smb: #14b8a6;
+  --sl-proto-http: #f97316;
+  --sl-proto-rdp: #8b5cf6;
+  --sl-proto-vpn: #65a30d;
+  --sl-proto-radius: #0e7490;
+  --sl-proto-dtp: #64748b;
   /* États : LED, pastilles et traits (jamais seuls : forme, icône ou texte en second indice) */
   --sl-ok: #22c55e;
   --sl-ok-soft: rgb(34 197 94 / 0.14);
@@ -164,6 +190,18 @@
   --sl-on-danger: #111827;
   --sl-on-kind: #ffffff;
   --sl-icon-accent: #2563eb;
+  --sl-proto-arp: #eab308;
+  --sl-proto-icmp: #d946ef;
+  --sl-proto-dhcp: #10b981;
+  --sl-proto-dns: #0ea5e9;
+  --sl-proto-ldap: #6366f1;
+  --sl-proto-kerberos: #f43f5e;
+  --sl-proto-smb: #14b8a6;
+  --sl-proto-http: #f97316;
+  --sl-proto-rdp: #8b5cf6;
+  --sl-proto-vpn: #65a30d;
+  --sl-proto-radius: #0e7490;
+  --sl-proto-dtp: #64748b;
   --sl-ok: #16a34a; /* #22c55e < 3:1 sur blanc (WCAG 1.4.11) */
   --sl-ok-soft: rgb(34 197 94 / 0.12);
   --sl-warn: #d97706; /* #f59e0b < 3:1 sur blanc */
