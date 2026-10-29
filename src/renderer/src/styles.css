@@ -115,7 +115,7 @@
   --sl-line-strong: #3a4252;
   --sl-fg: #e5e9f0;
   --sl-fg-muted: #a3acba;
-  --sl-fg-subtle: #8590a0;
+  --sl-fg-subtle: #96a1b1;
   /* Accent unique : fond des actions (texte blanc AA), sélection ; --sl-focus pour l'anneau de focus */
   --sl-accent: #2563eb;
   --sl-accent-hover: #1d4ed8;
@@ -124,7 +124,7 @@
   --sl-focus: #3b82f6;
   --sl-on-accent: #ffffff;
   --sl-on-danger: #111827;
-  --sl-on-kind: #ffffff;
+  --sl-on-kind: #0b0e14;
   --sl-icon-accent: #3b82f6;
   --sl-proto-arp: #eab308;
   --sl-proto-icmp: #d946ef;
@@ -216,11 +216,11 @@
   --sl-danger-text: #b91c1c;
   --sl-info-text: #1d4ed8;
   --sl-kind-server: #7458e0;
-  --sl-kind-client: #2f7fd6;
-  --sl-kind-switch: #1c9a69;
-  --sl-kind-router: #d57d1f;
-  --sl-kind-cloud: #6b7a90;
-  --sl-kind-firewall: #cf4a4a;
+  --sl-kind-client: #2a76c8;
+  --sl-kind-switch: #13805a;
+  --sl-kind-router: #b0600c;
+  --sl-kind-cloud: #627186;
+  --sl-kind-firewall: #c24343;
   --sl-shadow-xs: 0 1px 1px rgb(16 24 40 / 0.04);
   --sl-shadow-sm: 0 1px 2px rgb(16 24 40 / 0.06);
   --sl-shadow-md: 0 4px 12px rgb(16 24 40 / 0.08);
