@@ -51,7 +51,7 @@ export interface PduResult {
   success: boolean
 }
 
-export type RightTab = 'lab' | 'properties' | 'simulation' | 'audit'
+export type RightTab = 'lab' | 'properties' | 'simulation' | 'audit' | 'troubleshoot'
 
 /** Boîte de dialogue modale applicative. */
 export interface ModalState {
