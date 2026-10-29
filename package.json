@@ -1,12 +1,12 @@
 {
   "name": "serverlab",
   "productName": "ServerLab",
-  "version": "2.10.0",
+  "version": "2.11.0",
   "private": true,
   "description": "Simulateur d'administration de serveurs (AD DS, DNS, DHCP, GPO, partages) pour réviser l'E6 du BTS SIO SISR",
   "author": "tamalou25",
   "license": "UNLICENSED",
-  "homepage": "https://github.com/tamalou25/packetracer-windows",
+  "homepage": "https://github.com/tamalou25/ServerLab",
   "desktopName": "serverlab.desktop",
   "main": "./out/main/index.js",
   "scripts": {

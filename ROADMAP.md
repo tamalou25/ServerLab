@@ -5,19 +5,19 @@ chaque fonctionnalité (critères à cocher) est dans son issue GitHub, rattach�
 version. Source unique : [`.github/roadmap/roadmap.json`](.github/roadmap/roadmap.json), synchronisé
 avec GitHub par le workflow **Roadmap sync** (ne crée que ce qui manque).
 
-| Version | Thème                                                         | Milestone                                                                      |
-| ------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| v1.1    | Consolider (prérequis d'architecture, ergonomie, performance) | [v1.1](https://github.com/tamalou25/packetracer-windows/milestone/1)           |
-| v2.1    | Nouveaux rôles serveur                                        | [v2.1](https://github.com/tamalou25/packetracer-windows/milestone/2)           |
-| v2.2    | Réseau avancé                                                 | [v2.2](https://github.com/tamalou25/packetracer-windows/milestone/3)           |
-| v2.3    | Cybersécurité défensive                                       | [v2.3](https://github.com/tamalou25/packetracer-windows/milestone/4)           |
-| v2.4    | Pédagogie et communauté                                       | [v2.4](https://github.com/tamalou25/packetracer-windows/milestone/5)           |
-| v2.5    | Équipements Cisco IOS                                         | [v2.5](https://github.com/tamalou25/packetracer-windows/milestone/6)           |
-| v2.6    | Cybersécurité défensive                                       | [v2.6](https://github.com/tamalou25/packetracer-windows/milestones?q=v2.6)     |
-| v2.6.1  | Cybersécurité, volet attaque                                  | [v2.6.1](https://github.com/tamalou25/packetracer-windows/milestones?q=v2.6.1) |
-| v2.8    | Services à état et mode panne (dépannage)                     | [v2.8](https://github.com/tamalou25/packetracer-windows/milestones?q=v2.8)     |
-| v2.9    | Serveurs Linux (Debian 12 / Ubuntu Server 24.04)              | [v2.9](https://github.com/tamalou25/packetracer-windows/milestones?q=v2.9)     |
-| v2.10   | Pare-feu pfSense                                              | [v2.10](https://github.com/tamalou25/packetracer-windows/milestones?q=v2.10)   |
+| Version | Thème                                                         | Milestone                                                            |
+| ------- | ------------------------------------------------------------- | -------------------------------------------------------------------- |
+| v1.1    | Consolider (prérequis d'architecture, ergonomie, performance) | [v1.1](https://github.com/tamalou25/ServerLab/milestone/1)           |
+| v2.1    | Nouveaux rôles serveur                                        | [v2.1](https://github.com/tamalou25/ServerLab/milestone/2)           |
+| v2.2    | Réseau avancé                                                 | [v2.2](https://github.com/tamalou25/ServerLab/milestone/3)           |
+| v2.3    | Cybersécurité défensive                                       | [v2.3](https://github.com/tamalou25/ServerLab/milestone/4)           |
+| v2.4    | Pédagogie et communauté                                       | [v2.4](https://github.com/tamalou25/ServerLab/milestone/5)           |
+| v2.5    | Équipements Cisco IOS                                         | [v2.5](https://github.com/tamalou25/ServerLab/milestone/6)           |
+| v2.6    | Cybersécurité défensive                                       | [v2.6](https://github.com/tamalou25/ServerLab/milestones?q=v2.6)     |
+| v2.6.1  | Cybersécurité, volet attaque                                  | [v2.6.1](https://github.com/tamalou25/ServerLab/milestones?q=v2.6.1) |
+| v2.8    | Services à état et mode panne (dépannage)                     | [v2.8](https://github.com/tamalou25/ServerLab/milestones?q=v2.8)     |
+| v2.9    | Serveurs Linux (Debian 12 / Ubuntu Server 24.04)              | [v2.9](https://github.com/tamalou25/ServerLab/milestones?q=v2.9)     |
+| v2.10   | Pare-feu pfSense                                              | [v2.10](https://github.com/tamalou25/ServerLab/milestones?q=v2.10)   |
 
 > Le milestone v1.1 est sorti sous le numéro de version **2.0.0** (choix de Gary), suivi de la 2.0.1
 > (stabilisation). Les milestones suivants ajoutent des fonctionnalités sans casser les fichiers

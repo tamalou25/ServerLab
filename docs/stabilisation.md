@@ -218,7 +218,7 @@ Méthode : banc d'essai (scripts jetables, hors dépôt) exécutant des dizaines
 Chaîne vérifiée et figée par `tests/shared/release-config.test.ts` : tag `vX.Y.Z` seul déclencheur
 (`release.yml`), version de l'application = tag, installeurs versionnés + `latest.yml` /
 `latest-linux.yml` envoyés par electron-builder, release publiée « latest », dépôt de publication =
-`tamalou25/packetracer-windows` (electron-updater, aucun jeton embarqué).
+`tamalou25/ServerLab` (electron-updater, aucun jeton embarqué).
 
 Blocages (aucune correction de code possible) :
 
