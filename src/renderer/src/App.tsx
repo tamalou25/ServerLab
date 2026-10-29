@@ -15,6 +15,7 @@ import { TutorialCoach } from './components/tutorial/TutorialCoach'
 import { MainToolbar } from './components/MainToolbar'
 import { Palette } from './components/Palette'
 import { RightPanel } from './components/RightPanel'
+import { SimulationPanel } from './components/simulation/SimulationPanel'
 import { StatusBar } from './components/StatusBar'
 import { useDocumentLifecycle } from './hooks/useDocumentLifecycle'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
@@ -162,6 +163,7 @@ export function App() {
             </main>
             {showProperties && <RightPanel />}
           </div>
+          <SimulationPanel />
           <StatusBar />
         </div>
         <HomeScreen />

@@ -20,6 +20,10 @@ export interface PlayedEvent extends PduEvent {
   index: number
 }
 
+/** Vitesses proposées pour la lecture automatique. */
+export const SIM_SPEEDS = [0.5, 1, 2, 4] as const
+export type SimSpeed = (typeof SIM_SPEEDS)[number]
+
 interface SimState {
   queue: SimOperation[]
   /** Index du prochain pas à jouer dans l'opération courante. */
@@ -28,6 +32,8 @@ interface SimState {
   current: PduEvent[]
   played: PlayedEvent[]
   playing: boolean
+  /** Vitesse de la lecture automatique (multiplicateur, préférence d'interface). */
+  speed: SimSpeed
   filters: Record<Protocol, boolean>
   selectedKey: string | null
   /** Incrémenté à chaque pas (relance l'animation). */
@@ -36,6 +42,7 @@ interface SimState {
   enqueue: (op: Omit<SimOperation, 'id'>) => void
   step: () => void
   setPlaying: (playing: boolean) => void
+  setSpeed: (speed: SimSpeed) => void
   /** Termine instantanément toutes les opérations en attente et vide l'affichage. */
   reset: () => void
   /** Termine instantanément les opérations en attente (passage en Temps réel). */
@@ -62,6 +69,7 @@ export const useSimStore = create<SimState>()((set, get) => ({
   current: [],
   played: [],
   playing: false,
+  speed: 1,
   filters: Object.fromEntries(PROTOCOLS.map((p) => [p, true])) as Record<Protocol, boolean>,
   selectedKey: null,
   tick: 0,
@@ -103,6 +111,7 @@ export const useSimStore = create<SimState>()((set, get) => ({
   },
 
   setPlaying: (playing) => set({ playing }),
+  setSpeed: (speed) => set({ speed }),
 
   reset: () => {
     get().flush()

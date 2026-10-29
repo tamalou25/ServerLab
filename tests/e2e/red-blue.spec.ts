@@ -11,7 +11,6 @@ test('Mode Red/Blue : partie Red jouable du début à l’écran de fin', async 
     await openLab(app, page, redBlueLab())
     // Le panneau Scénarios fait partie du mode Simulation
     await page.getByTestId('mode-simulation').click()
-    await page.getByTestId('right-tab-simulation').click()
     await page.getByTestId('game-open').click()
     await expect(page.getByTestId('game-setup')).toBeVisible()
 
@@ -48,7 +47,6 @@ test('Mode Red/Blue : partie Blue (durcissement, analyse des journaux)', async (
     await openLab(app, page, redBlueLab())
     // Le panneau Scénarios fait partie du mode Simulation
     await page.getByTestId('mode-simulation').click()
-    await page.getByTestId('right-tab-simulation').click()
     await page.getByTestId('game-open').click()
     await page.getByTestId('game-play-blue').click()
     await expect(page.getByTestId('game-side')).toHaveText('Vous jouez Blue')

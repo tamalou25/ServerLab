@@ -9,14 +9,15 @@ const PLAY_INTERVAL_MS = 900
 
 export function useSimulationPlayback(): void {
   const playing = useSimStore((s) => s.playing)
+  const speed = useSimStore((s) => s.speed)
   const mode = useUiStore((s) => s.mode)
 
-  // Lecture automatique : un pas toutes les 900 ms
+  // Lecture automatique : un pas toutes les 900 ms à la vitesse 1×
   useEffect(() => {
     if (!playing) return
-    const timer = setInterval(() => useSimStore.getState().step(), PLAY_INTERVAL_MS)
+    const timer = setInterval(() => useSimStore.getState().step(), PLAY_INTERVAL_MS / speed)
     return () => clearInterval(timer)
-  }, [playing])
+  }, [playing, speed])
 
   // En repassant en Temps réel, les opérations en attente se terminent immédiatement
   useEffect(() => {
