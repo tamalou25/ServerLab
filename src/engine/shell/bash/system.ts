@@ -531,12 +531,14 @@ const ssTool: ToolDef = {
     const addrW = Math.max(13, ...rows.map((r) => r.address.length)) + 1
     const portW = Math.max(4, ...rows.map((r) => r.port.length))
     const peerW = Math.max(12, ...rows.map((r) => r.peer.length)) + 1
+    // iproute2 : la colonne Netid n'apparaît que si plusieurs types de socket sont affichés
+    const netid = both || (wantTcp && wantUdp)
     ctx.write(
-      `Netid State  Recv-Q Send-Q ${'Local Address'.padStart(addrW)}:${'Port'.padEnd(portW)} ${'Peer Address'.padStart(peerW)}:PortProcess`
+      `${netid ? 'Netid ' : ''}State  Recv-Q Send-Q ${'Local Address'.padStart(addrW)}:${'Port'.padEnd(portW)} ${'Peer Address'.padStart(peerW)}:Port Process`
     )
     for (const r of rows)
       ctx.write(
-        `${r.netid.padEnd(5)} ${r.state.padEnd(6)} ${'0'.padEnd(6)} ${r.sendq.padEnd(6)} ${r.address.padStart(addrW)}:${r.port.padEnd(portW)} ${r.peer.padStart(peerW)}:${'*'.padEnd(4)} ${r.process}`.trimEnd()
+        `${netid ? `${r.netid.padEnd(5)} ` : ''}${r.state.padEnd(6)} ${'0'.padEnd(6)} ${r.sendq.padEnd(6)} ${r.address.padStart(addrW)}:${r.port.padEnd(portW)} ${r.peer.padStart(peerW)}:${'*'.padEnd(4)} ${r.process}`.trimEnd()
       )
     if (!listening)
       ctx.write(
@@ -626,22 +628,21 @@ const freeTool: ToolDef = {
 
 const unameTool: ToolDef = {
   name: 'uname',
-  synopsis: 'Affiche le nom du système (uname -a) ; version du noyau non modélisée.',
+  synopsis: 'Affiche le nom du système (-s -n -m -o) ; version du noyau (-a, -r, -v) non modélisée.',
   run(ctx, args) {
     const flags = args.join('').replace(/-/g, '')
-    const all = flags.includes('a')
-    const picks = new Set(all ? ['s', 'n', 'm', 'o'] : flags === '' ? ['s'] : flags.split(''))
-    const unsupported = [...picks].find((c) => !'snmorv'.includes(c))
+    // -a, -r et -v exigent la release et la version du noyau, non modélisées : on refuse
+    // proprement, sans sortie partielle (audit v2.11.1, F-06)
+    const unsupported = [...flags].find((c) => !'snmo'.includes(c))
     if (unsupported)
       throw new CommandFailure(unsimulatedOptionMessage('uname', `-${unsupported}`), 'NotSupported')
+    const picks = new Set(flags === '' ? ['s'] : flags.split(''))
     const out: string[] = []
     if (picks.has('s')) out.push('Linux')
     if (picks.has('n')) out.push(ctx.host.name)
     if (picks.has('m')) out.push('x86_64')
     if (picks.has('o')) out.push('GNU/Linux')
     if (out.length > 0) ctx.write(out.join(' '))
-    if (picks.has('r') || picks.has('v') || all)
-      ctx.write('uname: la version exacte du noyau (-r, -v) n’est pas modélisée par ServerLab.', 'warning')
   }
 }
 

@@ -1,3 +1,0 @@
-# Source: https://manpages.debian.org/bookworm/coreutils/uname.1.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
-# Commande: uname -a
-Linux LSRV1 x86_64 GNU/Linux
