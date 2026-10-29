@@ -306,7 +306,13 @@ une sortie de référence sourcée dans `docs/captures/<console>/<commande>.txt`
 
 Points sans source publique exploitable, en attente d'une capture ou d'une documentation :
 
-- B4 (`whoami /groups`) et B5 (en-tête `ipconfig`) : capture WS2022 FR attendue (Gary).
+- B4 / F-04 (`whoami /groups`) : sortie à 4 colonnes (Nom du groupe, Type, SID, Attributs), « Alias » pour
+  BUILTIN\…, « Groupe bien connu » pour Tout le monde / NT AUTHORITY, libellés d'attributs. Aucune capture dans
+  `docs/captures/cmd/` (`whoami-groups.txt` absent) ni sur Microsoft Learn : sortie actuelle inchangée.
+- B5 / F-03 (`ipconfig`) : en-tête « Configuration IP de Windows », ligne IPv6 de liaison locale, bloc hôte de
+  `/all` (Nom de l'hôte, Suffixe DNS principal, Type de noeud, Routage IP activé, Proxy WINS activé). Aucune capture
+  (`ipconfig.txt`, `ipconfig-all.txt` absentes) : sortie actuelle inchangée, tests golden inchangés.
+  Capture WS2022 FR attendue (Gary) pour F-03 et F-04.
 - Variables cmd `PATH`, `TEMP`, `TMP`, `OS`, `COMSPEC`, `PATHEXT` : valeurs non sourcées.
 - Rendu tableau de `Get-WindowsFeature`.
 - Ordre des propriétés ajoutées par `-Properties` et rendu `{DN1, DN2}` de `MemberOf`.
