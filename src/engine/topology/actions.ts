@@ -10,6 +10,7 @@ import type { DeviceKind } from '../model/kinds'
 import type { Device, HostOs, LabState, LinkEnd, Position } from '../model/schema'
 import { linkOnInterface } from './queries'
 import { bootServices } from '../services/servicestate'
+import { validateLinuxBoot } from '../services/linuxsystem'
 import { IOS_MODEL_INFO, type IosModel } from '../ios/models'
 
 /** Refus d'une opération de topologie sur un équipement virtuel (géré par Hyper-V). */
@@ -163,6 +164,7 @@ export function setPower(state: LabState, id: string, powered: boolean): EngineR
       if (device.kind === 'server' || device.kind === 'client') {
         device.host.bootedAt = draft.clock
         bootServices(device)
+        validateLinuxBoot(draft, id)
         // Stratégies de groupe retraitées après le démarrage (arrière-plan, ouverture de session)
         device.host.policy.user = null
         device.host.policy.attempt = null
