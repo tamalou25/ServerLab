@@ -92,29 +92,3 @@ export const DEVICE_ICONS: Record<PaletteKind, DeviceGlyph> = {
 
 /** Icône d'un équipement (poste Linux distingué). */
 export const deviceIcon = (device: Device): DeviceGlyph => DEVICE_ICONS[paletteKind(device)]
-
-/** Liseré de catégorie des nœuds du canvas. */
-export const KIND_STRIPE: Record<PaletteKind, string> = {
-  server: 'bg-kind-server',
-  client: 'bg-kind-client',
-  linux: 'bg-kind-client',
-  'linux-server': 'bg-kind-server',
-  switch: 'bg-kind-switch',
-  router: 'bg-kind-router',
-  cloud: 'bg-kind-cloud',
-  firewall: 'bg-kind-firewall',
-  c1921: 'bg-kind-router',
-  c2811: 'bg-kind-router',
-  c2960: 'bg-kind-switch',
-  c9200: 'bg-kind-switch'
-}
-
-/** Classes de la pastille de chaque type d'équipement (tokens de catégorie, voir styles.css). */
-export const DEVICE_COLORS: Record<DeviceKind, string> = {
-  server: 'bg-kind-server text-on-kind',
-  client: 'bg-kind-client text-on-kind',
-  switch: 'bg-kind-switch text-on-kind',
-  router: 'bg-kind-router text-on-kind',
-  cloud: 'bg-kind-cloud text-on-kind',
-  firewall: 'bg-kind-firewall text-on-kind'
-}
