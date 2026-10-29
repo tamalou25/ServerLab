@@ -94,6 +94,16 @@
       }
     },
     {
+      "id": "undeleted",
+      "label": "Le compte de Marc Petit a été restauré depuis la Corbeille Active Directory",
+      "hint": "Supprimez d’abord le compte (Corbeille activée), puis cherchez-le parmi les objets supprimés : le recréer à la main ne compte pas.",
+      "check": {
+        "type": "adObjectRestored",
+        "domain": "lab.local",
+        "name": "mpetit"
+      }
+    },
+    {
       "id": "restored",
       "label": "Le compte de Marc Petit est dans son OU et membre de son groupe",
       "hint": "La Corbeille restaure l’objet avec ses attributs et ses appartenances ; un compte recréé à la main perd ses groupes.",

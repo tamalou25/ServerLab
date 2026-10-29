@@ -4,7 +4,7 @@
  */
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { app, session, type WebContents } from 'electron'
+import { app, session, type IpcMainEvent, type IpcMainInvokeEvent, type WebContents } from 'electron'
 import { isAppNavigation } from '../shared/navigation'
 
 /** Adresse exacte de la page de l'application empaquetée. */
@@ -14,6 +14,19 @@ const APP_PAGE_URL = pathToFileURL(join(__dirname, '../renderer/index.html')).hr
 function isAppUrl(url: string): boolean {
   const devUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL']
   return isAppNavigation(url, APP_PAGE_URL, devUrl)
+}
+
+/**
+ * Vrai si un message IPC provient du cadre principal de la page de l'application chargée dans
+ * `expected` (fenêtre principale) : ni autre fenêtre, ni sous-cadre, ni page externe.
+ */
+export function isTrustedIpcSender(
+  event: IpcMainEvent | IpcMainInvokeEvent,
+  expected: WebContents | undefined
+): boolean {
+  const frame = event.senderFrame
+  if (!expected || event.sender !== expected || !frame) return false
+  return frame === expected.mainFrame && isAppUrl(frame.url)
 }
 
 export function hardenWebContents(contents: WebContents): void {
