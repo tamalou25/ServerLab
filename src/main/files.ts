@@ -219,10 +219,11 @@ export class FileService {
     return file
   }
 
-  async writeAutosave(content: unknown): Promise<void> {
-    if (typeof content !== 'string' || Buffer.byteLength(content, 'utf8') > MAX_SLAB_BYTES) return
+  async writeAutosave(content: unknown): Promise<boolean> {
+    if (typeof content !== 'string' || Buffer.byteLength(content, 'utf8') > MAX_SLAB_BYTES) return false
     await fs.mkdir(dirname(this.autosavePath), { recursive: true })
     await writeAtomic(this.autosavePath, content)
+    return true
   }
 
   async clearAutosave(): Promise<void> {

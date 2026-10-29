@@ -195,8 +195,8 @@ export interface ServerLabApi {
   tutorialAtStartup(): Promise<boolean>
   setTutorialAtStartup(show: boolean): void
 
-  /** Écrit le fichier de récupération (autosave). */
-  writeAutosave(content: string): Promise<void>
+  /** Écrit le fichier de récupération (autosave) ; faux si le contenu est refusé (trop volumineux). */
+  writeAutosave(content: string): Promise<boolean>
   clearAutosave(): Promise<void>
   /** Contenu de récupération laissé par une session interrompue, ou null. */
   recoverAutosave(): Promise<string | null>
