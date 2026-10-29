@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { launchApp, placeDevice } from './helpers'
 
-test('Palette : recherche, groupes repliables, panneau rétractable', async () => {
+test('Palette : recherche, onglets par famille, panneau rétractable', async () => {
   const { close, page, consoleErrors } = await launchApp()
   try {
     const palette = page.getByTestId('palette')
@@ -10,10 +10,13 @@ test('Palette : recherche, groupes repliables, panneau rétractable', async () =
     await expect(palette.getByTestId('palette-server')).toHaveCount(0)
     await page.getByTestId('palette-search').fill('')
 
-    // Groupe Réseau replié : switch et routeur masqués
-    await page.getByTestId('palette-group-network').click()
+    // Onglet Cisco : seuls les modèles IOS ; cliquer l'onglet actif revient à « Tous »
+    await page.getByTestId('palette-group-cisco').click()
+    await expect(page.getByTestId('palette-group-cisco')).toHaveAttribute('aria-selected', 'true')
+    await expect(palette.getByTestId('palette-c2960')).toBeVisible()
     await expect(palette.getByTestId('palette-switch')).toHaveCount(0)
-    await page.getByTestId('palette-group-network').click()
+    await page.getByTestId('palette-group-cisco').click()
+    await expect(page.getByTestId('palette-group-all')).toHaveAttribute('aria-selected', 'true')
     await expect(palette.getByTestId('palette-switch')).toBeVisible()
 
     // Panneau replié : les équipements restent utilisables (icônes)

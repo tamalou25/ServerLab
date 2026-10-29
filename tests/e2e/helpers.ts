@@ -92,7 +92,10 @@ export async function clickMenu(app: ElectronApplication, path: string[]): Promi
 
 /** Place un équipement de la palette à une position relative au canvas. */
 export async function placeDevice(page: Page, kind: string, x: number, y: number): Promise<void> {
-  await page.getByTestId(`palette-${kind}`).click()
+  const tile = page.getByTestId(`palette-${kind}`)
+  // Onglet d'une autre famille affiché : retour à « Tous »
+  if (!(await tile.isVisible())) await page.getByTestId('palette-group-all').click()
+  await tile.click()
   await page.getByTestId('topology-canvas').locator('.react-flow__pane').click({ position: { x, y } })
 }
 

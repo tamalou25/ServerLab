@@ -290,6 +290,8 @@ export const fr = {
   'palette.group.cisco': 'Cisco',
   'palette.group.firewall': 'Pare-feu',
   'palette.group.internet': 'Internet',
+  'palette.group.all': 'Tous',
+  'palette.tabs': 'Familles d’équipements',
   'palette.dragHint': '{description} — glisser vers le canvas',
   'palette.noMatch': 'Aucun équipement ne correspond.',
   'palette.help': 'Glissez un équipement sur le canvas, ou cliquez-le puis cliquez sur le canvas.',

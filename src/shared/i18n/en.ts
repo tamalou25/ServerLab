@@ -286,6 +286,8 @@ export const en: Record<MessageKey, string> = {
   'palette.group.cisco': 'Cisco',
   'palette.group.firewall': 'Firewall',
   'palette.group.internet': 'Internet',
+  'palette.group.all': 'All',
+  'palette.tabs': 'Device families',
   'palette.dragHint': '{description} — drag onto the canvas',
   'palette.noMatch': 'No matching device.',
   'palette.help': 'Drag a device onto the canvas, or click it and then click the canvas.',
