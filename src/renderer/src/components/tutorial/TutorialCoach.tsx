@@ -53,7 +53,7 @@ export function TutorialCoach() {
   // En haut à droite : colonne laissée libre par les fenêtres d'équipement (ouvertes à gauche)
   return (
     <aside
-      className="fixed top-24 right-3 z-[280] w-[300px] rounded-md border border-line bg-overlay p-4 text-[13px] text-fg shadow-lg"
+      className="fixed top-24 right-3 z-[280] w-[300px] rounded-md border border-line bg-overlay p-4 text-ui text-fg shadow-lg"
       aria-label={t('tuto.tutoriel')}
       data-testid="tutorial-card"
       data-phase={phase}
@@ -69,7 +69,7 @@ function Header({ icon, title, onClose }: { icon: ReactNode; title: string; onCl
   return (
     <div className="mb-2 flex items-center gap-2">
       <span className="text-accent">{icon}</span>
-      <h2 className="text-[14px] font-semibold">{title}</h2>
+      <h2 className="text-title font-semibold">{title}</h2>
       {onClose && (
         <button
           type="button"
@@ -103,7 +103,7 @@ function Welcome() {
           Passer
         </Button>
       </div>
-      <label className="mt-3 flex items-center gap-2 text-[12px] text-fg-muted">
+      <label className="mt-3 flex items-center gap-2 text-dense text-fg-muted">
         <input
           type="checkbox"
           checked={atStartup ?? true}
@@ -152,10 +152,10 @@ function Running() {
           return (
             <li
               key={step.id}
-              className={`flex items-center gap-2 text-[12px] ${isCurrent ? 'font-semibold text-fg' : step.done ? 'text-fg-muted' : 'text-fg-subtle'}`}
+              className={`flex items-center gap-2 text-dense ${isCurrent ? 'font-semibold text-fg' : step.done ? 'text-fg-muted' : 'text-fg-subtle'}`}
             >
               {step.done ? (
-                <CheckCircle2 size={14} className="shrink-0 text-ok" aria-label={t('tuto.validee')} />
+                <CheckCircle2 size={14} className="shrink-0 text-ok-text" aria-label={t('tuto.validee')} />
               ) : isCurrent ? (
                 <CircleDot size={14} className="shrink-0 text-accent" aria-label={t('tuto.enCours')} />
               ) : (
@@ -172,14 +172,14 @@ function Running() {
       >
         <Instruction progress={progress} />
       </div>
-      <p className="mt-2 text-[11px] text-fg-subtle">{t('tuto.chaqueEtapeSeValide')}</p>
+      <p className="mt-2 text-meta text-fg-subtle">{t('tuto.chaqueEtapeSeValide')}</p>
       <Spotlight progress={progress} />
     </div>
   )
 }
 
 const Mono = ({ children }: { children: ReactNode }) => (
-  <code className="rounded-sm bg-surface px-1 font-mono text-[12px]">{children}</code>
+  <code className="rounded-sm bg-surface px-1 font-mono text-dense">{children}</code>
 )
 
 /** Consigne de l'étape en cours, avec les noms et adresses réels du lab. */

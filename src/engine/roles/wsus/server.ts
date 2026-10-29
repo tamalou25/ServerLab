@@ -7,6 +7,8 @@ import { raise, transact, type EngineResult } from '../../core/result'
 import type { LabState, ServerDevice } from '../../model/schema'
 import { requireDevice } from '../../topology/actions'
 import { ensureRoleState } from '../state'
+import { serviceRunning } from '../../services/servicestate'
+import { wsusServiceStoppedMessage } from './client'
 import { UPDATE_CATALOG, catalogUpdate } from './catalog'
 import type { WsusClassification, WsusServer } from './schema'
 import { ALL_COMPUTERS, UNASSIGNED_COMPUTERS, WSUS_STATE, findWsusGroup } from './state'
@@ -56,6 +58,10 @@ export function completeWsusPostInstall(state: LabState, deviceId: string, conte
 export function synchronizeWsus(state: LabState, deviceId: string): EngineResult<number> {
   return transact(state, (draft) => {
     const wsus = requireConfigured(draft, deviceId)
+    const { device } = requireWsus(draft, deviceId)
+    // Service WSUS arrêté : la synchronisation est refusée (v2.8, #222)
+    if (!serviceRunning(device, 'WsusService'))
+      raise('WsusServiceStopped', wsusServiceStoppedMessage(device.name))
     const added = UPDATE_CATALOG.filter(
       (u) => wsus.classifications.includes(u.classification) && !wsus.updates.includes(u.id)
     ).map((u) => u.id)

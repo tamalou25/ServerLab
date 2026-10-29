@@ -95,8 +95,8 @@ describe('PowerShell : réseau et système', () => {
     expect(ps.run('Test-Connection 192.168.10.1 -Quiet').text.trim()).toBe('True')
     const tnc = ps.run('Test-NetConnection srv1.lab.local -Port 445')
     expect(tnc.text).toMatch(/RemoteAddress\s+: 192\.168\.10\.1/)
-    expect(tnc.text).toMatch(/PingSucceeded\s+: True/)
-    expect(tnc.text).toContain('n’est pas simulé')
+    // Lot 2c : test TCP simulé (SMB à l'écoute sur SRV1)
+    expect(tnc.text).toMatch(/TcpTestSucceeded\s+: True/)
   })
 
   it('Set-NetIPInterface -Dhcp Enabled : passe en adressage automatique, DNS conservé', () => {

@@ -1,0 +1,11 @@
+# Source: https://manpages.debian.org/bookworm/curl/curl.1.en.html — réponse d’Apache reconstituée d’après modules/http/http_protocol.c (ap_send_error_response, get_canned_error_string) (httpd 2.4.68-1~deb12u1) (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: curl http://192.168.2.10/nexiste.html
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<title>404 Not Found</title>
+</head><body>
+<h1>Not Found</h1>
+<p>The requested URL was not found on this server.</p>
+<hr>
+<address>Apache/2.4.68 (Debian) Server at 192.168.2.10 Port 80</address>
+</body></html>

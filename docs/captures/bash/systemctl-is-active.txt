@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/systemd/systemctl.1.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: systemctl is-active apache2
+active

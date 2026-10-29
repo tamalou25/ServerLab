@@ -139,6 +139,35 @@ describe('catalogue des commandes', () => {
     r.run(command('system.restartComputer', pc2))
     expect(r.state.devices[pc2]?.name).toBe('POSTE2')
     r.run(command('system.clearEventLog', r.id('SRV1'), 'Système'))
+    // Services (v2.7, Lot 2a)
+    r.run(command('service.stop', r.id('SRV1'), 'DNS'))
+    r.run(command('service.start', r.id('SRV1'), 'DNS'))
+    r.run(command('service.setStartType', r.id('SRV1'), 'Kdc', 'Manual'))
+    r.run(command('service.restart', r.id('SRV1'), 'Kdc'))
+    r.run(command('service.setFailure', r.id('SRV1'), 'DNS', 'invalidConfig'))
+    r.run(command('service.clearFailure', r.id('SRV1'), 'DNS'))
+    r.run(
+      command('service.setRecovery', r.id('SRV1'), 'DNS', {
+        resetSeconds: 86400,
+        actions: [{ type: 'restart', delayMs: 60000 }]
+      })
+    )
+    // Mode panne (v2.8) : indice d'un dépannage en cours (champ facultatif posé pour le test)
+    r.state = {
+      ...r.state,
+      troubleshooting: { seed: 1, faults: [{ id: 'net.wrong-mask', params: {}, hintsUsed: 0 }] }
+    }
+    r.run(command('troubleshoot.useHint', 'net.wrong-mask'))
+    // Horloge par ordinateur (v2.8) : le service Temps Windows de PC2 est démarré par défaut
+    r.run(command('host.setClock', r.id('POSTE2'), 600))
+    r.run(command('host.resyncClock', r.id('POSTE2')))
+    // Base de comptes locale de PC2 (Lot 2b)
+    r.run(command('local.newUser', r.id('POSTE2'), { name: 'u1', password: 'x' }))
+    r.run(command('local.setUser', r.id('POSTE2'), 'u1', { description: 'd' }))
+    r.run(command('local.newGroup', r.id('POSTE2'), { name: 'G1' }))
+    r.run(command('local.addGroupMembers', r.id('POSTE2'), 'G1', ['u1']))
+    r.run(command('local.removeGroupMembers', r.id('POSTE2'), 'G1', ['u1']))
+    r.run(command('local.removeUser', r.id('POSTE2'), 'u1'))
     r.run(command('system.installFeatures', r.id('SRV1'), ['FS-FileServer']))
     r.run(command('system.uninstallFeatures', r.id('SRV1'), ['FS-FileServer']))
     done(r)
@@ -174,6 +203,85 @@ describe('catalogue des commandes', () => {
     )
     r.run(command('firewall.setRuleEnabled', srv, { group: 'Partage de fichiers et d’imprimantes' }, false))
     r.run(command('firewall.removeRule', srv, { displayName: 'Web 8080' }))
+    done(r)
+  })
+
+  it('pare-feu pfSense : règles, ordre, alias, blocages automatiques, journal, états', () => {
+    const r = runner()
+    const fw = r.id('FW1')
+    const first = r.run<string>(
+      command('pf.addRule', fw, { iface: 'lan', action: 'block', protocol: 'icmp', descr: 'Pas de ping' })
+    )
+    const second = r.run<string>(
+      command('pf.addRule', fw, { iface: 'lan', action: 'pass', log: true }, first)
+    )
+    r.run(command('pf.updateRule', fw, first, { action: 'reject', protocol: 'tcp' }))
+    r.run(command('pf.moveRule', fw, second, null))
+    r.run(command('pf.setAlias', fw, { name: 'Web', type: 'host', values: ['172.16.0.10'], descr: '' }))
+    r.run(command('pf.removeAlias', fw, 'Web'))
+    r.run(command('pf.setBlockNetworks', fw, 'wan', { blockPrivate: false, blockBogons: false }))
+    r.run(command('pf.removeRule', fw, first))
+    // Services (#245)
+    r.run(
+      command('pf.setDhcp', fw, 'lan', {
+        enabled: true,
+        rangeFrom: '192.168.1.100',
+        rangeTo: '192.168.1.110'
+      })
+    )
+    r.run(
+      command('pf.setGateway', fw, {
+        name: 'GW_DMZ',
+        iface: 'lan',
+        address: '192.168.1.254',
+        isDefault: false
+      })
+    )
+    r.run(command('pf.setDefaultGateway', fw, 'GW_DMZ'))
+    r.run(command('pf.addStaticRoute', fw, { network: '10.9.0.0', prefixLength: 24, gateway: 'GW_DMZ' }))
+    r.run(command('pf.removeStaticRoute', fw, '10.9.0.0', 24))
+    r.run(command('pf.removeGateway', fw, 'GW_DMZ'))
+    r.run(command('pf.setDnsResolver', fw, { forwarding: true }))
+    r.run(command('pf.setDnsServers', fw, ['8.8.8.8']))
+    r.run(command('pf.setHostOverride', fw, { host: 'nas', domain: 'lab.local', address: '192.168.1.50' }))
+    r.run(command('pf.removeHostOverride', fw, 'nas', 'lab.local'))
+    // NAT (#244)
+    r.run(command('pf.setNatMode', fw, 'hybrid'))
+    const nat = r.run<string>(
+      command('pf.addOutboundNat', fw, { source: { type: 'any' }, descr: 'Tout vers le WAN' })
+    )
+    r.run(command('pf.updateOutboundNat', fw, nat, { disabled: true }))
+    r.run(command('pf.removeOutboundNat', fw, nat))
+    const pfn = r.run<string>(
+      command('pf.addPortForward', fw, {
+        protocol: 'tcp',
+        destinationPort: { from: 80, to: 80 },
+        targetAddress: '172.16.0.10'
+      })
+    )
+    r.run(command('pf.updatePortForward', fw, pfn, { targetPort: 8080 }))
+    r.run(command('pf.removePortForward', fw, pfn))
+    r.run(command('pf.clearLog', fw), false)
+    r.run(command('pf.resetStates', fw), false)
+    // Console (#247)
+    r.run(command('pf.assignInterfaces', fw, { wan: 'em0', lan: 'em1', opt1: 'em2' }))
+    r.run(
+      command('pf.setInterfaceFromConsole', fw, {
+        key: 'lan',
+        address: '192.168.1.1',
+        prefixLength: 24,
+        gateway: null,
+        gatewayIsDefault: false,
+        dhcp: { enabled: false },
+        revertToHttp: false
+      })
+    )
+    r.run(command('pf.setFilterEnabled', fw, false))
+    r.run(command('pf.setFilterEnabled', fw, true))
+    r.run(command('pf.resetAdminPassword', fw), false)
+    r.run(command('pf.reboot', fw), false)
+    r.run(command('pf.factoryReset', fw))
+    r.run(command('pf.webRequest', r.id('PC1'), 'https://192.168.1.1'), false)
     done(r)
   })
 
@@ -336,6 +444,11 @@ describe('catalogue des commandes', () => {
       })
     )
     r.run(command('adds.addGroup', DOMAIN, { name: 'GG_Direction', scope: 'Global' }))
+    // Lot 2b : groupe modifié, compte d'ordinateur pré-créé
+    r.run(command('adds.setGroupProperties', DOMAIN, 'GG_Direction', { description: 'Direction' }))
+    r.run(command('adds.addComputer', DOMAIN, { name: 'POSTE42' }))
+    // Canal sécurisé déjà valide : aucune modification
+    r.run(command('adds.repairSecureChannel', r.id('PC1')), false)
     r.run(command('adds.addGroupMembers', DOMAIN, 'GG_Direction', ['pdurand']))
     r.run(command('adds.removeGroupMembers', DOMAIN, 'GG_Direction', ['pdurand']))
     const user = r.state.domains[DOMAIN]!.users.find((u) => u.sam === 'pdurand')!
@@ -473,6 +586,14 @@ describe('catalogue des commandes', () => {
     r.run(command('gpo.setInheritanceBlocked', DOMAIN, ou.id, true))
     r.run(command('gpo.setSecurityFilter', DOMAIN, gpo, 'GG_Compta', true))
     r.run(command('gpo.updateSettings', DOMAIN, gpo, { computer: { minPasswordLength: 10 } }))
+    r.run(
+      command('gpo.setRegistryValue', DOMAIN, gpo, {
+        key: 'HKLM\\Software\\Policies\\Exemple',
+        valueNames: ['Valeur'],
+        values: [1],
+        type: 'DWord'
+      })
+    )
     r.run(command('gpo.unlink', DOMAIN, gpo, ou.id))
     r.run(command('gpo.delete', DOMAIN, gpo))
     const linked = r.run<string>(command('gpo.createAndLink', DOMAIN, { name: 'Lecteurs' }, ou.id))
@@ -628,6 +749,12 @@ describe('catalogue des commandes', () => {
     r.run(command('backup.removePolicy', srv))
     r.run(command('files.removeItem', srv, 'C:\\Compta', r.admin(), {}))
     r.run(command('backup.recover', srv, version, 'C:\\Compta', 'Overwrite'))
+    done(r)
+  })
+
+  it('serveur Linux : paquets installés au départ d’un lab', () => {
+    const r = runner()
+    r.run(command('linux.installPackages', r.id('LSRV1'), ['apache2']))
     done(r)
   })
 

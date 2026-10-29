@@ -1,0 +1,5 @@
+# Source: https://manpages.debian.org/bookworm/apache2/apache2ctl.8.en.html — https://sources.debian.org/data/main/a/apache2/2.4.68-1~deb12u1/debian/apache2ctl et server/config.c (ap_build_config : « was not closed », process_resource_config) (httpd 2.4.68-1~deb12u1), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo apache2ctl configtest
+apache2: Syntax error on line 225 of /etc/apache2/apache2.conf: Syntax error on line 1 of /etc/apache2/sites-enabled/ouvert.conf: /etc/apache2/sites-enabled/ouvert.conf:1: <VirtualHost> was not closed.
+Action 'configtest' failed.
+The Apache error log may have more information.

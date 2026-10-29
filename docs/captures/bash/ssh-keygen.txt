@@ -1,0 +1,20 @@
+# Source: https://manpages.debian.org/bookworm/openssh-client/ssh-keygen.1.en.html (https://sources.debian.org/src/openssh/1:9.2p1-2+deb12u10/ssh-keygen.c, https://sources.debian.org/src/openssh/1:9.2p1-2+deb12u10/sshkey.c) — sortie reconstituée d’après la page de manuel et le code source Debian (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: ssh-keygen -t ed25519
+Generating public/private ed25519 key pair.
+Created directory '/home/etudiant/.ssh'.
+Your identification has been saved in /home/etudiant/.ssh/id_ed25519
+Your public key has been saved in /home/etudiant/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:V6LafPUDZsCZrHOih3d2EPWd6HKE8utVf7Nb6ymykTk etudiant@LNX1
+The key's randomart image is:
++--[ED25519 256]--+
+|            .    |
+|         o +.....|
+|         .O..o...|
+|         oo=o    |
+|        S +o=o . |
+|       * = =*o. .|
+|      + = +E..o.+|
+|       o +.o+. .B|
+|           oo o*.|
++----[SHA256]-----+

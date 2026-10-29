@@ -51,7 +51,7 @@ export interface PduResult {
   success: boolean
 }
 
-export type RightTab = 'lab' | 'properties' | 'simulation' | 'audit'
+export type RightTab = 'lab' | 'properties' | 'audit' | 'troubleshoot'
 
 /** Boîte de dialogue modale applicative. */
 export interface ModalState {
@@ -174,7 +174,8 @@ export const useUiStore = create<UiState>()((set, get) => ({
     set({ theme })
   },
   setMode: (mode) => {
-    set({ mode, rightTab: mode === 'simulation' ? 'simulation' : 'properties' })
+    // Le panneau Simulation est en bas de la fenêtre : l'onglet de l'inspecteur ne change pas
+    set({ mode })
     // Tâches de fond des rôles : actives en Temps réel, suspendues en Simulation
     useLabStore.getState().setRealtime(mode === 'realtime')
   },

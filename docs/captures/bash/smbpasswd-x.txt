@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/samba/smbpasswd.8.en.html — https://sources.debian.org/src/samba/2:4.17.12+dfsg-0+deb12u4/source3/utils/smbpasswd.c et source3/passdb/passdb.c (local_password_change) (samba 4.17.12), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo smbpasswd -x bob
+Deleted user bob.

@@ -28,6 +28,8 @@ export class ExecContext {
   exit = false
   /** Console bash : commande lancée avec sudo (droits root). */
   root = false
+  /** Console bash : sortie standard de l'étape précédente d'un tube (null = aucune). */
+  stdin: string[] | null = null
   private answerIndex = 0
 
   constructor(

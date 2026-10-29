@@ -9,6 +9,7 @@ import { createContext, sendIp, sourceAddressFor } from '../../sim/forward'
 import { createRecorder, type PacketTrace, type PduLayer, type Protocol } from '../../sim/trace'
 import { normalizeName } from '../dns/server'
 import { firstAddress, resolveName } from '../dns/resolver'
+import { dcAnswersClients } from './dcservices'
 import { dcSite, siteControllers, siteOfAddress } from './sites'
 
 /** Contrôleur de domaine localisé par le client. */
@@ -50,6 +51,12 @@ export function serverExchange(
   const from = state.devices[fromId]
   const src = from ? sourceAddressFor(state, from, dstIp) : null
   if (!from || !src) return { trace: { title: protocol, events: [] }, ok: false, src: null }
+  // Les effets durables (journal, états et traductions d'un pare-feu pfSense) accompagnent la trace
+  const traceOf = (): PacketTrace => ({
+    title: protocol,
+    events: rec.events,
+    ...(ctx.effects.length > 0 ? { effects: ctx.effects } : {})
+  })
   const tcp = port !== 389 || !request.startsWith('LDAP ping')
   const layer = (kind: string): PduLayer[] => [
     { layer: 4, name: tcp ? 'TCP' : 'UDP', fields: [['Port destination', String(port)]] },
@@ -67,10 +74,9 @@ export function serverExchange(
     transport: tcp ? 'TCP' : 'UDP',
     port
   })
-  if (req.kind !== 'delivered')
-    return { trace: { title: protocol, events: rec.events }, ok: false, src: null }
+  if (req.kind !== 'delivered') return { trace: traceOf(), ok: false, src: null }
   const dc = state.devices[req.deviceId]
-  if (!dc) return { trace: { title: protocol, events: rec.events }, ok: false, src: null }
+  if (!dc) return { trace: traceOf(), ok: false, src: null }
   const rep = sendIp(ctx, dc.id, {
     src: dstIp,
     dst: req.src,
@@ -81,7 +87,7 @@ export function serverExchange(
     upper: layer(reply),
     reply: true
   })
-  return { trace: { title: protocol, events: rec.events }, ok: rep.kind === 'delivered', src: req.src }
+  return { trace: traceOf(), ok: rep.kind === 'delivered', src: req.src }
 }
 
 export function exchange(
@@ -108,8 +114,26 @@ function contactDc(
   const srv = resolveName(state, clientId, srvName, 'SRV')
   traces.push(srv.trace)
   if (srv.result.kind !== 'answer') return null
-  const target = srv.result.records.find((r) => r.type === 'SRV')?.data.split(' ')[3]
-  if (!target) return null
+  // Plusieurs contrôleurs : le client essaie chaque cible SRV jusqu'à ce qu'un contrôleur réponde
+  // (NTDS et Netlogon démarrés, sinon il ne répond pas au « ping » de localisation)
+  const targets = [
+    ...new Set(srv.result.records.filter((r) => r.type === 'SRV').map((r) => r.data.split(' ')[3] ?? ''))
+  ].filter((t) => t)
+  for (const target of targets) {
+    const found = pingTarget(state, clientId, domain, target, traces)
+    if (found) return found
+  }
+  return null
+}
+
+/** Résout une cible SRV puis « ping » LDAP du contrôleur, qui indique le site du client. */
+function pingTarget(
+  state: LabState,
+  clientId: string,
+  domain: Domain,
+  target: string,
+  traces: PacketTrace[]
+): (LocatedDc & { clientSite: string | null }) | null {
   const a = resolveName(state, clientId, normalizeName(target), 'A')
   traces.push(a.trace)
   const dcIp = firstAddress(a)
@@ -117,7 +141,7 @@ function contactDc(
   const dc = Object.values(state.devices).find(
     (d) => d.powered && d.interfaces.some((i) => effectiveIpv4(i)?.address === dcIp)
   )
-  if (!dc || !domain.controllers.includes(dc.id)) return null
+  if (!dc || !domain.controllers.includes(dc.id) || !dcAnswersClients(dc)) return null
   // Le contrôleur indique au client son site, d'après le sous-réseau de son adresse
   const from = state.devices[clientId]
   const clientIp = from ? sourceAddressFor(state, from, dcIp) : null

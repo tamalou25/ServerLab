@@ -1,0 +1,7 @@
+# Source: https://manpages.debian.org/bookworm/bind9-dnsutils/nslookup.1.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: nslookup nexiste.pas.example.com
+Server:		8.8.8.8
+Address:	8.8.8.8#53
+
+** server can't find nexiste.pas.example.com: NXDOMAIN
+

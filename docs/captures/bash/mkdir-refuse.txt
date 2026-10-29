@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/mkdir.1.en.html
+# Commande: mkdir /etc/x
+mkdir: cannot create directory '/etc/x': Permission denied

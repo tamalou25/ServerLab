@@ -6,16 +6,60 @@
 import { LAB_EPOCH_MS } from '../../core/clock'
 import { effectiveIpv4 } from '../../net/addressing'
 import { isIpv4 } from '../../net/ipv4'
+import { findPackage } from '../../services/linuxcatalog'
+import { linuxRelease } from '../../services/linuxsystem'
 import { ctimeDate } from '../../shell/bash/interpreter'
+import type { ExecContext } from '../../shell/context'
 import { CommandFailure } from '../../shell/context'
 import type { ToolDef } from '../../shell/tools/types'
-import { dnsServersOf, resolveName, reverseLookup } from './resolver'
-import { DNS_RECORD_TYPES, type DnsRecordType } from './schema'
+import { dnsServersOf, resolveName, reverseLookup, type DnsAnswerRecord, type DnsQueryType } from './resolver'
+
+/** Types que dig accepte (ceux du DNS Windows et ceux des zones Bind9). */
+const DIG_TYPES = ['A', 'AAAA', 'PTR', 'CNAME', 'NS', 'SOA', 'SRV', 'MX', 'TXT']
 
 const DIG_VERSION = '9.18.18-0ubuntu0.22.04.2-Ubuntu'
 const STUB = '127.0.0.53'
 
+/**
+ * Serveur Linux (v2.9) : version de dig selon la distribution (paquet bind9-dnsutils du catalogue) ;
+ * Debian 12 n'a pas systemd-resolved, /etc/resolv.conf désigne directement le serveur DNS de la carte.
+ */
+function digVersion(ctx: ExecContext): string {
+  if (ctx.host.kind !== 'server') return DIG_VERSION
+  const release = linuxRelease(ctx.host)
+  const full = findPackage('bind9-dnsutils')?.versions[release] ?? ''
+  return `${full.replace(/^\d+:/, '')}-${release === 'debian12' ? 'Debian' : 'Ubuntu'}`
+}
+
+/** Résolveur interrogé par défaut : stub local (Ubuntu) ou premier serveur DNS de la carte (Debian). */
+function defaultResolver(ctx: ExecContext): string {
+  return ctx.host.kind === 'server' && linuxRelease(ctx.host) === 'debian12'
+    ? (dnsServersOf(ctx.host)[0] ?? STUB)
+    : STUB
+}
+
 const fqdn = (name: string) => (name.endsWith('.') ? name : `${name}.`)
+
+/** Données d'un enregistrement telles que dig les affiche. */
+function rdataOf(a: DnsAnswerRecord): string {
+  switch (a.type) {
+    case 'A':
+    case 'AAAA':
+    case 'SOA':
+    case 'TXT':
+      return a.data
+    case 'MX': {
+      const [pref, target] = a.data.split(' ')
+      return `${pref} ${fqdn(target ?? '')}`
+    }
+    case 'SRV': {
+      const parts = a.data.split(' ')
+      return [...parts.slice(0, 3), fqdn(parts[3] ?? '')].join(' ')
+    }
+    default:
+      return fqdn(a.data)
+  }
+}
 
 /** Identifiant de requête déterministe (dérivé du nom et de l'horloge). */
 function queryId(name: string, clock: number): number {
@@ -31,7 +75,7 @@ const digTool: ToolDef = {
     let server: string | undefined
     let short = false
     let reverse: string | undefined
-    let qtype: DnsRecordType = 'A'
+    let qtype: DnsQueryType = 'A'
     let name: string | undefined
     for (let i = 0; i < args.length; i++) {
       const a = args[i] as string
@@ -39,8 +83,8 @@ const digTool: ToolDef = {
       else if (a === '+short') short = true
       else if (a.startsWith('+')) continue
       else if (a === '-x') reverse = args[++i]
-      else if ((DNS_RECORD_TYPES as readonly string[]).includes(a.toUpperCase()) && name !== undefined)
-        qtype = a.toUpperCase() as DnsRecordType
+      else if (DIG_TYPES.includes(a.toUpperCase()) && name !== undefined)
+        qtype = a.toUpperCase() as DnsQueryType
       else if (name === undefined) name = a
     }
     if (server !== undefined && !isIpv4(server))
@@ -56,14 +100,15 @@ const digTool: ToolDef = {
         ? reverseLookup(ctx.state, ctx.deviceId, reverse, server)
         : resolveName(ctx.state, ctx.deviceId, fqdn(name ?? ''), qtype, server)
     ctx.addTrace(r.trace)
-    const type: DnsRecordType = reverse !== undefined ? 'PTR' : qtype
+    const type: DnsQueryType = reverse !== undefined ? 'PTR' : qtype
     const qname = fqdn(r.fqdn)
     const result = r.result
     const answers = result.kind === 'answer' ? result.records : []
+    const authority = result.kind === 'answer' || result.kind === 'nxdomain' ? (result.authority ?? []) : []
     if (short) {
       if (result.kind === 'timeout' && server)
         return ctx.writeLines([`;; communications error to ${server}#53: timed out`], 'error')
-      return ctx.writeLines(answers.map((a) => (a.type === 'A' ? a.data : fqdn(a.data))))
+      return ctx.writeLines(answers.map(rdataOf))
     }
     const cmd = [
       server ? `@${server}` : '',
@@ -72,7 +117,7 @@ const digTool: ToolDef = {
     ]
       .filter((x) => x)
       .join(' ')
-    const header = [``, `; <<>> DiG ${DIG_VERSION} <<>> ${cmd}`, ';; global options: +cmd']
+    const header = [``, `; <<>> DiG ${digVersion(ctx)} <<>> ${cmd}`, ';; global options: +cmd']
     // Serveur interrogé directement injoignable : aucune réponse
     if (result.kind === 'timeout' && server) {
       ctx.writeLines([
@@ -86,22 +131,29 @@ const digTool: ToolDef = {
       return
     }
     // Sans @serveur, le résolveur local (127.0.0.53) répond SERVFAIL si les serveurs DNS ne répondent pas
-    const status = result.kind === 'answer' ? 'NOERROR' : result.kind === 'nxdomain' ? 'NXDOMAIN' : 'SERVFAIL'
+    const status =
+      result.kind === 'answer'
+        ? 'NOERROR'
+        : result.kind === 'nxdomain'
+          ? 'NXDOMAIN'
+          : result.kind === 'servfail' && result.refused
+            ? 'REFUSED'
+            : 'SERVFAIL'
     const authoritative =
       !!server && (result.kind === 'answer' || result.kind === 'nxdomain') && result.authoritative
     const flags = `qr${authoritative ? ' aa' : ''} rd ra`
-    const used = server ?? STUB
+    const used = server ?? defaultResolver(ctx)
     const size =
       12 +
       qname.length +
       6 +
-      answers.reduce((n, a) => n + 12 + (a.type === 'A' ? 4 : a.data.length + 2), 0) +
+      [...answers, ...authority].reduce((n, a) => n + 12 + (a.type === 'A' ? 4 : a.data.length + 2), 0) +
       11
     ctx.writeLines([
       ...header,
       ';; Got answer:',
       `;; ->>HEADER<<- opcode: QUERY, status: ${status}, id: ${queryId(qname, ctx.state.clock)}`,
-      `;; flags: ${flags}; QUERY: 1, ANSWER: ${answers.length}, AUTHORITY: 0, ADDITIONAL: 1`,
+      `;; flags: ${flags}; QUERY: 1, ANSWER: ${answers.length}, AUTHORITY: ${authority.length}, ADDITIONAL: 1`,
       '',
       ';; OPT PSEUDOSECTION:',
       '; EDNS: version: 0, flags:; udp: 65494',
@@ -111,9 +163,14 @@ const digTool: ToolDef = {
       ...(answers.length > 0
         ? [
             ';; ANSWER SECTION:',
-            ...answers.map(
-              (a) => `${fqdn(a.name)}\t\t${a.ttl}\tIN\t${a.type}\t${a.type === 'A' ? a.data : fqdn(a.data)}`
-            ),
+            ...answers.map((a) => `${fqdn(a.name)}\t\t${a.ttl}\tIN\t${a.type}\t${rdataOf(a)}`),
+            ''
+          ]
+        : []),
+      ...(authority.length > 0
+        ? [
+            ';; AUTHORITY SECTION:',
+            ...authority.map((a) => `${fqdn(a.name)}\t\t${a.ttl}\tIN\t${a.type}\t${rdataOf(a)}`),
             ''
           ]
         : []),
@@ -129,6 +186,8 @@ const digTool: ToolDef = {
 const resolvectlTool: ToolDef = {
   name: 'resolvectl',
   synopsis: 'Affiche les serveurs DNS utilisés (resolvectl status, resolvectl dns).',
+  // Debian 12 n'installe pas systemd-resolved
+  available: (ctx) => ctx.host.kind !== 'server' || linuxRelease(ctx.host) !== 'debian12',
   run(ctx, args) {
     const action = args[0] ?? 'status'
     const iface = ctx.host.interfaces.find((i) => effectiveIpv4(i))
@@ -158,20 +217,5 @@ const resolvectlTool: ToolDef = {
 
 export const dnsBashTools: ToolDef[] = [digTool, resolvectlTool]
 
-/** Contenu de /etc/resolv.conf d'Ubuntu (résolveur local systemd-resolved). */
-export function resolvConfLines(domain: string | null): string[] {
-  return [
-    '# This is /run/systemd/resolve/stub-resolv.conf managed by man:systemd-resolved(8).',
-    '# Do not edit.',
-    '#',
-    "# This file might be symlinked as /etc/resolv.conf. If you're looking at",
-    '# /etc/resolv.conf and seeing this text, you have followed the symlink.',
-    '#',
-    '# Run "resolvectl status" to see details about the uplink DNS servers',
-    '# currently in use.',
-    '',
-    `nameserver ${STUB}`,
-    'options edns0 trust-ad',
-    `search ${domain ?? '.'}`
-  ]
-}
+// Contenu de /etc/resolv.conf : défini avec le système de fichiers Linux simulé
+export { resolvConfLines } from '../../shell/bash/linuxfs'

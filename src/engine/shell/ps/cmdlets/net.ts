@@ -1,6 +1,10 @@
 /**
  * Cmdlets réseau (module NetTCPIP / DnsClient).
  */
+import type { HostDevice } from '../../../model/schema'
+import { serverExchange } from '../../../roles/adds/locator'
+import { tcpListening } from '../../../services/listening'
+import type { Protocol } from '../../../sim/trace'
 import { effectiveIpv4 } from '../../../net/addressing'
 import { clearInterfaceAddress, setInterfaceIpv4 } from '../../../net/config'
 import { ipConflicts } from '../../../net/conflicts'
@@ -446,7 +450,7 @@ export const netCmdlets: CmdletDef[] = [
     name: 'Test-NetConnection',
     aliases: ['tnc'],
     module: 'NetTCPIP',
-    synopsis: 'Diagnostic de connectivité (ping).',
+    synopsis: 'Diagnostic de connectivité (ping, ou connexion TCP avec -Port).',
     params: [
       { name: 'ComputerName', type: 'string', position: 0 },
       { name: 'Port', type: 'int' }
@@ -464,14 +468,53 @@ export const netCmdlets: CmdletDef[] = [
           )
         ]
       }
+      const egress = ctx.host.interfaces.find((i) => effectiveIpv4(i))
+      // -Port (Learn, exemple 3) : connexion TCP ; réussie si le port écoute sur la cible (rôle
+      // installé, service démarré) et si le pare-feu et les listes d'accès IOS du chemin la laissent passer
+      if (args['Port'] !== undefined) {
+        const port = Number(args['Port'])
+        const tcp = tcpTest(ctx, resolved.ip, port)
+        const base = {
+          ComputerName: target,
+          RemoteAddress: resolved.ip,
+          RemotePort: port,
+          InterfaceAlias: egress?.name ?? '',
+          SourceAddress: egress ? (effectiveIpv4(egress)?.address ?? '') : ''
+        }
+        if (tcp)
+          return [
+            psObject(
+              'TestNetConnectionResult',
+              { ...base, TcpTestSucceeded: true },
+              { kind: 'list', props: [...Object.keys(base), 'TcpTestSucceeded'] }
+            )
+          ]
+        ctx.warn(`Échec de la connexion TCP à (${resolved.ip} : ${port})`)
+        const pinged = ping(ctx.state, ctx.deviceId, resolved.ip, { count: 1 })
+        if (pinged.ok) ctx.addTrace(pinged.value.trace)
+        const pong = pinged.ok ? pinged.value.outcomes.find((o) => o.kind === 'reply') : undefined
+        if (!pong) ctx.warn(`Échec du ping vers ${target} (${resolved.ip})`)
+        return [
+          psObject(
+            'TestNetConnectionResult',
+            {
+              ...base,
+              PingSucceeded: !!pong,
+              'PingReplyDetails (RTT)': pong && pong.kind === 'reply' ? `${pong.time} ms` : '0 ms',
+              TcpTestSucceeded: false
+            },
+            {
+              kind: 'list',
+              props: [...Object.keys(base), 'PingSucceeded', 'PingReplyDetails (RTT)', 'TcpTestSucceeded']
+            }
+          )
+        ]
+      }
       const result = ping(ctx.state, ctx.deviceId, resolved.ip, { count: 1 })
       if (!result.ok) throw psError(result.error.message, 'InvalidOperation', result.error.code)
       ctx.addTrace(result.value.trace)
       const reply = result.value.outcomes.find((o) => o.kind === 'reply')
       if (!reply) ctx.warn(`Échec du ping vers ${target} (${resolved.ip})`)
-      if (args['Port'] !== undefined)
-        ctx.warn('Le test de port TCP n’est pas simulé : seul le ping est vérifié.')
-      const egress = ctx.host.interfaces.find((i) => effectiveIpv4(i))
       return [
         psObject(
           'TestNetConnectionResult',
@@ -499,3 +542,35 @@ export const netCmdlets: CmdletDef[] = [
     }
   }
 ]
+
+/** Protocole affiché dans la trace pour un port TCP connu. */
+const PORT_PROTOCOL: Record<number, Protocol> = {
+  88: 'KERBEROS',
+  389: 'LDAP',
+  445: 'SMB',
+  3389: 'RDP',
+  1723: 'VPN'
+}
+
+/**
+ * Test de connexion TCP (Test-NetConnection -Port) : échange tracé SYN / SYN-ACK (ou RST si rien
+ * n'écoute) acheminé comme un vrai paquet (pare-feu de la cible, listes d'accès des routeurs).
+ */
+function tcpTest(ctx: CmdContext, ip: string, port: number): boolean {
+  const target = Object.values(ctx.state.devices).find(
+    (d): d is HostDevice =>
+      (d.kind === 'server' || d.kind === 'client') &&
+      d.powered &&
+      d.interfaces.some((i) => effectiveIpv4(i)?.address === ip)
+  )
+  const listening = !!target && tcpListening(target, port)
+  const exchange = serverExchange(ctx.state, ctx.deviceId, ip, {
+    protocol: PORT_PROTOCOL[port] ?? 'HTTP',
+    port,
+    request: `TCP SYN vers ${ip}:${port}`,
+    reply: listening ? 'TCP SYN-ACK' : 'TCP RST (aucun service à l’écoute)',
+    fields: [['Port', String(port)]]
+  })
+  ctx.addTrace(exchange.trace)
+  return exchange.ok && listening
+}

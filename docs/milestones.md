@@ -448,3 +448,68 @@ migration.
   `tests/engine/cyber/labs-attaque.test.ts` (solution à 100 %, examen, éditeur) et E2E `cyber-attack-labs.spec.ts`.
 - Documentation : récapitulatif du garde-fou et écarts avec les vraies techniques (`docs/fidelite.md`),
   README (Cybersécurité), ROADMAP, CHANGELOG [2.6.1].
+
+## v2.8 — Services à état et mode panne
+
+Milestone terminé : `CHANGELOG.md` [2.8.0], `package.json` 2.8.0 ; tag `v2.8.0` à pousser par Gary.
+Format `.slab` : v2.8 → format 26 (migration 25 → 26 écrite par l'issue #219, horloge par ordinateur) ; les autres
+issues n'ont ajouté que des champs facultatifs.
+
+| Issue | Sujet                                                           | Branche                         | PR   | État     |
+| ----- | --------------------------------------------------------------- | ------------------------------- | ---- | -------- |
+| #223  | Chantier A : dépendances réelles entre services                 | `feat/223-service-dependencies` | #260 | fusionné |
+| #226  | Chantier A : snap-in Services, alertes du Gestionnaire          | `feat/226-snapin-services`      | #261 | fusionné |
+| #219  | Chantier A : horloge par poste, W32Time et Kerberos             | `feat/219-horloge-kerberos`     | #262 | fusionné |
+| #224  | Chantier A : échec au démarrage, options de récupération        | `feat/224-echec-service`        | #263 | fusionné |
+| #220  | Chantier A : NTDS et Netlogon                                   | `feat/220-ntds-netlogon`        | #264 | fusionné |
+| #225  | Chantier A : `sc qc`, cohérence des commandes CMD               | `feat/225-cmd-services`         | #265 | fusionné |
+| #222  | Chantier A : CertSvc, TermService, WsusService, MpsSvc, Spooler | `feat/222-autres-services`      | #266 | fusionné |
+| #228  | Chantier D : modèle de panne et catalogue                       | `feat/228-modele-panne`         | #267 | fusionné |
+| #227  | Chantier A : lab 42 « Diagnostic de services Windows »          | `feat/227-lab-42`               | #268 | fusionné |
+| #229  | Chantier D : 12 pannes réseau                                   | `feat/229-pannes-reseau`        | #269 | fusionné |
+| #230  | Chantier D : pannes Windows et pannes composées                 | `feat/230-pannes-windows`       | #270 | fusionné |
+| #232  | Chantier D : interface « Lancer un dépannage »                  | `feat/232-interface-depannage`  | #271 | fusionné |
+| #231  | Chantier D : tirage par graine et réparabilité                  | `feat/231-tirage-graine`        | #272 | fusionné |
+| #233  | Chantier D : 3 labs de dépannage (labs 43 à 45)                 | `feat/233-labs-depannage`       | #273 | fusionné |
+
+## v2.9 — Serveurs Linux
+
+Milestone terminé : `CHANGELOG.md` [2.9.0], `package.json` 2.9.0 ; tag `v2.9.0` à pousser par Gary.
+Format `.slab` : v2.9 → format 27 (migration 26 → 27, issue #234) ; les autres issues n'ont ajouté que des champs
+facultatifs de `host.linux`.
+
+| Issue | Sujet                                               | Branche                          | PR   | État     |
+| ----- | --------------------------------------------------- | -------------------------------- | ---- | -------- |
+| #234  | Serveur Linux (Debian 12 / Ubuntu 24.04), format 27 | `feat/234-serveur-linux`         | #275 | fusionné |
+| #235  | Fichiers, utilisateurs et droits                    | `feat/235-fichiers-droits-linux` | #276 | fusionné |
+| #236  | apt, systemctl, journalctl, ss, diagnostic          | `feat/236-apt-systemctl`         | #277 | fusionné |
+| #237  | SSH, fail2ban, rsyslog                              | `feat/237-ssh-fail2ban-rsyslog`  | #278 | fusionné |
+| #238  | Apache2                                             | `feat/238-apache2`               | #279 | fusionné |
+| #239  | Samba et interopérabilité Windows                   | `feat/239-samba`                 | #280 | fusionné |
+| #240  | Bind9 et isc-dhcp-server                            | `feat/240-bind9-dhcp`            | #281 | fusionné |
+| #241  | Labs 46 à 53 et pannes Linux                        | `feat/241-labs-pannes-linux`     | #282 | fusionné |
+
+## v2.10 — Pare-feu pfSense
+
+Milestone terminé : `CHANGELOG.md` [2.10.0], `package.json` 2.10.0 ; tag `v2.10.0` à pousser par Gary.
+Format `.slab` : v2.10 → format 28 (migration 27 → 28, issue #242) ; les autres issues n'ont ajouté que des champs
+facultatifs de `pf`.
+
+| Issue | Sujet                           | Branche                           | PR   | État     |
+| ----- | ------------------------------- | --------------------------------- | ---- | -------- |
+| #242  | Équipement pare-feu, format 28  | `feat/242-equipement-pare-feu`    | #284 | fusionné |
+| #243  | Moteur de règles                | `feat/243-moteur-regles`          | #285 | fusionné |
+| #244  | NAT                             | `feat/244-nat-pare-feu`           | #286 | fusionné |
+| #245  | Passerelles, routes, DHCP, DNS  | `feat/245-services-pare-feu`      | #287 | fusionné |
+| #246  | Interface web                   | `feat/246-interface-web-pare-feu` | #288 | fusionné |
+| #247  | Console                         | `feat/247-console-pare-feu`       | #289 | fusionné |
+| #248  | Labs 54 à 59 et pannes pare-feu | `feat/248-labs-pannes-pare-feu`   | #290 | fusionné |
+
+## v2.11 — Interface v2
+
+Issues #292 (maquettes et plan) à #301 (finitions), une PR empilée par étape (#302 à #311). Refonte du chrome de
+l'application sans changement du moteur ni du format `.slab` : tokens v2 et contrastes AA, icônes et nœuds de 64 px,
+barre d'outils principale, palette à onglets, câbles et légende des protocoles, inspecteur à onglets, panneau
+Simulation inférieur, fenêtres d'équipement et menu contextuel. Documentation : [ui-v2.md](ui-v2.md).
+
+Milestone terminé : `CHANGELOG.md` [2.11.0], `package.json` 2.11.0 ; tag `v2.11.0` à pousser par Gary.

@@ -66,11 +66,15 @@ describe('fichiers .slab de référence', () => {
             .map((d) => d.name)
             .sort()
         ).toEqual(
-          version >= 9
-            ? ['CR1', 'CSW1', 'PC1', 'PC2', 'R1', 'SRV1', 'SW1']
-            : ['PC1', 'PC2', 'R1', 'SRV1', 'SW1']
+          version >= 28
+            ? ['CR1', 'CSW1', 'FW1', 'LSRV1', 'PC1', 'PC2', 'R1', 'SRV1', 'SW1']
+            : version >= 27
+              ? ['CR1', 'CSW1', 'LSRV1', 'PC1', 'PC2', 'R1', 'SRV1', 'SW1']
+              : version >= 9
+                ? ['CR1', 'CSW1', 'PC1', 'PC2', 'R1', 'SRV1', 'SW1']
+                : ['PC1', 'PC2', 'R1', 'SRV1', 'SW1']
         )
-        expect(Object.keys(lab.links)).toHaveLength(version >= 9 ? 5 : 4)
+        expect(Object.keys(lab.links)).toHaveLength(version >= 28 ? 6 : version >= 9 ? 5 : 4)
         const domain = lab.domains['lab.local']
         expect(domain?.users.map((u) => u.sam)).toContain('jdupont')
         expect(domain?.groups.find((g) => g.name === 'GG_Compta')?.members).toHaveLength(1)
@@ -113,6 +117,117 @@ describe('fichiers .slab de référence', () => {
       })
     })
   }
+})
+
+describe('migration 27 → 28 (pare-feu de la v2.10)', () => {
+  it('change seulement la version ; un lab 27 n’a aucun pare-feu', () => {
+    const doc = JSON.parse(readFixture(27)) as Record<string, unknown>
+    expect(migrations[27]!(doc)).toEqual({ ...doc, schemaVersion: 28 })
+    expect(Object.values(open(27).lab.devices).some((d) => d.kind === 'firewall')).toBe(false)
+  })
+
+  it('v28.slab : garde le pare-feu FW1 (em0 WAN, em1 LAN câblé, em2 DMZ, état de base)', () => {
+    const lab = open(28).lab
+    const fw = Object.values(lab.devices).find((d) => d.name === 'FW1')
+    expect(fw?.kind).toBe('firewall')
+    if (fw?.kind !== 'firewall') return
+    expect(fw.interfaces.map((i) => i.name)).toEqual(['em0', 'em1', 'em2'])
+    expect(
+      fw.pf.assignments.map((a) => [
+        a.key,
+        a.descr,
+        a.ifaceId === fw.interfaces[fw.pf.assignments.indexOf(a)]!.id
+      ])
+    ).toEqual([
+      ['wan', 'WAN', true],
+      ['lan', 'LAN', true],
+      ['opt1', 'DMZ', true]
+    ])
+    expect(fw.pf.hostname).toBe('FW1')
+    const lanId = fw.interfaces[1]!.id
+    expect(
+      Object.values(lab.links).some((l) =>
+        [l.a, l.b].some((e) => e.deviceId === fw.id && e.ifaceId === lanId)
+      )
+    ).toBe(true)
+  })
+})
+
+describe('migration 26 → 27 (serveurs Linux de la v2.9)', () => {
+  it('change seulement la version ; les serveurs existants restent des serveurs Windows', () => {
+    const doc = JSON.parse(readFixture(26)) as Record<string, unknown>
+    expect(migrations[26]!(doc)).toEqual({ ...doc, schemaVersion: 27 })
+    const srv = Object.values(open(26).lab.devices).find((d) => d.name === 'SRV1')
+    expect(srv?.kind === 'server' && [srv.host.os, srv.host.linux]).toEqual(['windows', undefined])
+  })
+
+  it('v27.slab : garde le serveur Linux LSRV1 (Debian 12, utilisateur admin, interface eth0)', () => {
+    const lsrv = Object.values(open(27).lab.devices).find((d) => d.name === 'LSRV1')
+    expect(lsrv?.kind).toBe('server')
+    if (lsrv?.kind !== 'server') return
+    expect(lsrv.host.os).toBe('linux')
+    expect(lsrv.host.linux).toEqual({ distro: 'debian12' })
+    expect(lsrv.host.session?.user).toBe('admin')
+    expect(lsrv.interfaces.map((i) => i.name)).toEqual(['eth0'])
+  })
+})
+
+describe('migration 25 → 26 (horloge par ordinateur de la v2.8)', () => {
+  it('change seulement la version ; tous les ordinateurs sont à l’heure du lab (écart nul)', () => {
+    const doc = JSON.parse(readFixture(25)) as Record<string, unknown>
+    expect(migrations[25]!(doc)).toEqual({ ...doc, schemaVersion: 26 })
+    const hosts = Object.values(open(25).lab.devices).filter(
+      (d) => d.kind === 'server' || d.kind === 'client'
+    )
+    expect(hosts.length).toBeGreaterThan(0)
+    for (const d of hosts)
+      expect((d as unknown as { host: { clockOffsetSeconds: number } }).host.clockOffsetSeconds).toBe(0)
+  })
+
+  it('v26.slab : garde l’écart d’horloge de PC2', () => {
+    const pc2 = Object.values(open(26).lab.devices).find((d) => d.name === 'PC2') as unknown as {
+      host: { clockOffsetSeconds: number }
+    }
+    expect(pc2.host.clockOffsetSeconds).toBe(90)
+  })
+})
+
+describe('migration 24 → 25 (base locale et registre des GPO de la v2.7)', () => {
+  it('change seulement la version ; base locale et registre des GPO vides', () => {
+    const doc = JSON.parse(readFixture(24)) as Record<string, unknown>
+    expect(migrations[24]!(doc)).toEqual({ ...doc, schemaVersion: 25 })
+    const pc2 = Object.values(open(24).lab.devices).find((d) => d.name === 'PC2') as unknown as {
+      host: { localUsers: unknown[]; localGroups: unknown[] }
+    }
+    expect(pc2.host.localUsers).toEqual([])
+    expect(pc2.host.localGroups).toEqual([])
+  })
+
+  it('v25.slab : garde l’utilisateur local de PC2 et la valeur de registre de la GPO', () => {
+    const lab = open(25).lab
+    const pc2 = Object.values(lab.devices).find((d) => d.name === 'PC2') as unknown as {
+      host: { localUsers: { name: string }[] }
+    }
+    expect(pc2.host.localUsers.map((u) => u.name)).toEqual(['tech'])
+    const ddp = lab.domains['lab.local']?.gpos.find((g) => g.name === 'Default Domain Policy')
+    expect(ddp?.registry[0]).toMatchObject({ hive: 'HKCU', valueName: 'ScreenSaveTimeOut', value: 900 })
+  })
+})
+
+describe('migration 23 → 24 (état des services de la v2.7)', () => {
+  const services = (lab: ReturnType<typeof open>['lab']) =>
+    (Object.values(lab.devices).find((d) => d.name === 'SRV1') as { host: { services: unknown } }).host
+      .services
+
+  it('change seulement la version ; aucun service modifié', () => {
+    const doc = JSON.parse(readFixture(23)) as Record<string, unknown>
+    expect(migrations[23]!(doc)).toEqual({ ...doc, schemaVersion: 24 })
+    expect(services(open(23).lab)).toEqual({})
+  })
+
+  it('v24.slab : s’ouvre sans migration et garde le service W32Time arrêté (manuel)', () => {
+    expect(services(open(24).lab)).toEqual({ W32Time: { status: 'Stopped', startType: 'Manual' } })
+  })
 })
 
 describe('migration 1 → 2 (stratégies de groupe par défaut)', () => {
@@ -357,6 +472,65 @@ describe('migration 9 → 10 (cybersécurité défensive de la v2.6)', () => {
     expect(evaluateCheck(lab, { type: 'iosStartup', device: 'CSW1', line: 'ip arp inspection trust' })).toBe(
       true
     )
+  })
+})
+
+describe('migration 22 → 23 (diagnostic des routeurs de la v2.7)', () => {
+  it('change seulement la version ; compteurs et cache ARP vides', () => {
+    const doc = JSON.parse(readFixture(22)) as Record<string, unknown>
+    expect(migrations[22]!(doc)).toEqual({ ...doc, schemaVersion: 23 })
+    const cr1 = Object.values(open(22).lab.devices).find((d) => d.name === 'CR1') as {
+      ios?: { arpTable: unknown[]; debugs: unknown[]; natHits: number }
+    }
+    expect(cr1.ios).toMatchObject({ arpTable: [], debugs: [], natHits: 0 })
+  })
+
+  it('v23.slab : s’ouvre sans migration', () => {
+    expect(evaluateCheck(open(23).lab, { type: 'iosStartup', device: 'CR1', line: 'router rip' })).toBe(true)
+  })
+})
+
+describe('migration 21 → 22 (RIP et default-information originate de la v2.7)', () => {
+  const startup = (lab: ReturnType<typeof open>['lab'], line: string) =>
+    evaluateCheck(lab, { type: 'iosStartup', device: 'CR1', line })
+
+  it('change seulement la version ; aucun RIP ni route par défaut annoncée', () => {
+    const doc = JSON.parse(readFixture(21)) as Record<string, unknown>
+    expect(migrations[21]!(doc)).toEqual({ ...doc, schemaVersion: 22 })
+    const lab = open(21).lab
+    expect(startup(lab, 'router rip')).toBe(false)
+    expect(startup(lab, 'default-information originate always')).toBe(false)
+  })
+
+  it('v22.slab : s’ouvre sans migration et garde RIP et la route par défaut OSPF', () => {
+    const lab = open(22).lab
+    for (const line of [
+      'router rip',
+      'version 2',
+      'network 192.168.30.0',
+      'no auto-summary',
+      'default-information originate always'
+    ])
+      expect(startup(lab, line)).toBe(true)
+  })
+})
+
+describe('migration 20 → 21 (administration du système IOS de la v2.7)', () => {
+  const startup = (lab: ReturnType<typeof open>['lab'], line: string) =>
+    evaluateCheck(lab, { type: 'iosStartup', device: 'CR1', line })
+
+  it('change seulement la version ; UTC, aucun serveur NTP, exec-timeout d’usine', () => {
+    const doc = JSON.parse(readFixture(20)) as Record<string, unknown>
+    expect(migrations[20]!(doc)).toEqual({ ...doc, schemaVersion: 21 })
+    const lab = open(20).lab
+    expect(startup(lab, 'clock timezone CET 1')).toBe(false)
+    expect(startup(lab, 'exec-timeout 0 0')).toBe(false)
+  })
+
+  it('v21.slab : s’ouvre sans migration et garde fuseau, NTP et exec-timeout', () => {
+    const lab = open(21).lab
+    for (const line of ['clock timezone CET 1', 'ntp server 192.168.30.10', 'exec-timeout 0 0'])
+      expect(startup(lab, line)).toBe(true)
   })
 })
 

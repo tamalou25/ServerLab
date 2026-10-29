@@ -13,6 +13,7 @@ import type { FirewallProfileName, FirewallRule, HostDevice, LabState } from '..
 import { FIREWALL_PROFILES, FIREWALL_PROTOCOLS } from '../model/schema'
 import { inNetwork, isIpv4, parseMaskOrPrefix } from '../net/ipv4'
 import { requireDevice } from '../topology/actions'
+import { serviceRunning } from './servicestate'
 
 export const PROFILE_LABELS: Record<FirewallProfileName, string> = {
   Domain: 'Domaine',
@@ -242,6 +243,19 @@ export function evaluateFirewall(host: HostDevice, packet: FirewallPacket): Fire
   // Poste Ubuntu : pas de pare-feu Windows ; ufw est installé mais inactif par défaut
   if (host.host.os === 'linux')
     return { allowed: true, profile, rule: null, reason: 'poste Linux : pare-feu (ufw) inactif' }
+  // Service Pare-feu Windows Defender (MpsSvc) arrêté : plus aucune règle n'est appliquée (v2.8, #222).
+  // Microsoft : « Stopping the Windows Firewall service isn't supported by Microsoft and can cause
+  // problems » (Start menu, applications modernes, activation par téléphone…) ; la méthode prise en
+  // charge est de désactiver les profils en laissant le service démarré :
+  // https://learn.microsoft.com/en-us/windows/security/operating-system-security/network-security/windows-firewall/
+  // Que l'arrêt laisse passer tout le trafic n'est pas sourcé (docs/fidelite.md, « À vérifier »).
+  if (!serviceRunning(host, 'MpsSvc'))
+    return {
+      allowed: true,
+      profile,
+      rule: null,
+      reason: 'service Pare-feu (MpsSvc) arrêté : aucune règle appliquée'
+    }
   const label = PROFILE_LABELS[profile]
   if (!profileEnabled(host, profile))
     return { allowed: true, profile, rule: null, reason: `pare-feu désactivé pour le profil ${label}` }

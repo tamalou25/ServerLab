@@ -33,14 +33,14 @@ export function InterfaceList({ device, compact = false }: { device: Device; com
               </span>
             </div>
             {iface.l3 && (
-              <div className="selectable pl-4.5 font-mono text-[11px] text-fg-muted">
+              <div className="selectable pl-4.5 font-mono text-meta text-fg-muted">
                 {ip
                   ? `${ip.address} / ${prefixToMask(ip.prefixLength)}${ip.source === 'apipa' ? ' (APIPA)' : ''}`
                   : t('props.noIpv4')}
               </div>
             )}
             {!compact && (
-              <div className="selectable pl-4.5 font-mono text-[11px] text-fg-subtle">{iface.mac}</div>
+              <div className="selectable pl-4.5 font-mono text-meta text-fg-subtle">{iface.mac}</div>
             )}
           </li>
         )

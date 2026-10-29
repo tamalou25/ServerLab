@@ -1,0 +1,7 @@
+# Source: https://manpages.debian.org/bookworm/bind9-dnsutils/nslookup.1.en.html — sources BIND 9.18 (bin/dig/nslookup.c, paquet bind9-dnsutils 1:9.18), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: nslookup 192.168.2.20 192.168.2.10
+Server:		192.168.2.10
+Address:	192.168.2.10#53
+
+20.2.168.192.in-addr.arpa	name = www.lab.lan.
+

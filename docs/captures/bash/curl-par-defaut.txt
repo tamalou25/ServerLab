@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/curl/curl.1.en.html — réponse d’Apache reconstituée d’après server/vhost.c (premier site = site par défaut) et debian/index.html (httpd 2.4.68-1~deb12u1) (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: curl -s -H "Host: inconnu.lab.local" http://192.168.2.10/ | grep "<title>"
+    <title>Apache2 Debian Default Page: It works</title>

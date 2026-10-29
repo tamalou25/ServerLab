@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/chmod.1.en.html
+# Commande: chmod -Q 644 a.txt
+chmod: invalid option -- 'Q'
+Try 'chmod --help' for more information.

@@ -4,8 +4,20 @@
  * pwd, echo, clear, exit, help) puis commandes du système de base et des modules de rôles.
  * Les outils affichent leurs messages d'origine, non traduits (locale C).
  */
-import { LINUX_USER } from '../../model/factory'
 import { CommandFailure, type ExecContext } from '../context'
+import { leaveSu, sudoPrefix } from './accounts'
+import { errnoText, linesToText, putFile, underMount, writeError } from './filetools'
+import {
+  actor,
+  bashUser,
+  canTraverse,
+  cloneFiles,
+  commitFiles,
+  hasPerm,
+  homeDir,
+  linuxFiles,
+  resolvePath
+} from './linuxfs'
 import type { ToolDef } from '../tools/types'
 import { isUnsimulated, unsimulatedMessage } from '../unsimulated'
 
@@ -61,71 +73,62 @@ function splitPipes(line: string): string[] {
   return parts
 }
 
-/** Dossier personnel de l'utilisateur de la session. */
-export function homeDir(ctx: ExecContext): string {
-  return `/home/${ctx.host.host.session?.user ?? LINUX_USER}`
-}
-
-/** Chemin absolu normalisé (., .., ~). */
-export function resolvePath(ctx: ExecContext, path: string): string {
-  const home = homeDir(ctx)
-  const expanded = path === '~' ? home : path.startsWith('~/') ? `${home}${path.slice(1)}` : path
-  const absolute = expanded.startsWith('/') ? expanded : `${ctx.session.cwd.replace(/\/$/, '')}/${expanded}`
-  const parts: string[] = []
-  for (const part of absolute.split('/')) {
-    if (part === '' || part === '.') continue
-    if (part === '..') parts.pop()
-    else parts.push(part)
-  }
-  return `/${parts.join('/')}`
-}
+export { homeDir, resolvePath }
 
 /** Invite bash : etudiant@LNX1:~/docs$ (root : #). */
 export function bashPrompt(ctx: { host: string; user: string; cwd: string }): string {
-  const home = `/home/${ctx.user}`
+  const home = ctx.user === 'root' ? '/root' : `/home/${ctx.user}`
   const where =
     ctx.cwd === home ? '~' : ctx.cwd.startsWith(`${home}/`) ? `~${ctx.cwd.slice(home.length)}` : ctx.cwd
-  return `${ctx.user}@${ctx.host}:${where}$ `
+  return `${ctx.user}@${ctx.host}:${where}${ctx.user === 'root' ? '#' : '$'} `
 }
 
-/** Dossiers locaux simulés (les autres chemins n'existent pas). */
+/** Dossier local existant (arborescence simulée ou point de montage). */
 export function isLocalDir(ctx: ExecContext, path: string): boolean {
-  if (['/', '/home', '/mnt', '/media', '/etc', '/tmp', homeDir(ctx)].includes(path)) return true
-  return ctx.host.host.mounts.some((m) => path === m.target || path.startsWith(`${m.target}/`))
+  return linuxFiles(ctx)[path]?.type === 'dir' || underMount(ctx, path)
 }
 
 export const BASH_BUILTINS = ['cd', 'pwd', 'echo', 'clear', 'exit', 'help', 'sudo'] as const
 
 function runCommand(ctx: ExecContext, args: string[], tools: ToolDef[]): void {
   let [name = '', ...rest] = args
+  let viaSudo = false
   if (name === 'sudo') {
-    // Session de l'administrateur du poste : sudo ne redemande pas le mot de passe (simplification)
-    if (rest.length === 0) {
-      ctx.writeLines(['usage: sudo command'], 'error')
-      return
-    }
-    ctx.root = true
-    ;[name = '', ...rest] = rest
+    // Règle /etc/sudoers (groupe sudo) et mot de passe vérifiés ; la commande s'exécute en root
+    const next = sudoPrefix(ctx, rest)
+    if (next === null) return
+    viaSudo = true
+    ;[name = '', ...rest] = next
   }
   switch (name) {
     case 'cd': {
-      const target = resolvePath(ctx, rest[0] ?? '~')
-      if (!isLocalDir(ctx, target))
-        throw new CommandFailure(`bash: cd: ${rest[0]}: No such file or directory`, 'NotFound')
+      const arg = rest[0] ?? '~'
+      const target = resolvePath(ctx, arg)
+      const files = linuxFiles(ctx)
+      const node = files[target]
+      if (!node && !underMount(ctx, target))
+        throw new CommandFailure(`bash: cd: ${arg}: No such file or directory`, 'NotFound')
+      if (node && node.type !== 'dir')
+        throw new CommandFailure(`bash: cd: ${arg}: Not a directory`, 'NotADirectory')
+      if (node && !(canTraverse(files, actor(ctx), target) && hasPerm(files, actor(ctx), node, 1)))
+        throw new CommandFailure(`bash: cd: ${arg}: Permission denied`, 'AccessDenied')
       ctx.session = { ...ctx.session, cwd: target }
       return
     }
     case 'pwd':
       ctx.write(ctx.session.cwd)
       return
-    case 'echo':
-      ctx.write(rest.join(' '))
+    case 'echo': {
+      const noNewline = rest[0] === '-n'
+      ctx.write((noNewline ? rest.slice(1) : rest).join(' '))
       return
+    }
     case 'clear':
       ctx.clear = true
       return
     case 'exit':
-      ctx.exit = true
+      // Dans une session ouverte par su, exit revient à l'utilisateur précédent
+      if (!leaveSu(ctx)) ctx.exit = true
       return
     case 'help':
       ctx.writeLines([
@@ -146,7 +149,9 @@ function runCommand(ctx: ExecContext, args: string[], tools: ToolDef[]): void {
   const tool = tools.find((t) => t.name === name)
   if (!tool || !(tool.available?.(ctx) ?? true)) {
     ctx.write(
-      isUnsimulated('bash', name) ? unsimulatedMessage('bash', name) : `${name}: command not found`,
+      isUnsimulated('bash', name)
+        ? unsimulatedMessage('bash', name)
+        : `${viaSudo ? 'sudo: ' : ''}${name}: command not found`,
       'error'
     )
     return
@@ -175,31 +180,128 @@ function applyGrep(ctx: ExecContext, from: number, args: string[]): void {
   ctx.output.splice(from, ctx.output.length - from, ...kept)
 }
 
+interface Redirect {
+  append: boolean
+  target: string
+}
+
+interface Stage {
+  args: string[] | null
+  redirect: Redirect | null
+  error?: string
+}
+
+/** Sépare « commande args > fichier » (ou >>) hors guillemets. */
+function parseStage(stage: string): Stage {
+  let quote: string | null = null
+  let at = -1
+  for (let i = 0; i < stage.length; i++) {
+    const c = stage[i] as string
+    if (quote) {
+      if (c === quote) quote = null
+    } else if (c === '"' || c === "'") quote = c
+    else if (c === '\\') i++
+    else if (c === '>') {
+      at = i
+      break
+    }
+  }
+  if (at < 0) return { args: splitBashArgs(stage.trim()), redirect: null }
+  const append = stage[at + 1] === '>'
+  const before = splitBashArgs(stage.slice(0, at).trim())
+  const after = splitBashArgs(stage.slice(at + (append ? 2 : 1)).trim())
+  if (before === null || after === null) return { args: null, redirect: null }
+  const [target, ...more] = after
+  if (target === undefined)
+    return { args: before, redirect: null, error: "bash: syntax error near unexpected token `newline'" }
+  return { args: [...before, ...more], redirect: { append, target } }
+}
+
+/**
+ * Redirection ouverte par le shell AVANT la commande, avec les droits de l'utilisateur connecté (et non
+ * ceux de sudo : `sudo echo x >> /etc/f` échoue, il faut `| sudo tee -a`). Renvoie le message d'erreur.
+ */
+function redirectError(ctx: ExecContext, target: string): string | null {
+  const path = resolvePath(ctx, target)
+  if (underMount(ctx, path))
+    return `bash: ${target}: écriture dans un partage monté non simulée dans ServerLab`
+  const err = writeError(linuxFiles(ctx), bashUser(ctx), path)
+  return err ? `bash: ${target}: ${errnoText(err)}` : null
+}
+
+/** Écrit dans le fichier la sortie standard produite depuis `from`, qui ne s'affiche plus. */
+function applyRedirect(ctx: ExecContext, from: number, redirect: Redirect): void {
+  const tail = ctx.output.splice(from)
+  ctx.output.push(...tail.filter((l) => l.kind !== 'out'))
+  const next = cloneFiles(linuxFiles(ctx))
+  putFile(
+    next,
+    resolvePath(ctx, redirect.target),
+    linesToText(tail.filter((l) => l.kind === 'out').map((l) => l.text)),
+    ctx,
+    {
+      user: bashUser(ctx),
+      clock: ctx.state.clock,
+      append: redirect.append
+    }
+  )
+  commitFiles(ctx, next)
+}
+
 export function executeBash(ctx: ExecContext, line: string, tools: ToolDef[]): void {
   const trimmed = line.trim()
   if (trimmed === '' || trimmed.startsWith('#')) return
-  const [first = '', ...filters] = splitPipes(trimmed)
-  const args = splitBashArgs(first.trim())
-  if (args === null) {
-    ctx.write('bash: unexpected EOF while looking for matching quote', 'error')
-    return
-  }
-  if (args.length === 0) return
-  const start = ctx.output.length
-  try {
-    runCommand(ctx, args, tools)
-  } catch (e) {
-    if (e instanceof CommandFailure) ctx.write(e.message, 'error')
-    else throw e
-  }
-  for (const filter of filters) {
-    const fargs = splitBashArgs(filter.trim()) ?? []
-    if (fargs[0] !== 'grep') {
-      ctx.write(`${fargs[0] ?? ''}: tube non simulé (seul grep est disponible après |)`, 'error')
+  const stages = splitPipes(trimmed)
+  // Début de la sortie de l'étape précédente (le tube la transmet à l'étape suivante)
+  let previous = ctx.output.length
+  for (const [i, text] of stages.entries()) {
+    const stage = parseStage(text)
+    if (stage.error) {
+      ctx.write(stage.error, 'error')
       return
     }
-    applyGrep(ctx, start, fargs.slice(1))
+    if (stage.args === null) {
+      ctx.write('bash: unexpected EOF while looking for matching quote', 'error')
+      return
+    }
+    const args = stage.args
+    if (args.length === 0) {
+      if (i === 0) return
+      ctx.write("bash: syntax error near unexpected token `|'", 'error')
+      return
+    }
+    if (stage.redirect) {
+      const denied = redirectError(ctx, stage.redirect.target)
+      if (denied) {
+        ctx.write(denied, 'error')
+        return
+      }
+    }
+    ctx.root = bashUser(ctx) === 'root'
+    ctx.stdin = null
+    let region: number
+    if (i > 0 && args[0] === 'grep') {
+      applyGrep(ctx, previous, args.slice(1))
+      region = previous
+    } else {
+      if (i > 0) {
+        // Les erreurs restent à l'écran ; seule la sortie standard alimente l'étape suivante
+        const tail = ctx.output.splice(previous)
+        ctx.stdin = tail.filter((l) => l.kind === 'out').map((l) => l.text)
+        ctx.output.push(...tail.filter((l) => l.kind !== 'out'))
+      }
+      region = ctx.output.length
+      try {
+        runCommand(ctx, args, tools)
+      } catch (e) {
+        if (e instanceof CommandFailure) ctx.write(e.message, 'error')
+        else throw e
+      }
+    }
+    if (stage.redirect) applyRedirect(ctx, region, stage.redirect)
+    previous = region
   }
+  ctx.stdin = null
 }
 
 const EN_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']

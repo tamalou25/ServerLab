@@ -5,7 +5,7 @@
  */
 import { DEFAULT_DC_POLICY_ID, DEFAULT_DOMAIN_POLICY_ID, defaultDomainGpos } from '../roles/gpo/defaults'
 
-export const CURRENT_SCHEMA_VERSION = 20
+export const CURRENT_SCHEMA_VERSION = 28
 
 type RawDocument = Record<string, unknown>
 
@@ -207,6 +207,75 @@ function addV27EtherChannelVtp(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 20 }
 }
 
+/**
+ * Version 21 : administration du système IOS (v2.7, lot 4a) — clock timezone, ntp server,
+ * exec-timeout des lignes et horloge réglée par clock set. Champs facultatifs (valeurs par défaut
+ * du schéma : UTC, aucun serveur, 10 0, horloge jamais réglée) : seule la version change.
+ */
+function addV27SystemAdmin(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 21 }
+}
+
+/**
+ * Version 22 : routage dynamique du routeur (v2.7, lot 4b) — processus RIP (router rip) et
+ * default-information originate d'OSPF. Champs facultatifs (aucun RIP, aucune route par défaut
+ * annoncée) : seule la version change.
+ */
+function addV27RipOspfDefault(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 22 }
+}
+
+/**
+ * Version 23 : état de fonctionnement des routeurs IOS (v2.7, lot 4c) — compteurs d'interface,
+ * cache ARP, hits NAT et débogages actifs. Champs facultatifs (vides) : seule la version change.
+ */
+function addV27RouterDiagnostics(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 23 }
+}
+
+/**
+ * Version 24 : état des services système des ordinateurs (`host.services` : démarré / arrêté, type de démarrage).
+ * Valeurs par défaut (vides) : seul le numéro de version change.
+ */
+function addV27Services(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 24 }
+}
+
+/**
+ * Version 25 : base de comptes locale des ordinateurs (`host.localUsers`, `host.localGroups`) et valeurs de registre des GPO (`registry`).
+ * Valeurs par défaut (vides) : seul le numéro de version change.
+ */
+function addV27LocalAccountsRegistry(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 25 }
+}
+
+/**
+ * Version 26 : horloge par ordinateur (`host.clockOffsetSeconds`, v2.8 chantier A). Valeur par défaut 0
+ * (synchronisé avec l'horloge du lab) : seul le numéro de version change. Les issues suivantes de la v2.8
+ * n'ajoutent que des champs facultatifs, sans nouvelle version (format 26).
+ */
+function addV28HostClock(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 26 }
+}
+
+/**
+ * 26 → 27 (v2.9, serveurs Linux) : `kind: 'server'` peut porter `host.os = 'linux'` et le champ facultatif
+ * `host.linux { distro }` apparaît. Les fichiers 26 n'ont que des serveurs Windows : seul le numéro change.
+ * Les issues suivantes de la v2.9 n'ajoutent que des champs facultatifs (format 27).
+ */
+function addV29LinuxServers(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 27 }
+}
+
+/**
+ * 27 → 28 (v2.10, pare-feu) : nouveau type d'équipement `kind: 'firewall'` avec son état `pf`
+ * (affectations WAN/LAN/OPT1, règles, NAT, services, journal). Les fichiers 27 n'ont aucun pare-feu :
+ * seul le numéro change. Les issues suivantes de la v2.10 n'ajoutent que des champs facultatifs (format 28).
+ */
+function addV210Firewall(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 28 }
+}
+
 /** migrations[n] migre un document de la version n vers n + 1. */
 export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   1: addDefaultGpos,
@@ -227,7 +296,15 @@ export const migrations: Record<number, (doc: RawDocument) => RawDocument> = {
   16: addV27FileContent,
   17: addV27SwitchBasics,
   18: addV27Stp,
-  19: addV27EtherChannelVtp
+  19: addV27EtherChannelVtp,
+  20: addV27SystemAdmin,
+  21: addV27RipOspfDefault,
+  22: addV27RouterDiagnostics,
+  23: addV27Services,
+  24: addV27LocalAccountsRegistry,
+  25: addV28HostClock,
+  26: addV29LinuxServers,
+  27: addV210Firewall
 }
 
 export type MigrationResult = { ok: true; doc: RawDocument } | { ok: false; message: string }

@@ -1,0 +1,2 @@
+# Source: https://manpages.debian.org/bookworm/sed/sed.1.en.html
+# Commande: sed -i 's/bonjour/salut/' a.txt

@@ -155,6 +155,7 @@ describe('aide ? et complétion Tab', () => {
       '  exit        Exit from the EXEC',
       '  ping        Send echo messages',
       '  show        Show running system information',
+      '  terminal    Set terminal line parameters',
       '  traceroute  Trace route to destination'
     ])
     c.run('en')
@@ -201,7 +202,7 @@ describe('do depuis la configuration', () => {
   it('do est proposé dans les modes de configuration, pas en exec', () => {
     const c = router()
     c.run('en')
-    expect(iosHelp(c.state, c.session, 'd')).toEqual(['disable  '])
+    expect(iosHelp(c.state, c.session, 'd')).toEqual(['debug  disable  '])
     c.run('conf t')
     expect(iosHelp(c.state, c.session, 'd')).toEqual(['do  '])
     // Les commandes de navigation ne passent pas par do

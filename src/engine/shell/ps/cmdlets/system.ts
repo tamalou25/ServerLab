@@ -1,6 +1,7 @@
 /**
  * Cmdlets système : rôles et fonctionnalités, redémarrage, renommage.
  */
+import { isDomainAdmin } from '../../../roles/adds/directory'
 import { allFeatures, featureInfo, installFeatures, uninstallFeatures } from '../../../roles/features'
 import { newSelfSignedCertificate } from '../../../services/certificates'
 import { renameComputer, restartComputer } from '../../../services/system'
@@ -145,10 +146,50 @@ export const systemCmdlets: CmdletDef[] = [
   {
     name: 'Restart-Computer',
     module: 'Management',
-    synopsis: 'Redémarre l’ordinateur.',
-    params: [{ name: 'Force', type: 'switch' }],
-    run(ctx) {
-      restartNow(ctx)
+    synopsis: 'Redémarre l’ordinateur local ou des ordinateurs du domaine (-ComputerName).',
+    params: [
+      {
+        name: 'ComputerName',
+        type: 'string[]',
+        position: 0,
+        aliases: ['CN', '__SERVER', 'Server', 'IPAddress']
+      },
+      { name: 'Force', type: 'switch' },
+      { name: 'Wait', type: 'switch' }
+    ],
+    run(ctx, args) {
+      const names = args['ComputerName'] === undefined ? [] : flatten([args['ComputerName']]).map(psToString)
+      const local = (n: string) => ['.', 'localhost', ctx.host.name.toLowerCase()].includes(n.toLowerCase())
+      // Ordinateurs distants (Learn, Restart-Computer -ComputerName) : membres du même domaine,
+      // allumés, administrateur du domaine requis
+      for (const name of names.filter((n) => !local(n))) {
+        const target = Object.values(ctx.state.devices).find(
+          (d) => (d.kind === 'server' || d.kind === 'client') && d.name.toLowerCase() === name.toLowerCase()
+        )
+        const domain = ctx.host.host.domain ? ctx.state.domains[ctx.host.host.domain] : undefined
+        if (!target || !target.powered || target.kind === 'router')
+          throw psError(
+            `Impossible de redémarrer l’ordinateur ${name}. Le serveur RPC n’est pas disponible.`,
+            'OperationStopped',
+            'RestartcomputerFailed',
+            name
+          )
+        if (
+          !domain ||
+          (target.kind !== 'server' && target.kind !== 'client') ||
+          target.host.domain !== domain.name ||
+          !ctx.user.domain ||
+          !isDomainAdmin(domain, ctx.user.name)
+        )
+          throw psError(
+            `Impossible de redémarrer l’ordinateur ${name}. Accès refusé.`,
+            'OperationStopped',
+            'RestartcomputerFailed',
+            name
+          )
+        ctx.apply(restartComputer(ctx.state, target.id))
+      }
+      if (names.length === 0 || names.some(local)) restartNow(ctx)
     }
   },
   {

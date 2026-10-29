@@ -23,6 +23,7 @@ import { requireDevice } from '../../topology/actions'
 import { encodedSize, type FileEncoding } from './encoding'
 import { accessPerms, effectiveAcl, resolvePrincipal, type AccessToken, type Perm } from './acl'
 import { findNode, isWithin, nodePath, normalizeItemName, splitLocalPath, validItemName } from './paths'
+import { isLinuxServer, linuxCreate, linuxFileText, linuxRemove } from './linuxshare'
 
 export const ACCESS_DENIED = 'Accès refusé.'
 export const PATH_NOT_FOUND = 'Le chemin d’accès spécifié est introuvable.'
@@ -120,6 +121,9 @@ export function createItem(
   token: AccessToken,
   options: CreateOptions = {}
 ): EngineResult<string> {
+  // Partage Samba d'un serveur Linux : droits Unix (v2.9, #239)
+  if (isLinuxServer(state.devices[serverId]))
+    return linuxCreate(state, serverId, path, kind, token, options.share, options.content)
   return transact(state, (draft) => {
     const server = requireServer(draft, serverId)
     const storage = server.storage
@@ -225,6 +229,7 @@ export function removeItem(
   token: AccessToken,
   options: { recurse?: boolean; share?: string } = {}
 ): EngineResult {
+  if (isLinuxServer(state.devices[serverId])) return linuxRemove(state, serverId, path, token, options.share)
   return transact(state, (draft) => {
     const server = requireServer(draft, serverId)
     const storage = server.storage
@@ -275,6 +280,10 @@ export function writeFileContent(
   options: WriteContentOptions = {}
 ): EngineResult<string> {
   const encoding = options.encoding ?? 'Default'
+  if (isLinuxServer(state.devices[serverId])) {
+    const previous = options.append ? (linuxFileText(state, serverId, path) ?? '') : ''
+    return linuxCreate(state, serverId, path, 'file', token, options.share, `${previous}${text}`)
+  }
   return transact(state, (draft) => {
     const server = requireServer(draft, serverId)
     const storage = server.storage

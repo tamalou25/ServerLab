@@ -1,0 +1,6 @@
+# Source: https://manpages.debian.org/bookworm/systemd/journalctl.1.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: journalctl -u apache2
+Hint: You are currently not seeing messages from other users and the system.
+      Users in groups 'adm', 'systemd-journal' can see all messages.
+      Pass -q to turn off this notice.
+-- No entries --

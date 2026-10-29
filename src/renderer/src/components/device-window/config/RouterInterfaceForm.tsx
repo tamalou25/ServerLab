@@ -41,7 +41,7 @@ export function RouterInterfaceForm({ device, iface }: { device: Device; iface: 
       }
     >
       <div className="flex max-w-lg flex-col gap-3">
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-ui">
           <input
             type="checkbox"
             data-testid="if-enabled"

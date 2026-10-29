@@ -7,6 +7,8 @@
  * (`.default(...)`) pour rester compatible avec les fichiers existants.
  */
 import { z } from 'zod'
+import { LinuxNodeSchema } from './linuxnode'
+import { PfStateSchema } from './firewall'
 import { DEVICE_KINDS } from './kinds'
 import { IOS_ROUTER_MODELS, IOS_SWITCH_MODELS } from '../ios/models'
 import { DhcpExclusionSchema, DhcpServerSchema } from './dhcp'
@@ -434,6 +436,80 @@ export const RemoteSessionSchema = z.object({
   at: z.number().default(0)
 })
 
+/**
+ * État d'un service système modifié par l'administrateur (Stop-Service, Set-Service, net stop,
+ * sc config). Un service absent de la table est démarré, en démarrage automatique (v2.7, .slab 24).
+ */
+export const SERVICE_STATUSES = ['Running', 'Stopped'] as const
+export const SERVICE_START_TYPES = ['Automatic', 'Manual', 'Disabled'] as const
+/**
+ * Causes d'échec au démarrage d'un service (v2.8, #224) : configuration invalide (erreur 1066,
+ * « service-specific error code ») ou délai dépassé (erreur 1053). Absent = le service démarre.
+ */
+export const SERVICE_FAILURE_REASONS = ['invalidConfig', 'timeout'] as const
+export const ServiceFailureSchema = z.object({ reason: z.enum(SERVICE_FAILURE_REASONS) })
+export type ServiceFailure = z.infer<typeof ServiceFailureSchema>
+
+/** Actions de récupération (`sc failure actions=` : restart, reboot, run). */
+export const SERVICE_RECOVERY_ACTIONS = ['restart', 'reboot', 'run'] as const
+export type ServiceRecoveryActionType = (typeof SERVICE_RECOVERY_ACTIONS)[number]
+
+/**
+ * Options de récupération d'un service (`sc failure` / `sc qfailure`, v2.8, #224) : délai de remise à
+ * zéro du compteur d'échecs (s), message de redémarrage, commande à exécuter, actions successives
+ * (1er, 2e puis échecs suivants) avec leur délai (ms). Absent = aucune action configurée.
+ */
+export const ServiceRecoverySchema = z.object({
+  resetSeconds: z.number().int().min(0).default(0),
+  rebootMessage: z.string().default(''),
+  command: z.string().default(''),
+  actions: z
+    .array(
+      z.object({
+        type: z.enum(SERVICE_RECOVERY_ACTIONS),
+        delayMs: z.number().int().min(0).default(0)
+      })
+    )
+    .default([])
+})
+export type ServiceRecovery = z.infer<typeof ServiceRecoverySchema>
+
+export const ServiceStateSchema = z.object({
+  status: z.enum(SERVICE_STATUSES).default('Running'),
+  startType: z.enum(SERVICE_START_TYPES).default('Automatic'),
+  /** Échec au démarrage (champ facultatif du format 26, v2.8). */
+  failure: ServiceFailureSchema.optional(),
+  /** Options de récupération (champ facultatif du format 26, v2.8). */
+  recovery: ServiceRecoverySchema.optional()
+})
+export type ServiceState = z.infer<typeof ServiceStateSchema>
+
+/**
+ * Compte d'utilisateur local (base SAM d'un serveur membre ou d'un poste, v2.7 Lot 2b, .slab 25).
+ * Les comptes intégrés (Administrateur, Invité) ne sont stockés que s'ils sont modifiés.
+ */
+export const LocalUserSchema = z.object({
+  name: z.string(),
+  fullName: z.string().default(''),
+  description: z.string().default(''),
+  enabled: z.boolean().default(true),
+  password: z.string().default(''),
+  passwordNeverExpires: z.boolean().default(false),
+  userMayChangePassword: z.boolean().default(true)
+})
+export type LocalUser = z.infer<typeof LocalUserSchema>
+
+/**
+ * Groupe local : groupe créé (New-LocalGroup) ou membres ajoutés à un groupe intégré
+ * (Administrateurs, Utilisateurs, Invités). Membres : comptes locaux (nom) ou DOMAINE\nom.
+ */
+export const LocalGroupSchema = z.object({
+  name: z.string(),
+  description: z.string().default(''),
+  members: z.array(z.string()).default([])
+})
+export type LocalGroup = z.infer<typeof LocalGroupSchema>
+
 /** Partie « système d'exploitation » commune aux serveurs et postes clients. */
 /** Système d'un ordinateur : Windows (serveur, poste) ou poste Ubuntu simulé. */
 export const HOST_OS = ['windows', 'linux'] as const
@@ -450,8 +526,58 @@ export const CifsMountSchema = z.object({
 })
 export type CifsMount = z.infer<typeof CifsMountSchema>
 
+/** Distribution d'un serveur Linux simulé (v2.9, format 27). */
+export const LINUX_DISTROS = ['debian12', 'ubuntu2404'] as const
+export type LinuxDistro = (typeof LINUX_DISTROS)[number]
+
 export const HostSchema = z.object({
   os: z.enum(HOST_OS).default('windows'),
+  /** Serveur Linux : distribution (absent = debian12). Sans effet sur un ordinateur Windows. */
+  linux: z
+    .object({
+      distro: z.enum(LINUX_DISTROS).default('debian12'),
+      /** Fichiers modifiés (chemin absolu → nœud), v2.9 ; absent = arborescence par défaut. */
+      files: z.record(z.string(), LinuxNodeSchema).optional(),
+      /** Paquets installés (apt) ; absent = paquets de base de la distribution (services/linuxcatalog.ts). */
+      packages: z.array(z.string()).optional(),
+      /**
+       * Configuration en vigueur de chaque service (SSH, rsyslog, fail2ban) : texte lu au dernier
+       * (re)démarrage, tant que les fichiers ont été modifiés depuis ; absent = fichiers actuels.
+       */
+      loaded: z.record(z.string(), z.string()).optional(),
+      /** Bannissements de fail2ban (abstraits : une règle de refus, jamais d'attaque réelle). */
+      bans: z
+        .array(
+          z.object({
+            jail: z.string(),
+            ip: z.string(),
+            /** Horloge du lab au bannissement (ms). */
+            time: z.number(),
+            /** Durée en ms ; -1 = définitif. */
+            duration: z.number(),
+            /** Horloge du lab du débannissement manuel, s'il a eu lieu. */
+            unbanned: z.number().optional()
+          })
+        )
+        .optional(),
+      /** Serveurs SSH dont la clé d'hôte a été acceptée (nom ou adresse tapés) ; Linux et Windows. */
+      knownHosts: z.array(z.string()).optional(),
+      /**
+       * Connexions SMB ouvertes depuis cet ordinateur (poste Windows) vers un serveur Samba : serveur
+       * (nom en minuscules), compte Samba vérifié, horloge du lab à la connexion et partages (v2.9, #239).
+       */
+      smbLogins: z
+        .array(
+          z.object({
+            server: z.string(),
+            user: z.string(),
+            time: z.number(),
+            shares: z.array(z.string()).default([])
+          })
+        )
+        .optional()
+    })
+    .optional(),
   workgroup: z.string().default('WORKGROUP'),
   /** Domaine AD rejoint (FQDN) ou null si groupe de travail. */
   domain: z.string().nullable().default(null),
@@ -472,6 +598,11 @@ export const HostSchema = z.object({
   session: HostSessionSchema.nullable().default(null),
   /** Horloge du lab au dernier démarrage (redémarrage, mise sous tension). */
   bootedAt: z.number().default(0),
+  /**
+   * Écart, en secondes, entre l'heure locale de l'ordinateur et l'horloge du lab (0 = synchronisé).
+   * Heure locale = horloge du lab + écart (v2.8, Set-Date / w32tm /resync).
+   */
+  clockOffsetSeconds: z.number().int().default(0),
   /** Stratégies de groupe appliquées (ordinateur et utilisateur de la session). */
   policy: HostPolicySchema.default(() => ({ computer: null, user: null, attempt: null })),
   /** Lecteurs réseau connectés (net use). */
@@ -485,6 +616,11 @@ export const HostSchema = z.object({
   /** Protocole SMB 1.0 accepté par le serveur SMB (EnableSMB1Protocol). */
   smb1: z.boolean().default(false),
   eventLog: z.array(EventLogEntrySchema).default([]),
+  /** Services dont l'état diffère du défaut (démarré, automatique), par nom court (DNS, LanmanServer…). */
+  services: z.record(z.string(), ServiceStateSchema).default({}),
+  /** Base de comptes locale (SAM) : utilisateurs et groupes locaux créés ou modifiés. */
+  localUsers: z.array(LocalUserSchema).default([]),
+  localGroups: z.array(LocalGroupSchema).default([]),
   /** Poste Linux : partages SMB montés. */
   mounts: z.array(CifsMountSchema).default([])
 })
@@ -651,6 +787,11 @@ export const IosLineSchema = z.object({
   login: z.enum(['none', 'line', 'local']).default('none'),
   /** logging synchronous : messages de la console resynchronisés avec la saisie (v16). */
   loggingSync: z.boolean().default(false),
+  /** Délai d'inactivité (exec-timeout minutes secondes, v21) ; null : valeur d'usine 10 0. */
+  execTimeout: z
+    .object({ minutes: z.number().int().min(0), seconds: z.number().int().min(0) })
+    .nullable()
+    .default(null),
   /** Protocoles autorisés (transport input) ; null : valeur d'usine. */
   transport: z
     .array(z.enum(['ssh', 'telnet']))
@@ -754,7 +895,26 @@ export const OspfProcessSchema = z.object({
   passive: z.array(z.string()).default([]),
   passiveDefault: z.boolean().default(false),
   /** Exceptions à passive-interface default (no passive-interface Gi0/0). */
-  active: z.array(z.string()).default([])
+  active: z.array(z.string()).default([]),
+  /** default-information originate [always] (v22) ; null : aucune route par défaut annoncée. */
+  defaultOriginate: z.enum(['on', 'always']).nullable().default(null)
+})
+
+/** Processus RIP d'un équipement IOS (router rip, v22). */
+export const RipProcessSchema = z.object({
+  /** version 1 | 2 ; null : envoi en version 1, réception des versions 1 et 2. */
+  version: z
+    .union([z.literal(1), z.literal(2)])
+    .nullable()
+    .default(null),
+  /** Réseaux de classe annoncés (network 10.0.0.0). */
+  networks: z.array(z.string()).default([]),
+  /** Résumé automatique aux frontières de classe (auto-summary, actif par défaut). */
+  autoSummary: z.boolean().default(true),
+  /** Interfaces passives (noms courts) : aucune mise à jour émise. */
+  passive: z.array(z.string()).default([]),
+  /** default-information originate : annonce de 0.0.0.0/0. */
+  defaultOriginate: z.boolean().default(false)
 })
 
 /** Configuration IOS globale (running-config, hors interfaces du moteur). */
@@ -769,6 +929,8 @@ export const IosConfigSchema = z.object({
   ipRouting: z.boolean().default(false),
   /** Processus OSPF (router ospf N). */
   ospf: z.array(OspfProcessSchema).default([]),
+  /** Processus RIP (router rip, v22) ; null : non configuré. */
+  rip: RipProcessSchema.nullable().default(null),
   /** Serveur DHCP IOS : pools (ip dhcp pool), une étendue par pool. */
   dhcpServer: DhcpServerSchema.nullable().default(null),
   /** Adresses exclues de tous les pools (ip dhcp excluded-address). */
@@ -806,6 +968,17 @@ export const IosConfigSchema = z.object({
   /** Mode VTP (vtp mode) et nom de domaine (vtp domain, vide par défaut). */
   vtpMode: z.enum(['server', 'client', 'transparent']).default('server'),
   vtpDomain: z.string().default(''),
+  /** Fuseau horaire (clock timezone, v21) ; null : UTC. */
+  clockTimezone: z
+    .object({
+      zone: z.string(),
+      hours: z.number().int().min(-23).max(23),
+      minutes: z.number().int().min(0).max(59)
+    })
+    .nullable()
+    .default(null),
+  /** Serveurs NTP (ntp server, v21), synchronisation non simulée. */
+  ntpServers: z.array(z.string()).default([]),
   /** CDP actif globalement (cdp run, actif par défaut). */
   cdpRun: z.boolean().default(true),
   /** Données IOS par interface (clé : nom court Gi0/0). */
@@ -858,7 +1031,36 @@ export const IosStateSchema = IosConfigSchema.extend({
   /** Tampon de journalisation (show logging), perdu au redémarrage. */
   syslog: z.array(z.string()).default([]),
   /** Table d'adresses MAC apprises par les trames simulées, perdue au redémarrage. */
-  macTable: z.array(MacEntrySchema).default([])
+  macTable: z.array(MacEntrySchema).default([]),
+  /**
+   * Horloge réglée par clock set (v21) : écart en ms avec l'horloge du lab ; null : jamais réglée
+   * (heure non fiable, « * » de show clock). Conservée au redémarrage (calendrier matériel).
+   */
+  clockOffset: z.number().int().nullable().default(null),
+  /** Compteurs de trafic par interface (show interfaces, v23), remis à zéro au redémarrage. */
+  ifaceCounters: z
+    .record(
+      z.string(),
+      z.object({
+        inPackets: z.number().int().nonnegative(),
+        inBytes: z.number().int().nonnegative(),
+        inBroadcasts: z.number().int().nonnegative(),
+        outPackets: z.number().int().nonnegative(),
+        outBytes: z.number().int().nonnegative(),
+        /** Horloge du lab de la dernière trame reçue / émise. */
+        lastIn: z.number().nullable(),
+        lastOut: z.number().nullable()
+      })
+    )
+    .default({}),
+  /** Cache ARP appris par les trames simulées (show ip arp, v23), perdu au redémarrage. */
+  arpTable: z
+    .array(z.object({ ip: z.string(), mac: z.string(), iface: z.string(), at: z.number() }))
+    .default([]),
+  /** Paquets traduits par le NAT (Hits de show ip nat statistics, v23). */
+  natHits: z.number().int().nonnegative().default(0),
+  /** Débogages actifs (debug ip packet, debug ip ospf events, v23), perdus au redémarrage. */
+  debugs: z.array(z.enum(['ip packet', 'ip ospf events'])).default([])
 })
 
 const deviceBase = {
@@ -901,6 +1103,12 @@ export const RouterDeviceSchema = z.object({
   /** Configuration IOS (équipement Cisco ; absente : valeurs d'usine). */
   ios: IosStateSchema.optional()
 })
+/** Pare-feu pfSense CE 2.7 simulé (v2.10, format 28) : trois cartes em0 (WAN), em1 (LAN), em2 (OPT1/DMZ). */
+export const PfDeviceSchema = z.object({
+  ...deviceBase,
+  kind: z.literal('firewall'),
+  pf: PfStateSchema
+})
 export const CloudDeviceSchema = z.object({ ...deviceBase, kind: z.literal('cloud') })
 
 export const DeviceSchema = z.discriminatedUnion('kind', [
@@ -908,7 +1116,8 @@ export const DeviceSchema = z.discriminatedUnion('kind', [
   ClientDeviceSchema,
   SwitchDeviceSchema,
   RouterDeviceSchema,
-  CloudDeviceSchema
+  CloudDeviceSchema,
+  PfDeviceSchema
 ])
 
 /** Extrémité d'un câble : un port précis d'un équipement. */
@@ -962,6 +1171,30 @@ export const GPO_STATUSES = [
 /** SID bien connu « Utilisateurs authentifiés » (filtrage de sécurité par défaut). */
 export const AUTHENTICATED_USERS_SID = WELL_KNOWN_SIDS.authenticatedUsers
 
+/**
+ * Valeur de registre d'une stratégie (Set-GPRegistryValue, v2.7 Lot 2b, .slab 25) : HKLM dans la
+ * Configuration ordinateur, HKCU dans la Configuration utilisateur. `Delete` : valeur supprimée sur
+ * le client (paramètre -Disable).
+ */
+export const GP_REGISTRY_TYPES = [
+  'String',
+  'ExpandString',
+  'Binary',
+  'DWord',
+  'MultiString',
+  'QWord'
+] as const
+export const GpRegistryValueSchema = z.object({
+  hive: z.enum(['HKLM', 'HKCU']),
+  /** Chemin relatif à la ruche (Software\Policies\Microsoft\…). */
+  key: z.string(),
+  valueName: z.string(),
+  type: z.enum(GP_REGISTRY_TYPES).default('String'),
+  value: z.union([z.string(), z.number(), z.array(z.string())]).default(''),
+  state: z.enum(['Set', 'Delete']).default('Set')
+})
+export type GpRegistryValue = z.infer<typeof GpRegistryValueSchema>
+
 /** Objet de stratégie de groupe (GPO). */
 export const GpoSchema = z.object({
   /** GUID de l'objet ({31B2F340-016D-11D2-945F-00C04FB984F9}). */
@@ -980,7 +1213,9 @@ export const GpoSchema = z.object({
   userVersion: z.number().int().nonnegative().default(0),
   computerVersion: z.number().int().nonnegative().default(0),
   computer: GpoComputerSettingsSchema.default(noComputerSettings),
-  user: GpoUserSettingsSchema.default(noUserSettings)
+  user: GpoUserSettingsSchema.default(noUserSettings),
+  /** Valeurs de registre sans paramètre simulé correspondant (Set-GPRegistryValue). */
+  registry: z.array(GpRegistryValueSchema).default([])
 })
 
 export const AdUserSchema = z.object({
@@ -1202,6 +1437,22 @@ export const CyberConfigSchema = z.object({
   intercepts: z.array(z.object({ a: z.string(), b: z.string(), by: z.string() })).default([])
 })
 
+/** Paramètres d'une panne (ids d'équipements, noms, valeurs) : sérialisables. */
+export const FaultParamsSchema = z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+
+/** Panne active d'un dépannage (mode panne, v2.8) : identifiant du catalogue, cibles tirées, indices utilisés. */
+export const ActiveFaultSchema = z.object({
+  id: z.string(),
+  params: FaultParamsSchema,
+  hintsUsed: z.number().int().min(0).max(3).default(0)
+})
+
+/** Dépannage en cours : graine du tirage et pannes actives (absent : lab ordinaire). */
+export const TroubleshootingSchema = z.object({
+  seed: z.number().int(),
+  faults: z.array(ActiveFaultSchema)
+})
+
 export const LabStateSchema = z.object({
   devices: z.record(z.string(), DeviceSchema),
   links: z.record(z.string(), LinkSchema),
@@ -1212,11 +1463,15 @@ export const LabStateSchema = z.object({
   /** Domaines Active Directory (clé : nom DNS du domaine). */
   domains: z.record(z.string(), DomainSchema).default({}),
   /** Paramètres des scénarios de cybersécurité. */
-  cyber: CyberConfigSchema.default(() => CyberConfigSchema.parse({}))
+  cyber: CyberConfigSchema.default(() => CyberConfigSchema.parse({})),
+  /** Mode panne (v2.8) : facultatif, absent d'un lab ordinaire (format 26 inchangé). */
+  troubleshooting: TroubleshootingSchema.optional()
 })
 
 export const DeviceKindSchema = z.enum(DEVICE_KINDS)
 
+export type ActiveFault = z.infer<typeof ActiveFaultSchema>
+export type Troubleshooting = z.infer<typeof TroubleshootingSchema>
 export type CyberConfig = z.infer<typeof CyberConfigSchema>
 export type Position = z.infer<typeof PositionSchema>
 export type DhcpClientLease = z.infer<typeof DhcpClientLeaseSchema>
@@ -1242,6 +1497,7 @@ export type ClientDevice = z.infer<typeof ClientDeviceSchema>
 export type SwitchDevice = z.infer<typeof SwitchDeviceSchema>
 export type IosConfig = z.infer<typeof IosConfigSchema>
 export type OspfProcess = z.infer<typeof OspfProcessSchema>
+export type RipProcess = z.infer<typeof RipProcessSchema>
 export type IosAcl = z.infer<typeof AclSchema>
 export type IosAclEntry = z.infer<typeof AclEntrySchema>
 export type NatRule = z.infer<typeof NatRuleSchema>

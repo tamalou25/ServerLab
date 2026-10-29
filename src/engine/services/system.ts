@@ -8,6 +8,8 @@ import { DEFAULT_LOCAL_USER } from '../model/factory'
 import type { HostDevice, LabState } from '../model/schema'
 import { deviceNameError, requireDevice } from '../topology/actions'
 import { registerHostDns } from '../roles/adds/join'
+import { computerServices, startFailureEvent, startFailureOf } from './hostservices'
+import { bootServices } from './servicestate'
 
 /** Applique les opérations en attente d'un redémarrage (renommage…). */
 export function applyRestart(draft: Draft<LabState>, device: Draft<HostDevice>, reason?: string): void {
@@ -41,6 +43,8 @@ export function applyRestart(draft: Draft<LabState>, device: Draft<HostDevice>, 
   }
   device.host.pendingReboot = false
   device.host.bootedAt = draft.clock
+  // Services : démarrage automatique ou arrêt selon leur type de démarrage
+  const failedAtBoot = bootServices(device)
   // Stratégie utilisateur déchargée ; la stratégie d'ordinateur (conservée) sera retraitée
   device.host.policy.user = null
   device.host.policy.attempt = null
@@ -59,6 +63,12 @@ export function applyRestart(draft: Draft<LabState>, device: Draft<HostDevice>, 
     eventId: 6005,
     message: 'Le service Journal des événements a été démarré.'
   })
+  // Services en démarrage automatique en échec : évènement 7000 (v2.8, #224)
+  for (const s of computerServices(draft, device.id)) {
+    const failure = startFailureOf(s)
+    if (failure && failedAtBoot.includes(s.name))
+      logEvent(draft, device.id, startFailureEvent(s.display, failure.text))
+  }
   // Membre d'un domaine : inscription de son nom dans le DNS (mise à jour dynamique)
   registerHostDns(draft, device)
 }

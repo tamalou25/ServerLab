@@ -1,0 +1,247 @@
+{
+  "formatVersion": 1,
+  "id": "lab-59-depannage-pare-feu",
+  "title": "Dépannage pare-feu : site publié et accès Internet en panne",
+  "difficulty": "Avancé",
+  "duration": "50 min",
+  "summary": "Deux incidents indépendants sur le pare-feu pfSense (filtrage, NAT, redirection de port…) : diagnostiquez avec les journaux et les états, puis réparez.",
+  "statement": "## Tickets\n\n> « Le site de l'entreprise (http://45.10.0.1/) ne s'affiche plus depuis l'extérieur. »\n>\n> « Depuis ce matin, des postes ou des serveurs n'accèdent plus à ce qu'ils atteignaient hier. »\n\n## L'environnement\n\n**FW1** (pfSense CE 2.7) relie le WAN (45.10.0.1/30, fournisseur ISP), le LAN (192.168.1.0/24 : PC1, PC2 en DHCP) et la DMZ (172.16.0.0/24 : WEB1). **INTERNET** (8.8.8.8) est un site public derrière le fournisseur. Tout fonctionnait hier soir : la configuration **attendue** est celle d'une politique cohérente (LAN autorisé vers l'extérieur, DMZ isolée du LAN, site publié sur le port 80).\n\n## Travail demandé\n\n1. Reproduisez chaque symptôme (`curl`, `ping`, Test-NetConnection).\n2. Cherchez la cause avec Status > System Logs > Firewall, Diagnostics > States et les pages de configuration (règles, NAT, passerelles, DHCP).\n3. Réparez, puis contrôlez. Il y a plusieurs causes : relisez les symptômes après chaque correction.\n\nÀ rendre : pour chaque cause, le symptôme, l'outil de diagnostic et la correction.",
+  "start": {
+    "devices": [
+      {
+        "kind": "firewall",
+        "name": "FW1",
+        "x": 420,
+        "y": 230,
+        "interfaces": {
+          "em0": "45.10.0.1/30",
+          "em2": "172.16.0.1/24"
+        },
+        "pf": [
+          {
+            "type": "pf.setGateway",
+            "args": [
+              {
+                "name": "WAN_GW",
+                "iface": "wan",
+                "address": "45.10.0.2",
+                "isDefault": true
+              }
+            ]
+          },
+          {
+            "type": "pf.setAlias",
+            "args": [
+              {
+                "name": "MIROIR_MAJ",
+                "type": "host",
+                "values": ["8.8.8.8"],
+                "descr": "Miroir des mises à jour"
+              }
+            ]
+          },
+          {
+            "type": "pf.setDhcp",
+            "args": [
+              "lan",
+              {
+                "enabled": true,
+                "rangeFrom": "192.168.1.100",
+                "rangeTo": "192.168.1.150"
+              }
+            ]
+          },
+          {
+            "type": "pf.addRule",
+            "args": [
+              {
+                "iface": "opt1",
+                "action": "block",
+                "source": {
+                  "type": "interface",
+                  "key": "opt1",
+                  "what": "net"
+                },
+                "destination": {
+                  "type": "interface",
+                  "key": "lan",
+                  "what": "net"
+                },
+                "descr": "DMZ isolée du LAN"
+              }
+            ]
+          },
+          {
+            "type": "pf.addRule",
+            "args": [
+              {
+                "iface": "opt1",
+                "action": "pass",
+                "protocol": "tcp",
+                "source": {
+                  "type": "interface",
+                  "key": "opt1",
+                  "what": "net"
+                },
+                "destination": {
+                  "type": "alias",
+                  "name": "MIROIR_MAJ"
+                },
+                "destinationPort": {
+                  "from": 80,
+                  "to": 80
+                },
+                "descr": "Mises à jour HTTP"
+              }
+            ]
+          },
+          {
+            "type": "pf.addPortForward",
+            "args": [
+              {
+                "protocol": "tcp",
+                "destinationPort": {
+                  "from": 80,
+                  "to": 80
+                },
+                "targetAddress": "172.16.0.10",
+                "descr": "Site web"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "router",
+        "name": "ISP",
+        "x": 420,
+        "y": 130,
+        "interfaces": {
+          "Gi0/0": "45.10.0.2/30",
+          "Gi0/1": "8.8.8.1/24"
+        }
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "INTERNET",
+        "x": 640,
+        "y": 130,
+        "ip": "8.8.8.8/24",
+        "gateway": "8.8.8.1",
+        "packages": ["apache2"]
+      },
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 160,
+        "y": 230
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 40,
+        "y": 330,
+        "ip": "192.168.1.10/24",
+        "gateway": "192.168.1.1",
+        "dns": ["192.168.1.1"],
+        "firewallDisabled": ["Domain", "Private", "Public"]
+      },
+      {
+        "kind": "client",
+        "name": "PC2",
+        "x": 150,
+        "y": 330,
+        "dhcp": true,
+        "firewallDisabled": ["Domain", "Private", "Public"]
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "WEB1",
+        "x": 700,
+        "y": 330,
+        "ip": "172.16.0.10/24",
+        "gateway": "172.16.0.1",
+        "packages": ["apache2"]
+      }
+    ],
+    "links": [
+      ["ISP:Gi0/0", "FW1:em0"],
+      ["INTERNET:eth0", "ISP:Gi0/1"],
+      ["SW1:Fa0/1", "FW1:em1"],
+      ["PC1:Ethernet0", "SW1:Fa0/2"],
+      ["PC2:Ethernet0", "SW1:Fa0/3"],
+      ["WEB1:eth0", "FW1:em2"]
+    ]
+  },
+  "troubleshooting": {
+    "seed": 2,
+    "faults": [
+      {
+        "id": "pf.rule-order"
+      },
+      {
+        "id": "pf.nat-disabled"
+      }
+    ]
+  },
+  "criteria": [
+    {
+      "id": "c1",
+      "label": "Toutes les pannes du pare-feu sont réparées",
+      "hint": "Relisez les symptômes après chaque correction.",
+      "check": {
+        "type": "faultRepaired"
+      }
+    },
+    {
+      "id": "c2",
+      "label": "Le site est publié sur l’adresse WAN (TCP 80)",
+      "hint": "Testez depuis INTERNET avec curl.",
+      "check": {
+        "type": "pfReachable",
+        "from": "INTERNET",
+        "to": "45.10.0.1",
+        "protocol": "tcp",
+        "port": 80
+      }
+    },
+    {
+      "id": "c3",
+      "label": "PC1 atteint Internet (TCP 80)",
+      "hint": "Regardez la traduction d’adresses dans Diagnostics > States.",
+      "check": {
+        "type": "pfReachable",
+        "from": "PC1",
+        "to": "INTERNET",
+        "protocol": "tcp",
+        "port": 80
+      }
+    },
+    {
+      "id": "c4",
+      "label": "WEB1 télécharge ses mises à jour (TCP 80 vers Internet)",
+      "hint": "Règle de la DMZ et NAT.",
+      "check": {
+        "type": "pfReachable",
+        "from": "WEB1",
+        "to": "INTERNET",
+        "protocol": "tcp",
+        "port": 80
+      }
+    },
+    {
+      "id": "c5",
+      "label": "La DMZ reste isolée du LAN",
+      "hint": "Ne corrigez pas en ouvrant tout.",
+      "check": {
+        "type": "pfReachable",
+        "from": "WEB1",
+        "to": "PC1",
+        "protocol": "icmp",
+        "success": false
+      }
+    }
+  ]
+}

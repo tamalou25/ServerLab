@@ -42,6 +42,14 @@ const THEMES: Record<
     warning: 'text-neutral-200',
     verbose: 'text-neutral-200'
   },
+  // Console série du pare-feu pfSense
+  pfsense: {
+    root: 'bg-black',
+    text: 'text-neutral-200',
+    error: 'text-red-400',
+    warning: 'text-yellow-300',
+    verbose: 'text-cyan-300'
+  },
   // Terminal d'Ubuntu (profil par défaut)
   bash: {
     root: 'bg-[#300a24]',
@@ -183,7 +191,7 @@ export function Terminal({ deviceId, kind, autoFocus }: TerminalProps) {
   return (
     <div
       ref={scrollRef}
-      className={`selectable h-full overflow-y-auto p-2 font-mono text-[13px] leading-[1.35] ${theme.root} ${theme.text}`}
+      className={`selectable h-full overflow-y-auto p-2 font-mono text-ui leading-[1.35] ${theme.root} ${theme.text}`}
       onMouseUp={() => {
         // Clic dans la console : focus sur la saisie (sauf sélection de texte en cours)
         if (!window.getSelection()?.toString()) inputRef.current?.focus()
@@ -222,7 +230,7 @@ export function Terminal({ deviceId, kind, autoFocus }: TerminalProps) {
             type={secure ? 'password' : 'text'}
             spellCheck={false}
             autoComplete="off"
-            className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[13px] text-inherit caret-current outline-none focus-visible:ring-1 focus-visible:ring-accent"
+            className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-ui text-inherit caret-current outline-none focus-visible:ring-1 focus-visible:ring-accent"
             data-testid="terminal-input"
           />
         </div>

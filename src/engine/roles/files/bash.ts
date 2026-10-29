@@ -8,14 +8,29 @@ import { transact, type EngineResult } from '../../core/result'
 import { LAB_EPOCH_MS } from '../../core/clock'
 import type { CifsMount, Domain, HostDevice, LabState, ServerDevice } from '../../model/schema'
 import { effectiveIpv4 } from '../../net/addressing'
-import { ctimeDate, homeDir, isLocalDir, resolvePath } from '../../shell/bash/interpreter'
+import { ctimeDate, resolvePath } from '../../shell/bash/interpreter'
+import { catOutput, lsLocal, mkdirLocal, readLocal, touchLocal } from '../../shell/bash/filetools'
+import { getopt } from '../../shell/bash/getopt'
+import { usageError } from '../../shell/bash/linuxfs'
 import { CommandFailure, type ExecContext } from '../../shell/context'
 import type { ToolDef } from '../../shell/tools/types'
 import { isLockedOut } from '../adds/lockout'
-import { resolvConfLines } from '../dns/bash'
 import { domainToken, type AccessToken } from './acl'
 import { adminShares, createItem } from './actions'
 import { openUnc, type UncTarget } from './smb'
+import { isLinuxServer } from './linuxshare'
+import { byteLength, commitFilesOf } from '../../shell/bash/linuxfs'
+import {
+  authenticate as sambaAuthenticate,
+  connect as sambaConnect,
+  createInShare,
+  listShareDir,
+  listedShares,
+  sambaServer,
+  sharePath
+} from '../../shell/bash/sambaaccess'
+import { serverExchange } from '../adds/locator'
+import { sourceAddressFor } from '../../sim/forward'
 
 /** //srv1/Compta/Budget → \\srv1\Compta\Budget */
 const toUnc = (source: string) => source.replace(/\//g, '\\')
@@ -130,6 +145,11 @@ const mountTool: ToolDef = {
       throw new CommandFailure(`mount: ${target}: mount point does not exist.`, 'NotFound')
     if (ctx.host.host.mounts.some((m) => m.target === target))
       throw new CommandFailure(`mount error(16): Device or resource busy\n${SUGGEST}`, 'Busy')
+    if (linuxServerNamed(ctx.state, source.replace(/^\/\//, '').split('/')[0] ?? ''))
+      throw new CommandFailure(
+        'mount -t cifs vers un serveur Samba n’est pas simulé dans ServerLab : utilisez smbclient //serveur/partage -U compte pour tester l’accès.',
+        'NotSupported'
+      )
     const username = option(opts, 'username') ?? option(opts, 'user')
     if (!username) throw new CommandFailure(`mount error(13): Permission denied\n${SUGGEST}`, 'AccessDenied')
     const password = option(opts, 'password') ?? ctx.ask(`Password for ${username}@${source}: `, true)
@@ -185,27 +205,6 @@ function lsEntries(
     .filter(() => !!ctx)
 }
 
-const SYSTEM_DIRS = [
-  'bin',
-  'boot',
-  'dev',
-  'etc',
-  'home',
-  'lib',
-  'media',
-  'mnt',
-  'opt',
-  'proc',
-  'root',
-  'run',
-  'sbin',
-  'srv',
-  'sys',
-  'tmp',
-  'usr',
-  'var'
-]
-
 const lsTool: ToolDef = {
   name: 'ls',
   synopsis: 'Liste un dossier (local ou partage monté).',
@@ -213,7 +212,8 @@ const lsTool: ToolDef = {
     const arg = args.find((a) => !a.startsWith('-'))
     const path = resolvePath(ctx, arg ?? '.')
     const mounted = mountOf(ctx, path)
-    if (mounted) {
+    if (!mounted) return lsLocal(ctx, args)
+    {
       const r = openMounted(ctx, mounted.mount, mounted.unc)
       if (!r.ok)
         throw new CommandFailure(
@@ -229,36 +229,24 @@ const lsTool: ToolDef = {
         )
       const names = lsEntries(ctx, r.target).map((e) => e.name)
       if (names.length > 0) ctx.write(names.join('  '))
-      return
     }
-    if (!isLocalDir(ctx, path))
-      throw new CommandFailure(`ls: cannot access '${arg ?? path}': No such file or directory`, 'NotFound')
-    const names =
-      path === '/'
-        ? SYSTEM_DIRS
-        : path === '/etc'
-          ? ['hostname', 'hosts', 'resolv.conf']
-          : path === '/home'
-            ? [homeDir(ctx).split('/')[2] ?? '']
-            : path === '/mnt' || path === '/media'
-              ? ctx.host.host.mounts
-                  .filter((m) => m.target.startsWith(`${path}/`))
-                  .map((m) => m.target.slice(path.length + 1))
-              : []
-    if (names.length > 0) ctx.write(names.join('  '))
   }
 }
 
 /** Création d'un fichier ou d'un dossier sur un montage (droit d'écriture du compte du montage). */
-function createOnMount(ctx: ExecContext, tool: string, arg: string, kind: 'file' | 'folder'): void {
+function createOnMount(
+  ctx: ExecContext,
+  tool: string,
+  arg: string,
+  kind: 'file' | 'folder',
+  parents = false
+): void {
   const path = resolvePath(ctx, arg)
   const mounted = mountOf(ctx, path)
   if (!mounted) {
-    if (path.startsWith(homeDir(ctx)) || path.startsWith('/tmp')) return // fichiers locaux non conservés
-    throw new CommandFailure(
-      `${tool}: cannot ${tool === 'touch' ? 'touch' : 'create directory'} '${arg}': Permission denied`,
-      'AccessDenied'
-    )
+    if (tool === 'touch') touchLocal(ctx, arg)
+    else mkdirLocal(ctx, arg, parents)
+    return
   }
   const parentUnc = mounted.unc.split('\\').slice(0, -1).join('\\')
   const name = mounted.unc.split('\\').pop() ?? ''
@@ -308,9 +296,9 @@ const touchTool: ToolDef = {
   name: 'touch',
   synopsis: 'Crée un fichier vide (sur un partage monté : droit d’écriture requis).',
   run(ctx, args) {
-    const files = args.filter((a) => !a.startsWith('-'))
-    if (files.length === 0) throw new CommandFailure('touch: missing file operand', 'Usage')
-    for (const f of files) createOnMount(ctx, 'touch', f, 'file')
+    const o = getopt('touch', args, { flags: 'f', unsimulated: 'acdhmrt' })
+    if (o.rest.length === 0) throw usageError('touch', 'missing file operand')
+    for (const f of o.rest) createOnMount(ctx, 'touch', f, 'file')
   }
 }
 
@@ -318,39 +306,50 @@ const mkdirTool: ToolDef = {
   name: 'mkdir',
   synopsis: 'Crée un dossier (sur un partage monté : droit d’écriture requis).',
   run(ctx, args) {
-    const dirs = args.filter((a) => !a.startsWith('-'))
-    if (dirs.length === 0) throw new CommandFailure('mkdir: missing operand', 'Usage')
-    for (const d of dirs) createOnMount(ctx, 'mkdir', d, 'folder')
+    const o = getopt('mkdir', args, { flags: 'p', long: { parents: 'p' }, unsimulated: 'mvZ' })
+    if (o.rest.length === 0) throw usageError('mkdir', 'missing operand')
+    for (const d of o.rest) {
+      try {
+        createOnMount(ctx, 'mkdir', d, 'folder', o.flags.has('p'))
+      } catch (e) {
+        // mkdir continue avec les autres dossiers après une erreur
+        if (e instanceof CommandFailure) ctx.write(e.message, 'error')
+        else throw e
+      }
+    }
   }
 }
 
 const catTool: ToolDef = {
   name: 'cat',
-  synopsis: 'Affiche un fichier (/etc/hostname, /etc/hosts, /etc/resolv.conf, fichiers des partages).',
+  synopsis: 'Affiche un fichier (arborescence locale, ou fichiers des partages montés).',
   run(ctx, args) {
-    for (const arg of args.filter((a) => !a.startsWith('-'))) {
-      const path = resolvePath(ctx, arg)
-      if (path === '/etc/hostname') ctx.write(ctx.host.name)
-      else if (path === '/etc/hosts')
-        ctx.writeLines([
-          '127.0.0.1 localhost',
-          `127.0.1.1 ${ctx.host.name}`,
-          '',
-          '# The following lines are desirable for IPv6 capable hosts',
-          '::1     ip6-localhost ip6-loopback'
-        ])
-      else if (path === '/etc/resolv.conf') ctx.writeLines(resolvConfLines(ctx.host.host.domain))
-      else {
-        const mounted = mountOf(ctx, path)
-        const r = mounted ? openMounted(ctx, mounted.mount, mounted.unc) : null
-        if (!r || (!r.ok && r.code !== 5))
-          throw new CommandFailure(`cat: ${arg}: No such file or directory`, 'NotFound')
-        if (!r.ok || !r.target.perms.has('read'))
-          throw new CommandFailure(`cat: ${arg}: Permission denied`, 'AccessDenied')
-        const node = (r.target.server as ServerDevice).storage.nodes.find((n) => n.id === r.target.nodeId)
-        if (node?.kind === 'folder') throw new CommandFailure(`cat: ${arg}: Is a directory`, 'IsDirectory')
-        // Contenu des fichiers non simulé : fichier vide
+    const o = getopt('cat', args, { flags: 'n', unsimulated: 'AbEsTuv' })
+    if (o.rest.length === 0) return catOutput(ctx, o, (ctx.stdin ?? []).join('\n'))
+    for (const arg of o.rest) {
+      if (arg === '-') {
+        catOutput(ctx, o, (ctx.stdin ?? []).join('\n'))
+        continue
       }
+      const path = resolvePath(ctx, arg)
+      const mounted = mountOf(ctx, path)
+      if (!mounted) {
+        const text = readLocal(ctx, 'cat', arg)
+        if (text !== null) catOutput(ctx, o, text)
+        continue
+      }
+      const r = openMounted(ctx, mounted.mount, mounted.unc)
+      if (!r.ok && r.code !== 5) {
+        ctx.write(`cat: ${arg}: No such file or directory`, 'error')
+        continue
+      }
+      if (!r.ok || !r.target.perms.has('read')) {
+        ctx.write(`cat: ${arg}: Permission denied`, 'error')
+        continue
+      }
+      const node = (r.target.server as ServerDevice).storage.nodes.find((n) => n.id === r.target.nodeId)
+      if (node?.kind === 'folder') ctx.write(`cat: ${arg}: Is a directory`, 'error')
+      // Contenu des fichiers non simulé : fichier vide
     }
   }
 }
@@ -362,6 +361,138 @@ function smbUser(args: string[]): { account: string; password?: string } | null 
   if (!value) return null
   const [account = '', password] = value.split('%')
   return { account, ...(password !== undefined ? { password } : {}) }
+}
+
+/** Serveur Linux désigné par son nom ou son adresse IPv4 (smbclient //hôte/partage). */
+function linuxServerNamed(state: LabState, name: string): ServerDevice | undefined {
+  return Object.values(state.devices).find(
+    (d): d is ServerDevice =>
+      d.kind === 'server' &&
+      isLinuxServer(d) &&
+      (d.name.toLowerCase() === name.toLowerCase() ||
+        d.interfaces.some((i) => effectiveIpv4(i)?.address === name))
+  )
+}
+
+/**
+ * smbclient vers un serveur Samba (v2.9, #239) : mêmes messages que smbclient 4.17 (source3/client/client.c,
+ * source3/libsmb/clidfs.c). Authentification et droits : shell/bash/sambaaccess.ts.
+ */
+function smbclientLinux(
+  ctx: ExecContext,
+  args: string[],
+  server: ServerDevice,
+  target: string,
+  list: boolean,
+  user: { account: string; password?: string } | null,
+  workgroup: string | undefined
+): void {
+  const serverName = target.replace(/^\/\//, '').split('/')[0] ?? ''
+  const ip = server.interfaces.map((i) => effectiveIpv4(i)?.address).find((a) => !!a) ?? null
+  const reachable = ip
+    ? serverExchange(ctx.state, ctx.deviceId, ip, {
+        protocol: 'SMB',
+        port: 445,
+        request: 'SMB2 : négociation du dialecte',
+        reply: 'SMB2 : réponse du serveur Samba',
+        fields: [['Hôte', serverName]]
+      })
+    : null
+  if (!reachable?.ok)
+    throw new CommandFailure(
+      `do_connect: Connection to ${serverName} failed (Error ${server.powered && !sambaServer(server) && reachable !== null ? 'NT_STATUS_CONNECTION_REFUSED' : 'NT_STATUS_HOST_UNREACHABLE'})`,
+      'Unreachable'
+    )
+  ctx.addTrace(reachable.trace)
+  const srv = sambaServer(server)
+  if (!srv)
+    throw new CommandFailure(
+      `do_connect: Connection to ${serverName} failed (Error NT_STATUS_CONNECTION_REFUSED)`,
+      'Refused'
+    )
+  const anonymous = args.includes('-N') && !user
+  const account = anonymous ? null : (user?.account ?? ctx.user.name)
+  const shown = `${workgroup ?? 'WORKGROUP'}\\${account ?? ''}`
+  const password = anonymous ? null : (user?.password ?? ctx.ask(`Password for [${shown}]:`, true))
+  const auth = sambaAuthenticate(srv, account ? (account.split('\\').pop() ?? account) : null, password)
+  if (auth.kind === 'failed') throw new CommandFailure(`session setup failed: ${auth.status}`, 'LogonFailure')
+  if (list) {
+    ctx.writeLines([
+      '',
+      '\tSharename       Type      Comment',
+      '\t---------       ----      -------',
+      ...listedShares(srv).map((s) => `\t${s.name.padEnd(15)} ${s.type.padEnd(10)}${s.comment}`),
+      'SMB1 disabled -- no workgroup available'
+    ])
+    return
+  }
+  const clientIp = ip ? sourceAddressFor(ctx.state, ctx.host, ip) : null
+  const share = target.replace(/^\/\/[^/]+\//, '').split('/')[0] ?? ''
+  const connected = sambaConnect(srv, share, auth, clientIp)
+  if (!connected.ok) throw new CommandFailure(`tree connect failed: ${connected.status}`, 'TreeConnect')
+  const conn = connected.conn
+  const command = args.includes('-c') ? (args[args.indexOf('-c') + 1] ?? '') : null
+  if (command === null)
+    throw new CommandFailure(
+      "Mode interactif non simulé : utilisez -c 'ls' (ex. smbclient //srv1/Partage -U compte -c 'ls').",
+      'NotSupported'
+    )
+  let cwd: string[] = []
+  for (const part of command.split(';')) {
+    const [verb = '', ...rest] = part.trim().split(/\s+/)
+    const operand = rest.join(' ').replace(/^\\/, '')
+    if (verb === 'ls' || verb === 'dir') {
+      const parts = [...cwd, ...operand.split(/[\\/]/).filter((x) => x !== '' && x !== '*')]
+      const path = sharePath(conn, parts)
+      const mask = `\\${[...parts, '*'].join('\\')}`
+      const entries = path ? listShareDir(srv, conn, path) : null
+      if (!entries) {
+        ctx.write(
+          `${path && srv.files[path] ? 'NT_STATUS_ACCESS_DENIED' : 'NT_STATUS_NO_SUCH_FILE'} listing ${mask}`
+        )
+        continue
+      }
+      const asc = (at: number) => ctimeDate(at, LAB_EPOCH_MS)
+      const row = (name: string, attr: string, size: number, at: number) =>
+        `  ${name.padEnd(30)}${attr.padStart(7)} ${String(size).padStart(8)}  ${asc(at)}`
+      const here = path ? (srv.files[path]?.mtime ?? 0) : 0
+      ctx.writeLines([
+        row('.', 'D', 0, here),
+        row('..', 'D', 0, here),
+        ...entries
+          .filter((e) => !e.name.startsWith('.'))
+          .map((e) =>
+            row(
+              e.name,
+              e.node.type === 'dir' ? 'D' : 'N',
+              e.node.type === 'dir' ? 0 : byteLength(e.node.content ?? ''),
+              e.node.mtime
+            )
+          ),
+        '',
+        '\t\t1018576 blocks of size 4096. 996720 blocks available'
+      ])
+    } else if (verb === 'cd') {
+      const next = operand.split(/[\\/]/).filter(Boolean)
+      cwd = operand.startsWith('\\') ? next : [...cwd, ...next]
+    } else if (verb === 'mkdir') {
+      const parts = [...cwd, ...operand.split(/[\\/]/).filter(Boolean)]
+      const path = sharePath(conn, parts)
+      const made = path ? createInShare(srv, conn, path, 'dir', ctx.state.clock) : null
+      if (!made || 'error' in made) {
+        const why =
+          made && 'error' in made && made.error === 'exists'
+            ? 'NT_STATUS_OBJECT_NAME_COLLISION'
+            : made && 'error' in made && made.error === 'missing'
+              ? 'NT_STATUS_OBJECT_PATH_NOT_FOUND'
+              : 'NT_STATUS_ACCESS_DENIED'
+        ctx.write(`${why} making remote directory \\${parts.join('\\')}`)
+        continue
+      }
+      commitFilesOf(ctx, server.id, made.files)
+      srv.files = made.files
+    } else ctx.write(`${verb}: command not found`)
+  }
 }
 
 const smbclientTool: ToolDef = {
@@ -377,6 +508,8 @@ const smbclientTool: ToolDef = {
         'Usage: smbclient [-L //server] [//server/share] [-U user] [-c command]',
         'Usage'
       )
+    const linux = linuxServerNamed(ctx.state, target.replace(/^\/\//, '').split('/')[0] ?? '')
+    if (linux) return smbclientLinux(ctx, args, linux, target, list, user, workgroup)
     const account = user?.account ?? ctx.host.host.session?.user ?? 'etudiant'
     const domain = domainFor(ctx.state, ctx.host, account, workgroup)
     const shown = `${domain?.netbios ?? 'WORKGROUP'}\\${samOf(account) || account}`

@@ -7,9 +7,14 @@ import { effectiveIpv4 } from '../../net/addressing'
 import { inNetwork, networkAddress } from '../../net/ipv4'
 import type { TransitHooks, Tunnel } from '../../sim/transit'
 import { natEnabled, rrasOf, vpnEnabled } from './state'
+import { serviceRunning } from '../../services/servicestate'
 
 const serverRras = (device: Device) =>
-  device.kind === 'server' && device.powered && device.host.features.includes('RemoteAccess')
+  device.kind === 'server' &&
+  device.powered &&
+  device.host.features.includes('RemoteAccess') &&
+  // Service Routage et accès distant arrêté : plus de routage, de NAT ni de VPN
+  serviceRunning(device, 'RemoteAccess')
     ? rrasOf(device)
     : null
 

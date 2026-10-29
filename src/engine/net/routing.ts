@@ -1,13 +1,15 @@
 /**
  * Tables de routage : routes connectées, statiques et passerelle par défaut.
  */
+import { isLinuxHost } from '../model/host'
 import type { Device, LabState } from '../model/schema'
 import { effectiveIpv4 } from './addressing'
 import { inNetwork, networkAddress, parseIpv4, prefixToMaskInt } from './ipv4'
 import { l2Segment } from './segment'
+import { pfRoutes } from './pf-services'
 import { iosDynamicRoutes, iosInterfaceRoutes } from '../ios/registry'
 
-export type RouteSource = 'connected' | 'static' | 'default' | 'ospf'
+export type RouteSource = 'connected' | 'static' | 'default' | 'ospf' | 'rip'
 
 export interface Route {
   network: string
@@ -19,13 +21,17 @@ export interface Route {
   /** Distance administrative et métrique (routage dynamique : OSPF 110/coût). */
   distance?: number
   metric?: number
+  /** Route externe OSPF de type 2 (default-information originate : O*E2). */
+  external?: boolean
 }
 
 /** TTL initial selon le type d'équipement. */
 export function initialTtl(device: Device): number {
   if (device.kind === 'router' || device.kind === 'switch' || device.kind === 'cloud') return 255
+  // FreeBSD (pfSense) : net.inet.ip.ttl = 64 (à vérifier : docs/fidelite.md, P-03)
+  if (device.kind === 'firewall') return 64
   // Linux : net.ipv4.ip_default_ttl = 64 ; Windows : 128
-  return device.kind === 'client' && device.host.os === 'linux' ? 64 : 128
+  return isLinuxHost(device) ? 64 : 128
 }
 
 /**
@@ -87,6 +93,9 @@ export function routingTable(state: LabState, device: Device): Route[] {
     const known = new Set(routes.map((r) => `${r.network}/${r.prefixLength}`))
     for (const r of iosDynamicRoutes(state, device))
       if (!known.has(`${r.network}/${r.prefixLength}`)) routes.push(r)
+  } else if (device.kind === 'firewall') {
+    // Routes statiques et passerelle par défaut (System > Routing, v2.10 #245)
+    routes.push(...pfRoutes(device, connected))
   } else if (device.kind === 'cloud') {
     // Le FAI renvoie tout le trafic vers le premier équipement adressé de son lien WAN
     const wan = device.interfaces[0]

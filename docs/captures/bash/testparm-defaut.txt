@@ -1,0 +1,41 @@
+# Source: https://manpages.debian.org/bookworm/samba/testparm.1.en.html — https://sources.debian.org/src/samba/2:4.17.12+dfsg-0+deb12u4/source3/utils/testparm.c, lib/param/loadparm.c, lib/util/tini.c et debian/smb.conf (samba 4.17.12), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo testparm -s
+Load smb config files from /etc/samba/smb.conf
+Loaded services file OK.
+Weak crypto is allowed by GnuTLS (e.g. NTLM as a compatibility fallback)
+
+Server role: ROLE_STANDALONE
+
+# Global parameters
+[global]
+	log file = /var/log/samba/log.%m
+	logging = file
+	map to guest = Bad User
+	max log size = 1000
+	obey pam restrictions = Yes
+	pam password change = Yes
+	panic action = /usr/share/samba/panic-action %d
+	passwd chat = *Enter\snew\s*\spassword:* %n\n *Retype\snew\s*\spassword:* %n\n *password\supdated\ssuccessfully* .
+	passwd program = /usr/bin/passwd %u
+	server role = standalone server
+	unix password sync = Yes
+	usershare allow guests = Yes
+	idmap config * : backend = tdb
+
+[homes]
+	browseable = No
+	comment = Home Directories
+	create mask = 0700
+	directory mask = 0700
+	valid users = %S
+
+[printers]
+	browseable = No
+	comment = All Printers
+	create mask = 0700
+	path = /var/tmp
+	printable = Yes
+
+[print$]
+	comment = Printer Drivers
+	path = /var/lib/samba/printers

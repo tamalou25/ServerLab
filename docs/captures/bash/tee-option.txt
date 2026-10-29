@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/tee.1.en.html
+# Commande: tee -Q f
+tee: invalid option -- 'Q'
+Try 'tee --help' for more information.

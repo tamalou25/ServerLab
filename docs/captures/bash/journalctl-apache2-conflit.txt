@@ -1,0 +1,12 @@
+# Source: https://manpages.debian.org/bookworm/systemd/journalctl.1.en.html — messages d’apachectl (debian/apache2ctl) et d’Apache (server/listen.c : AH00072, server/main.c : AH00015) (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo journalctl -u apache2 -n 10
+Jan 05 08:00:36 LSRV1 systemd[1]: Failed to start apache2.service - The Apache HTTP Server.
+Jan 05 08:00:39 LSRV1 systemd[1]: Starting apache2.service - The Apache HTTP Server...
+Jan 05 08:00:39 LSRV1 apachectl[1021]: (98)Address already in use: AH00072: make_sock: could not bind to address [::]:80
+Jan 05 08:00:39 LSRV1 apachectl[1021]: (98)Address already in use: AH00072: make_sock: could not bind to address 0.0.0.0:80
+Jan 05 08:00:39 LSRV1 apachectl[1021]: no listening sockets available, shutting down
+Jan 05 08:00:39 LSRV1 apachectl[1021]: AH00015: Unable to open logs
+Jan 05 08:00:39 LSRV1 apachectl[1021]: Action 'start' failed.
+Jan 05 08:00:39 LSRV1 apachectl[1021]: The Apache error log may have more information.
+Jan 05 08:00:40 LSRV1 systemd[1]: apache2.service: Failed with result 'exit-code'.
+Jan 05 08:00:41 LSRV1 systemd[1]: Failed to start apache2.service - The Apache HTTP Server.

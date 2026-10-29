@@ -20,13 +20,16 @@ import {
   effectiveIpv4,
   featureInfo,
   nodePath,
-  hostServices,
+  computerServices,
   roleModules,
   type EventLogEntry,
+  type LabState,
+  type ServiceInfo,
   type ServerDevice
 } from '@engine/index'
 import { launch } from '../../../lib/desktop'
 import { formatSimTime } from '../../../lib/format'
+import { isAlert, START_TYPE_LABELS, statusLabel } from '../../../lib/services'
 import { useLabStore } from '../../../store/lab'
 import { MessageBox } from '../shell/classic'
 import { DESKTOP_APPS } from '../apps'
@@ -57,7 +60,22 @@ const ROLES: RoleDef[] = roleModules()
   .sort((a, b) => a.feature.localeCompare(b.feature))
 
 /** Services système simulés : ceux du système, puis ceux déclarés par les rôles installés. */
-const servicesOf = (device: ServerDevice, dc: boolean) => hostServices(device.host.features, dc)
+const servicesOf = (lab: LabState, device: ServerDevice) => computerServices(lab, device.id)
+
+/** Ligne de service ; arrêté alors que le démarrage est automatique : signalé en rouge. */
+function serviceRow(server: string, s: ServiceInfo): ReactNode[] {
+  const cells = [server, s.display, s.name, statusLabel(s), START_TYPE_LABELS[s.startType]]
+  if (!isAlert(s)) return cells
+  return cells.map((c, i) => (
+    <span
+      key={i}
+      className="font-semibold text-[#c42b1c]"
+      data-testid={i === 0 ? `sm-alert-${s.name}` : undefined}
+    >
+      {c}
+    </span>
+  ))
+}
 
 interface Notification {
   id: string
@@ -154,7 +172,8 @@ export function ServerManager({ device }: { device: ServerDevice }) {
   const [menu, setMenu] = useState<'manage' | 'tools' | 'view' | 'help' | 'flag' | null>(null)
   const [welcome, setWelcome] = useState(true)
   const [about, setAbout] = useState(false)
-  const domains = useLabStore((s) => s.lab.domains)
+  const lab = useLabStore((s) => s.lab)
+  const domains = lab.domains
   const dc = !!controlledDomain({ domains }, device.id)
   const notifications = notificationsOf(device, dc)
   // Un rôle est affiché dès qu'un de ses services de rôle est installé (Serveur de fichiers par défaut)
@@ -346,10 +365,14 @@ export function ServerManager({ device }: { device: ServerDevice }) {
             const roleNotice =
               (tile.id === 'role:AD-Domain-Services' && notifications.some((n) => n.id === 'adds')) ||
               (tile.id === 'role:DHCP' && notifications.some((n) => n.id === 'dhcp'))
+            const tileFeature = tile.id.startsWith('role:') ? tile.id.slice(5) : null
+            const servicesOk = !servicesOf(lab, device).some(
+              (x) => isAlert(x) && (tileFeature === null || x.role === tileFeature)
+            )
             const rows: [string, boolean][] = [
               ['Gérabilité', !roleNotice],
               ['Événements', errors === 0],
-              ['Services', true],
+              ['Services', servicesOk],
               ['Performances', true],
               ['Résultats BPA', true]
             ]
@@ -451,13 +474,7 @@ export function ServerManager({ device }: { device: ServerDevice }) {
         <Section title="Services" subtitle="Tous les services">
           <Table
             columns={['Nom du serveur', 'Nom complet', 'Nom du service', 'État', 'Type de démarrage']}
-            rows={servicesOf(device, dc).map((s) => [
-              device.name,
-              s.display,
-              s.name,
-              'En cours d’exécution',
-              'Automatique'
-            ])}
+            rows={servicesOf(lab, device).map((s) => serviceRow(device.name, s))}
             empty="Aucun service."
           />
         </Section>
@@ -560,9 +577,9 @@ export function ServerManager({ device }: { device: ServerDevice }) {
         <Section title="Services" subtitle={role.label}>
           <Table
             columns={['Nom du serveur', 'Nom complet', 'Nom du service', 'État', 'Type de démarrage']}
-            rows={servicesOf(device, dc)
+            rows={servicesOf(lab, device)
               .filter((s) => s.role === role.feature)
-              .map((s) => [device.name, s.display, s.name, 'En cours d’exécution', 'Automatique'])}
+              .map((s) => serviceRow(device.name, s))}
             empty="Aucun service pour ce rôle."
           />
         </Section>

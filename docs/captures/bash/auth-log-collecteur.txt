@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/rsyslog/rsyslog.conf.5.en.html (https://manpages.debian.org/bookworm/openssh-server/sshd.8.en.html) — sortie reconstituée d’après la page de manuel et le code source Debian (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: cat /var/log/auth.log | grep Accepted
+Jan  5 08:01:24 LSRV1 sshd[2100]: Accepted publickey for bob from 192.168.2.20 port 37097 ssh2: ED25519 SHA256:V6LafPUDZsCZrHOih3d2EPWd6HKE8utVf7Nb6ymykTk

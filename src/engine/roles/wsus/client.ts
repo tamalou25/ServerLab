@@ -6,11 +6,22 @@
 import type { HostDevice, LabState, ServerDevice } from '../../model/schema'
 import { effectiveIpv4 } from '../../net/addressing'
 import type { PacketTrace } from '../../sim/trace'
+import { serviceRunning } from '../../services/servicestate'
 import { serverExchange } from '../adds/locator'
 import { firstAddress, resolveName } from '../dns/resolver'
 import { appliesTo, catalogUpdate, type CatalogUpdate } from './catalog'
 import type { WsusServer } from './schema'
 import { ALL_COMPUTERS, UNASSIGNED_COMPUTERS, findWsusGroup, wsusServerOf } from './state'
+
+/**
+ * Message d'un client dont le serveur WSUS a son service arrêté (v2.8, #222). Code 0x80244022
+ * WU_E_PT_HTTP_STATUS_SERVICE_UNAVAIL « Same as HTTP status 503 - the service is temporarily
+ * overloaded. » : https://learn.microsoft.com/en-us/windows/deployment/update/windows-update-error-reference
+ * Que ce soit ce code que le client reçoit n'est pas sourcé (docs/fidelite.md, « À vérifier »).
+ */
+export function wsusServiceStoppedMessage(server: string): string {
+  return `Le service Service WSUS (WsusService) est arrêté sur ${server} (code 0x80244022, WU_E_PT_HTTP_STATUS_SERVICE_UNAVAIL : équivalent du statut HTTP 503).`
+}
 
 /** Port HTTP du service WSUS. */
 export const WSUS_HTTP_PORT = 8530
@@ -116,6 +127,9 @@ export function wsusClientStatus(state: LabState, clientId: string): WsusClientS
       `Aucun service WSUS ne répond sur ${parsed.host}:${parsed.port} (code 0x80072EFD : impossible d’établir une connexion avec le serveur).`,
       exchange.trace
     )
+  // Service WSUS (WsusService) arrêté : le client ne remonte plus (v2.8, #222)
+  if (!serviceRunning(server, 'WsusService'))
+    return error(wsusServiceStoppedMessage(server.name), exchange.trace)
   const group = computerGroup(wsus, client)
   return {
     kind: 'ok',

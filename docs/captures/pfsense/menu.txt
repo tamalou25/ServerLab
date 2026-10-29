@@ -1,0 +1,19 @@
+# Source: https://github.com/pfsense/pfsense/tree/RELENG_2_7_2/src/etc (scripts de la console pfSense CE 2.7.2 : rc.initial, rc.banner, rc.initial.setports, config.console.inc, rc.initial.setlanip, rc.initial.password, rc.initial.defaults, rc.initial.reboot, rc.initial.ping) ; https://docs.netgate.com/pfsense/en/latest/config/console-menu.html. Noms de cartes, adresses et durées du lab ServerLab
+# Commande: (ouverture de la console)
+*** Welcome to pfSense 2.7.2-RELEASE (amd64) on FW1 ***
+
+ WAN (wan)       -> em0        -> v4: 203.0.113.2/24
+ LAN (lan)       -> em1        -> v4: 192.168.1.1/24
+ DMZ (opt1)      -> em2        -> v4: 172.16.0.1/24
+
+ 0) Logout (SSH only)                  9) pfTop
+ 1) Assign Interfaces                 10) Filter Logs
+ 2) Set interface(s) IP address       11) Restart webConfigurator
+ 3) Reset webConfigurator password    12) PHP shell + pfSense tools
+ 4) Reset to factory defaults         13) Update from console
+ 5) Reboot system                     14) Enable Secure Shell (sshd)
+ 6) Halt system                       15) Restore recent configuration
+ 7) Ping host                         16) Restart PHP-FPM
+ 8) Shell
+
+Enter an option: 

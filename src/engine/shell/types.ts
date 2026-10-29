@@ -6,8 +6,11 @@ import type { PacketTrace } from '../sim/trace'
 import type { PsValue } from './ps/values'
 import type { IosSession } from '../ios/cli/types'
 
-/** Interpréteurs : consoles des ordinateurs et console IOS des équipements Cisco. */
-export type ShellKind = 'cmd' | 'powershell' | 'bash' | 'ios'
+/**
+ * Interpréteurs : consoles des ordinateurs, console IOS des équipements Cisco et console du pare-feu
+ * pfSense (menu numéroté puis shell tcsh).
+ */
+export type ShellKind = 'cmd' | 'powershell' | 'bash' | 'ios' | 'pfsense'
 
 export type LineKind = 'out' | 'error' | 'warning' | 'verbose'
 
@@ -31,6 +34,8 @@ export interface ShellSession {
   cmdEnv?: Record<string, string | null>
   /** Console IOS : mode et contexte de configuration. */
   ios?: IosSession
+  /** Console pfSense : menu numéroté (défaut) ou shell (option 8 du menu). */
+  pfsense?: { mode: 'menu' | 'shell' }
 }
 
 /** Saisie demandée à l'utilisateur pendant une commande (mot de passe, confirmation…). */

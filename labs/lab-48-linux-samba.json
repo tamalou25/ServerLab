@@ -1,0 +1,109 @@
+{
+  "formatVersion": 1,
+  "id": "lab-48-linux-samba",
+  "title": "Linux : un partage Samba pour un groupe",
+  "difficulty": "Intermédiaire",
+  "duration": "40 min",
+  "summary": "Créez un compte, un groupe et un dossier partagé par Samba avec les bons droits Unix et un compte Samba.",
+  "statement": "## Contexte\n\n**LSRV1** (192.168.20.10/24) a Samba installé avec sa configuration d'origine. Le service comptabilité doit disposer d'un partage **compta**.\n\n## Travail demandé\n\n1. Créez le groupe `compta` et l'utilisateur `alice` membre de ce groupe.\n2. Créez `/srv/compta`, propriété du groupe `compta`, droits **770**.\n3. Déclarez le partage `[compta]` dans `/etc/samba/smb.conf` (chemin, `read only = no`, `valid users = @compta`), contrôlez avec `testparm`.\n4. Créez le compte Samba d'alice (`smbpasswd -a alice`) puis redémarrez `smbd`.\n5. Depuis LNX1, listez et ouvrez le partage avec `smbclient`.\n\nÀ rendre : la section `[compta]`, la sortie de `testparm -s` et celle de `smbclient`.",
+  "start": {
+    "devices": [
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 330,
+        "y": 300
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "LSRV1",
+        "x": 330,
+        "y": 100,
+        "ip": "192.168.20.10/24",
+        "packages": ["samba"]
+      },
+      {
+        "kind": "client",
+        "os": "linux",
+        "name": "LNX1",
+        "x": 130,
+        "y": 470,
+        "ip": "192.168.20.20/24"
+      }
+    ],
+    "links": [
+      ["LSRV1:eth0", "SW1:Fa0/1"],
+      ["LNX1:eth0", "SW1:Fa0/2"]
+    ]
+  },
+  "criteria": [
+    {
+      "id": "groupe",
+      "label": "Le groupe compta existe et alice en est membre",
+      "hint": "Les droits d’un dossier partagé reposent sur les groupes Unix.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/group",
+        "text": "^compta:x:\\d+:.*alice",
+        "regex": true
+      }
+    },
+    {
+      "id": "dossier",
+      "label": "Le dossier /srv/compta appartient au groupe compta en 770",
+      "hint": "Comparez les droits et le groupe du dossier avec ceux attendus (ls -ld).",
+      "check": {
+        "type": "linuxFileMode",
+        "device": "LSRV1",
+        "path": "/srv/compta",
+        "mode": "770",
+        "group": "compta"
+      }
+    },
+    {
+      "id": "partage",
+      "label": "Le partage [compta] est déclaré avec son chemin",
+      "hint": "Un partage Samba est une section de smb.conf avec un paramètre path.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/samba/smb.conf",
+        "text": "\\[compta\\][^\\[]*path = /srv/compta",
+        "regex": true
+      }
+    },
+    {
+      "id": "valid",
+      "label": "L’accès est réservé au groupe compta",
+      "hint": "Un paramètre de la section limite les comptes admis, un groupe se note avec @.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/samba/smb.conf",
+        "text": "valid users = @compta"
+      }
+    },
+    {
+      "id": "smbd",
+      "label": "Le service smbd est actif",
+      "hint": "smbd ne relit smb.conf qu’à son redémarrage.",
+      "check": {
+        "type": "linuxServiceActive",
+        "device": "LSRV1",
+        "unit": "smbd"
+      }
+    },
+    {
+      "id": "port",
+      "label": "Le port 445 est en écoute",
+      "hint": "Vérifiez les ports en écoute du serveur.",
+      "check": {
+        "type": "linuxPortListening",
+        "device": "LSRV1",
+        "port": 445
+      }
+    }
+  ]
+}

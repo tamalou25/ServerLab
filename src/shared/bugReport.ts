@@ -6,7 +6,7 @@
  */
 
 /** Seule adresse externe ouverte par l'application. */
-export const BUG_REPORT_URL = 'https://github.com/tamalou25/packetracer-windows/issues/new'
+export const BUG_REPORT_URL = 'https://github.com/tamalou25/ServerLab/issues/new'
 
 /** Environnement joint au rapport (aucune donnée personnelle). */
 export interface BugReportEnvironment {

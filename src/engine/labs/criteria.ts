@@ -11,12 +11,18 @@ import type { LabState } from '../model/schema'
 import { effectiveIpv4 } from '../net/addressing'
 import { ping } from '../net/diagnostics'
 import { switchportOf } from '../net/switchport'
+import { findComputerService } from '../services/hostservices'
+import { clockOffset } from '../services/hostclock'
+import { findLocalGroup, findLocalUser } from '../services/localaccounts'
 import { effectiveRules, profileEnabled } from '../services/firewall'
+import { allRepaired } from '../troubleshoot/session'
 import { auditLab } from '../audit/audit'
 import { CYBER_CRITERIA } from '../cyber/criteria'
 import { IOS_CRITERIA } from '../ios/criteria'
 import { roleCriteria } from '../roles/registry'
 import { defineCriterion, type CriterionType } from '../roles/types'
+import { LINUX_CRITERIA } from './linuxcriteria'
+import { PF_CRITERIA } from './pfcriteria'
 import { byName, hostByName, sameName, targetIp } from './lookup'
 
 /** Critères du système de base (adressage, connectivité, rôles installés). */
@@ -143,6 +149,59 @@ const CORE_CRITERIA: CriterionType[] = [
     z.object({ type: z.literal('featureInstalled'), device: z.string(), feature: z.string() }),
     (state, check) => !!hostByName(state, check.device)?.host.features.includes(check.feature),
     'Rôle ou fonctionnalité installé'
+  ),
+  defineCriterion(
+    z.object({
+      type: z.literal('serviceState'),
+      device: z.string(),
+      name: z.string(),
+      running: z.boolean().optional(),
+      startType: z.enum(['Automatic', 'Manual', 'Disabled']).optional()
+    }),
+    (state, check) => {
+      const id = hostByName(state, check.device)?.id
+      const s = id ? findComputerService(state, id, check.name) : undefined
+      return (
+        !!s &&
+        (check.running === undefined || (s.status === 'Running') === check.running) &&
+        (check.startType === undefined || s.startType === check.startType)
+      )
+    },
+    'État d’un service système'
+  ),
+  defineCriterion(
+    z.object({
+      type: z.literal('localAccount'),
+      device: z.string(),
+      name: z.string(),
+      enabled: z.boolean().optional(),
+      memberOf: z.string().optional()
+    }),
+    (state, check) => {
+      const id = hostByName(state, check.device)?.id
+      const user = id ? findLocalUser(state, id, check.name) : undefined
+      if (!id || !user) return false
+      if (check.enabled !== undefined && user.enabled !== check.enabled) return false
+      if (check.memberOf === undefined) return true
+      return !!findLocalGroup(state, id, check.memberOf)?.members.some(
+        (m) => m.toLowerCase() === user.name.toLowerCase()
+      )
+    },
+    'Compte local (existence, état, groupe local)'
+  ),
+  defineCriterion(
+    z.object({ type: z.literal('clockOffset'), device: z.string(), maxSeconds: z.number().int().min(0) }),
+    (state, check) => {
+      const id = hostByName(state, check.device)?.id
+      return !!id && Math.abs(clockOffset(state, id)) <= check.maxSeconds
+    },
+    'Écart d’horloge d’un ordinateur'
+  ),
+  defineCriterion(
+    z.object({ type: z.literal('faultRepaired'), faultId: z.string().optional() }),
+    // Dépannage (mode panne) : toutes les pannes actives, ou celle d'identifiant `faultId`, sont guéries
+    (state, check) => allRepaired(state, check.faultId),
+    'Panne du mode dépannage réparée'
   )
 ]
 
@@ -151,7 +210,14 @@ let types: Map<string, CriterionType> | null = null
 /** Types de critères disponibles (système de base + modules de rôles), par nom. */
 export function criterionTypes(): Map<string, CriterionType> {
   return (types ??= new Map(
-    [...CORE_CRITERIA, ...roleCriteria(), ...IOS_CRITERIA, ...CYBER_CRITERIA].map((c) => [c.type, c])
+    [
+      ...CORE_CRITERIA,
+      ...roleCriteria(),
+      ...IOS_CRITERIA,
+      ...CYBER_CRITERIA,
+      ...LINUX_CRITERIA,
+      ...PF_CRITERIA
+    ].map((c) => [c.type, c])
   ))
 }
 

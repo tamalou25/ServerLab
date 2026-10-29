@@ -1,11 +1,14 @@
 /**
- * Câble entre deux ports, avec un voyant d'état à chaque extrémité.
+ * Câble entre deux ports, avec un voyant d'état à chaque extrémité. Chaque voyant double sa couleur
+ * d'une forme (rond : actif, triangle : adressage incomplet, carré barré : inactif) ; l'infobulle du
+ * câble donne en texte les deux extrémités, le débit et l'état de chaque port.
  */
 import { memo } from 'react'
 import { BaseEdge, EdgeLabelRenderer, useInternalNode, type Edge, type EdgeProps } from '@xyflow/react'
 import { canvasStatus, type LedStatus } from '@engine/index'
 import { useLabStore } from '../../store/lab'
 import { useUiStore } from '../../store/ui'
+import { linkSpeedMbps } from '../../lib/cabling'
 import { ICON_CENTER } from '../../lib/flow'
 import { countRender } from '../../lib/perf'
 import { useT } from '../../lib/i18n'
@@ -13,13 +16,8 @@ import { useT } from '../../lib/i18n'
 export type CableEdgeData = { linkId: string; offset: number }
 export type CableFlowEdge = Edge<CableEdgeData, 'cable'>
 
-const LED_DISTANCE = 44
-
-const LED_CLASS: Record<LedStatus, string> = {
-  up: 'fill-ok',
-  degraded: 'fill-warn',
-  down: 'fill-danger'
-}
+// Distance du voyant au centre du nœud (carte de 64 px : 16 px au-delà du bord)
+const LED_DISTANCE = 48
 
 /** Infobulle du voyant (clés `link.<état>`). */
 const LED_KEY = {
@@ -38,6 +36,9 @@ function CableEdgeComponent({ id, source, target, data, selected }: EdgeProps<Ca
   const view = useLabStore((s) => (data ? canvasStatus(s.lab).links[data.linkId] : undefined))
   // Noms de ports aux extrémités : option d'affichage, ou automatiquement pendant le câblage
   const showPortLabels = useUiStore((s) => s.showPortLabels || s.tool === 'cable')
+  // Noms des équipements pour l'infobulle (chaînes stables : aucun rendu pendant un glisser)
+  const nameA = useLabStore((s) => (link ? s.lab.devices[link.a.deviceId]?.name : undefined))
+  const nameB = useLabStore((s) => (link ? s.lab.devices[link.b.deviceId]?.name : undefined))
   if (!sourceNode || !targetNode || !link || !view) return null
 
   // Extrémités au centre des icônes, décalées si plusieurs câbles relient les mêmes équipements
@@ -61,6 +62,14 @@ function CableEdgeComponent({ id, source, target, data, selected }: EdgeProps<Ca
   const ledB = { x: tx - ux * LED_DISTANCE, y: ty - uy * LED_DISTANCE }
   const { a: statusA, b: statusB, portA, portB } = view
   const visible = len > LED_DISTANCE * 2 + 8
+  const mbps = linkSpeedMbps(portA, portB)
+  const tooltip = [
+    t('link.ends', { a: nameA ?? '?', portA, b: nameB ?? '?', portB }),
+    mbps >= 1000 ? t('link.gbps', { n: mbps / 1000 }) : t('link.mbps', { n: mbps }),
+    `${portA} : ${t(LED_KEY[statusA])}`,
+    `${portB} : ${t(LED_KEY[statusB])}`,
+    ...(link.virtual ? [t('link.virtualCable')] : [])
+  ].join('\n')
 
   return (
     <>
@@ -72,23 +81,60 @@ function CableEdgeComponent({ id, source, target, data, selected }: EdgeProps<Ca
         // Liaison virtuelle (Hyper-V) : tracé en pointillés
         {...(link.virtual ? { style: { strokeDasharray: '6 4' } } : {})}
       />
+      {/* Infobulle au survol du câble (même zone que la sélection) */}
+      <path d={path} className="fill-none stroke-transparent" strokeWidth={16} data-testid="cable-hit">
+        <title>{tooltip}</title>
+      </path>
       {visible && (
         <g data-testid={`cable-${portA}-${portB}`}>
-          <circle cx={ledA.x} cy={ledA.y} r={5} className={`${LED_CLASS[statusA]} stroke-canvas stroke-2`}>
-            <title>{`${portA} : ${t(LED_KEY[statusA])}`}</title>
-          </circle>
-          <circle cx={ledB.x} cy={ledB.y} r={5} className={`${LED_CLASS[statusB]} stroke-canvas stroke-2`}>
-            <title>{`${portB} : ${t(LED_KEY[statusB])}`}</title>
-          </circle>
+          <LinkLed x={ledA.x} y={ledA.y} status={statusA} title={`${portA} : ${t(LED_KEY[statusA])}`} />
+          <LinkLed x={ledB.x} y={ledB.y} status={statusB} title={`${portB} : ${t(LED_KEY[statusB])}`} />
         </g>
       )}
       {showPortLabels && visible && (
         <EdgeLabelRenderer>
-          <PortLabel x={ledA.x + uy * 14} y={ledA.y - ux * 14} text={portA} />
-          <PortLabel x={ledB.x + uy * 14} y={ledB.y - ux * 14} text={portB} />
+          <PortLabel x={ledA.x + uy * 16 + ux * 14} y={ledA.y - ux * 16 + uy * 14} text={portA} />
+          <PortLabel x={ledB.x + uy * 16 - ux * 14} y={ledB.y - ux * 16 - uy * 14} text={portB} />
         </EdgeLabelRenderer>
       )}
     </>
+  )
+}
+
+/** Voyant d'une extrémité : couleur et forme selon l'état (data-shape pour les tests). */
+function LinkLed({ x, y, status, title }: { x: number; y: number; status: LedStatus; title: string }) {
+  if (status === 'up')
+    return (
+      <circle cx={x} cy={y} r={5} className="fill-ok stroke-canvas stroke-2" data-shape="circle">
+        <title>{title}</title>
+      </circle>
+    )
+  if (status === 'degraded')
+    return (
+      <path
+        d={`M${x} ${y - 6}L${x + 6} ${y + 5}H${x - 6}Z`}
+        className="fill-warn stroke-canvas"
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+        data-shape="triangle"
+      >
+        <title>{title}</title>
+      </path>
+    )
+  return (
+    <g data-shape="square">
+      <title>{title}</title>
+      <rect
+        x={x - 5}
+        y={y - 5}
+        width={10}
+        height={10}
+        rx={1}
+        className="fill-danger stroke-canvas"
+        strokeWidth={1.5}
+      />
+      <path d={`M${x - 2.5} ${y - 2.5}l5 5m0 -5l-5 5`} className="stroke-on-danger" strokeWidth={1.5} />
+    </g>
   )
 }
 
@@ -96,7 +142,7 @@ function CableEdgeComponent({ id, source, target, data, selected }: EdgeProps<Ca
 function PortLabel({ x, y, text }: { x: number; y: number; text: string }) {
   return (
     <div
-      className="nodrag nopan pointer-events-none absolute rounded border border-line bg-panel/90 px-1 font-mono text-[10px] text-fg-muted shadow-xs"
+      className="nodrag nopan pointer-events-none absolute rounded border border-line bg-panel/90 px-1 font-mono text-meta text-fg-muted shadow-xs"
       style={{ transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }}
     >
       {text}

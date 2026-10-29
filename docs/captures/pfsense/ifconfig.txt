@@ -1,0 +1,27 @@
+# Source: https://github.com/freebsd/freebsd-src/tree/stable/14/sbin/ifconfig (ifconfig.c, af_inet.c) ; valeurs du lab ServerLab (docs/fidelite.md, P-53)
+# Commande: ifconfig
+em0: flags=8843<UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST> metric 0 mtu 1500
+	description: WAN
+	ether 02:53:4c:00:00:02
+	inet 203.0.113.2 netmask 0xffffff00 broadcast 203.0.113.255
+	media: Ethernet autoselect (1000baseT <full-duplex>)
+	status: active
+	nd6 options=21<PERFORMNUD,AUTO_LINKLOCAL>
+em1: flags=8843<UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST> metric 0 mtu 1500
+	description: LAN
+	ether 02:53:4c:00:00:03
+	inet 192.168.1.1 netmask 0xffffff00 broadcast 192.168.1.255
+	media: Ethernet autoselect (1000baseT <full-duplex>)
+	status: active
+	nd6 options=21<PERFORMNUD,AUTO_LINKLOCAL>
+em2: flags=8803<UP,BROADCAST,SIMPLEX,MULTICAST> metric 0 mtu 1500
+	description: DMZ
+	ether 02:53:4c:00:00:04
+	inet 172.16.0.1 netmask 0xffffff00 broadcast 172.16.0.255
+	media: Ethernet autoselect (1000baseT <full-duplex>)
+	status: no carrier
+	nd6 options=21<PERFORMNUD,AUTO_LINKLOCAL>
+lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> metric 0 mtu 16384
+	inet 127.0.0.1 netmask 0xff000000
+	groups: lo
+	nd6 options=21<PERFORMNUD,AUTO_LINKLOCAL>

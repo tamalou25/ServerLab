@@ -1,0 +1,5 @@
+# Source: https://manpages.debian.org/bookworm/traceroute/traceroute.8.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: traceroute 8.8.8.8
+traceroute to 8.8.8.8 (8.8.8.8), 30 hops max, 60 byte packets
+ 1  192.168.2.254 (192.168.2.254)  0.400 ms  0.400 ms  0.400 ms
+ 2  resolveur-a.example.net (8.8.8.8)  2.000 ms  2.000 ms  2.000 ms

@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/apache2/apache2ctl.8.en.html — https://sources.debian.org/data/main/a/apache2/2.4.68-1~deb12u1/debian/apache2ctl et le script apache2ctl (start : délégation à systemctl) (httpd 2.4.68-1~deb12u1), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo apache2ctl start
+Invoking 'systemctl start apache2'.
+Use 'systemctl status apache2' for more info.

@@ -44,6 +44,22 @@ export function psObject(typeName: string, props: Record<string, PsValue>, view?
   return view ? { kind: 'object', typeName, props, view } : { kind: 'object', typeName, props }
 }
 
+/**
+ * Valeur d'énumération .NET : affichée par son nom, triée par sa valeur entière (Learn,
+ * Get-Service : « Status is an enumeration, in which Stopped has a value of 1, and Running has
+ * a value of 4 » ; Sort-Object trie sur la valeur entière, pas sur le nom).
+ */
+export function psEnum(typeName: string, name: string, value: number): PsObject {
+  return { kind: 'object', typeName, props: { value__: value }, text: name }
+}
+
+/** Valeur entière d'une énumération (`psEnum`), sinon null. */
+export function enumValue(v: PsValue): number | null {
+  if (!isPsObject(v) || v.text === undefined) return null
+  const n = v.props['value__']
+  return typeof n === 'number' ? n : null
+}
+
 export function isPsObject(v: PsValue): v is PsObject {
   return typeof v === 'object' && v !== null && !Array.isArray(v) && v.kind === 'object'
 }

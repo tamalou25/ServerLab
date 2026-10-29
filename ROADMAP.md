@@ -5,16 +5,19 @@ chaque fonctionnalité (critères à cocher) est dans son issue GitHub, rattach�
 version. Source unique : [`.github/roadmap/roadmap.json`](.github/roadmap/roadmap.json), synchronisé
 avec GitHub par le workflow **Roadmap sync** (ne crée que ce qui manque).
 
-| Version | Thème                                                         | Milestone                                                                      |
-| ------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| v1.1    | Consolider (prérequis d'architecture, ergonomie, performance) | [v1.1](https://github.com/tamalou25/packetracer-windows/milestone/1)           |
-| v2.1    | Nouveaux rôles serveur                                        | [v2.1](https://github.com/tamalou25/packetracer-windows/milestone/2)           |
-| v2.2    | Réseau avancé                                                 | [v2.2](https://github.com/tamalou25/packetracer-windows/milestone/3)           |
-| v2.3    | Cybersécurité défensive                                       | [v2.3](https://github.com/tamalou25/packetracer-windows/milestone/4)           |
-| v2.4    | Pédagogie et communauté                                       | [v2.4](https://github.com/tamalou25/packetracer-windows/milestone/5)           |
-| v2.5    | Équipements Cisco IOS                                         | [v2.5](https://github.com/tamalou25/packetracer-windows/milestone/6)           |
-| v2.6    | Cybersécurité défensive                                       | [v2.6](https://github.com/tamalou25/packetracer-windows/milestones?q=v2.6)     |
-| v2.6.1  | Cybersécurité, volet attaque                                  | [v2.6.1](https://github.com/tamalou25/packetracer-windows/milestones?q=v2.6.1) |
+| Version | Thème                                                         | Milestone                                                            |
+| ------- | ------------------------------------------------------------- | -------------------------------------------------------------------- |
+| v1.1    | Consolider (prérequis d'architecture, ergonomie, performance) | [v1.1](https://github.com/tamalou25/ServerLab/milestone/1)           |
+| v2.1    | Nouveaux rôles serveur                                        | [v2.1](https://github.com/tamalou25/ServerLab/milestone/2)           |
+| v2.2    | Réseau avancé                                                 | [v2.2](https://github.com/tamalou25/ServerLab/milestone/3)           |
+| v2.3    | Cybersécurité défensive                                       | [v2.3](https://github.com/tamalou25/ServerLab/milestone/4)           |
+| v2.4    | Pédagogie et communauté                                       | [v2.4](https://github.com/tamalou25/ServerLab/milestone/5)           |
+| v2.5    | Équipements Cisco IOS                                         | [v2.5](https://github.com/tamalou25/ServerLab/milestone/6)           |
+| v2.6    | Cybersécurité défensive                                       | [v2.6](https://github.com/tamalou25/ServerLab/milestones?q=v2.6)     |
+| v2.6.1  | Cybersécurité, volet attaque                                  | [v2.6.1](https://github.com/tamalou25/ServerLab/milestones?q=v2.6.1) |
+| v2.8    | Services à état et mode panne (dépannage)                     | [v2.8](https://github.com/tamalou25/ServerLab/milestones?q=v2.8)     |
+| v2.9    | Serveurs Linux (Debian 12 / Ubuntu Server 24.04)              | [v2.9](https://github.com/tamalou25/ServerLab/milestones?q=v2.9)     |
+| v2.10   | Pare-feu pfSense                                              | [v2.10](https://github.com/tamalou25/ServerLab/milestones?q=v2.10)   |
 
 > Le milestone v1.1 est sorti sous le numéro de version **2.0.0** (choix de Gary), suivi de la 2.0.1
 > (stabilisation). Les milestones suivants ajoutent des fonctionnalités sans casser les fichiers
@@ -144,6 +147,67 @@ Scénarios d'attaque simulés de façon **abstraite** : on modélise leur résul
 
 Hors périmètre (v2.6 et v2.6.1) : tout exploit réel ou code offensif utilisable hors du simulateur,
 attaques web (OWASP), reverse engineering, forensic disque, EDR, SIEM réel (pistes v2.7).
+
+## v2.8 — Services à état et mode panne
+
+**Objectif** : finir les services Windows à état (effets réels sur le reste du lab), puis s'en servir pour
+le mode panne : un lab démarre cassé, l'élève diagnostique puis répare, comme à l'E6. Reste léger : aucune
+VM, aucune dépendance d'exécution, `npm run perf:measure` sans régression. Format `.slab` 26 et suivants.
+
+Livraison découpée avec l'accord de Gary : **v2.8** (chantiers A et D), **v2.9** (B : serveurs Linux),
+**v2.10** (C : pfSense). D s'enrichit des pannes Linux et pare-feu après B et C.
+
+Règles de fiabilité : sortie de référence sourcée d'abord (`docs/captures/<console>/<commande>.txt`) ;
+sans source, rien n'est codé (ligne « à vérifier » dans `docs/fidelite.md`) ; tests golden par commande ;
+commande non simulée : message honnête de `unsimulated.ts` ; tout est calculé depuis l'état du lab.
+
+### Chantier A — Services à état
+
+| Fonctionnalité      | Critère d'acceptation                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Horloge et Kerberos | Horloge par poste ; écart > 5 min : session et partages du domaine refusés ; `w32tm`, `net time`, `Set-Date` |
+| NTDS / Netlogon     | Service arrêté : sessions de domaine, `gpupdate`, `nltest /dsgetdc` et jonction échouent                     |
+| Autres services     | `CertSvc`, `TermService`, `WsusService`, `MpsSvc` (ports ouverts), `Spooler` : un test chacun                |
+| Dépendances         | Arrêt refusé sans `-Force`, démarrage en cascade, `-DependentServices`, `Disabled`                           |
+| Échec de service    | Évènements 7000 / 7031 / 7034, `sc qfailure` ; point d'accroche du mode panne                                |
+| CMD                 | `sc query\|qc\|start\|stop\|config\|qfailure`, `net start\|stop`, `tasklist /svc`                            |
+| Interface           | Snap-in Services (`services.msc`), services arrêtés en rouge dans le Gestionnaire de serveur                 |
+| Lab                 | Lab 42 « Diagnostic de services Windows »                                                                    |
+
+### Chantier D — Mode panne
+
+| Fonctionnalité  | Critère d'acceptation                                                                                               |
+| --------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Modèle de panne | Transformation déterministe de l'état par commandes ; symptôme visible, cause cachée ; pas réparable par annulation |
+| Catalogue       | ≥ 20 pannes simples (réseau, Windows), 6 composées ; test « injecter, symptôme, réparer, guérison »                 |
+| Génération      | Graine reproductible ; la réparation officielle réussit sur 100 graines                                             |
+| Interface       | Ticket sans cause, 3 indices comptés, « J'ai réparé », « Abandonner », journal, bilan, mode examen                  |
+| Labs            | 3 labs de dépannage d'exemple                                                                                       |
+
+Les symptômes affichés en console sont ceux du vrai système (mêmes messages, sourcés).
+
+Modèle, recette d'ajout d'une panne et catalogue : [docs/depannage.md](docs/depannage.md).
+
+Hors périmètre : pannes physiques réelles, matériel, tout contenu non sourcé.
+
+## v2.9 — Serveurs Linux
+
+Serveur Linux (Debian 12 / Ubuntu Server 24.04) : `host.os = 'linux'` sur le type `server`, système de
+fichiers et droits, `apt`, `systemctl`, diagnostic, puis SSH, Apache2, Samba, Bind9, isc-dhcp-server,
+fail2ban et rsyslog (modules `src/engine/roles-linux/<service>`). Interopérabilité : partage Samba depuis
+Windows, délégation DNS Windows vers Bind, client Linux joint au domaine.
+
+Critères d'acceptation : 7 services avec tests golden ; un lab par service (à partir du lab 43) ; 2 labs
+mixtes ; pannes Linux ajoutées au mode panne. Hors périmètre : conteneurs, vrai réseau, paquets réels.
+
+## v2.10 — Pare-feu pfSense
+
+Équipement `firewall` (WAN, LAN, OPT1/DMZ), pfSense CE 2.7 : règles par interface avec état des
+connexions branchées sur `sim/forward.ts`, NAT sortant et redirections, DHCP/DNS, interface web et console
+fidèles, labs DMZ.
+
+Critère d'acceptation : le même ping ou la même requête web réussit ou échoue selon la règle, et la règle
+appliquée est visible dans la trace. Hors périmètre : VPN, proxy, IDS.
 
 ## Points d'attention (audit v1.0)
 

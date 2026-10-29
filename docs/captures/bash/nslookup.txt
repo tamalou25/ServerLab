@@ -1,0 +1,9 @@
+# Source: https://manpages.debian.org/bookworm/bind9-dnsutils/nslookup.1.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: nslookup www.example.com
+Server:		8.8.8.8
+Address:	8.8.8.8#53
+
+Non-authoritative answer:
+Name:	www.example.com
+Address: 93.184.215.14
+

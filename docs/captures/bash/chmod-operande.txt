@@ -1,0 +1,4 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/chmod.1.en.html
+# Commande: chmod
+chmod: missing operand
+Try 'chmod --help' for more information.

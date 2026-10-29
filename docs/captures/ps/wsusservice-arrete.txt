@@ -1,0 +1,3 @@
+# Source: https://learn.microsoft.com/en-us/windows/deployment/update/windows-update-error-reference (0x80244022 WU_E_PT_HTTP_STATUS_SERVICE_UNAVAIL : « Same as HTTP status 503 - the service is temporarily overloaded. », traduit) ; que le client reçoive ce code quand WsusService est arrêté n'est pas sourcé, voir docs/fidelite.md v2.8 (A-32)
+# Commande: synchronisation WSUS ou recherche de mises à jour d'un client (WsusService arrêté sur SRV1)
+Le service Service WSUS (WsusService) est arrêté sur SRV1 (code 0x80244022, WU_E_PT_HTTP_STATUS_SERVICE_UNAVAIL : équivalent du statut HTTP 503).

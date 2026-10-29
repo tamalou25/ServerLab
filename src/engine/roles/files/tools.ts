@@ -2,12 +2,13 @@
  * Outils de fichiers et de partage de l'invite de commandes : dir, mkdir, rmdir, del, icacls, net
  * (share, use, view). Utilisables aussi depuis PowerShell.
  */
-import type { NtfsRight, ServerDevice, ShareRight } from '../../model/schema'
+import type { HostDevice, NtfsRight, ServerDevice, ShareRight } from '../../model/schema'
 import {
   accessPerms,
   canonicalAcl,
   domainToken,
   effectiveAcl,
+  localToken,
   principalName,
   sessionToken,
   type AccessToken
@@ -24,10 +25,14 @@ import {
   setNtfsInheritance
 } from './actions'
 import { findNode, nodePath, parseUnc } from './paths'
-import { mapDrive, openUnc, sessionDrives, unmapDrive } from './smb'
+import { connectShare, mapDrive, openUnc, sessionDrives, unmapDrive } from './smb'
+import { isLinuxServer, linuxShareNames } from './linuxshare'
+import { authenticate as sambaAuthenticate, sambaServer } from '../../shell/bash/sambaaccess'
 import { verifyCredentials } from '../adds/join'
+import { authenticate } from '../adds/credentials'
 import { netAccounts, netGroup, netLocalGroup, netUser } from '../adds/net'
 import { netStart, netStop } from '../../shell/tools/services'
+import { netTime } from '../../shell/tools/time'
 import type { ExecContext } from '../../shell/context'
 import {
   absolutePath,
@@ -364,9 +369,30 @@ export const icaclsTool: ToolDef = {
 }
 
 /** Compte utilisé pour une connexion réseau : session, ou identifiants /user: fournis. */
-function connectionToken(ctx: ExecContext, user: string | null, password: string | null): AccessToken | null {
+function connectionToken(
+  ctx: ExecContext,
+  user: string | null,
+  password: string | null,
+  serverName?: string
+): AccessToken | null {
   if (!user) return sessionToken(ctx.state, ctx.deviceId)
   const [domainPart, sam] = user.includes('\\') ? (user.split('\\') as [string, string]) : [null, user]
+  // Compte local du serveur visé (SRV2\tech) : base de comptes locale de cet ordinateur (Lot 2b)
+  const target = serverName
+    ? Object.values(ctx.state.devices).find(
+        (d): d is HostDevice =>
+          (d.kind === 'server' || d.kind === 'client') && d.name.toLowerCase() === serverName.toLowerCase()
+      )
+    : undefined
+  // Serveur Samba : compte Unix / Samba du serveur (v2.9, #239), le domaine saisi est ignoré
+  if (target && isLinuxServer(target)) {
+    const srv = sambaServer(target as ServerDevice)
+    if (srv && sambaAuthenticate(srv, sam, password ?? '').kind === 'failed') return null
+    const base = sessionToken(ctx.state, ctx.deviceId) ?? localToken(ctx.host.name, ctx.user.name)
+    return { ...base, smb: { user: sam, password: password ?? '' } }
+  }
+  if (target && domainPart?.toLowerCase() === target.name.toLowerCase())
+    return authenticate(ctx.state, target, user, password ?? '')
   const domain = Object.values(ctx.state.domains).find(
     (d) =>
       (domainPart
@@ -529,7 +555,7 @@ function netUse(ctx: ExecContext, args: string[]): void {
       `Entrez le mot de passe pour « ${user} » pour vous connecter à « ${parseUnc(remote)?.server ?? remote} » : `,
       true
     )
-  const token = connectionToken(ctx, user, password)
+  const token = connectionToken(ctx, user, password, parseUnc(remote)?.server)
   if (user && !token) {
     systemError(ctx, 1326, 'Le nom d’utilisateur ou le mot de passe est incorrect.')
     return
@@ -541,7 +567,10 @@ function netUse(ctx: ExecContext, args: string[]): void {
     const opened = openUnc(ctx.state, ctx.deviceId, remote, token)
     ctx.addTrace(opened.trace)
     if (!opened.ok) systemError(ctx, opened.code, opened.error)
-    else ctx.writeLines([DONE, ''])
+    else {
+      ctx.state = connectShare(ctx.state, ctx.deviceId, remote, token)
+      ctx.writeLines([DONE, ''])
+    }
     return
   }
   let letter = local.replace(/:$/, '').toUpperCase()
@@ -585,7 +614,11 @@ function netView(ctx: ExecContext, args: string[]): void {
     (d): d is ServerDevice =>
       d.kind === 'server' && d.name.toLowerCase() === (unc?.server ?? '').toLowerCase()
   )
-  const shares = server ? server.storage.shares.filter((s) => !s.name.endsWith('$')) : []
+  const shares = server
+    ? isLinuxServer(server)
+      ? linuxShareNames(server).map((s) => ({ name: s.name, description: s.comment }))
+      : server.storage.shares.filter((s) => !s.name.endsWith('$'))
+    : []
   const drives = sessionDrives(ctx.host, shellToken(ctx).account)
   ctx.writeLines([
     `Ressources partagées de ${target}`,
@@ -607,7 +640,7 @@ function netView(ctx: ExecContext, args: string[]): void {
 export const netTool: ToolDef = {
   name: 'net',
   synopsis:
-    'Partages (share), lecteurs (use, view), comptes (user, localgroup, group, accounts), services (start, stop).',
+    'Partages (share), lecteurs (use, view), comptes (user, localgroup, group, accounts), services (start, stop), heure (time).',
   help: {
     syntax: [
       'net user [<UserName> {<Password> | *} [<Options>]] [/domain]',
@@ -618,7 +651,8 @@ export const netTool: ToolDef = {
       'net group [<GroupName> <UserName>[ ...] {/add | /delete} [/domain]]',
       'net accounts [/forcelogoff:{minutes | no}] [/minpwlen:length] [/maxpwage:{days | unlimited}] [/minpwage:days] [/uniquepw:number] [/domain]',
       'net start [service]',
-      'net stop service'
+      'net stop service',
+      'net time [\\<ComputerName> | /domain[:<DomainName>]] [/set]'
     ],
     url: 'https://learn.microsoft.com/fr-fr/windows-server/administration/windows-commands/net-user'
   },
@@ -632,6 +666,7 @@ export const netTool: ToolDef = {
     'accounts',
     'start',
     'stop',
+    'time',
     '/add',
     '/domain',
     '/active:yes',
@@ -674,7 +709,7 @@ export const netTool: ToolDef = {
         netStop(ctx, rest)
         return
       case 'time':
-        ctx.write(`La sous-commande NET ${sub.toUpperCase()} n’est pas simulée.`, 'error')
+        netTime(ctx, rest)
         return
       default:
         ctx.writeLines([

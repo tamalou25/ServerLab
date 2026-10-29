@@ -2,6 +2,17 @@
  * Fabriques : création d'un lab vide et d'équipements avec leurs valeurs par défaut.
  */
 import type { Draft } from 'immer'
+import {
+  PF_DEFAULT_LAN_RULE_ID,
+  PF_DMZ_DESCR,
+  PF_IFACE_KEYS,
+  PF_IFACE_LABEL,
+  PF_LAN_ADDRESS,
+  PF_LAN_PREFIX,
+  PF_PORTS,
+  PFSENSE_VERSION,
+  type PfState
+} from './firewall'
 import { DEVICE_KIND_INFO, type DeviceKind } from './kinds'
 import { IOS_MODEL_INFO, type IosModel } from '../ios/models'
 import {
@@ -55,6 +66,9 @@ export const DEFAULT_LOCAL_USER = { server: 'Administrateur', client: 'Utilisate
 export const LINUX_USER = 'etudiant'
 export const LINUX_NAME_PREFIX = 'LNX'
 export const LINUX_INTERFACE = 'eth0'
+/** Serveur Linux (Debian 12 simulé) : compte d'administration (sudo) et préfixe de nom. */
+export const LINUX_SERVER_USER = 'admin'
+export const LINUX_SERVER_NAME_PREFIX = 'LSRV'
 
 /** Fonctionnalités présentes dès l'installation d'un serveur. */
 export const DEFAULT_SERVER_FEATURES = ['FS-FileServer', 'PowerShell']
@@ -64,15 +78,19 @@ export function createHost(kind: 'server' | 'client', os: HostOs = 'windows'): H
     os,
     workgroup: 'WORKGROUP',
     domain: null,
-    features: kind === 'server' ? [...DEFAULT_SERVER_FEATURES] : os === 'linux' ? [] : ['PowerShell'],
+    features: os === 'linux' ? [] : kind === 'server' ? [...DEFAULT_SERVER_FEATURES] : ['PowerShell'],
     pendingReboot: false,
     adminTargets: [],
     controlled: false,
     pendingName: null,
     pendingDomain: null,
     localAdminPassword: 'P@ssw0rd',
-    session: { user: os === 'linux' ? LINUX_USER : DEFAULT_LOCAL_USER[kind], domain: null },
+    session: {
+      user: os === 'linux' ? (kind === 'server' ? LINUX_SERVER_USER : LINUX_USER) : DEFAULT_LOCAL_USER[kind],
+      domain: null
+    },
     bootedAt: 0,
+    clockOffsetSeconds: 0,
     policy: { computer: null, user: null, attempt: null },
     drives: [],
     certificates: [],
@@ -82,6 +100,9 @@ export function createHost(kind: 'server' | 'client', os: HostOs = 'windows'): H
     vpnConnections: [],
     smb1: false,
     eventLog: [],
+    services: {},
+    localUsers: [],
+    localGroups: [],
     mounts: []
   }
 }
@@ -98,6 +119,52 @@ export function defaultFirewall(): Host['firewall'] {
     networkCategory: 'Public',
     predefined: {},
     rules: []
+  }
+}
+
+/**
+ * État de base d'un pare-feu neuf : WAN sur la première carte, LAN sur la deuxième, OPT1 (DMZ) sur la
+ * troisième, toutes activées ; WAN avec blocage des réseaux privés et bogons (cases cochées par défaut
+ * sur le WAN). Aucune règle ni NAT : les issues suivantes de la v2.10 les alimentent.
+ */
+export function defaultPfState(hostname: string, interfaces: NetInterface[]): PfState {
+  return {
+    version: PFSENSE_VERSION,
+    hostname,
+    domain: '',
+    assignments: PF_IFACE_KEYS.map((key, i) => ({
+      key,
+      ifaceId: interfaces[i]?.id ?? null,
+      descr: key === 'opt1' ? PF_DMZ_DESCR : PF_IFACE_LABEL[key],
+      enabled: true,
+      blockPrivate: key === 'wan',
+      blockBogons: key === 'wan'
+    })),
+    // Règle d'usine du LAN (docs/fidelite.md, P-05) ; l'anti-verrouillage est une règle automatique du moteur
+    rules: [
+      {
+        id: PF_DEFAULT_LAN_RULE_ID,
+        iface: 'lan',
+        action: 'pass',
+        disabled: false,
+        protocol: 'any',
+        source: { type: 'interface', key: 'lan', what: 'net' },
+        sourcePort: null,
+        destination: { type: 'any' },
+        destinationPort: null,
+        log: false,
+        descr: 'Default allow LAN to any rule'
+      }
+    ],
+    aliases: [],
+    nat: { outboundMode: 'automatic', outbound: [], portForwards: [] },
+    dhcp: {},
+    dnsResolver: { enabled: true, forwarding: false, hostOverrides: [] },
+    dnsServers: [],
+    gateways: [],
+    staticRoutes: [],
+    log: [],
+    states: []
   }
 }
 
@@ -140,6 +207,8 @@ export function defaultInterfaceNames(kind: DeviceKind): string[] {
       return Array.from({ length: ROUTER_INTERFACE_COUNT }, (_, i) => `Gi0/${i}`)
     case 'cloud':
       return ['WAN']
+    case 'firewall':
+      return [...PF_PORTS]
   }
 }
 
@@ -150,7 +219,12 @@ export function nextDeviceName(
   os: HostOs = 'windows'
 ): string {
   const used = new Set(Object.values(state.devices).map((d) => d.name.toUpperCase()))
-  const prefix = os === 'linux' ? LINUX_NAME_PREFIX : DEVICE_KIND_INFO[kind].namePrefix
+  const prefix =
+    os === 'linux'
+      ? kind === 'server'
+        ? LINUX_SERVER_NAME_PREFIX
+        : LINUX_NAME_PREFIX
+      : DEVICE_KIND_INFO[kind].namePrefix
   for (let n = 1; ; n++) {
     const candidate = `${prefix}${n}`
     if (!used.has(candidate)) return candidate
@@ -163,12 +237,12 @@ export function buildDevice(
   kind: DeviceKind,
   position: Position,
   name?: string,
-  /** Poste Linux (Ubuntu simulé) : kind « client » et os « linux ». */
+  /** Poste Linux (Ubuntu) ou serveur Linux (Debian 12) : os « linux » sur un client ou un serveur. */
   os: HostOs = 'windows',
   /** Équipement Cisco IOS (routeur ou switch du même type que `kind`). */
   model?: IosModel
 ): Device {
-  const linux = kind === 'client' && os === 'linux'
+  const linux = (kind === 'client' || kind === 'server') && os === 'linux'
   const id = `d${nextSeq(draft)}`
   const deviceName = name ?? nextDeviceName(draft, kind, linux ? 'linux' : 'windows')
   const ios = model && IOS_MODEL_INFO[model].kind === kind ? model : undefined
@@ -176,7 +250,11 @@ export function buildDevice(
   // Routeur IOS : interfaces administrativement coupées en sortie d'usine (no shutdown requis)
   const interfaces = names.map((n) => ({
     ...createInterface(draft, n, kind),
-    ...(ios && kind === 'router' ? { enabled: false } : {})
+    ...(ios && kind === 'router' ? { enabled: false } : {}),
+    // Pare-feu : LAN préconfiguré (192.168.1.1/24), WAN et OPT1 sans adresse
+    ...(kind === 'firewall' && n === PF_PORTS[1]
+      ? { address: PF_LAN_ADDRESS, prefixLength: PF_LAN_PREFIX }
+      : {})
   }))
   const base = { id, name: deviceName, position: { ...position }, powered: true, interfaces, hostedBy: null }
   switch (kind) {
@@ -184,7 +262,9 @@ export function buildDevice(
       return {
         ...base,
         kind,
-        host: createHost('server'),
+        host: linux
+          ? { ...createHost('server', 'linux'), linux: { distro: 'debian12' as const } }
+          : createHost('server'),
         roles: {},
         storage: { rootAcl: defaultRootAcl(), nodes: defaultFsNodes(), shares: [] }
       }
@@ -201,5 +281,7 @@ export function buildDevice(
       return { ...base, kind, routes: [], ...(ios === 'c1921' || ios === 'c2811' ? { model: ios } : {}) }
     case 'cloud':
       return { ...base, kind }
+    case 'firewall':
+      return { ...base, kind, pf: defaultPfState(deviceName, interfaces) }
   }
 }

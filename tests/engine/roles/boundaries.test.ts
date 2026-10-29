@@ -30,12 +30,28 @@ const ALLOWED_CORE_TO_ROLE = [
   'index.ts', // API publique du moteur
   'labs/lab.ts', // construction des labs : jeton d'administrateur local, Default Domain Policy
   'serialization/migrations.ts', // migration 1 → 2 : GPO par défaut
+  'services/linuxlog.ts', // envoi distant de rsyslog : résolution du nom du collecteur (v2.9, #237)
   'services/system.ts', // redémarrage : inscription DNS du poste joint
+  'shell/bash/bind.ts', // console bash : host, rndc (résolveur DNS des postes, v2.9, #240)
   'shell/bash/core.ts', // console bash : dhclient, résolution de noms (comme shell/tools/net.ts)
+  'shell/bash/net.ts', // console bash : curl, nslookup, traceroute (résolveur DNS, échange TCP tracé, IIS)
+  'shell/bash/ssh.ts', // console bash : ssh (résolution du nom du serveur joint)
   'shell/cmd/builtins.ts', // copy, move, ren, type, cd (système de fichiers du serveur)
   'shell/cmd/interpreter.ts', // redirections > et >> (contenu des fichiers)
   'shell/filesystem.ts', // chemins, partages et jetons d'accès
-  'shell/tools/net.ts' // ipconfig /renew, résolution de noms, whoami /groups
+  'shell/ps/cmdlets/net.ts', // Test-NetConnection -Port : échange TCP tracé (serverExchange)
+  'shell/ps/cmdlets/netsys.ts', // Test-ComputerSecureChannel : compte d'ordinateur du domaine
+  'shell/ps/cmdlets/system.ts', // Restart-Computer -ComputerName : administrateur du domaine
+  'shell/tools/net.ts', // ipconfig /renew, résolution de noms, whoami /groups
+  'troubleshoot/faults/domain-probe.ts',
+  'troubleshoot/faults/pf-dhcp.ts', // panne DHCP du pare-feu : bail obtenu par le client DHCP (comme win-dhcp)
+  'troubleshoot/faults/service-probes.ts',
+  'troubleshoot/faults/win-account.ts',
+  'troubleshoot/faults/win-dhcp.ts',
+  'troubleshoot/faults/win-dns-record.ts',
+  'troubleshoot/faults/win-gpo.ts',
+  'troubleshoot/faults/win-share.ts',
+  'troubleshoot/faults/win-trust.ts' // pannes Windows : symptômes lus par les fonctions des rôles (sondes)
 ]
 
 describe('frontière cœur / rôles', () => {

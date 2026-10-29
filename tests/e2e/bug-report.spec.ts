@@ -27,7 +27,7 @@ test('Signaler un bug : issue préremplie, liste blanche, aucune donnée du lab'
     const [address] = await opened()
     const url = new URL(address ?? '')
 
-    expect(`${url.origin}${url.pathname}`).toBe('https://github.com/tamalou25/packetracer-windows/issues/new')
+    expect(`${url.origin}${url.pathname}`).toBe('https://github.com/tamalou25/ServerLab/issues/new')
     expect(url.searchParams.get('labels')).toBe('bug')
     const body = url.searchParams.get('body') ?? ''
     // L'application tourne sur la même machine que le test : mêmes nom d'utilisateur et de machine

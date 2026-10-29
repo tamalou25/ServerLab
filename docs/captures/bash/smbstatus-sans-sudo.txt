@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/samba/smbstatus.1.en.html — https://sources.debian.org/src/samba/2:4.17.12+dfsg-0+deb12u4/source3/utils/status.c (samba 4.17.12), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: smbstatus
+smbstatus only works as root!

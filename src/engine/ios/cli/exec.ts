@@ -19,6 +19,9 @@ import { CONFIG_SUBMODES, isConfigMode, type IosMode, type IosRunContext, type I
 /** Ctrl+Z (envoyé par la console) : quitte la configuration, comme `end`. */
 export const IOS_CTRL_Z = '\u001a'
 
+/** Taille d'usine de l'historique (history size, 10 commandes). */
+export const HISTORY_SIZE = 10
+
 /** Message journalisé en quittant la configuration (end, Ctrl+Z, exit). */
 export const CONFIG_I_MESSAGE = '%SYS-5-CONFIG_I: Configured from console by console'
 
@@ -42,7 +45,14 @@ class RunContext implements IosRunContext {
   setMode(mode: IosMode, extra: Omit<IosSession, 'mode'> = {}): void {
     // Sortie de la configuration vers le mode privilégié : message de journalisation
     if (isConfigMode(this.session.mode) && mode === 'exec') this.print(CONFIG_I_MESSAGE)
-    this.session = { mode, ...extra }
+    // L'historique et la longueur d'écran suivent la session d'un mode à l'autre
+    const { history, length } = this.session
+    this.session = {
+      mode,
+      ...extra,
+      ...(history ? { history } : {}),
+      ...(length !== undefined ? { length } : {})
+    }
   }
 
   apply(result: { ok: true; state: LabState } | { ok: false; error: { message: string } }): boolean {
@@ -140,6 +150,12 @@ export function executeIos(
   const tokens = pipe < 0 ? allTokens : allTokens.slice(0, pipe)
   const filter: FilterParse | null = pipe < 0 ? null : parseFilter(line, allTokens, pipe + 1)
   const words = tokens.map((t) => t.text)
+  // Historique de la session (show history) : lignes saisies en mode utilisateur ou privilégié
+  if (ctx.session.mode === 'user' || ctx.session.mode === 'exec')
+    ctx.session = {
+      ...ctx.session,
+      history: [...(ctx.session.history ?? []), line.trim()].slice(-HISTORY_SIZE)
+    }
   const caret = (token: Token | undefined): void => {
     ctx.print(`${' '.repeat(prompt.length + (token?.start ?? 0))}^`)
     ctx.print("% Invalid input detected at '^' marker.")
@@ -163,7 +179,7 @@ export function executeIos(
           ctx.print(`% ${unsimulatedIosMessage(filter.name)}`)
           break
         }
-        if (mode !== ctx.session.mode) ctx.session = { mode }
+        if (mode !== ctx.session.mode) ctx.setMode(mode)
         const from = ctx.output.length
         outcome.run(ctx, outcome.args)
         if (filter?.kind === 'ok') {

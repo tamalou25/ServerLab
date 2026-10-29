@@ -11,7 +11,7 @@ PowerShell / CMD simulées.
 ## Installation
 
 Téléchargez la dernière version dans les
-[Releases](https://github.com/tamalou25/packetracer-windows/releases) du dépôt :
+[Releases](https://github.com/tamalou25/ServerLab/releases) du dépôt :
 
 | Système             | Fichier                           | Installation                                                                                                             |
 | ------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
@@ -88,6 +88,14 @@ la CI la vérifie à chaque push (application empaquetée puis démarrée).
 Sécurité : `contextIsolation`, `sandbox`, pas de `nodeIntegration`, CSP stricte, navigation bloquée.
 
 Voir [`CLAUDE.md`](./CLAUDE.md) pour les conventions détaillées.
+
+## Interface
+
+Console d'ingénierie sobre, en thème sombre ou clair (Affichage > Thème) : barre d'outils, palette à onglets,
+canvas, inspecteur à onglets et panneau Simulation. La forme des icônes indique le type d'équipement, la couleur
+et la forme des voyants indiquent l'état. Détails : [docs/ui-v2.md](docs/ui-v2.md).
+
+![Écran principal (thème clair)](docs/captures/ui-v2/v2-ecran-principal-clair.png)
 
 ## Stratégies de groupe (GPO)
 
@@ -173,7 +181,9 @@ l'application ou abandon est signalé dans le résultat.
 
 La palette propose un **Poste Linux** (Ubuntu simulé) avec une console bash : `ip a`, `ip route`, `ping`,
 `dig`, `realm join` pour rejoindre le domaine Active Directory, `mount -t cifs` ou `smbclient` pour accéder
-aux partages selon les autorisations NTFS du compte. Les sorties reprennent le format d'origine des outils
+aux partages selon les autorisations NTFS du compte. Le système de fichiers local (`/etc`, `/var/www`, `/home`)
+et ses droits Unix sont simulés : `cat`, `echo >>`, `tee`, `sed -i`, `chmod`, `chown`, `useradd`, `usermod -aG`,
+`passwd`, `id`, `su`, `sudo` (groupe `sudo` de `/etc/sudoers`). Les sorties reprennent le format d'origine des outils
 (en anglais).
 
 ## Équipements Cisco

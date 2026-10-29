@@ -54,7 +54,8 @@ export function newGpo(id: string, name: string, time: number): Gpo {
     userVersion: 0,
     computerVersion: 0,
     computer: emptyComputerSettings(),
-    user: emptyUserSettings()
+    user: emptyUserSettings(),
+    registry: []
   }
 }
 

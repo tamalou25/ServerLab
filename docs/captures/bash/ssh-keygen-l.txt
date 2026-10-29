@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/openssh-client/ssh-keygen.1.en.html (https://sources.debian.org/src/openssh/1:9.2p1-2+deb12u10/ssh-keygen.c) — sortie reconstituée d’après la page de manuel et le code source Debian (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: ssh-keygen -l -f .ssh/id_ed25519.pub
+256 SHA256:V6LafPUDZsCZrHOih3d2EPWd6HKE8utVf7Nb6ymykTk etudiant@LNX1 (ED25519)

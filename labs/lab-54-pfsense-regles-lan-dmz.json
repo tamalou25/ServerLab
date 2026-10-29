@@ -1,0 +1,167 @@
+{
+  "formatVersion": 1,
+  "id": "lab-54-pfsense-regles-lan-dmz",
+  "title": "pfSense : filtrer le trafic entre le LAN, la DMZ et Internet",
+  "difficulty": "Intermédiaire",
+  "duration": "45 min",
+  "summary": "Isolez la DMZ du réseau local avec les règles du pare-feu pfSense : le LAN ne joint le serveur web que sur le port 80, la DMZ ne peut rien initier vers le LAN.",
+  "statement": "## Contexte\n\nLe pare-feu **FW1** (pfSense CE 2.7) relie trois zones : le **WAN** (Internet, 45.10.0.1/30), le **LAN** (192.168.1.0/24 : PC1 et le serveur intranet FILES1) et la **DMZ** (172.16.0.0/24 : le serveur web WEB1, 172.16.0.10). Le serveur **INTERNET** (45.10.0.2) représente un site public.\n\nAu départ, seule la règle d'usine du LAN existe (« Default allow LAN to any rule ») : le LAN peut tout faire, la DMZ ne peut rien faire (refus par défaut).\n\n## Politique à appliquer\n\n1. Depuis le LAN, WEB1 n'est joignable qu'en **HTTP (TCP 80)** : ni ping, ni SSH.\n2. Le LAN conserve son accès à Internet.\n3. WEB1 doit pouvoir télécharger ses mises à jour en **HTTP (TCP 80) vers Internet** (sa sortie est traduite par le NAT automatique).\n4. WEB1 ne doit **jamais** joindre le LAN : ni FILES1, ni PC1, quel que soit le port.\n\n## Rappels\n\n- Les règles d'une interface s'appliquent au trafic **entrant** sur cette interface, dans l'ordre, et la **première qui correspond** s'applique.\n- Le filtrage est à états : une connexion autorisée laisse passer ses réponses.\n\n## À rendre\n\nLa liste des règles de chaque interface (Firewall > Rules) et, pour chaque règle, la raison de sa position.",
+  "start": {
+    "devices": [
+      {
+        "kind": "firewall",
+        "name": "FW1",
+        "x": 420,
+        "y": 230,
+        "interfaces": {
+          "em0": "45.10.0.1/30",
+          "em2": "172.16.0.1/24"
+        }
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "INTERNET",
+        "x": 420,
+        "y": 40,
+        "ip": "45.10.0.2/30",
+        "packages": ["apache2"]
+      },
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 160,
+        "y": 230
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 40,
+        "y": 330,
+        "ip": "192.168.1.10/24",
+        "gateway": "192.168.1.1",
+        "dns": ["192.168.1.1"],
+        "firewallDisabled": ["Domain", "Private", "Public"]
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "FILES1",
+        "x": 40,
+        "y": 330,
+        "ip": "192.168.1.20/24",
+        "gateway": "192.168.1.1",
+        "packages": ["apache2"]
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "WEB1",
+        "x": 700,
+        "y": 330,
+        "ip": "172.16.0.10/24",
+        "gateway": "172.16.0.1",
+        "packages": ["apache2"]
+      }
+    ],
+    "links": [
+      ["INTERNET:eth0", "FW1:em0"],
+      ["SW1:Fa0/1", "FW1:em1"],
+      ["PC1:Ethernet0", "SW1:Fa0/2"],
+      ["FILES1:eth0", "SW1:Fa0/3"],
+      ["WEB1:eth0", "FW1:em2"]
+    ]
+  },
+  "criteria": [
+    {
+      "id": "c1",
+      "label": "Le LAN atteint le site de WEB1 (TCP 80)",
+      "hint": "Une règle du LAN doit autoriser ce flux vers la DMZ.",
+      "check": {
+        "type": "pfReachable",
+        "from": "PC1",
+        "to": "WEB1",
+        "protocol": "tcp",
+        "port": 80
+      }
+    },
+    {
+      "id": "c2",
+      "label": "Le LAN ne peut plus pinguer WEB1",
+      "hint": "Le ping est du trafic ICMP : la règle d’usine autorise encore tout le LAN vers n’importe où.",
+      "check": {
+        "type": "pfReachable",
+        "from": "PC1",
+        "to": "WEB1",
+        "protocol": "icmp",
+        "success": false
+      }
+    },
+    {
+      "id": "c3",
+      "label": "Le LAN ne peut plus ouvrir de session SSH sur WEB1",
+      "hint": "Seul le port 80 est permis du LAN vers la DMZ. Observez l’ordre des règles du LAN.",
+      "check": {
+        "type": "pfReachable",
+        "from": "PC1",
+        "to": "WEB1",
+        "protocol": "tcp",
+        "port": 22,
+        "success": false
+      }
+    },
+    {
+      "id": "c4",
+      "label": "Le LAN garde son accès à Internet",
+      "hint": "Ne bloquez que ce qui va vers la DMZ : la règle d’usine reste utile pour le reste.",
+      "check": {
+        "type": "pfReachable",
+        "from": "PC1",
+        "to": "INTERNET",
+        "protocol": "tcp",
+        "port": 80
+      }
+    },
+    {
+      "id": "c5",
+      "label": "WEB1 télécharge ses mises à jour en HTTP vers Internet",
+      "hint": "La DMZ n’a aucune règle : tout y est refusé par défaut. Pensez à ce que cache « any ».",
+      "check": {
+        "type": "pfReachable",
+        "from": "WEB1",
+        "to": "INTERNET",
+        "protocol": "tcp",
+        "port": 80
+      }
+    },
+    {
+      "id": "c6",
+      "label": "WEB1 n’atteint pas le serveur intranet FILES1",
+      "hint": "Une règle « HTTP vers any » de la DMZ inclut aussi le LAN : l’ordre des règles compte.",
+      "hints": [
+        "Les règles sont lues de haut en bas et la première qui correspond s’applique.",
+        "Placez au-dessus de la règle large celle qui bloque le LAN."
+      ],
+      "check": {
+        "type": "pfReachable",
+        "from": "WEB1",
+        "to": "FILES1",
+        "protocol": "tcp",
+        "port": 80,
+        "success": false
+      }
+    },
+    {
+      "id": "c7",
+      "label": "WEB1 n’atteint pas PC1",
+      "hint": "Le blocage doit couvrir tout le réseau local.",
+      "check": {
+        "type": "pfReachable",
+        "from": "WEB1",
+        "to": "PC1",
+        "protocol": "icmp",
+        "success": false
+      }
+    }
+  ]
+}

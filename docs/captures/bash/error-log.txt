@@ -1,0 +1,10 @@
+# Source: https://sources.debian.org/data/main/a/apache2/2.4.68-1~deb12u1/server/log.c — format [date] [module:niveau] [pid:tid] et messages AH00489/AH00493/AH00094 (server/mpm/event/event.c, server/log.c) (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo cat /var/log/apache2/error.log
+[Mon Jan 05 08:00:02.031676 2026] [mpm_event:notice] [pid 413:tid 139800000422912] AH00489: Apache/2.4.68 (Debian) configured -- resuming normal operations
+[Mon Jan 05 08:00:02.039595 2026] [core:notice] [pid 413:tid 139800000422912] AH00094: Command line: '/usr/sbin/apache2'
+[Mon Jan 05 08:00:05.063352 2026] [mpm_event:notice] [pid 413:tid 139800000422912] AH00493: SIGUSR1 received.  Doing graceful restart
+[Mon Jan 05 08:00:05.071271 2026] [mpm_event:notice] [pid 413:tid 139800000422912] AH00489: Apache/2.4.68 (Debian) configured -- resuming normal operations
+[Mon Jan 05 08:00:05.079190 2026] [core:notice] [pid 413:tid 139800000422912] AH00094: Command line: '/usr/sbin/apache2'
+[Mon Jan 05 08:00:13.087109 2026] [mpm_event:notice] [pid 413:tid 139800000422912] AH00493: SIGUSR1 received.  Doing graceful restart
+[Mon Jan 05 08:00:13.095028 2026] [mpm_event:notice] [pid 413:tid 139800000422912] AH00489: Apache/2.4.68 (Debian) configured -- resuming normal operations
+[Mon Jan 05 08:00:13.102947 2026] [core:notice] [pid 413:tid 139800000422912] AH00094: Command line: '/usr/sbin/apache2'

@@ -9,7 +9,11 @@
  * Depuis la v17 : fichier C:\Scripts\users.csv de SRV1 avec son contenu texte.
  * Depuis la v18 : passerelle par défaut de CSW1 (ip default-gateway).
  * Depuis la v20 : EtherChannel de CSW1 (Fa0/23-24 en LACP) et VTP (domaine SIO, transparent).
+ * Depuis la v21 : horloge et NTP de CR1 (clock timezone, ntp server, exec-timeout de la console).
+ * Depuis la v22 : RIP v2 de CR1 et default-information originate d'OSPF.
  * Depuis la v19 : spanning-tree de CSW1 (rapid-pvst, priorité du VLAN 30, BPDU Guard).
+ * Depuis la v27 : serveur Linux LSRV1 (Debian 12 simulé).
+ * Depuis la v28 : pare-feu FW1 (pfSense CE 2.7 simulé), LAN câblé sur le port Fa0/10 de SW1.
  * Le même scénario a servi à produire chaque fichier vN.slab avec le code de la version N.
  */
 import {
@@ -34,6 +38,11 @@ import {
   runIosScript,
   setDhcpOptions,
   setInterfaceIpv4,
+  setHostClock,
+  setServiceStartType,
+  newLocalUser,
+  setGpRegistryValue,
+  stopService,
   setSwitchport,
   unwrap,
   writeFileContent,
@@ -214,6 +223,32 @@ export function buildReferenceLab(): LabState {
   s = unwrap(
     writeFileContent(s, id('SRV1'), 'C:\\Scripts\\users.csv', 'Nom;Prenom\r\nDupont;Jean\r\n', admin)
   ).state
+  // v24 : service Temps Windows arrêté, démarrage manuel
+  s = unwrap(setServiceStartType(s, id('SRV1'), 'W32Time', 'Manual')).state
+  s = unwrap(stopService(s, id('SRV1'), 'W32Time')).state
+  // v25 : utilisateur local de PC2 et valeur de registre de la Default Domain Policy
+  s = unwrap(newLocalUser(s, id('PC2'), { name: 'tech', password: 'T3ch!pass' })).state
+  s = unwrap(
+    setGpRegistryValue(s, 'lab.local', '{31B2F340-016D-11D2-945F-00C04FB984F9}', {
+      key: 'HKCU\\Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop',
+      valueNames: ['ScreenSaveTimeOut'],
+      values: [900],
+      type: 'DWord'
+    })
+  ).state
+  // v26 : horloge de PC2 en avance de 90 secondes (sous la tolérance Kerberos de 5 minutes)
+  s = unwrap(setHostClock(s, id('PC2'), 90)).state
+  // v27 : serveur Linux (Debian 12 simulé) LSRV1, non câblé
+  s = unwrap(addDevice(s, { kind: 'server', os: 'linux', position: { x: 0, y: 200 }, name: 'LSRV1' })).state
+  // v28 : pare-feu pfSense FW1, LAN (em1) relié au switch SW1
+  device('firewall', 'FW1', 200, -200)
+  s = unwrap(
+    connect(
+      s,
+      { deviceId: id('FW1'), ifaceId: iface('FW1', 'em1') },
+      { deviceId: id('SW1'), ifaceId: iface('SW1', 'Fa0/10') }
+    )
+  ).state
   return runIosScript(s, id('CR1'), [
     'enable',
     'configure terminal',
@@ -228,7 +263,11 @@ export function buildReferenceLab(): LabState {
     // v16 : logging synchronous sur la console
     'line con 0',
     'logging synchronous',
+    // v21 : délai d'inactivité de la console, fuseau horaire et serveur NTP
+    'exec-timeout 0 0',
     'exit',
+    'clock timezone CET 1',
+    'ntp server 192.168.30.10',
     'interface Gi0/0',
     'no shutdown',
     'interface Gi0/0.30',
@@ -238,6 +277,13 @@ export function buildReferenceLab(): LabState {
     'exit',
     'router ospf 1',
     'network 192.168.30.0 0.0.0.255 area 0',
+    // v22 : route par défaut annoncée par OSPF, processus RIP v2
+    'default-information originate always',
+    'exit',
+    'router rip',
+    'version 2',
+    'network 192.168.30.0',
+    'no auto-summary',
     'end',
     'write memory'
   ])

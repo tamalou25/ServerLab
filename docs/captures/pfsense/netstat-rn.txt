@@ -1,0 +1,14 @@
+# Source: https://docs.netgate.com/pfsense/en/latest/monitoring/status/routes.html (« Route Table CLI ») et https://github.com/freebsd/freebsd-src/tree/stable/14/usr.bin/netstat/route.c (pr_rthdr) ; valeurs du lab ServerLab (docs/fidelite.md, P-54)
+# Commande: netstat -rn
+Routing tables
+
+Internet:
+Destination        Gateway            Flags         Netif Expire
+default            203.0.113.1        UGS             em0
+127.0.0.1          link#5             UH              lo0
+172.16.0.0/24      link#3             U               em2
+172.16.0.1         link#3             UHS             lo0
+192.168.1.0/24     link#2             U               em1
+192.168.1.1        link#2             UHS             lo0
+203.0.113.0/24     link#1             U               em0
+203.0.113.2        link#1             UHS             lo0

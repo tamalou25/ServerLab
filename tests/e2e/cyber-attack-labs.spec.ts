@@ -12,7 +12,6 @@ test('Lab 31 : scénarios joués depuis le panneau Simulation, critères validé
 
     // Le panneau Scénarios fait partie du mode Simulation ; seuls les scénarios du lab sont proposés
     await page.getByTestId('mode-simulation').click()
-    await page.getByTestId('right-tab-simulation').click()
     await expect(page.getByTestId('scenario-select').locator('option')).toHaveCount(4)
     for (const id of ['auth-repetee', 'compte-service', 'reutilisation-acces']) {
       await page.getByTestId('scenario-select').selectOption(id)
@@ -39,7 +38,6 @@ test('Lab 35 : sujet Red / Blue, le lab impose le camp de l’IA', async () => {
     await expect(page.getByTestId('lab-score')).toHaveText('0 / 5 critère(s) validé(s)')
 
     await page.getByTestId('mode-simulation').click()
-    await page.getByTestId('right-tab-simulation').click()
     await page.getByTestId('game-open').click()
     // L'IA joue Red : le joueur est Blue, minuteur de 15 minutes
     await expect(page.getByTestId('game-setup')).toContainText('6 tours maximum')

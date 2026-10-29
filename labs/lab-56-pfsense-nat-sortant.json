@@ -1,0 +1,136 @@
+{
+  "formatVersion": 1,
+  "id": "lab-56-pfsense-nat-sortant",
+  "title": "pfSense : rétablir le NAT sortant en mode manuel",
+  "difficulty": "Intermédiaire",
+  "duration": "30 min",
+  "summary": "Le NAT sortant a été désactivé : le LAN et la DMZ n’atteignent plus Internet. Passez en mode manuel et traduisez chaque réseau vers l’adresse du WAN.",
+  "statement": "## Ticket\n\n> « Plus personne n'accède à Internet depuis le LAN, et WEB1 ne télécharge plus ses mises à jour. »\n\n## Contexte\n\n**FW1** a le WAN en 45.10.0.1/30, le LAN en 192.168.1.0/24 (PC1) et la DMZ en 172.16.0.0/24 (WEB1). Le serveur **INTERNET** (45.10.0.2) n'a pas de route vers les réseaux privés. Les règles de filtrage sont correctes : le LAN et la DMZ sont autorisés vers l'extérieur.\n\n## Travail demandé\n\n1. Constatez l'échec (`curl http://45.10.0.2/` depuis PC1 ou WEB1 ; dans la trace, la source reste privée à la sortie).\n2. Dans Firewall > NAT > Outbound, passez en **mode manuel** et créez une règle par réseau : **192.168.1.0/24** et **172.16.0.0/24** traduits vers l'**adresse de l'interface WAN**.\n3. Vérifiez la traduction dans Diagnostics > States.\n\n## À rendre\n\nLa différence entre les modes automatique, hybride et manuel, et un cas où le mode manuel est nécessaire.",
+  "start": {
+    "devices": [
+      {
+        "kind": "firewall",
+        "name": "FW1",
+        "x": 420,
+        "y": 230,
+        "interfaces": {
+          "em0": "45.10.0.1/30",
+          "em2": "172.16.0.1/24"
+        },
+        "pf": [
+          {
+            "type": "pf.setNatMode",
+            "args": ["disabled"]
+          },
+          {
+            "type": "pf.addRule",
+            "args": [
+              {
+                "iface": "opt1",
+                "action": "pass",
+                "descr": "DMZ vers tout"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "INTERNET",
+        "x": 420,
+        "y": 40,
+        "ip": "45.10.0.2/30",
+        "packages": ["apache2"]
+      },
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 160,
+        "y": 230
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 40,
+        "y": 330,
+        "ip": "192.168.1.10/24",
+        "gateway": "192.168.1.1",
+        "dns": ["192.168.1.1"],
+        "firewallDisabled": ["Domain", "Private", "Public"]
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "WEB1",
+        "x": 700,
+        "y": 330,
+        "ip": "172.16.0.10/24",
+        "gateway": "172.16.0.1",
+        "packages": ["apache2"]
+      }
+    ],
+    "links": [
+      ["INTERNET:eth0", "FW1:em0"],
+      ["SW1:Fa0/1", "FW1:em1"],
+      ["PC1:Ethernet0", "SW1:Fa0/2"],
+      ["WEB1:eth0", "FW1:em2"]
+    ]
+  },
+  "criteria": [
+    {
+      "id": "c1",
+      "label": "Le NAT sortant est en mode manuel",
+      "hint": "Firewall > NAT > Outbound : le mode se choisit en haut de l’onglet.",
+      "check": {
+        "type": "pfNatMode",
+        "device": "FW1",
+        "mode": "manual"
+      }
+    },
+    {
+      "id": "c2",
+      "label": "Une règle de NAT sortant traduit le LAN (192.168.1.0/24)",
+      "hint": "En mode manuel, aucun réseau n’est traduit sans règle.",
+      "check": {
+        "type": "pfOutboundNat",
+        "device": "FW1",
+        "covers": "192.168.1.10"
+      }
+    },
+    {
+      "id": "c3",
+      "label": "Une règle de NAT sortant traduit la DMZ (172.16.0.0/24)",
+      "hint": "Chaque réseau interne a besoin de sa règle.",
+      "check": {
+        "type": "pfOutboundNat",
+        "device": "FW1",
+        "covers": "172.16.0.10"
+      }
+    },
+    {
+      "id": "c4",
+      "label": "PC1 atteint le site d’INTERNET (TCP 80)",
+      "hint": "Si la source reste privée, INTERNET ne sait pas répondre.",
+      "check": {
+        "type": "pfReachable",
+        "from": "PC1",
+        "to": "INTERNET",
+        "protocol": "tcp",
+        "port": 80
+      }
+    },
+    {
+      "id": "c5",
+      "label": "WEB1 atteint le site d’INTERNET (TCP 80)",
+      "hint": "Regardez la table d’états du pare-feu pour voir la traduction.",
+      "check": {
+        "type": "pfReachable",
+        "from": "WEB1",
+        "to": "INTERNET",
+        "protocol": "tcp",
+        "port": 80
+      }
+    }
+  ]
+}

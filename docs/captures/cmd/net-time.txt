@@ -1,0 +1,3 @@
+# Source: https://learn.microsoft.com/en-us/archive/blogs/w32time/net-time-and-w32time (exemple « net time \\DC-01.mydomain.com »)
+# Commande: net time \\SRV1
+Current time at \\SRV1 is 1/5/2026 8:00:00 AM

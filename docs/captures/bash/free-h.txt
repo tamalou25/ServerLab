@@ -1,0 +1,5 @@
+# Source: https://manpages.debian.org/bookworm/procps/free.1.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: free -h
+               total        used        free      shared  buff/cache   available
+Mem:               -           -           -           -           -           -
+Swap:              -           -           -

@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/samba/smbclient.1.en.html — https://sources.debian.org/src/samba/2:4.17.12+dfsg-0+deb12u4/source3/client/client.c et source3/libsmb/clidfs.c (samba 4.17.12), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: smbclient //192.168.2.10/public -U alice%Passw0rd -c 'mkdir docs'
+NT_STATUS_OBJECT_NAME_COLLISION making remote directory \docs

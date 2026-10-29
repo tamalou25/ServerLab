@@ -1,0 +1,22 @@
+# Source: https://github.com/freebsd/freebsd-src/tree/stable/14/sbin/pfctl (pfctl.c, pfctl_parser.c : print_rule, print_status ; pf_print_state.c : print_state), https://github.com/pfsense/pfsense/blob/RELENG_2_7_2/src/etc/inc/filter.inc (règles générées), https://docs.netgate.com/pfsense/en/latest/firewall/pf-ruleset.html. Jeu de règles réduit (docs/fidelite.md, P-52) ; valeurs du lab ServerLab
+# Commande: pfctl -sr
+pass in quick on lo0 inet6 all flags S/SA keep state label "pass IPv6 loopback" ridentifier 1000000001
+pass out quick on lo0 inet6 all flags S/SA keep state label "pass IPv6 loopback" ridentifier 1000000002
+block drop in log quick inet6 all label "Block all IPv6" ridentifier 1000000003
+block drop out log quick inet6 all label "Block all IPv6" ridentifier 1000000004
+block drop in log quick inet from 169.254.0.0/16 to any label "Block IPv4 link-local" ridentifier 1000000101
+block drop in log quick inet from any to 169.254.0.0/16 label "Block IPv4 link-local" ridentifier 1000000102
+block drop in log inet all label "Default deny rule IPv4" ridentifier 1000000103
+block drop out log inet all label "Default deny rule IPv4" ridentifier 1000000104
+block drop in log inet6 all label "Default deny rule IPv6" ridentifier 1000000105
+block drop out log inet6 all label "Default deny rule IPv6" ridentifier 1000000106
+block drop in log quick on em0 from <bogons> to any label "block bogon IPv4 networks from WAN" ridentifier 11001
+block drop in log quick on em0 inet from 10.0.0.0/8 to any label "Block private networks from WAN block 10/8" ridentifier 12001
+block drop in log quick on em0 inet from 127.0.0.0/8 to any label "Block private networks from WAN block 127/8" ridentifier 12002
+block drop in log quick on em0 inet from 172.16.0.0/12 to any label "Block private networks from WAN block 172.16/12" ridentifier 12003
+block drop in log quick on em0 inet from 192.168.0.0/16 to any label "Block private networks from WAN block 192.168/16" ridentifier 12004
+block drop in log quick on em0 inet6 from fc00::/7 to any label "Block ULA networks from WAN block fc00::/7" ridentifier 12005
+pass in quick on em1 proto tcp from any to (em1) port = https flags S/SA keep state label "anti-lockout rule" ridentifier 10001
+pass in quick on em1 proto tcp from any to (em1) port = http flags S/SA keep state label "anti-lockout rule" ridentifier 10001
+pass in quick on em1 proto tcp from any to (em1) port = ssh flags S/SA keep state label "anti-lockout rule" ridentifier 10001
+pass in quick on em1 inet from 192.168.1.0/24 to any flags S/SA keep state label "USER_RULE: Default allow LAN to any rule" label "id:0100000101" ridentifier 100000101

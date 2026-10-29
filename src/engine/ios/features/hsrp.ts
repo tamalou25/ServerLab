@@ -203,6 +203,43 @@ function showStandbyBrief(ctx: IosRunContext): void {
   }
 }
 
+/**
+ * show standby : état détaillé de chaque groupe (champs de l'exemple de la FHRP Command Reference,
+ * https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/ipapp_fhrp/command/fhp-cr-book/fhp-s1.html).
+ * Temporisateurs d'usine (hello 3 s, hold 10 s), MAC virtuelle HSRP v1 0000.0c07.acXX.
+ */
+function showStandby(ctx: IosRunContext): void {
+  const device = deviceOf(ctx)
+  const all = members(ctx.state)
+  const secs = Math.floor(ctx.state.clock / 1000)
+  for (const m of all.filter((x) => x.device.id === device.id)) {
+    const s = stateOf(m)
+    const peers = all.filter((o) => o !== m && o.group === m.group && o.ip === m.ip && o.up)
+    const mac = `0000.0c07.ac${m.group.toString(16).padStart(2, '0')}`
+    const who = (wanted: HsrpState): string => {
+      if (s === wanted) return 'local'
+      const peer = peers.find((o) => stateOf(o) === wanted)
+      return peer
+        ? `${peer.iface.address ?? 'unknown'}, priority ${peer.priority} (expires in ${10 - (secs % 3)}.000 sec)`
+        : 'unknown'
+    }
+    ctx.print(`${ifaceLongName(m.iface.name)} - Group ${m.group}`)
+    ctx.print(`  State is ${s === 'Init' && !m.up ? 'Init' : s}`)
+    ctx.print(`  Virtual IP address is ${m.ip ?? 'unknown'}`)
+    ctx.print(
+      `  Active virtual MAC address is ${s === 'Active' || peers.some((o) => stateOf(o) === 'Active') ? mac : 'unknown'}`
+    )
+    ctx.print(`   Local virtual MAC address is ${mac} (v1 default)`)
+    ctx.print('  Hello time 3 sec, hold time 10 sec')
+    ctx.print(`   Next hello sent in ${3 - (secs % 3)}.000 secs`)
+    ctx.print(`  Preemption ${m.preempt ? 'enabled' : 'disabled'}`)
+    ctx.print(`  Active router is ${who('Active')}`)
+    ctx.print(`  Standby router is ${who('Standby')}`)
+    ctx.print(`  Priority ${m.priority} (${m.priority === 100 ? 'default' : 'configured'} ${m.priority})`)
+    ctx.print(`  Group name is "hsrp-${m.iface.name}-${m.group}" (default)`)
+  }
+}
+
 const STANDBY = kw('standby', 'HSRP interface configuration commands')
 const GROUP = { arg: 'group', type: number(0, 255), help: 'group number' }
 const IF_MODES = ['config-if', 'config-subif'] as const
@@ -250,6 +287,14 @@ const commands: CliCommand[] = [
       ctx.state.devices[ctx.deviceId]?.kind === 'router' ||
       ctx.state.devices[ctx.deviceId]?.kind === 'switch',
     run: showStandbyBrief
+  },
+  {
+    modes: ['user', 'exec'],
+    syntax: [kw('show', 'Show running system information'), kw('standby', 'HSRP information')],
+    available: (ctx) =>
+      ctx.state.devices[ctx.deviceId]?.kind === 'router' ||
+      ctx.state.devices[ctx.deviceId]?.kind === 'switch',
+    run: showStandby
   }
 ]
 

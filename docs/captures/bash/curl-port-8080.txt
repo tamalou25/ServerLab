@@ -1,0 +1,12 @@
+# Source: https://manpages.debian.org/bookworm/curl/curl.1.en.html — réponse d’Apache reconstituée d’après modules/http/http_etag.c et http_protocol.c (httpd 2.4.68-1~deb12u1) (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: curl -I http://192.168.2.10:8080/
+HTTP/1.1 200 OK
+Date: Mon, 05 Jan 2026 08:00:43 GMT
+Server: Apache/2.4.68 (Debian)
+Last-Modified: Mon, 05 Jan 2026 08:00:00 GMT
+ETag: "29cd-6479f721ae000"
+Accept-Ranges: bytes
+Content-Length: 10701
+Vary: Accept-Encoding
+Content-Type: text/html
+

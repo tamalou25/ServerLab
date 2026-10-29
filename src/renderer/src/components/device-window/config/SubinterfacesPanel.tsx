@@ -48,7 +48,7 @@ export function SubinterfacesPanel({ device }: { device: RouterDevice }) {
               <td className="py-1 text-right">
                 <button
                   type="button"
-                  className="rounded p-1 text-fg-subtle hover:bg-danger-soft hover:text-danger"
+                  className="rounded p-1 text-fg-subtle hover:bg-danger-soft hover:text-danger-text"
                   title={t('win.supprimerLaSousInterface')}
                   onClick={() => runCommand(command('net.removeSubinterface', device.id, i.id))}
                 >

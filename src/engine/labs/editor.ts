@@ -35,6 +35,15 @@ export interface CriterionTypeInfo {
 /** Libellés des champs, communs à tous les types (même clé = même sens). */
 const FIELD_LABELS: Record<string, string> = {
   min: 'Score minimal',
+  unit: 'Service (unité systemd)',
+  active: 'Actif',
+  text: 'Texte cherché',
+  regex: 'Expression régulière',
+  owner: 'Propriétaire',
+  proto: 'Protocole de transport',
+  listening: 'En écoute',
+  package: 'Paquet',
+  maxSeconds: 'Écart maximal (secondes)',
   line: 'Ligne de configuration',
   present: 'Présente',
   state: 'État',
@@ -83,6 +92,7 @@ const FIELD_LABELS: Record<string, string> = {
   kind: 'Type d’objet',
   parent: 'Conteneur parent',
   memberOf: 'Membre de',
+  contains: 'Doit contenir',
   domain: 'Domaine',
   site: 'Site',
   subnet: 'Sous-réseau',
@@ -97,6 +107,18 @@ const FIELD_LABELS: Record<string, string> = {
   part: 'Partie',
   account: 'Compte',
   path: 'Chemin',
+  iface: 'Interface logique (wan, lan, opt1)',
+  aliasType: 'Type d’alias',
+  values: 'Valeurs',
+  destination: 'Destination',
+  targetPort: 'Port de la machine interne',
+  associatedRule: 'Règle de filtrage associée',
+  covers: 'Adresse que la règle traduit',
+  translation: 'Adresse de traduction',
+  hostOverride: 'Host Override attendu',
+  rangeFrom: 'Début de plage',
+  rangeTo: 'Fin de plage',
+  isDefault: 'Passerelle par défaut',
   share: 'Partage',
   allow: 'Autorisations accordées',
   deny: 'Autorisations refusées',
@@ -127,7 +149,9 @@ const FIELD_LABELS: Record<string, string> = {
   systemState: 'État du système',
   access: 'Accès',
   user: 'Utilisateur',
-  granted: 'Accordé'
+  granted: 'Accordé',
+  startType: 'Type de démarrage',
+  faultId: 'Panne (identifiant du catalogue, vide : toutes)'
 }
 
 /** Champs dont la valeur désigne un objet du lab : suggestions proposées. */

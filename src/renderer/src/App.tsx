@@ -12,14 +12,18 @@ import { DeviceWindows } from './components/device-window/DeviceWindow'
 import { RedBlueGame } from './components/cyber/RedBlueGame'
 import { HomeScreen } from './components/home/HomeScreen'
 import { TutorialCoach } from './components/tutorial/TutorialCoach'
+import { MainToolbar } from './components/MainToolbar'
 import { Palette } from './components/Palette'
 import { RightPanel } from './components/RightPanel'
+import { SimulationPanel } from './components/simulation/SimulationPanel'
 import { StatusBar } from './components/StatusBar'
 import { useDocumentLifecycle } from './hooks/useDocumentLifecycle'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { LabPicker } from './components/labs/LabPicker'
+import { TroubleshootDialog } from './components/labs/Troubleshoot'
 import { LabEditor } from './components/labs/LabEditor'
 import { useExamGuards } from './lib/exam'
+import { openTroubleshootDialog, useTroubleshootTracking } from './lib/troubleshoot'
 import { useLabsStore } from './store/labs'
 import { useConsoleSessionSync } from './hooks/useConsoleSessionSync'
 import { useMenuBridge } from './hooks/useMenuBridge'
@@ -57,6 +61,9 @@ function handleMenuCommand(msg: MenuCommandMessage): void {
       break
     case 'file:openLab':
       useLabsStore.getState().setPickerOpen(true)
+      break
+    case 'file:troubleshoot':
+      openTroubleshootDialog()
       break
     // Menu « Annuler : … » : toujours la commande annoncée, même si le focus est dans un champ
     case 'edit:undo':
@@ -142,11 +149,13 @@ export function App() {
   useSimulationPlayback()
   useConsoleSessionSync()
   useExamGuards()
+  useTroubleshootTracking()
 
   return (
     <ReactFlowProvider>
       <Fragment key={lang}>
         <div className="flex h-full flex-col">
+          <MainToolbar />
           <div className="flex min-h-0 flex-1">
             <Palette />
             <main className="min-w-0 flex-1">
@@ -154,12 +163,14 @@ export function App() {
             </main>
             {showProperties && <RightPanel />}
           </div>
+          <SimulationPanel />
           <StatusBar />
         </div>
         <HomeScreen />
         <TutorialCoach />
         <DeviceWindows />
         <LabPicker />
+        <TroubleshootDialog />
         <LabEditor />
         <RedBlueGame />
         <Toasts />

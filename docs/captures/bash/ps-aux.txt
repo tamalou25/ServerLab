@@ -1,0 +1,9 @@
+# Source: https://manpages.debian.org/bookworm/procps/ps.1.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: ps aux
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root           1    -    -      -     - ?        -    -          - /sbin/init
+root         457    -    -      -     - ?        -    -          - /usr/sbin/cron -f
+root         856    -    -      -     - ?        -    -          - /usr/sbin/rsyslogd -n -iNONE
+root         970    -    -      -     - ?        -    -          - sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups
+admin       1000    -    -      -     - pts/0    -    -          - -bash
+admin       2046    -    -      -     - pts/0    -    -          - ps aux

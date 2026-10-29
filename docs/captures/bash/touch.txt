@@ -1,0 +1,2 @@
+# Source: https://manpages.debian.org/bookworm/coreutils/touch.1.en.html
+# Commande: touch a.txt

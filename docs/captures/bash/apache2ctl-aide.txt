@@ -1,0 +1,5 @@
+# Source: https://manpages.debian.org/bookworm/apache2/apache2ctl.8.en.html — https://sources.debian.org/data/main/a/apache2/2.4.68-1~deb12u1/debian/apache2ctl et server/main.c (httpd 2.4.68-1~deb12u1), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: apache2ctl
+Usage: /usr/sbin/apache2ctl start|stop|restart|graceful|graceful-stop|configtest|status|fullstatus|help
+       /usr/sbin/apache2ctl <apache2 args>
+       /usr/sbin/apache2ctl -h            (for help on <apache2 args>)

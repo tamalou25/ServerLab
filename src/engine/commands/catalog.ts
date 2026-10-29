@@ -15,6 +15,47 @@ import { applyCountermeasure, getCountermeasure } from '../cyber/countermeasures
 import { fail, type EngineResult } from '../core/result'
 import { nextDeviceName } from '../model/factory'
 import type { LabState, Position } from '../model/schema'
+import {
+  addPfRule,
+  clearPfLog,
+  movePfRule,
+  removePfAlias,
+  removePfRule,
+  resetPfStates,
+  setPfAlias,
+  setPfBlockNetworks,
+  updatePfRule
+} from '../net/pf-rules'
+import {
+  assignPfInterfaces,
+  factoryResetPf,
+  rebootPf,
+  resetPfAdminPassword,
+  setPfFilterEnabled,
+  setPfInterfaceFromConsole
+} from '../net/pf-console'
+import {
+  addPfStaticRoute,
+  removePfGateway,
+  removePfHostOverride,
+  removePfStaticRoute,
+  setPfDefaultGateway,
+  setPfDhcp,
+  setPfDnsResolver,
+  setPfDnsServers,
+  setPfGateway,
+  setPfHostOverride
+} from '../net/pf-services'
+import {
+  addPfOutboundNat,
+  addPfPortForward,
+  removePfOutboundNat,
+  removePfPortForward,
+  setPfNatMode,
+  updatePfOutboundNat,
+  updatePfPortForward
+} from '../net/pf-nat'
+import { pfWebRequest } from '../roles/iis/pfweb'
 import { addStaticRoute, removeStaticRoute, setHelperAddresses, setInterfaceIpv4 } from '../net/config'
 import {
   addSubinterface,
@@ -36,7 +77,27 @@ import {
   setFirewallRuleEnabled,
   setNetworkCategory
 } from '../services/firewall'
+import { resyncClock, setHostClock } from '../services/hostclock'
+import {
+  clearServiceFailure,
+  restartService,
+  setServiceFailure,
+  setServiceRecovery,
+  setServiceStartType,
+  startService,
+  stopService
+} from '../services/hostservices'
+import {
+  addLocalGroupMembers,
+  newLocalGroup,
+  newLocalUser,
+  removeLocalGroupMembers,
+  removeLocalUser,
+  setLocalUser
+} from '../services/localaccounts'
+import { installPackages } from '../services/linuxsystem'
 import { renameComputer, restartComputer } from '../services/system'
+import { useHint } from '../troubleshoot/hints'
 import { executeLine } from '../shell/exec'
 import type { ShellResult, ShellSession } from '../shell/types'
 import type { PacketTrace } from '../sim/trace'
@@ -224,11 +285,138 @@ const CORE_COMMANDS = {
     return `Supprimer la règle de pare-feu « ${target} »${on(s, id)}`
   }),
 
+  // Pare-feu pfSense (v2.10)
+  'pf.addRule': def(
+    addPfRule,
+    (s, id, input) =>
+      `Ajouter une règle ${input.action ?? 'pass'} sur ${input.iface.toUpperCase()}${on(s, id)}`
+  ),
+  'pf.updateRule': def(updatePfRule, (s, id, ruleId) => `Modifier la règle ${ruleId}${on(s, id)}`),
+  'pf.removeRule': def(removePfRule, (s, id, ruleId) => `Supprimer la règle ${ruleId}${on(s, id)}`),
+  'pf.moveRule': def(movePfRule, (s, id, ruleId) => `Déplacer la règle ${ruleId}${on(s, id)}`),
+  'pf.setAlias': def(setPfAlias, (s, id, alias) => `Définir l’alias ${alias.name}${on(s, id)}`),
+  'pf.removeAlias': def(removePfAlias, (s, id, name) => `Supprimer l’alias ${name}${on(s, id)}`),
+  'pf.setBlockNetworks': def(
+    setPfBlockNetworks,
+    (s, id, key) => `Blocage des réseaux privés et bogons de ${key.toUpperCase()}${on(s, id)}`
+  ),
+  'pf.setDhcp': def(
+    setPfDhcp,
+    (s, id, key) => `Configurer le serveur DHCP de l’interface ${key.toUpperCase()}${on(s, id)}`
+  ),
+  'pf.setGateway': def(setPfGateway, (s, id, gw) => `Définir la passerelle ${gw.name}${on(s, id)}`),
+  'pf.removeGateway': def(removePfGateway, (s, id, name) => `Supprimer la passerelle ${name}${on(s, id)}`),
+  'pf.setDefaultGateway': def(
+    setPfDefaultGateway,
+    (s, id, name) => `Définir la passerelle par défaut ${name ?? '(automatique)'}${on(s, id)}`
+  ),
+  'pf.addStaticRoute': def(
+    addPfStaticRoute,
+    (s, id, r) => `Ajouter la route statique ${r.network}/${r.prefixLength}${on(s, id)}`
+  ),
+  'pf.removeStaticRoute': def(
+    removePfStaticRoute,
+    (s, id, network, prefix) => `Supprimer la route statique ${network}/${prefix}${on(s, id)}`
+  ),
+  'pf.setDnsResolver': def(setPfDnsResolver, (s, id) => `Configurer le résolveur DNS${on(s, id)}`),
+  'pf.setDnsServers': def(setPfDnsServers, (s, id) => `Définir les serveurs DNS${on(s, id)}`),
+  'pf.setHostOverride': def(
+    setPfHostOverride,
+    (s, id, e) => `Définir le Host Override ${e.host ? `${e.host}.` : ''}${e.domain}${on(s, id)}`
+  ),
+  'pf.removeHostOverride': def(
+    removePfHostOverride,
+    (s, id, host, domain) => `Supprimer le Host Override ${host ? `${host}.` : ''}${domain}${on(s, id)}`
+  ),
+  'pf.setNatMode': def(setPfNatMode, (s, id, mode) => `Mode de NAT sortant : ${mode}${on(s, id)}`),
+  'pf.addOutboundNat': def(addPfOutboundNat, (s, id) => `Ajouter une règle de NAT sortant${on(s, id)}`),
+  'pf.updateOutboundNat': def(
+    updatePfOutboundNat,
+    (s, id, natId) => `Modifier la règle de NAT sortant ${natId}${on(s, id)}`
+  ),
+  'pf.removeOutboundNat': def(
+    removePfOutboundNat,
+    (s, id, natId) => `Supprimer la règle de NAT sortant ${natId}${on(s, id)}`
+  ),
+  'pf.addPortForward': def(
+    addPfPortForward,
+    (s, id, input) => `Ajouter une redirection de port vers ${input.targetAddress}${on(s, id)}`
+  ),
+  'pf.updatePortForward': def(
+    updatePfPortForward,
+    (s, id, natId) => `Modifier la redirection de port ${natId}${on(s, id)}`
+  ),
+  'pf.removePortForward': def(
+    removePfPortForward,
+    (s, id, natId) => `Supprimer la redirection de port ${natId}${on(s, id)}`
+  ),
+  // Accès web : alimente le journal et les états du pare-feu (exécutée sans entrée d'historique)
+  'pf.webRequest': def(pfWebRequest, (_s, _id, url) => `Accéder à l’interface web du pare-feu (${url})`),
+  'pf.clearLog': def(clearPfLog, (s, id) => `Vider le journal du pare-feu${on(s, id)}`),
+  'pf.resetStates': def(resetPfStates, (s, id) => `Réinitialiser la table d’états${on(s, id)}`),
+
+  // Console du pare-feu (v2.10, #247)
+  'pf.assignInterfaces': def(assignPfInterfaces, (s, id) => `Affecter les interfaces${on(s, id)}`),
+  'pf.setInterfaceFromConsole': def(
+    setPfInterfaceFromConsole,
+    (s, id, input) => `Définir l’adresse de l’interface ${input.key.toUpperCase()}${on(s, id)}`
+  ),
+  'pf.resetAdminPassword': def(
+    resetPfAdminPassword,
+    (s, id) => `Réinitialiser le mot de passe du webConfigurator${on(s, id)}`
+  ),
+  'pf.factoryReset': def(factoryResetPf, (s, id) => `Réinitialiser aux valeurs d’usine${on(s, id)}`),
+  'pf.reboot': def(rebootPf, (s, id) => `Redémarrer le pare-feu${on(s, id)}`),
+  'pf.setFilterEnabled': def(
+    setPfFilterEnabled,
+    (s, id, enabled) => `${enabled ? 'Activer' : 'Désactiver'} le filtre pf${on(s, id)}`
+  ),
+
   // Système
   'system.restartComputer': def(restartComputer, (s, id) => `Redémarrer ${deviceName(s, id)}`),
   'system.renameComputer': def(
     renameComputer,
     (s, id, name) => `Renommer l’ordinateur ${deviceName(s, id)} en ${name}`
+  ),
+  'host.setClock': def(
+    setHostClock,
+    (s, id, offsetSeconds) =>
+      `Régler l’horloge de ${deviceName(s, id)} (écart de ${offsetSeconds} s avec l’horloge du lab)`
+  ),
+  'host.resyncClock': def(resyncClock, (s, id) => `Resynchroniser l’horloge de ${deviceName(s, id)}`),
+  'service.start': def(startService, (s, id, name) => `Démarrer le service ${name}${on(s, id)}`),
+  'service.stop': def(stopService, (s, id, name) => `Arrêter le service ${name}${on(s, id)}`),
+  'service.restart': def(restartService, (s, id, name) => `Redémarrer le service ${name}${on(s, id)}`),
+  'service.setStartType': def(
+    setServiceStartType,
+    (s, id, name, type) => `Type de démarrage ${type} pour le service ${name}${on(s, id)}`
+  ),
+  'service.setFailure': def(
+    setServiceFailure,
+    (s, id, name) => `Mettre le service ${name} en échec au démarrage${on(s, id)}`
+  ),
+  'service.clearFailure': def(
+    clearServiceFailure,
+    (s, id, name) => `Réparer la configuration du service ${name}${on(s, id)}`
+  ),
+  'service.setRecovery': def(
+    setServiceRecovery,
+    (s, id, name) => `Options de récupération du service ${name}${on(s, id)}`
+  ),
+  'local.newUser': def(newLocalUser, (s, id, input) => `Créer l’utilisateur local ${input.name}${on(s, id)}`),
+  'local.setUser': def(setLocalUser, (s, id, name) => `Modifier l’utilisateur local ${name}${on(s, id)}`),
+  'local.removeUser': def(
+    removeLocalUser,
+    (s, id, name) => `Supprimer l’utilisateur local ${name}${on(s, id)}`
+  ),
+  'local.newGroup': def(newLocalGroup, (s, id, input) => `Créer le groupe local ${input.name}${on(s, id)}`),
+  'local.addGroupMembers': def(
+    addLocalGroupMembers,
+    (s, id, group, members) => `Ajouter ${members.join(', ')} au groupe local ${group}${on(s, id)}`
+  ),
+  'local.removeGroupMembers': def(
+    removeLocalGroupMembers,
+    (s, id, group, members) => `Retirer ${members.join(', ')} du groupe local ${group}${on(s, id)}`
   ),
   'system.clearEventLog': def(clearEventLog, (s, id, log) => `Effacer le journal ${log}${on(s, id)}`),
   'system.newSelfSignedCertificate': def(
@@ -243,6 +431,15 @@ const CORE_COMMANDS = {
     uninstallFeatures,
     (s, id, names) => `Supprimer ${names.join(', ')}${on(s, id)}`
   ),
+
+  // Serveur Linux : paquets installés au départ d'un lab (comme `apt install`, sans dépôt distant)
+  'linux.installPackages': def(
+    installPackages,
+    (s, id, names) => `Installer ${names.join(', ')}${on(s, id)}`
+  ),
+
+  // Mode panne : un indice de plus (le compteur sert au bilan)
+  'troubleshoot.useHint': def(useHint, () => 'Demander un indice'),
 
   // Consoles, tâches de fond, lots
   'shell.exec': def(shellExec, (s, session, line) => `${line}${on(s, session.deviceId)}`),

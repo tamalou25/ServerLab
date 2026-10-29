@@ -1,0 +1,152 @@
+{
+  "formatVersion": 1,
+  "id": "lab-57-pfsense-dhcp-dns",
+  "title": "pfSense : serveur DHCP et résolveur DNS du LAN",
+  "difficulty": "Intermédiaire",
+  "duration": "35 min",
+  "summary": "Faites du pare-feu le serveur DHCP et le résolveur DNS du LAN : plage d’adresses, passerelle WAN, nom interne par Host Override.",
+  "statement": "## Contexte\n\nLe LAN (192.168.1.0/24) n'a plus de serveur DHCP : **PC1** et **PC2** sont configurés en DHCP et n'ont pas d'adresse. **FILES1** (192.168.1.20) est le serveur intranet. Le pare-feu **FW1** sort par la passerelle du fournisseur **45.10.0.2** (INTERNET).\n\n## Travail demandé\n\n1. Services > DHCP Server > LAN : activez le serveur, plage **192.168.1.100 à 192.168.1.150**.\n2. System > Routing : créez la passerelle **WAN_GW (45.10.0.2)** et faites-en la passerelle par défaut.\n3. Services > DNS Resolver : laissez le résolveur actif et ajoutez le Host Override **intranet.lab.local → 192.168.1.20**.\n4. Sur PC1 et PC2, renouvelez le bail (`ipconfig /renew`) et vérifiez : adresse dans la plage, passerelle et DNS = 192.168.1.1, `nslookup intranet.lab.local`.\n\n## À rendre\n\nLes paramètres distribués aux clients (adresse, masque, passerelle, DNS) et ce que fait le résolveur pour un nom qu'il ne connaît pas.",
+  "start": {
+    "devices": [
+      {
+        "kind": "firewall",
+        "name": "FW1",
+        "x": 420,
+        "y": 230,
+        "interfaces": {
+          "em0": "45.10.0.1/30",
+          "em2": "172.16.0.1/24"
+        }
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "INTERNET",
+        "x": 420,
+        "y": 40,
+        "ip": "45.10.0.2/30",
+        "packages": ["apache2"]
+      },
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 160,
+        "y": 230
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 10,
+        "y": 330,
+        "dhcp": true,
+        "firewallDisabled": ["Domain", "Private", "Public"]
+      },
+      {
+        "kind": "client",
+        "name": "PC2",
+        "x": 120,
+        "y": 330,
+        "dhcp": true,
+        "firewallDisabled": ["Domain", "Private", "Public"]
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "FILES1",
+        "x": 240,
+        "y": 330,
+        "ip": "192.168.1.20/24",
+        "gateway": "192.168.1.1",
+        "packages": ["apache2"]
+      }
+    ],
+    "links": [
+      ["INTERNET:eth0", "FW1:em0"],
+      ["SW1:Fa0/1", "FW1:em1"],
+      ["PC1:Ethernet0", "SW1:Fa0/2"],
+      ["PC2:Ethernet0", "SW1:Fa0/3"],
+      ["FILES1:eth0", "SW1:Fa0/4"]
+    ]
+  },
+  "criteria": [
+    {
+      "id": "c1",
+      "label": "Le serveur DHCP du LAN distribue 192.168.1.100 à 192.168.1.150",
+      "hint": "Services > DHCP Server : onglet LAN, case « Enable », plage (Range).",
+      "check": {
+        "type": "pfDhcp",
+        "device": "FW1",
+        "iface": "lan",
+        "rangeFrom": "192.168.1.100",
+        "rangeTo": "192.168.1.150"
+      }
+    },
+    {
+      "id": "c2",
+      "label": "PC1 a obtenu un bail auprès du pare-feu",
+      "hint": "Le bail se demande sur le poste : ipconfig /renew.",
+      "check": {
+        "type": "dhcpLease",
+        "client": "PC1",
+        "server": "FW1"
+      }
+    },
+    {
+      "id": "c3",
+      "label": "PC2 a obtenu un bail auprès du pare-feu",
+      "hint": "Même démarche que PC1.",
+      "check": {
+        "type": "dhcpLease",
+        "client": "PC2",
+        "server": "FW1"
+      }
+    },
+    {
+      "id": "c4",
+      "label": "La passerelle par défaut du pare-feu est 45.10.0.2",
+      "hint": "System > Routing > Gateways : une passerelle sur l’interface WAN, définie par défaut.",
+      "check": {
+        "type": "pfGateway",
+        "device": "FW1",
+        "address": "45.10.0.2"
+      }
+    },
+    {
+      "id": "c5",
+      "label": "Le Host Override intranet.lab.local pointe vers 192.168.1.20",
+      "hint": "Services > DNS Resolver > Host Overrides : hôte, domaine et adresse IP.",
+      "check": {
+        "type": "pfDnsResolver",
+        "device": "FW1",
+        "hostOverride": {
+          "host": "intranet",
+          "domain": "lab.local",
+          "address": "192.168.1.20"
+        }
+      }
+    },
+    {
+      "id": "c6",
+      "label": "PC1 résout intranet.lab.local grâce au pare-feu",
+      "hint": "Le poste doit avoir reçu le pare-feu comme serveur DNS.",
+      "check": {
+        "type": "nslookup",
+        "client": "PC1",
+        "name": "intranet.lab.local",
+        "address": "192.168.1.20"
+      }
+    },
+    {
+      "id": "c7",
+      "label": "PC2 atteint le site d’INTERNET (TCP 80)",
+      "hint": "Passerelle du bail, règle d’usine du LAN et NAT automatique doivent s’enchaîner.",
+      "check": {
+        "type": "pfReachable",
+        "from": "PC2",
+        "to": "INTERNET",
+        "protocol": "tcp",
+        "port": 80
+      }
+    }
+  ]
+}

@@ -17,7 +17,7 @@ export function ConsoleTab({ device }: { device: HostDevice }) {
     )
   if (!device.host.session)
     return (
-      <div className="flex h-full items-center justify-center p-8 text-center text-sm text-fg-muted">
+      <div className="flex h-full items-center justify-center p-8 text-center text-ui text-fg-muted">
         {t('console.aucuneSessionOuverteConnectez')}
       </div>
     )
@@ -48,6 +48,15 @@ export function IosConsoleTab({ deviceId }: { deviceId: string }) {
   return (
     <div className="h-full" data-testid="console-ios">
       <Terminal key={k(deviceId, 'ios')} deviceId={deviceId} kind="ios" autoFocus />
+    </div>
+  )
+}
+
+/** Console du pare-feu pfSense : menu numéroté puis shell. */
+export function PfsenseConsoleTab({ deviceId }: { deviceId: string }) {
+  return (
+    <div className="h-full" data-testid="console-pfsense">
+      <Terminal key={k(deviceId, 'pfsense')} deviceId={deviceId} kind="pfsense" autoFocus />
     </div>
   )
 }

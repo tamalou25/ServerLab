@@ -9,6 +9,7 @@ import { buildDevice, createInterface, SERVER_MAX_INTERFACES, nextSeq } from '..
 import type { DeviceKind } from '../model/kinds'
 import type { Device, HostOs, LabState, LinkEnd, Position } from '../model/schema'
 import { linkOnInterface } from './queries'
+import { bootServices } from '../services/servicestate'
 import { IOS_MODEL_INFO, type IosModel } from '../ios/models'
 
 /** Refus d'une opération de topologie sur un équipement virtuel (géré par Hyper-V). */
@@ -38,6 +39,9 @@ export function deviceNameError(kind: DeviceKind, name: string): string | null {
     return null
   }
   if (n.length > 32) return 'Le nom ne peut pas dépasser 32 caractères.'
+  // pfSense (System > General Setup) : le nom d'hôte commence par une lettre ; lettres, chiffres, tiret
+  if (kind === 'firewall' && !/^[A-Za-z][A-Za-z0-9-]*$/.test(n))
+    return 'Le nom d’hôte doit commencer par une lettre et ne contenir que des lettres, des chiffres et des tirets.'
   if (!/^[A-Za-z0-9_-]+$/.test(n))
     return 'Le nom ne peut contenir que des lettres, des chiffres, « - » et « _ ».'
   return null
@@ -122,6 +126,7 @@ export function renameDevice(state: LabState, id: string, name: string): EngineR
     if (err) raise('InvalidName', err)
     assertNameAvailable(draft, trimmed, id)
     device.name = trimmed
+    if (device.kind === 'firewall') device.pf.hostname = trimmed
     return undefined
   })
 }
@@ -157,6 +162,7 @@ export function setPower(state: LabState, id: string, powered: boolean): EngineR
       // Nouveau démarrage : le Bureau simulé revient à l'écran de verrouillage
       if (device.kind === 'server' || device.kind === 'client') {
         device.host.bootedAt = draft.clock
+        bootServices(device)
         // Stratégies de groupe retraitées après le démarrage (arrière-plan, ouverture de session)
         device.host.policy.user = null
         device.host.policy.attempt = null
@@ -297,6 +303,15 @@ export function duplicateDevices(
         const parent = ifaceMap.get(`${original.id}/${iface.subinterface.parent}`) ?? ''
         iface.subinterface = { ...iface.subinterface, parent }
         iface.mac = copy.interfaces.find((i) => i.id === parent)?.mac ?? iface.mac
+      }
+      if (copy.kind === 'firewall' && original.kind === 'firewall') {
+        // État du pare-feu recopié ; les affectations suivent les nouvelles cartes
+        copy.pf = JSON.parse(JSON.stringify(original.pf)) as typeof original.pf
+        copy.pf.hostname = copy.name
+        copy.pf.log = []
+        copy.pf.states = []
+        for (const a of copy.pf.assignments)
+          a.ifaceId = a.ifaceId ? (ifaceMap.get(`${original.id}/${a.ifaceId}`) ?? null) : null
       }
       if (copy.kind === 'router' && original.kind === 'router')
         copy.routes = original.routes.map((r) => ({ ...r }))

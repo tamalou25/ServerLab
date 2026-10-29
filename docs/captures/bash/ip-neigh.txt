@@ -1,0 +1,5 @@
+# Source: https://manpages.debian.org/bookworm/iproute2/ip-neighbour.8.en.html — sortie reconstituée d’après la page de manuel, à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: ip neigh
+192.168.2.1 dev eth0 lladdr 02:53:4c:00:00:1a REACHABLE
+192.168.2.20 dev eth0 lladdr 02:53:4c:00:00:1e REACHABLE
+192.168.2.254 dev eth0 lladdr 02:53:4c:00:00:13 REACHABLE

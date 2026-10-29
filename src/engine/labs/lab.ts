@@ -3,18 +3,26 @@
  * l'état de départ avec les actions du moteur (déterministe : même lab = même état).
  */
 import { z } from 'zod'
-import { command, type Command, type CommandType, type CommandValue } from '../commands/catalog'
+import {
+  command,
+  isCommandType,
+  type Command,
+  type CommandType,
+  type CommandValue
+} from '../commands/catalog'
 import { dispatch } from '../commands/dispatch'
 import { runIosScript } from '../ios/cli'
+import { createShellSession } from '../shell/exec'
 import type { CyberConfigPatch } from '../cyber/config'
 import { IOS_MODELS } from '../ios/models'
 import { createLab } from '../model/factory'
 import { DEVICE_KINDS } from '../model/kinds'
 import type { LabState } from '../model/schema'
-import { FIREWALL_PROFILES } from '../model/schema'
+import { FaultParamsSchema, FIREWALL_PROFILES } from '../model/schema'
 import { localToken } from '../roles/files/acl'
 import { DEFAULT_DOMAIN_POLICY_ID } from '../roles/gpo/defaults'
 import { parseSlabValue } from '../serialization/slab'
+import { startTroubleshooting } from '../troubleshoot/session'
 import { CriterionSchema, evaluateCriteria, type CriterionResult } from './criteria'
 
 export const LAB_FORMAT_VERSION = 1
@@ -24,6 +32,8 @@ export const LabDeviceSchema = z.object({
   name: z.string(),
   /** Routeur ou switch Cisco IOS (1921, 2811, 2960, 9200) : console IOS à la place de la configuration graphique. */
   model: z.enum(IOS_MODELS).optional(),
+  /** Système Linux (serveur Debian 12 ou poste Ubuntu) à la place de Windows. */
+  os: z.literal('linux').optional(),
   /**
    * Configuration IOS de départ : lignes saisies dans la console, comme à la main (« enable »,
    * « configure terminal », « interface Gi0/0 »… « end »).
@@ -55,6 +65,18 @@ export const LabDeviceSchema = z.object({
   logon: z.object({ user: z.string(), password: z.string() }).optional(),
   /** Machines vers lesquelles les sessions de ce poste ont un accès administrateur (cyber). */
   adminAccess: z.array(z.string()).optional(),
+  /** État initial de services système : { name: "DNS", running: false, startType: "Manual" }. */
+  services: z
+    .array(
+      z.object({
+        name: z.string(),
+        running: z.boolean().default(true),
+        startType: z.enum(['Automatic', 'Manual', 'Disabled']).optional()
+      })
+    )
+    .optional(),
+  /** Écart de l'horloge du poste avec celle du lab, en secondes (appliqué en dernier ; labs de diagnostic Kerberos). */
+  clockOffsetSeconds: z.number().int().optional(),
   /** Dossiers partagés (créés au besoin) : comptes par niveau d'autorisation. */
   shares: z
     .array(
@@ -68,7 +90,26 @@ export const LabDeviceSchema = z.object({
     )
     .optional(),
   /** Fichiers présents au départ (dossiers parents créés au besoin) : chemin local et contenu texte. */
-  files: z.array(z.object({ path: z.string(), content: z.string() })).optional()
+  files: z.array(z.object({ path: z.string(), content: z.string() })).optional(),
+  /** Serveur Linux : paquets installés au départ (apache2, bind9…), leurs services démarrés comme avec `apt install`. */
+  packages: z.array(z.string()).optional(),
+  /**
+   * Serveur ou poste Linux : lignes saisies dans la console bash (compte `admin`, `sudo` permis) pour
+   * préparer l'ordinateur (écriture de fichiers avec `echo … | sudo tee`, `systemctl restart`…). Une ligne
+   * qui échoue interrompt la construction du lab : le départ est sain ou n'existe pas. Une ligne qui
+   * demande une saisie (mot de passe de `smbpasswd`) s'écrit { line, answers }.
+   */
+  bash: z
+    .array(z.union([z.string(), z.object({ line: z.string(), answers: z.array(z.string()) })]))
+    .optional(),
+  /**
+   * Pare-feu pfSense : configuration de départ en commandes nommées `pf.*` (mêmes commandes que l'interface
+   * web), appliquées après les adresses des cartes : { "type": "pf.addRule", "args": [{ "iface": "opt1", … }] }.
+   * L'identifiant du pare-feu est ajouté en premier argument.
+   */
+  pf: z
+    .array(z.object({ type: z.string().regex(/^pf\./), args: z.array(z.unknown()).default([]) }))
+    .optional()
 })
 
 export const LabDomainSchema = z.object({
@@ -140,6 +181,18 @@ export const LabSnapshotStartSchema = z.object({ snapshot: z.record(z.string(), 
 
 export const LabStartSchema = z.union([LabDeclarativeStartSchema, LabSnapshotStartSchema])
 
+/**
+ * Dépannage (mode panne) : le lab démarre cassé. `start` décrit le lab SAIN ; les pannes sont
+ * tirées de la graine (filtres facultatifs) ou imposées par `faults`.
+ */
+export const LabTroubleshootingSchema = z.object({
+  seed: z.number().int(),
+  domain: z.enum(['reseau', 'windows', 'linux', 'pare-feu']).optional(),
+  difficulty: z.number().int().min(1).max(3).optional(),
+  count: z.number().int().min(1).max(5).optional(),
+  faults: z.array(z.object({ id: z.string(), params: FaultParamsSchema.optional() })).optional()
+})
+
 export const LabDefinitionSchema = z.object({
   formatVersion: z.literal(LAB_FORMAT_VERSION),
   id: z.string(),
@@ -151,7 +204,9 @@ export const LabDefinitionSchema = z.object({
   /** Énoncé en Markdown (titres, listes, gras, code). */
   statement: z.string(),
   start: LabStartSchema,
-  criteria: z.array(CriterionSchema).min(1)
+  criteria: z.array(CriterionSchema).min(1),
+  /** Mode panne : facultatif (absent = lab ordinaire). */
+  troubleshooting: LabTroubleshootingSchema.optional()
 })
 
 export type LabDefinition = z.infer<typeof LabDefinitionSchema>
@@ -211,6 +266,18 @@ export function buildLabStart(start: LabStart): LabState {
   return buildDeclarativeStart(start)
 }
 
+/**
+ * État de départ complet d'un lab : `buildLabStart`, puis l'injection des pannes si le lab est un
+ * lab de dépannage (le résultat est le point de départ : rien n'est annulable).
+ */
+export function buildLabState(lab: LabDefinition): LabState {
+  const healthy = buildLabStart(lab.start)
+  if (!lab.troubleshooting) return healthy
+  const r = startTroubleshooting(healthy, lab.troubleshooting)
+  if (!r.ok) throw new Error(`Dépannage impossible : ${r.error.message}`)
+  return r.state
+}
+
 function buildDeclarativeStart(start: LabDeclarativeStart): LabState {
   let state = createLab()
   /** Applique une commande (mêmes commandes que l'interface et les consoles) ou lève une erreur. */
@@ -232,7 +299,8 @@ function buildDeclarativeStart(start: LabDeclarativeStart): LabState {
         kind: d.kind,
         position: { x: d.x, y: d.y },
         name: d.name,
-        ...(d.model ? { model: d.model } : {})
+        ...(d.model ? { model: d.model } : {}),
+        ...(d.os ? { os: d.os } : {})
       })
     )
     ids.set(d.name.toLowerCase(), id)
@@ -313,6 +381,29 @@ function buildDeclarativeStart(start: LabDeclarativeStart): LabState {
         })
       )
     if (d.ios?.length) state = runIosScript(state, id, d.ios)
+  }
+  // Pare-feu pfSense : règles, NAT et services, une fois toutes les cartes adressées
+  for (const d of start.devices)
+    for (const step of d.pf ?? []) {
+      if (!isCommandType(step.type)) throw new Error(`Commande pare-feu inconnue : ${step.type}.`)
+      apply({ type: step.type, args: [idOf(d.name), ...step.args] } as unknown as Command)
+    }
+  // Ordinateurs Linux : paquets puis lignes de console, une fois toutes les cartes configurées
+  for (const d of start.devices) {
+    const id = idOf(d.name)
+    if (d.packages?.length) apply(command('linux.installPackages', id, d.packages))
+    if (!d.bash?.length) continue
+    let session = createShellSession(state, id, 'cmd')
+    for (const entry of d.bash) {
+      const line = typeof entry === 'string' ? entry : entry.line
+      const outcome = apply(
+        command('shell.exec', session, line, typeof entry === 'string' ? [] : entry.answers)
+      )
+      session = outcome.session
+      const failure = outcome.output.find((o) => o.kind === 'error')
+      if (failure || outcome.prompt)
+        throw new Error(`${d.name} : « ${line} » a échoué (${failure?.text ?? 'saisie demandée'}).`)
+    }
   }
   const domain = start.domain
   if (domain) {
@@ -410,6 +501,16 @@ function buildDeclarativeStart(start: LabDeclarativeStart): LabState {
         throw new Error(`Session de ${d.logon.user} sur ${d.name} impossible : ${logged.message}`)
     }
   }
+  // Services système : appliqués en dernier (rôles installés, redémarrages de jonction terminés)
+  for (const d of start.devices)
+    for (const svc of d.services ?? []) {
+      const id = idOf(d.name)
+      if (svc.startType) apply(command('service.setStartType', id, svc.name, svc.startType))
+      apply(command(svc.running ? 'service.start' : 'service.stop', id, svc.name))
+    }
+  // Horloges décalées : après la jonction, qui exige des horloges à l'heure
+  for (const d of start.devices)
+    if (d.clockOffsetSeconds) apply(command('host.setClock', idOf(d.name), d.clockOffsetSeconds))
   for (const d of start.devices)
     if (d.adminAccess?.length) apply(command('cyber.setAdminAccess', idOf(d.name), d.adminAccess.map(idOf)))
   if (start.cyber) apply(command('cyber.configure', start.cyber as CyberConfigPatch))

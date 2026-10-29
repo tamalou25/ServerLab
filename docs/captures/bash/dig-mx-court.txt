@@ -1,0 +1,3 @@
+# Source: https://manpages.debian.org/bookworm/bind9-dnsutils/dig.1.en.html — sources BIND 9.18 (bin/dig/dig.c, paquet bind9-dnsutils 1:9.18), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: dig @192.168.2.10 lab.lan MX +short
+10 mail.lab.lan.

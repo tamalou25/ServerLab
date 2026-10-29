@@ -1,0 +1,14 @@
+# Source: https://manpages.debian.org/bookworm/samba/smbstatus.1.en.html — https://sources.debian.org/src/samba/2:4.17.12+dfsg-0+deb12u4/source3/utils/status.c (samba 4.17.12), sortie reconstituée (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
+# Commande: sudo smbstatus
+
+Samba version 4.17.12-Debian
+PID     Username     Group        Machine                                   Protocol Version  Encryption           Signing              
+----------------------------------------------------------------------------------------------------------------------------------------
+950     alice        alice        192.168.2.30 (ipv4:192.168.2.30:49160)    SMB3_11           -                    partial(AES-128-CMAC)
+
+Service      pid     Machine       Connected at                     Encryption   Signing     
+---------------------------------------------------------------------------------------------
+public       950     192.168.2.30  Mon Jan  5 08:00:08 2026 UTC     -            -           
+
+No locked files
+

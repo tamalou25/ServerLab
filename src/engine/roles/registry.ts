@@ -125,12 +125,17 @@ const SYSTEM_SERVICES: HostService[] = [
   { display: 'Client DNS', name: 'Dnscache' },
   { display: 'Journal d’événements', name: 'EventLog' },
   { display: 'Pare-feu', name: 'MpsSvc' },
-  { display: 'Station de travail', name: 'LanmanWorkstation' }
+  // Spouleur d'impression : présent sur tout ordinateur Windows, sans effet de rôle (v2.8, #222).
+  // Nom court « Spooler » et libellé français : docs/fidelite.md, A-34 et « À vérifier (v2.8 — services) ».
+  { display: 'Spouleur d’impression', name: 'Spooler' },
+  { display: 'Station de travail', name: 'LanmanWorkstation' },
+  { display: 'Temps Windows', name: 'W32Time' }
 ]
 
 /**
  * Services d'un ordinateur : ceux du système, puis ceux déclarés par les rôles installés
- * (`when`), triés par nom affiché. Tous sont considérés démarrés (état non simulé).
+ * (`when`), triés par nom affiché. Leur état (démarré, arrêté, type de démarrage) est lu par
+ * `services/hostservices.ts` (v2.7, Lot 2a).
  */
 export function hostServices(features: readonly string[], domainController: boolean): HostService[] {
   const fromRoles = roleModules().flatMap((m) =>

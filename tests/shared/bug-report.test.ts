@@ -61,15 +61,15 @@ describe('liste blanche des adresses externes', () => {
 
   it('tout le reste est refusé', () => {
     for (const url of [
-      'http://github.com/tamalou25/packetracer-windows/issues/new',
-      'https://github.com/tamalou25/packetracer-windows/issues',
-      'https://github.com/tamalou25/packetracer-windows/issues/new/choose',
+      'http://github.com/tamalou25/ServerLab/issues/new',
+      'https://github.com/tamalou25/ServerLab/issues',
+      'https://github.com/tamalou25/ServerLab/issues/new/choose',
       'https://github.com/autre/depot/issues/new',
-      'https://github.com.evil.example/tamalou25/packetracer-windows/issues/new',
-      'https://evil.example/tamalou25/packetracer-windows/issues/new',
-      'https://user:pass@github.com/tamalou25/packetracer-windows/issues/new',
-      'https://github.com:8443/tamalou25/packetracer-windows/issues/new',
-      'https://github.com/tamalou25/packetracer-windows/issues/new#x',
+      'https://github.com.evil.example/tamalou25/ServerLab/issues/new',
+      'https://evil.example/tamalou25/ServerLab/issues/new',
+      'https://user:pass@github.com/tamalou25/ServerLab/issues/new',
+      'https://github.com:8443/tamalou25/ServerLab/issues/new',
+      'https://github.com/tamalou25/ServerLab/issues/new#x',
       'file:///etc/passwd',
       'javascript:alert(1)',
       'pas une adresse',

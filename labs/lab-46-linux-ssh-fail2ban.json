@@ -1,0 +1,109 @@
+{
+  "formatVersion": 1,
+  "id": "lab-46-linux-ssh-fail2ban",
+  "title": "Linux : sécuriser SSH et installer fail2ban",
+  "difficulty": "Débutant",
+  "duration": "30 min",
+  "summary": "Durcissez l’accès SSH d’un serveur Debian (port, root interdit) et protégez-le des essais répétés de mot de passe avec fail2ban.",
+  "statement": "## Contexte\n\nLe serveur **LSRV1** (Debian 12, 192.168.20.10/24) est administré à distance depuis **LNX1** (192.168.20.20/24). Le service SSH est installé avec sa configuration par défaut ; **fail2ban** est installé mais la prison `sshd` n'est pas réglée. Compte administrateur : `admin` (sudo).\n\n## Travail demandé\n\n1. Sur LSRV1, faites écouter SSH sur le port **2222** et interdisez la connexion directe de **root** (`/etc/ssh/sshd_config`). Rappel : sshd ne relit sa configuration qu'au redémarrage du service.\n2. Créez `/etc/fail2ban/jail.local` avec une prison `sshd` activée sur le port 2222 : **3 essais** (`maxretry`) et bannissement de **10 minutes** (`bantime`).\n3. Redémarrez fail2ban, puis vérifiez avec `fail2ban-client status sshd` et `ss -tlnp`.\n4. Depuis LNX1, testez la connexion : `ssh -p 2222 admin@192.168.20.10`.\n\nÀ rendre : les directives modifiées et la sortie de `fail2ban-client status sshd`.",
+  "start": {
+    "devices": [
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 330,
+        "y": 300
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "LSRV1",
+        "x": 330,
+        "y": 100,
+        "ip": "192.168.20.10/24",
+        "packages": ["fail2ban"]
+      },
+      {
+        "kind": "client",
+        "os": "linux",
+        "name": "LNX1",
+        "x": 130,
+        "y": 470,
+        "ip": "192.168.20.20/24"
+      }
+    ],
+    "links": [
+      ["LSRV1:eth0", "SW1:Fa0/1"],
+      ["LNX1:eth0", "SW1:Fa0/2"]
+    ]
+  },
+  "criteria": [
+    {
+      "id": "port",
+      "label": "SSH écoute sur le port 2222 (et plus sur le 22)",
+      "hint": "Un port modifié dans le fichier n’est actif qu’après le redémarrage du service : contrôlez les ports en écoute avec ss.",
+      "check": {
+        "type": "linuxPortListening",
+        "device": "LSRV1",
+        "port": 2222
+      }
+    },
+    {
+      "id": "port22",
+      "label": "Le port 22 n’est plus en écoute",
+      "hint": "Vérifiez que la directive Port d’origine n’est plus active.",
+      "check": {
+        "type": "linuxPortListening",
+        "device": "LSRV1",
+        "port": 22,
+        "listening": false
+      }
+    },
+    {
+      "id": "root",
+      "label": "La connexion directe de root est interdite",
+      "hint": "Une directive de sshd_config décide si root peut ouvrir une session SSH.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/ssh/sshd_config",
+        "text": "^PermitRootLogin no",
+        "regex": true
+      }
+    },
+    {
+      "id": "jail",
+      "label": "La prison sshd limite à 3 essais",
+      "hint": "Les réglages locaux de fail2ban se placent dans jail.local ; la prison sshd porte le nom de son service.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/fail2ban/jail.local",
+        "text": "^maxretry\\s*=\\s*3",
+        "regex": true
+      }
+    },
+    {
+      "id": "bantime",
+      "label": "Le bannissement dure 10 minutes",
+      "hint": "Cherchez le paramètre de durée de bannissement de la prison.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/fail2ban/jail.local",
+        "text": "^bantime\\s*=\\s*10m",
+        "regex": true
+      }
+    },
+    {
+      "id": "f2b",
+      "label": "Le service fail2ban est actif",
+      "hint": "fail2ban relit sa configuration à son (re)démarrage.",
+      "check": {
+        "type": "linuxServiceActive",
+        "device": "LSRV1",
+        "unit": "fail2ban"
+      }
+    }
+  ]
+}

@@ -1,0 +1,163 @@
+{
+  "formatVersion": 1,
+  "id": "lab-43-depannage-reseau",
+  "title": "Dépannage réseau : Internet ne répond plus",
+  "difficulty": "Intermédiaire",
+  "duration": "30 min",
+  "summary": "Un poste ne joint plus rien : localisez plusieurs causes réseau (switch, serveur) à partir du ticket, sans rien connaître de la panne, puis réparez.",
+  "statement": "## Ticket utilisateur\n\n> « Depuis ce matin, le poste **PC2** (service RH) n'arrive plus à joindre quoi que ce soit : ni son collègue de la comptabilité **PC1**, ni le serveur **WEB**. Le câble est branché et personne n'a touché au poste. Et du côté de la comptabilité, **PC1** n'ouvre plus non plus le serveur WEB. »\n\n## Le réseau\n\n| Équipement | Rôle | Adresse | Réseau |\n| --- | --- | --- | --- |\n| PC1 | Comptabilité (VLAN 10 `COMPTA`) | 192.168.10.10/24 | passerelle 192.168.10.254 |\n| PC2 | Ressources humaines (VLAN 20 `RH`) | 192.168.20.10/24 | passerelle 192.168.20.254 |\n| R1 | Routeur « on a stick » (Gi0/0.10, Gi0/0.20) et accès au serveur (Gi0/1) | 203.0.113.1/24 | |\n| WEB | Serveur joint depuis les deux VLAN | 203.0.113.10/24 | passerelle 203.0.113.1 |\n\nTout fonctionnait la semaine dernière : le schéma ci-dessus décrit la configuration **attendue**.\n\n## Travail demandé\n\n1. Reproduisez le symptôme depuis PC2 (`ping`, `ipconfig`) puis depuis les autres équipements, et notez ce que vous observez.\n2. Localisez le ou les points de la chaîne (poste, switch, routeur, serveur) qui ne correspondent plus au schéma. Il peut y avoir plusieurs causes.\n3. Corrigez-les sans toucher à ce qui fonctionne, puis vérifiez avec des `ping` dans les deux sens.\n\nÀ rendre : pour chaque cause, le symptôme observé, la commande de diagnostic et la correction.",
+  "start": {
+    "devices": [
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 300,
+        "y": 200,
+        "model": "c2960",
+        "ios": [
+          "enable",
+          "configure terminal",
+          "vlan 10",
+          "name COMPTA",
+          "vlan 20",
+          "name RH",
+          "interface Fa0/1",
+          "switchport mode access",
+          "switchport access vlan 10",
+          "interface Fa0/2",
+          "switchport mode access",
+          "switchport access vlan 20",
+          "interface Gi0/1",
+          "switchport mode trunk",
+          "end"
+        ]
+      },
+      {
+        "kind": "router",
+        "name": "R1",
+        "x": 300,
+        "y": 50,
+        "model": "c1921",
+        "ios": [
+          "enable",
+          "configure terminal",
+          "interface Gi0/0",
+          "no shutdown",
+          "interface Gi0/0.10",
+          "encapsulation dot1Q 10",
+          "ip address 192.168.10.254 255.255.255.0",
+          "interface Gi0/0.20",
+          "encapsulation dot1Q 20",
+          "ip address 192.168.20.254 255.255.255.0",
+          "interface Gi0/1",
+          "ip address 203.0.113.1 255.255.255.0",
+          "no shutdown",
+          "end"
+        ]
+      },
+      {
+        "kind": "server",
+        "name": "WEB",
+        "x": 520,
+        "y": 50,
+        "ip": "203.0.113.10/24",
+        "gateway": "203.0.113.1"
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 150,
+        "y": 380,
+        "ip": "192.168.10.10/24",
+        "gateway": "192.168.10.254"
+      },
+      {
+        "kind": "client",
+        "name": "PC2",
+        "x": 450,
+        "y": 380,
+        "ip": "192.168.20.10/24",
+        "gateway": "192.168.20.254"
+      }
+    ],
+    "links": [
+      ["R1:Gi0/0", "SW1:Gi0/1"],
+      ["R1:Gi0/1", "WEB:Ethernet0"],
+      ["PC1:Ethernet0", "SW1:Fa0/1"],
+      ["PC2:Ethernet0", "SW1:Fa0/2"]
+    ]
+  },
+  "troubleshooting": {
+    "seed": 2,
+    "faults": [
+      {
+        "id": "net.wrong-vlan"
+      },
+      {
+        "id": "net.wrong-gateway"
+      }
+    ]
+  },
+  "criteria": [
+    {
+      "id": "panne-vlan",
+      "label": "La première cause (niveau 2) est réparée",
+      "hint": "Quand un poste ne voit même pas ses voisins ni sa passerelle, la configuration IP n'est pas forcément en cause : regardez comment il est raccordé.",
+      "check": {
+        "type": "faultRepaired",
+        "faultId": "net.wrong-vlan"
+      }
+    },
+    {
+      "id": "panne-passerelle",
+      "label": "La seconde cause (niveau 3) est réparée",
+      "hint": "Une fois le poste revenu sur son réseau, testez les deux sens de la communication : une réponse doit pouvoir revenir.",
+      "check": {
+        "type": "faultRepaired",
+        "faultId": "net.wrong-gateway"
+      }
+    },
+    {
+      "id": "acces-rh",
+      "label": "Le port de PC2 est un port d'accès du VLAN des ressources humaines",
+      "hint": "Comparez avec le tableau de l'énoncé : chaque service a son VLAN.",
+      "check": {
+        "type": "switchport",
+        "device": "SW1",
+        "port": "Fa0/2",
+        "mode": "access",
+        "vlan": 20
+      }
+    },
+    {
+      "id": "pc2-pc1",
+      "label": "PC2 joint PC1 en passant par le routeur",
+      "hint": "Le trafic entre deux VLAN passe par le routeur : la passerelle de chaque poste doit répondre.",
+      "check": {
+        "type": "ping",
+        "from": "PC2",
+        "to": "PC1"
+      }
+    },
+    {
+      "id": "pc2-web",
+      "label": "PC2 joint le serveur WEB",
+      "hint": "Un ping aboutit seulement si la requête arrive ET si la réponse revient : examinez aussi la configuration du serveur.",
+      "check": {
+        "type": "ping",
+        "from": "PC2",
+        "to": "WEB"
+      }
+    },
+    {
+      "id": "pc1-web",
+      "label": "PC1 joint le serveur WEB",
+      "hint": "Le serveur répond à des clients de réseaux différents : sur quel équipement s'appuie-t-il pour les joindre ?",
+      "check": {
+        "type": "ping",
+        "from": "PC1",
+        "to": "WEB"
+      }
+    }
+  ]
+}

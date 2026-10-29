@@ -73,6 +73,7 @@ export function buildMenu(ctx: MenuContext): Menu {
         { label: t('menu.file.saveAs'), accelerator: accelerator('saveAs'), click: cmd('file:saveAs') },
         { type: 'separator' },
         { label: t('menu.file.openLab'), accelerator: accelerator('openLab'), click: cmd('file:openLab') },
+        { label: t('menu.file.troubleshoot'), click: cmd('file:troubleshoot') },
         { type: 'separator' },
         { label: t('menu.file.quit'), accelerator: accelerator('quit'), click: () => win.close() }
       ]

@@ -60,12 +60,12 @@ export function FormDialog({
           if (e.key === 'Escape') onClose()
         }}
       >
-        <h3 className="mb-1 text-base font-semibold">{title}</h3>
+        <h3 className="mb-1 text-title font-semibold">{title}</h3>
         {description && <p className="mb-3 text-xs text-fg-muted">{description}</p>}
         <div className="flex flex-col gap-2">
           {fields.map((f) =>
             f.type === 'checkbox' ? (
-              <label key={f.key} className="flex items-center gap-2 text-sm">
+              <label key={f.key} className="flex items-center gap-2 text-ui">
                 <input
                   type="checkbox"
                   checked={values[f.key] === true}

@@ -1,0 +1,146 @@
+{
+  "formatVersion": 1,
+  "id": "lab-53-depannage-linux",
+  "title": "Dépannage Linux : le site web et l’accès SSH sont en panne",
+  "difficulty": "Intermédiaire",
+  "duration": "40 min",
+  "summary": "Deux incidents indépendants sur un serveur Debian (web et SSH) : diagnostiquez à partir des tickets avec la console bash, puis réparez.",
+  "statement": "## Tickets utilisateurs\n\n> « Depuis ce matin, le site web de **LSRV1** ne s'affiche plus depuis mon poste. »\n>\n> « Je n'arrive plus à me connecter en SSH sur **LSRV1** depuis **LNX1**. »\n\n## L'environnement\n\n**LSRV1** (Debian 12, 192.168.20.10/24) héberge SSH, fail2ban, Apache2, Samba, Bind9 et isc-dhcp-server. **LNX1** (192.168.20.20) et **PC1** (192.168.20.30) sont des postes. Tout fonctionnait hier soir : c'est la configuration **attendue**.\n\n## Travail demandé\n\n1. Reproduisez les symptômes depuis LNX1 (`curl -I http://192.168.20.10/`, `ssh admin@192.168.20.10`).\n2. Identifiez chaque cause avec les outils de LSRV1 (`systemctl`, `ss`, `journalctl`, `apache2ctl configtest`, `ls -l`).\n3. Réparez, puis contrôlez depuis LNX1. Il y a plusieurs causes : relisez les messages après chaque correction.\n\nÀ rendre : pour chaque cause, le symptôme, l'outil de diagnostic et la correction.",
+  "start": {
+    "devices": [
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 330,
+        "y": 300
+      },
+      {
+        "kind": "server",
+        "os": "linux",
+        "name": "LSRV1",
+        "x": 330,
+        "y": 100,
+        "ip": "192.168.20.10/24",
+        "packages": ["apache2", "samba", "bind9", "isc-dhcp-server", "fail2ban"],
+        "bash": [
+          "sudo sed -i 's/^#PermitRootLogin prohibit-password$/PermitRootLogin yes/' /etc/ssh/sshd_config",
+          "sudo systemctl restart ssh",
+          "echo '[sshd]' | sudo tee /etc/fail2ban/jail.local",
+          "echo 'enabled = true' | sudo tee -a /etc/fail2ban/jail.local",
+          "echo 'maxretry = 3' | sudo tee -a /etc/fail2ban/jail.local",
+          "sudo systemctl restart fail2ban",
+          "sudo useradd -m alice",
+          {
+            "line": "sudo smbpasswd -a alice",
+            "answers": ["Passw0rd", "Passw0rd"]
+          },
+          "sudo mkdir -p /srv/samba/public",
+          "sudo chown alice:alice /srv/samba/public",
+          "echo '[public]' | sudo tee -a /etc/samba/smb.conf",
+          "echo '   path = /srv/samba/public' | sudo tee -a /etc/samba/smb.conf",
+          "echo '   read only = no' | sudo tee -a /etc/samba/smb.conf",
+          "echo '   valid users = alice' | sudo tee -a /etc/samba/smb.conf",
+          "sudo systemctl restart smbd",
+          "echo '$TTL 604800' | sudo tee /var/cache/bind/db.lab.lan",
+          "echo '@ IN SOA ns1.lab.lan. admin.lab.lan. (' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo '        2         ; Serial' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo '        604800    ; Refresh' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo '        86400     ; Retry' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo '        2419200   ; Expire' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo '        604800 )  ; Negative Cache TTL' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo '@ IN NS ns1.lab.lan.' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo 'ns1 IN A 192.168.20.10' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo 'www IN A 192.168.20.20' | sudo tee -a /var/cache/bind/db.lab.lan",
+          "echo 'zone \"lab.lan\" {' | sudo tee /etc/bind/named.conf.local",
+          "echo '    type master;' | sudo tee -a /etc/bind/named.conf.local",
+          "echo '    file \"db.lab.lan\";' | sudo tee -a /etc/bind/named.conf.local",
+          "echo '};' | sudo tee -a /etc/bind/named.conf.local",
+          "sudo systemctl restart named",
+          "echo 'INTERFACESv4=\"eth0\"' | sudo tee /etc/default/isc-dhcp-server",
+          "echo 'default-lease-time 600;' | sudo tee /etc/dhcp/dhcpd.conf",
+          "echo 'authoritative;' | sudo tee -a /etc/dhcp/dhcpd.conf",
+          "echo 'subnet 192.168.20.0 netmask 255.255.255.0 {' | sudo tee -a /etc/dhcp/dhcpd.conf",
+          "echo '  range 192.168.20.100 192.168.20.110;' | sudo tee -a /etc/dhcp/dhcpd.conf",
+          "echo '  option routers 192.168.20.254;' | sudo tee -a /etc/dhcp/dhcpd.conf",
+          "echo '  option domain-name-servers 192.168.20.10;' | sudo tee -a /etc/dhcp/dhcpd.conf",
+          "echo '}' | sudo tee -a /etc/dhcp/dhcpd.conf",
+          "sudo systemctl restart isc-dhcp-server"
+        ]
+      },
+      {
+        "kind": "client",
+        "os": "linux",
+        "name": "LNX1",
+        "x": 130,
+        "y": 470,
+        "ip": "192.168.20.20/24",
+        "dns": ["192.168.20.10"]
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 530,
+        "y": 470,
+        "ip": "192.168.20.30/24",
+        "dns": ["192.168.20.10"]
+      }
+    ],
+    "links": [
+      ["LSRV1:eth0", "SW1:Fa0/1"],
+      ["LNX1:eth0", "SW1:Fa0/2"],
+      ["PC1:Ethernet0", "SW1:Fa0/3"]
+    ]
+  },
+  "troubleshooting": {
+    "seed": 3,
+    "faults": [
+      {
+        "id": "linux.apache-docroot-perms"
+      },
+      {
+        "id": "linux.sshd-port"
+      }
+    ]
+  },
+  "criteria": [
+    {
+      "id": "panne-web",
+      "label": "La cause de l’erreur du site web est réparée",
+      "hint": "Apache répond, mais pas par la page attendue : que dit le journal d’erreurs, et que peut lire le compte d’Apache ?",
+      "check": {
+        "type": "faultRepaired",
+        "faultId": "linux.apache-docroot-perms"
+      }
+    },
+    {
+      "id": "panne-ssh",
+      "label": "La cause du refus de connexion SSH est réparée",
+      "hint": "Le service SSH est actif et pourtant la connexion est refusée : sur quel port écoute-t-il ?",
+      "check": {
+        "type": "faultRepaired",
+        "faultId": "linux.sshd-port"
+      }
+    },
+    {
+      "id": "ssh-port",
+      "label": "SSH écoute de nouveau sur le port 22",
+      "hint": "Comparez les ports en écoute du serveur (ss) avec le port que le client essaie.",
+      "check": {
+        "type": "linuxPortListening",
+        "device": "LSRV1",
+        "port": 22
+      }
+    },
+    {
+      "id": "web",
+      "label": "Le site répond 200 depuis PC1",
+      "hint": "Le test depuis un poste doit de nouveau afficher la page.",
+      "check": {
+        "type": "httpResponse",
+        "from": "PC1",
+        "url": "http://192.168.20.10/",
+        "status": 200
+      }
+    }
+  ]
+}
