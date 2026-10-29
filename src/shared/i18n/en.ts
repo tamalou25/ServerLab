@@ -312,6 +312,8 @@ export const en: Record<MessageKey, string> = {
   'toolbar.hint.delete': 'Click a device or a cable to delete it',
   'toolbar.hint.cancel': '{hint} · Esc to cancel',
   'node.virtual': 'Virtual device (Hyper-V)',
+  'node.ios': 'IOS',
+  'node.iosHint': 'Cisco IOS device (simulated CLI)',
   'pdu.title': 'Simple PDUs',
   'pdu.clear': 'Clear',
   'pdu.success': 'Successful',
