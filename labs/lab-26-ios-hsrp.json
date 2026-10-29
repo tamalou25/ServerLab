@@ -5,7 +5,7 @@
   "difficulty": "Avancé",
   "duration": "30 min",
   "summary": "Doubler la passerelle d’un LAN avec deux routeurs HSRP et choisir lequel est actif.",
-  "statement": "# Contexte\n\nLe LAN `192.168.1.0/24` n’a qu’une passerelle : si elle tombe, les postes sont isolés. **R1** (`192.168.1.1`) et **R2** (`192.168.1.2`) vont partager l’adresse virtuelle `192.168.1.254`, que PC1 utilise comme passerelle.\n\n## Travail demandé\n\n1. Sur R1 et R2, configurez le **groupe HSRP 1** sur `Gi0/0` avec l’adresse virtuelle.\n2. Faites de **R1** le routeur actif : priorité supérieure à la valeur par défaut, avec préemption.\n3. Contrôlez avec `show standby brief`.\n4. PC1 doit joindre l’adresse virtuelle.",
+  "statement": "# Contexte\n\nLe LAN `192.168.1.0/24` n’a qu’une passerelle : si elle tombe, les postes sont isolés. **R1** (`192.168.1.1`) et **R2** (`192.168.1.2`) vont partager l’adresse virtuelle `192.168.1.254`, que PC1 utilise comme passerelle.\n\n## Travail demandé\n\n1. Sur R1 et R2, configurez le **groupe HSRP 1** sur `Gi0/0` avec l’adresse virtuelle.\n2. Faites de **R1** le routeur actif : priorité **110** (supérieure à la valeur par défaut), avec préemption.\n3. Contrôlez avec `show standby brief`.\n4. PC1 doit joindre l’adresse virtuelle.",
   "start": {
     "devices": [
       {
