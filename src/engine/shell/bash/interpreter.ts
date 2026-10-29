@@ -6,7 +6,7 @@
  */
 import { CommandFailure, type ExecContext } from '../context'
 import { leaveSu, sudoPrefix } from './accounts'
-import { errnoText, linesToText, putFile, underMount, writeError } from './filetools'
+import { errnoText, linesToText, putFile, readLocal, underMount, writeError } from './filetools'
 import {
   actor,
   bashUser,
@@ -143,6 +143,10 @@ function runCommand(ctx: ExecContext, args: string[], tools: ToolDef[]): void {
         ''
       ])
       return
+    case 'grep':
+      // grep motif fichier (hors tube) ; sans fichier, le comportement historique est conservé
+      if (grepFiles(ctx, rest)) return
+      break
     default:
       break
   }
@@ -157,6 +161,26 @@ function runCommand(ctx: ExecContext, args: string[], tools: ToolDef[]): void {
     return
   }
   tool.run(ctx, rest)
+}
+
+/** grep [-i] [-v] motif fichier… : renvoie false si la forme n'est pas prise en charge. */
+function grepFiles(ctx: ExecContext, args: string[]): boolean {
+  const opts = args.filter((a) => a.startsWith('-'))
+  const operands = args.filter((a) => !a.startsWith('-'))
+  if (opts.some((o) => !/^-[iv]+$/.test(o)) || operands.length < 2) return false
+  const [pattern = '', ...paths] = operands
+  const ignore = opts.some((o) => o.includes('i'))
+  const invert = opts.some((o) => o.includes('v'))
+  const needle = ignore ? pattern.toLowerCase() : pattern
+  for (const path of paths) {
+    const text = readLocal(ctx, 'grep', path)
+    if (text === null) continue
+    for (const line of text.split('\n')) {
+      const hay = ignore ? line.toLowerCase() : line
+      if (hay.includes(needle) !== invert) ctx.write(paths.length > 1 ? `${path}:${line}` : line)
+    }
+  }
+  return true
 }
 
 /** Filtre de tube : grep [-i] [-v] motif. */
