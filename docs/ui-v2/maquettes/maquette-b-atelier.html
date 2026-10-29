@@ -1,0 +1,28 @@
+<!doctype html><meta charset="utf-8" /><title>Maquette B — Atelier</title
+><link rel="stylesheet" href="commun.css" />
+<body>
+  <script src="commun.js"></script>
+  <script src="parties.js"></script>
+  <script>
+    // B : rail vertical de familles (icône + nom court) + colonne de vignettes ; panneau Simulation sous le
+    // canvas seulement (l'inspecteur garde toute la hauteur), détail du PDU à droite de la table.
+    const fam = [
+      ['i-server', 'Serveurs', 1],
+      ['i-client', 'Postes'],
+      ['i-switch', 'Réseau'],
+      ['i-router', 'Cisco'],
+      ['i-cloud', 'Internet'],
+      ['i-firewall', 'Pare-feu']
+    ]
+    render(
+      'Maquette B « Atelier »',
+      () => `${toolbar()}<div class="mid"><aside class="pal" style="width:252px;flex-direction:row">
+<nav style="width:64px;border-right:1px solid var(--sl-line);display:flex;flex-direction:column;gap:2px;padding:6px 4px">${fam.map(([i, n, on]) => `<div style="display:flex;flex-direction:column;align-items:center;font-size:11px;padding:4px 0;border-radius:4px;${on ? 'background:var(--sl-accent-soft);color:var(--sl-accent-text);box-shadow:inset 2px 0 var(--sl-accent)' : 'color:var(--sl-fg-muted)'}"><svg style="width:24px;height:24px"><use href="#${i}"/></svg>${n}</div>`).join('')}</nav>
+<div style="flex:1;display:flex;flex-direction:column"><div class="ph">Serveurs</div><div class="search">Rechercher…</div><div class="tiles" style="grid-template-columns:repeat(2,1fr)"><div class="tile on">${ic('i-server')}Serveur Windows<span class="mono" style="font-size:11px;color:var(--sl-fg-subtle)">2022</span></div><div class="tile">${ic('i-linux-server')}Serveur Linux<span class="mono" style="font-size:11px;color:var(--sl-fg-subtle)">Ubuntu 24.04</span></div></div></div></aside>
+<div style="flex:1;display:flex;flex-direction:column;min-width:0">${canvas()}<div class="sim" style="height:210px">${simbar()}<div style="display:flex;min-height:0;flex:1"><div style="flex:1;overflow:auto">${events()}</div>
+<div style="width:260px;border-left:1px solid var(--sl-line);padding:8px 10px;font-size:12px;overflow:auto"><b>PDU #4 · DHCP OFFER</b><div style="color:var(--sl-fg-muted);margin:4px 0 6px">DC01 propose 192.168.20.11 (bail 8 j).</div>
+<div style="border:1px solid var(--sl-line);border-radius:4px"><div style="padding:3px 6px;border-bottom:1px solid var(--sl-line);color:var(--sl-fg-muted)">Couche 3 · IPv4</div><dl class="kv mono" style="padding:4px 6px;font-size:11px;grid-template-columns:60px 1fr"><dt>src</dt><dd>192.168.10.10</dd><dt>dst</dt><dd>192.168.20.254</dd><dt>TTL</dt><dd>128</dd></dl></div></div></div></div></div>
+${inspector(0)}</div>${statusbar()}`
+    )
+  </script>
+</body>
