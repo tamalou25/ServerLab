@@ -304,6 +304,7 @@ export const en: Record<MessageKey, string> = {
   'port.tray.free.other': '{count}/{total} free',
   'port.tray.connect': '{title} — click to connect',
   'toolbar.label': 'Tools',
+  'toolbar.main': 'Main toolbar',
   'toolbar.pdu': 'Simple PDU (ping)',
   'toolbar.hint.cable.first': 'Choose a port on the first device',
   'toolbar.hint.cable.second': 'Choose the port on the second device',

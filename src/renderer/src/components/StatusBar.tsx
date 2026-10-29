@@ -1,9 +1,9 @@
 /**
  * Barre d'état (24 px, en bas) : contenu du lab, outil actif, zoom, état d'enregistrement,
- * thème et bascule Temps réel / Simulation.
+ * thème (la bascule Temps réel / Simulation est dans la barre d'outils principale).
  */
 import { useViewport } from '@xyflow/react'
-import { Clock, Footprints, Moon, Sun } from 'lucide-react'
+import { Moon, Sun } from 'lucide-react'
 import { dateLocale, rich, useT } from '../lib/i18n'
 import { useLabStore } from '../store/lab'
 import { useSimStore } from '../store/sim'
@@ -46,12 +46,10 @@ export function StatusBar() {
   const tool = useUiStore((s) => s.tool)
   const mode = useUiStore((s) => s.mode)
   const theme = useUiStore((s) => s.theme)
-  const setMode = useUiStore((s) => s.setMode)
   const pending = useSimStore((s) => s.queue.length)
   const { zoom } = useViewport()
   const { t, tp } = useT()
 
-  const segment = 'flex h-full items-center gap-1 px-2 transition-colors'
   return (
     <footer
       className="flex h-6 shrink-0 items-center gap-4 border-t border-line bg-panel pl-3 text-meta text-fg-muted"
@@ -83,34 +81,6 @@ export function StatusBar() {
       >
         {theme === 'dark' ? <Sun size={12} /> : <Moon size={12} />}
       </button>
-      <div
-        className="flex h-full items-stretch border-l border-line"
-        role="radiogroup"
-        aria-label={t('status.mode')}
-      >
-        <button
-          type="button"
-          role="radio"
-          aria-checked={mode === 'realtime'}
-          data-testid="mode-realtime"
-          title={t('status.realtimeHint')}
-          onClick={() => setMode('realtime')}
-          className={`${segment} ${mode === 'realtime' ? 'bg-ok-soft font-medium text-ok-text' : 'hover:bg-surface-2 hover:text-fg'}`}
-        >
-          <Clock size={12} /> {t('status.realtime')}
-        </button>
-        <button
-          type="button"
-          role="radio"
-          aria-checked={mode === 'simulation'}
-          data-testid="mode-simulation"
-          title={t('status.simulationHint')}
-          onClick={() => setMode('simulation')}
-          className={`${segment} ${mode === 'simulation' ? 'bg-accent-soft font-medium text-accent-text' : 'hover:bg-surface-2 hover:text-fg'}`}
-        >
-          <Footprints size={12} /> {t('status.simulation')}
-        </button>
-      </div>
     </footer>
   )
 }

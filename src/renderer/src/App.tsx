@@ -12,6 +12,7 @@ import { DeviceWindows } from './components/device-window/DeviceWindow'
 import { RedBlueGame } from './components/cyber/RedBlueGame'
 import { HomeScreen } from './components/home/HomeScreen'
 import { TutorialCoach } from './components/tutorial/TutorialCoach'
+import { MainToolbar } from './components/MainToolbar'
 import { Palette } from './components/Palette'
 import { RightPanel } from './components/RightPanel'
 import { StatusBar } from './components/StatusBar'
@@ -153,6 +154,7 @@ export function App() {
     <ReactFlowProvider>
       <Fragment key={lang}>
         <div className="flex h-full flex-col">
+          <MainToolbar />
           <div className="flex min-h-0 flex-1">
             <Palette />
             <main className="min-w-0 flex-1">
