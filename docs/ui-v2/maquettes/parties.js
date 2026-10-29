@@ -1,3 +1,4 @@
+/* eslint-disable -- maquette statique hors application, scripts navigateur à globaux partagés */
 // Morceaux communs des maquettes (barre d'outils, canvas d'un lab, barre d'état).
 const b = (id, on) => `<span class="btn ${on ? 'on' : ''}" title="${id}">${ic('t-' + id, 'i16')}</span>`
 window.toolbar =

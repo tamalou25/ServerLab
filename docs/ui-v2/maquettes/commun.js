@@ -1,3 +1,4 @@
+/* eslint-disable -- maquette statique hors application, scripts navigateur à globaux partagés */
 // Sprite d'icônes (dessinées pour ServerLab) et duplication de la maquette en thème sombre et clair.
 const S = 'fill="var(--sl-icon-fill)" stroke="var(--sl-icon)" stroke-width="2" stroke-linejoin="round"'
 const A = 'fill="var(--sl-icon-2)"'
