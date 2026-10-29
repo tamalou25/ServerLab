@@ -12,7 +12,7 @@ import { buildLabState, checkLab, parseLabText } from '@engine/index'
 const ALREADY_MET: Record<string, Record<string, string>> = {
   'lab-12-sauvegarde': {
     restored:
-      'le compte n’est supprimé par aucune étape du départ : critère de non-régression (à revoir, rapport d’audit)'
+      'non-régression : le compte restauré garde son OU et son groupe ; la restauration elle-même est vérifiée par « undeleted »'
   },
   'lab-15-pare-feu': {
     allowed: 'non-régression : PC1 doit rester joignable après le blocage',
