@@ -38,8 +38,8 @@ import { checkForUpdatesFromMenu, initUpdater, installUpdateNow } from './update
 import { isDocState, isMenuState } from './validate'
 
 // Permet aux tests E2E d'isoler les données utilisateur (récents, autosave) dans un dossier temporaire ;
-// ignoré par l'application empaquetée
-const userDataOverride = app.isPackaged ? undefined : process.env['SERVERLAB_USER_DATA']
+// conservé pour l'application empaquetée, testée elle aussi par la CI (SERVERLAB_E2E_EXECUTABLE)
+const userDataOverride = process.env['SERVERLAB_USER_DATA']
 if (userDataOverride) app.setPath('userData', userDataOverride)
 
 // Une seule instance : un double-clic sur un .slab est transmis à la fenêtre existante
