@@ -7,6 +7,10 @@
  * 100 équipements au total.
  * SW7 n'est pas raccordé au cœur : ses postes en DHCP restent sans bail (APIPA), cas où les
  * tâches de fond pourraient retenter un DORA à chaque modification.
+ *
+ * Option `mixed` (OUTIL DE TEST SEULEMENT, jamais embarqué) : même nombre d'équipements (100) mais
+ * hétérogènes : cœur Catalyst 9200, switchs d'accès Catalyst 2960, routeur Cisco 1921, pare-feu FW1,
+ * serveur Linux SRV3, postes alternativement Windows et Linux.
  */
 import {
   addDevice,
@@ -31,11 +35,18 @@ export interface LargeLab {
 const ACCESS_SWITCHES = 6
 const PER_SWITCH = 14
 
-export function buildLargeLab(): LargeLab {
+export function buildLargeLab(options: { mixed?: boolean } = {}): LargeLab {
+  const mixed = options.mixed === true
   let s = createLab()
   const ids: Record<string, string> = {}
-  const add = (kind: DeviceKind, name: string, x: number, y: number) => {
-    const r = unwrap(addDevice(s, { kind, position: { x, y }, name }))
+  const add = (
+    kind: DeviceKind,
+    name: string,
+    x: number,
+    y: number,
+    extra: { os?: 'windows' | 'linux'; model?: 'c1921' | 'c2960' | 'c9200' } = {}
+  ) => {
+    const r = unwrap(addDevice(s, { kind, position: { x, y }, name, ...extra }))
     s = r.state
     ids[name] = r.value
     return r.value
@@ -56,10 +67,17 @@ export function buildLargeLab(): LargeLab {
     ).state
   }
 
-  const core = add('switch', 'SW1', 900, 80)
+  const core = add('switch', 'SW1', 900, 80, mixed ? { model: 'c9200' } : {})
   const srv1 = add('server', 'SRV1', 600, 0)
   const srv2 = add('server', 'SRV2', 750, 0)
-  const r1 = add('router', 'R1', 1200, 0)
+  const r1 = add('router', 'R1', 1200, 0, mixed ? { model: 'c1921' } : {})
+  if (mixed) {
+    // Pare-feu et serveur Linux au cœur, remplacent deux postes de SW8
+    const fw = add('firewall', 'FW1', 1350, 0)
+    const srv3 = add('server', 'SRV3', 450, 0, { os: 'linux' })
+    cable(fw, 0, r1, 1)
+    cable(srv3, 0, core, 20)
+  }
   cable(srv1, 0, core, 0)
   cable(srv2, 0, core, 1)
   cable(r1, 0, core, 2)
@@ -76,13 +94,19 @@ export function buildLargeLab(): LargeLab {
   let pc = 0
   for (let a = 0; a <= ACCESS_SWITCHES; a++) {
     const x = 100 + a * 260
-    const sw = add('switch', `SW${a + 2}`, x, 300)
+    const sw = add('switch', `SW${a + 2}`, x, 300, mixed ? { model: 'c2960' } : {})
     // Le dernier switch d'accès reste isolé (postes sans serveur DHCP joignable)
     if (a < ACCESS_SWITCHES) cable(sw, PER_SWITCH, core, 3 + a)
-    const count = a < ACCESS_SWITCHES ? PER_SWITCH : 5
+    const count = a < ACCESS_SWITCHES ? PER_SWITCH : mixed ? 3 : 5
     for (let i = 0; i < count; i++) {
       pc++
-      const host = add('client', `PC${pc}`, x - 80 + (i % 3) * 80, 420 + Math.floor(i / 3) * 110)
+      const host = add(
+        'client',
+        `PC${pc}`,
+        x - 80 + (i % 3) * 80,
+        420 + Math.floor(i / 3) * 110,
+        mixed && pc % 2 === 0 ? { os: 'linux' } : {}
+      )
       cable(host, 0, sw, i)
       // Un poste sur huit en adressage statique, les autres en DHCP (par défaut)
       if (pc % 8 === 0) ip(host, `10.0.0.${10 + pc}`, '10.0.0.254', ['10.0.0.1'])
