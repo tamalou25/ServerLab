@@ -6,7 +6,7 @@
 import type { Device, LabState, ServerDevice } from '../../model/schema'
 
 type FirewallDevice = Extract<Device, { kind: 'firewall' }>
-import type { DnsRecord, DnsRecordType } from './schema'
+import type { DnsRecord, DnsRecordType, DnsZone } from './schema'
 import { effectiveIpv4 } from '../../net/addressing'
 import { PUBLIC_DNS, PUBLIC_RESOLVERS, ROOT_HINT_IP } from '../../net/internet'
 import { isLoopback } from '../../net/ipv4'
@@ -186,9 +186,47 @@ function serverLookup(
       if (next.kind === 'answer') return { ...next, qname: name, records: [toAnswer(cname), ...next.records] }
       return next
     }
+    const delegated = followDelegation(ctx, server, zone, rel, name, qtype, depth)
+    if (delegated) return delegated
     return { kind: 'nxdomain', qname: name, authoritative: true }
   }
   return recurse(ctx, server, name, qtype, depth)
+}
+
+/**
+ * Délégation NS existante dans la zone : si le nom est sous un enregistrement NS d'un sous-domaine
+ * (hors sommet de la zone), la requête est transmise au serveur indiqué, dont l'adresse vient de
+ * l'enregistrement A (glue) de la zone. Réponse non autoritative côté Windows ; null si aucune délégation.
+ */
+function followDelegation(
+  ctx: SimContext,
+  server: ServerDevice,
+  zone: DnsZone,
+  rel: string,
+  name: string,
+  qtype: DnsQueryType,
+  depth: number
+): DnsResult | null {
+  const dns = dnsServerOf(server)
+  if (!dns || rel === '@') return null
+  // Point de coupure le plus proche du nom (le plus long)
+  const cuts = zone.records
+    .filter((r) => r.type === 'NS' && r.name !== '@')
+    .filter((r) => rel === r.name.toLowerCase() || rel.endsWith(`.${r.name.toLowerCase()}`))
+    .sort((a, b) => b.name.length - a.name.length)
+  const cut = cuts[0]?.name
+  if (!cut) return null
+  for (const ns of cuts.filter((r) => r.name === cut)) {
+    const target = normalizeName(ns.data)
+    const hostZone = findZoneFor(dns, target)
+    if (!hostZone) continue
+    const rname = relativeName(hostZone, target)
+    const glue = hostZone.records.find((r) => r.type === 'A' && r.name.toLowerCase() === rname)
+    if (!glue) continue
+    const r = queryServer(ctx, server.id, glue.data, name, qtype, depth + 1)
+    if (r.kind !== 'timeout') return r.kind === 'answer' ? { ...r, authoritative: false } : r
+  }
+  return { kind: 'servfail', qname: name }
 }
 
 /**
