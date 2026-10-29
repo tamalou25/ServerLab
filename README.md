@@ -150,12 +150,12 @@ et se relance par **Aide > Tutoriel interactif**.
 
 ## Labs pédagogiques
 
-L'accueil et **Fichier > Ouvrir un lab…** (`Ctrl+L`) proposent trente-cinq labs prêts à l'emploi, du plus simple au
+L'accueil et **Fichier > Ouvrir un lab…** (`Ctrl+L`) proposent cinquante-neuf labs prêts à l'emploi, du plus simple au
 plus complet : adressage et routage, DHCP, DNS, Active Directory + GPO, partages et NTFS, puis un lab par rôle de la
 2.1 (WSUS, IIS, Bureau à distance, Hyper-V, AD CS, DFS, sauvegarde et Corbeille AD), par fonctionnalité réseau
 de la 2.2 (VLAN, relais DHCP, pare-feu, NAT et VPN, NPS/RADIUS, multi-sites AD) et trois labs de durcissement
 de la 2.3 (Active Directory, partages, pare-feu) et sept labs Cisco de la 2.5 (base, VLAN, OSPF, DHCP / NAT, HSRP, sécurité,
-sujet E6 complet à deux sites). Les labs 29 à 35 relèvent de la cybersécurité (durcissement, compromission et défense d'Active Directory et du réseau, attaque de niveau 2, exercice red/blue), avec des attaques simulées de façon abstraite. Chaque lab
+sujet E6 complet à deux sites). Les labs 29 à 35 relèvent de la cybersécurité (durcissement, compromission et défense d'Active Directory et du réseau, attaque de niveau 2, exercice red/blue), avec des attaques simulées de façon abstraite. Les labs 46 à 53 portent sur les serveurs Linux de la 2.9 (SSH et fail2ban, Apache2, Samba, Bind9, DHCP, deux labs mixtes avec Windows, dépannage) et les labs 54 à 59 sur le pare-feu pfSense de la 2.10 (règles LAN / DMZ, service web publié, NAT sortant, DHCP et DNS, lab mixte Windows / Linux, dépannage). Chaque lab
 construit sa topologie de départ ; l'onglet **Lab** affiche l'énoncé et les objectifs, et
 **Vérifier** valide chaque critère (✅ / ❌) avec un indice qui oriente sans donner la solution.
 Le lab en cours est conservé dans le fichier `.slab` enregistré.
@@ -185,6 +185,23 @@ aux partages selon les autorisations NTFS du compte. Le système de fichiers loc
 et ses droits Unix sont simulés : `cat`, `echo >>`, `tee`, `sed -i`, `chmod`, `chown`, `useradd`, `usermod -aG`,
 `passwd`, `id`, `su`, `sudo` (groupe `sudo` de `/etc/sudoers`). Les sorties reprennent le format d'origine des outils
 (en anglais).
+
+## Serveurs Linux (2.9)
+
+La palette propose un **Serveur Linux** (Debian 12 ou Ubuntu Server 24.04 simulé, groupe Serveurs) avec une
+console bash : système de fichiers et droits Unix, `apt`, `systemctl`, `journalctl`, `ss`, `ps`, `df`. Services
+simulés : SSH, Apache2, Samba, Bind9, isc-dhcp-server, fail2ban et rsyslog. Il s'interconnecte avec Windows
+(partage Samba, délégation DNS vers Bind, client Linux joint au domaine) ; les pannes Linux rejoignent le mode
+panne. Labs 46 à 53. Écarts connus avec les vrais systèmes : section v2.9 de
+[`docs/fidelite.md`](docs/fidelite.md).
+
+## Pare-feu pfSense (2.10)
+
+La palette propose un **pare-feu pfSense CE 2.7** simulé (groupe Pare-feu) avec trois interfaces : WAN, LAN et
+OPT1 (DMZ). Règles par interface avec suivi d'état (Pass, Block, Reject), alias, NAT sortant et redirections de
+port, DHCP et résolveur DNS, interface web et console ; la règle appliquée apparaît dans la trace des paquets.
+Labs 54 à 59. Hors périmètre : VPN, proxy, IDS. Points à vérifier : section v2.10 de
+[`docs/fidelite.md`](docs/fidelite.md).
 
 ## Équipements Cisco
 
