@@ -2,7 +2,16 @@
  * Point d'entrée du process principal Electron.
  * Crée la fenêtre sécurisée, le menu natif et enregistre les handlers IPC.
  */
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  Menu,
+  nativeTheme,
+  type IpcMainEvent,
+  type IpcMainInvokeEvent
+} from 'electron'
 import { join } from 'node:path'
 import {
   IPC,
@@ -23,13 +32,14 @@ import { buildMenu } from './menu'
 import { exportExamResult, exportLabFile, importLabFile } from './labfiles'
 import { fetchLibraryIndex, fetchLibraryLab } from './library'
 import { exportAuditPdf } from './report'
-import { applyGlobalSecurity } from './security'
+import { applyGlobalSecurity, isTrustedIpcSender } from './security'
 import { isThemePreference, loadSettings, saveSettings, THEME_BACKGROUND, type Settings } from './settings'
 import { checkForUpdatesFromMenu, initUpdater, installUpdateNow } from './updater'
 import { isDocState, isMenuState } from './validate'
 
-// Permet aux tests E2E d'isoler les données utilisateur (récents, autosave) dans un dossier temporaire
-const userDataOverride = process.env['SERVERLAB_USER_DATA']
+// Permet aux tests E2E d'isoler les données utilisateur (récents, autosave) dans un dossier temporaire ;
+// ignoré par l'application empaquetée
+const userDataOverride = app.isPackaged ? undefined : process.env['SERVERLAB_USER_DATA']
 if (userDataOverride) app.setPath('userData', userDataOverride)
 
 // Une seule instance : un double-clic sur un .slab est transmis à la fenêtre existante
@@ -204,8 +214,24 @@ function registerIpc(): void {
     if (!mainWindow) throw new Error('Fenêtre principale indisponible')
     return mainWindow
   }
+  // Tout message IPC doit venir de la page de l'application dans la fenêtre principale
+  const trusted = (event: IpcMainEvent | IpcMainInvokeEvent) =>
+    isTrustedIpcSender(event, mainWindow?.webContents)
+  const ipc = {
+    handle(channel: string, listener: (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown) {
+      ipcMain.handle(channel, (event, ...args) => {
+        if (!trusted(event)) throw new Error('Expéditeur IPC non autorisé')
+        return listener(event, ...args)
+      })
+    },
+    on(channel: string, listener: (event: IpcMainEvent, ...args: unknown[]) => void) {
+      ipcMain.on(channel, (event, ...args) => {
+        if (trusted(event)) listener(event, ...args)
+      })
+    }
+  }
 
-  ipcMain.handle(IPC.appInfo, (): AppInfo => ({
+  ipc.handle(IPC.appInfo, (): AppInfo => ({
     name: app.getName(),
     version: app.getVersion(),
     electron: process.versions.electron,
@@ -214,58 +240,56 @@ function registerIpc(): void {
     isPackaged: app.isPackaged
   }))
 
-  ipcMain.on(IPC.menuState, (_event, state: unknown) => {
+  ipc.on(IPC.menuState, (_event, state: unknown) => {
     if (!isMenuState(state)) return
     menuState = state
     refreshMenu()
   })
 
-  ipcMain.on(IPC.themeSet, (_event, preference: unknown) => {
+  ipc.on(IPC.themeSet, (_event, preference: unknown) => {
     if (isThemePreference(preference)) applyThemePreference(preference)
   })
 
-  ipcMain.handle(IPC.homeAtStartup, () => settings.showHomeOnStartup)
-  ipcMain.on(IPC.homeAtStartupSet, (_event, show: unknown) => {
+  ipc.handle(IPC.homeAtStartup, () => settings.showHomeOnStartup)
+  ipc.on(IPC.homeAtStartupSet, (_event, show: unknown) => {
     if (typeof show !== 'boolean') return
     settings = { ...settings, showHomeOnStartup: show }
     saveSettings(settings)
   })
-  ipcMain.handle(IPC.tutorialAtStartup, () => settings.showTutorialOnStartup)
-  ipcMain.on(IPC.tutorialAtStartupSet, (_event, show: unknown) => {
+  ipc.handle(IPC.tutorialAtStartup, () => settings.showTutorialOnStartup)
+  ipc.on(IPC.tutorialAtStartupSet, (_event, show: unknown) => {
     if (typeof show !== 'boolean') return
     settings = { ...settings, showTutorialOnStartup: show }
     saveSettings(settings)
   })
 
-  ipcMain.on(IPC.docState, (_event, state: unknown) => {
+  ipc.on(IPC.docState, (_event, state: unknown) => {
     if (isDocState(state)) docState = state
   })
 
-  ipcMain.handle(IPC.fileOpen, () => files.openDialog(win()))
-  ipcMain.handle(IPC.fileOpenRecent, (_e, path: unknown) => files.openRecent(path))
-  ipcMain.handle(IPC.fileSave, (_e, path: unknown, content: unknown) => files.save(path, content))
-  ipcMain.handle(IPC.fileSaveAs, (_e, content: unknown, name: unknown) => files.saveAs(win(), content, name))
-  ipcMain.handle(IPC.filePending, () => files.takePending())
-  ipcMain.handle(IPC.recentList, () => files.recentEntries())
-  ipcMain.handle(IPC.recentRemove, (_e, path: unknown) => files.removeRecent(path))
-  ipcMain.handle(IPC.recentClear, () => files.clearRecent())
+  ipc.handle(IPC.fileOpen, () => files.openDialog(win()))
+  ipc.handle(IPC.fileOpenRecent, (_e, path: unknown) => files.openRecent(path))
+  ipc.handle(IPC.fileSave, (_e, path: unknown, content: unknown) => files.save(path, content))
+  ipc.handle(IPC.fileSaveAs, (_e, content: unknown, name: unknown) => files.saveAs(win(), content, name))
+  ipc.handle(IPC.filePending, () => files.takePending())
+  ipc.handle(IPC.recentList, () => files.recentEntries())
+  ipc.handle(IPC.recentRemove, (_e, path: unknown) => files.removeRecent(path))
+  ipc.handle(IPC.recentClear, () => files.clearRecent())
 
-  ipcMain.handle(IPC.autosaveWrite, (_e, content: unknown) => files.writeAutosave(content))
-  ipcMain.handle(IPC.autosaveClear, () => files.clearAutosave())
-  ipcMain.handle(IPC.autosaveRecover, () => files.recoverAutosave())
+  ipc.handle(IPC.autosaveWrite, (_e, content: unknown) => files.writeAutosave(content))
+  ipc.handle(IPC.autosaveClear, () => files.clearAutosave())
+  ipc.handle(IPC.autosaveRecover, () => files.recoverAutosave())
 
-  ipcMain.handle(IPC.askSaveChanges, (_e, name: unknown) =>
+  ipc.handle(IPC.askSaveChanges, (_e, name: unknown) =>
     askSaveChanges(win(), typeof name === 'string' ? name.slice(0, 200) : '')
   )
-  ipcMain.handle(IPC.auditExportPdf, (_e, report: unknown) => exportAuditPdf(win(), report))
-  ipcMain.handle(IPC.labImport, () => importLabFile(win()))
-  ipcMain.handle(IPC.labExport, (_e, content: unknown, name: unknown) => exportLabFile(win(), content, name))
-  ipcMain.handle(IPC.libraryIndex, () => fetchLibraryIndex())
-  ipcMain.handle(IPC.libraryLab, (_e, file: unknown) => fetchLibraryLab(file))
-  ipcMain.handle(IPC.examExport, (_e, content: unknown, name: unknown) =>
-    exportExamResult(win(), content, name)
-  )
-  ipcMain.on(IPC.closeConfirmed, () => {
+  ipc.handle(IPC.auditExportPdf, (_e, report: unknown) => exportAuditPdf(win(), report))
+  ipc.handle(IPC.labImport, () => importLabFile(win()))
+  ipc.handle(IPC.labExport, (_e, content: unknown, name: unknown) => exportLabFile(win(), content, name))
+  ipc.handle(IPC.libraryIndex, () => fetchLibraryIndex())
+  ipc.handle(IPC.libraryLab, (_e, file: unknown) => fetchLibraryLab(file))
+  ipc.handle(IPC.examExport, (_e, content: unknown, name: unknown) => exportExamResult(win(), content, name))
+  ipc.on(IPC.closeConfirmed, () => {
     closeConfirmed = true
     closeIntent = intentAfterSave
     intentAfterSave = 'quit'
