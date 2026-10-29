@@ -68,6 +68,27 @@ describe('Corbeille Active Directory', () => {
     expect(evaluateCheck(s, { type: 'adRecycleBin', domain: 'lab.local' })).toBe(true)
   })
 
+  it('critère adObjectRestored : exige une restauration depuis la Corbeille, pas un compte recréé', () => {
+    const check = { type: 'adObjectRestored', domain: 'lab.local', name: 'jdupont' } as const
+    let s = exec(buildReferenceLab(), command('adds.enableRecycleBin', D))
+    const srv = id(s, 'SRV1')
+    // Compte présent dès le départ : rien n'a été restauré
+    expect(evaluateCheck(s, check)).toBe(false)
+    // Supprimé puis recréé à la main : refusé
+    const recreated = run(
+      run(s, srv, 'Remove-ADUser -Identity jdupont -Confirm:$false').state,
+      srv,
+      'New-ADUser -Name "Jean Dupont" -SamAccountName jdupont'
+    ).state
+    expect(user(recreated, 'jdupont')).toBeDefined()
+    expect(evaluateCheck(recreated, check)).toBe(false)
+    // Restauré depuis la Corbeille : validé, événement tracé sur le contrôleur de domaine
+    const jd = user(s, 'jdupont')!
+    s = exec(s, command('adds.removeObject', D, jd.id), command('adds.restoreDeleted', D, jd.id))
+    expect(evaluateCheck(s, check)).toBe(true)
+    expect(server(s).host.eventLog.some((e) => e.eventId === 5138 && e.account === 'LAB\\jdupont')).toBe(true)
+  })
+
   it('OU supprimée avec son contenu : le parent d’abord, puis l’utilisateur', () => {
     let s = exec(buildReferenceLab(), command('adds.enableRecycleBin', D))
     const ou = s.domains[D]!.containers.find((c) => c.name === 'Compta')!

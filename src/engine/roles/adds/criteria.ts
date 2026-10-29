@@ -7,6 +7,7 @@ import { defineCriterion } from '../types'
 import { FSMO_ROLES } from '../../model/schema'
 import { allObjects, findContainer, groupsOf } from './directory'
 import { fsmoHolder } from './fsmo'
+import { RESTORED_EVENT_ID } from './objects'
 import { dcSite } from './sites'
 
 export const addsCriteria = [
@@ -103,5 +104,36 @@ export const addsCriteria = [
     (state, check) =>
       sameName(hostByName(state, check.client)?.host.session?.logonServer ?? '', check.server),
     'Contrôleur qui authentifie une session'
+  ),
+  defineCriterion(
+    z.object({
+      type: z.literal('adObjectRestored'),
+      domain: z.string(),
+      /** Nom d'ouverture de session (sam) ou nom de l'objet restauré. */
+      name: z.string()
+    }),
+    (state, check) => {
+      const domain = state.domains[check.domain.toLowerCase()]
+      if (!domain) return false
+      const account = `${domain.netbios}\\${check.name}`.toLowerCase()
+      const wanted = check.name.toLowerCase()
+      // L'objet doit exister maintenant et avoir été restauré depuis la Corbeille (pas recréé)
+      const exists = [...domain.users, ...domain.groups, ...domain.computers].some(
+        (o) => o.name.toLowerCase() === wanted || ('sam' in o && o.sam.toLowerCase() === wanted)
+      )
+      return (
+        exists &&
+        domain.controllers.some((id) => {
+          const dc = state.devices[id]
+          return (
+            (dc?.kind === 'server' || dc?.kind === 'client') &&
+            dc.host.eventLog.some(
+              (e) => e.eventId === RESTORED_EVENT_ID && e.account?.toLowerCase() === account
+            )
+          )
+        })
+      )
+    },
+    'Objet restauré depuis la Corbeille AD'
   )
 ]

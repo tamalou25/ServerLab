@@ -2,6 +2,7 @@
  * Gestion des objets de l'annuaire : unités d'organisation, utilisateurs, groupes, membres.
  */
 import type { Draft } from 'immer'
+import { logEvent } from '../../core/eventlog'
 import { logAudited } from '../gpo/auditpolicy'
 import { raise, transact, type EngineResult } from '../../core/result'
 import type { AdGroup, Domain, LabState } from '../../model/schema'
@@ -515,6 +516,9 @@ export function enableRecycleBin(state: LabState, domainName: string): EngineRes
   })
 }
 
+/** Identifiant de l'événement de restauration d'un objet supprimé (comme l'audit 5138). */
+export const RESTORED_EVENT_ID = 5138
+
 /**
  * Restaure un objet supprimé de la Corbeille (Restore-ADObject) avec ses attributs et ses
  * appartenances aux groupes encore présents. `targetId` : conteneur de destination (par défaut le
@@ -553,6 +557,19 @@ export function restoreDeletedObject(
     for (const g of domain.groups)
       if (entry.memberOf.includes(g.id) && !g.members.includes(entry.obj.id)) g.members.push(entry.obj.id)
     domain.deletedObjects.splice(index, 1)
+    // Trace de la restauration sur le contrôleur de domaine (critère de lab adObjectRestored)
+    const dcId = domain.controllers[0]
+    if (dcId) {
+      const sam = 'sam' in entry.obj ? entry.obj.sam : entry.obj.name
+      logEvent(draft, dcId, {
+        level: 'information',
+        source: 'ActiveDirectory_DomainService',
+        eventId: RESTORED_EVENT_ID,
+        log: 'Service d’annuaire',
+        account: `${domain.netbios}\\${sam}`,
+        message: `L’objet « ${entry.obj.name} » a été restauré depuis la Corbeille Active Directory.`
+      })
+    }
     return undefined
   })
 }
