@@ -16,7 +16,7 @@
  * Aucune valeur n'est tirée au hasard : tout est calculé depuis l'état du lab.
  */
 import type { Draft } from 'immer'
-import { logEvent } from '../core/eventlog'
+import { isUnitStateEntry, logEvent } from '../core/eventlog'
 import { LAB_EPOCH_MS } from '../core/clock'
 import { raise, transact, type EngineResult } from '../core/result'
 import { effectiveIpv4 } from '../net/addressing'
@@ -80,7 +80,7 @@ export function activeSince(host: AnyHost, unit: string): number {
 
 /** L'unité est-elle tombée en échec (arrêtée, dernier évènement : échec du démarrage) ? */
 export function unitFailed(host: AnyHost, unit: LinuxUnit): boolean {
-  const last = unitJournal(host, unit.name).at(-1)
+  const last = unitJournal(host, unit.name).filter(isUnitStateEntry).at(-1)
   return !unitStatus(host, unit).active && !!last && last.message.startsWith('Failed to start ')
 }
 
