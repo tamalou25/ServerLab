@@ -93,6 +93,30 @@ function independentlyRepairable(state: LabState, faults: ActiveFault[]): boolea
   return true
 }
 
+/**
+ * La réparation officielle guérit-elle TOUT, quel que soit l'ordre (injection puis inverse) ? Deux pannes
+ * peuvent s'entremêler sans viser la même cible : réparer le DHCP du serveur avant de rebrancher le
+ * câble d'un poste client (ou avant de corriger le masque d'un poste pair) laisse ce poste sans bail.
+ * Un tel tirage est écarté (constats T-01 et T-02 de l'audit v2.11.1).
+ */
+function healedInAnyOrder(state: LabState, faults: ActiveFault[]): boolean {
+  const withMode: LabState = { ...state, troubleshooting: { seed: 0, faults } }
+  for (const list of [faults, [...faults].reverse()]) {
+    let next = withMode
+    for (const f of list) {
+      const def = getFault(f.id)
+      if (!def) return false
+      for (const c of def.repair(next, f.params)) {
+        const r = dispatch(next, c)
+        if (!r.ok) return false
+        next = r.state
+      }
+    }
+    if (!allRepaired(next)) return false
+  }
+  return true
+}
+
 export function startTroubleshooting(
   healthy: LabState,
   spec: TroubleshootingSpec
@@ -134,7 +158,10 @@ export function startTroubleshooting(
       if ('error' in r || !fault.symptomVisible(r.state, params)) continue
       if (!compatible(params, active, r.state)) continue
       const candidate: ActiveFault = { id: fault.id, params, hintsUsed: 0 }
-      if (active.length > 0 && !independentlyRepairable(r.state, [...active, candidate])) continue
+      if (active.length > 0) {
+        const all = [...active, candidate]
+        if (!independentlyRepairable(r.state, all) || !healedInAnyOrder(r.state, all)) continue
+      }
       state = r.state
       active.push(candidate)
     }
