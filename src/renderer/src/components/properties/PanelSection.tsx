@@ -37,7 +37,7 @@ export function PanelSection({ id, title, count, actions, children }: PanelSecti
           type="button"
           onClick={toggle}
           aria-expanded={open}
-          className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-1 text-[11px] font-semibold tracking-wider text-fg-subtle uppercase hover:text-fg-muted"
+          className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-1 text-meta font-semibold tracking-wider text-fg-subtle uppercase hover:text-fg-muted"
         >
           {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
           <span className="truncate">{title}</span>

@@ -54,7 +54,7 @@ export function StatusBar() {
   const segment = 'flex h-full items-center gap-1 px-2 transition-colors'
   return (
     <footer
-      className="flex h-6 shrink-0 items-center gap-4 border-t border-line bg-panel pl-3 text-[11px] text-fg-muted"
+      className="flex h-6 shrink-0 items-center gap-4 border-t border-line bg-panel pl-3 text-meta text-fg-muted"
       data-testid="status-bar"
     >
       <span data-testid="status-counts">
@@ -95,7 +95,7 @@ export function StatusBar() {
           data-testid="mode-realtime"
           title={t('status.realtimeHint')}
           onClick={() => setMode('realtime')}
-          className={`${segment} ${mode === 'realtime' ? 'bg-ok-soft font-medium text-ok' : 'hover:bg-surface-2 hover:text-fg'}`}
+          className={`${segment} ${mode === 'realtime' ? 'bg-ok-soft font-medium text-ok-text' : 'hover:bg-surface-2 hover:text-fg'}`}
         >
           <Clock size={12} /> {t('status.realtime')}
         </button>

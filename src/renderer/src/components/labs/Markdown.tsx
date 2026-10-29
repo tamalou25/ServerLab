@@ -9,7 +9,7 @@ function inline(text: string): ReactNode[] {
   return text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).map((part, i) => {
     if (part.startsWith('`') && part.endsWith('`') && part.length > 1)
       return (
-        <code key={i} className="rounded-sm bg-surface-2 px-1 font-mono text-[12px] text-fg">
+        <code key={i} className="rounded-sm bg-surface-2 px-1 font-mono text-dense text-fg">
           {part.slice(1, -1)}
         </code>
       )
@@ -62,22 +62,22 @@ function parse(source: string): Block[] {
 
 export function Markdown({ text }: { text: string }) {
   return (
-    <div className="flex flex-col gap-2 text-[13px] leading-relaxed text-fg-muted">
+    <div className="flex flex-col gap-2 text-ui leading-relaxed text-fg-muted">
       {parse(text).map((b, i) => {
         switch (b.kind) {
           case 'heading':
             return b.level === 1 ? (
-              <h3 key={i} className="mt-1 text-[13px] font-semibold tracking-wide text-fg uppercase">
+              <h3 key={i} className="mt-1 text-ui font-semibold tracking-wide text-fg uppercase">
                 {inline(b.text)}
               </h3>
             ) : (
-              <h4 key={i} className="mt-1 text-[13px] font-semibold text-fg">
+              <h4 key={i} className="mt-1 text-ui font-semibold text-fg">
                 {inline(b.text)}
               </h4>
             )
           case 'quote':
             return (
-              <p key={i} className="border-l-2 border-accent bg-accent-soft px-2 py-1 text-[12px] text-fg">
+              <p key={i} className="border-l-2 border-accent bg-accent-soft px-2 py-1 text-dense text-fg">
                 {inline(b.text)}
               </p>
             )

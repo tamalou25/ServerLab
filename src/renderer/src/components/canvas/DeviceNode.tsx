@@ -27,7 +27,7 @@ const LED: Record<DeviceHealth, string> = {
   idle: 'bg-fg-subtle'
 }
 
-const IP_TONE = { normal: 'text-fg-muted', warn: 'text-warn', none: 'text-fg-subtle' } as const
+const IP_TONE = { normal: 'text-fg-muted', warn: 'text-warn-text', none: 'text-fg-subtle' } as const
 
 /** Délai avant de masquer le panneau de ports (le temps d'y amener la souris). */
 const HOVER_GRACE_MS = 180
@@ -82,7 +82,7 @@ function DeviceNodeComponent({ data, selected, dragging }: NodeProps<DeviceFlowN
         <Icon size={26} strokeWidth={1.5} className="text-fg-muted" />
         {device.hostedBy && (
           <span
-            className="absolute right-0.5 bottom-0.5 rounded-sm bg-panel px-0.5 text-[8px] leading-none font-semibold text-fg-subtle"
+            className="absolute right-0.5 bottom-0.5 rounded-sm bg-panel px-0.5 text-meta leading-none font-semibold text-fg-subtle"
             data-testid="device-virtual"
           >
             {device.kind === 'switch' ? 'vSW' : 'VM'}
@@ -101,7 +101,7 @@ function DeviceNodeComponent({ data, selected, dragging }: NodeProps<DeviceFlowN
           {device.name}
         </span>
         {ip && (
-          <span className={`rounded bg-canvas/85 px-1 font-mono text-[10.5px] ${IP_TONE[ip.tone]}`}>
+          <span className={`rounded bg-canvas/85 px-1 font-mono text-meta ${IP_TONE[ip.tone]}`}>
             {ip.text}
             {ip.more > 0 && <span className="text-fg-subtle"> +{ip.more}</span>}
           </span>

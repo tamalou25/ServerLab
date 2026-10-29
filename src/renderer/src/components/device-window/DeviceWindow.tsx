@@ -112,7 +112,7 @@ export function DeviceWindow({ win }: { win: DeviceWindowState }) {
         <span className={`flex h-6 w-6 items-center justify-center rounded-md ${DEVICE_COLORS[device.kind]}`}>
           <Icon size={14} />
         </span>
-        <span className="text-sm font-semibold">{device.name}</span>
+        <span className="text-ui font-semibold">{device.name}</span>
         <span className="text-xs text-fg-muted">— {deviceLabel(device)}</span>
         <button
           type="button"

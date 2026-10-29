@@ -107,10 +107,10 @@ export const KIND_STRIPE: Record<PaletteKind, string> = {
 
 /** Classes de la pastille de chaque type d'équipement (tokens de catégorie, voir styles.css). */
 export const DEVICE_COLORS: Record<DeviceKind, string> = {
-  server: 'bg-kind-server text-white',
-  client: 'bg-kind-client text-white',
-  switch: 'bg-kind-switch text-white',
-  router: 'bg-kind-router text-white',
-  cloud: 'bg-kind-cloud text-white',
-  firewall: 'bg-kind-firewall text-white'
+  server: 'bg-kind-server text-on-kind',
+  client: 'bg-kind-client text-on-kind',
+  switch: 'bg-kind-switch text-on-kind',
+  router: 'bg-kind-router text-on-kind',
+  cloud: 'bg-kind-cloud text-on-kind',
+  firewall: 'bg-kind-firewall text-on-kind'
 }

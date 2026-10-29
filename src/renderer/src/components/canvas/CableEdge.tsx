@@ -96,7 +96,7 @@ function CableEdgeComponent({ id, source, target, data, selected }: EdgeProps<Ca
 function PortLabel({ x, y, text }: { x: number; y: number; text: string }) {
   return (
     <div
-      className="nodrag nopan pointer-events-none absolute rounded border border-line bg-panel/90 px-1 font-mono text-[10px] text-fg-muted shadow-xs"
+      className="nodrag nopan pointer-events-none absolute rounded border border-line bg-panel/90 px-1 font-mono text-meta text-fg-muted shadow-xs"
       style={{ transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }}
     >
       {text}

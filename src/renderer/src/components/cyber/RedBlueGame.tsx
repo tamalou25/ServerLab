@@ -60,7 +60,7 @@ export function RedBlueGame() {
       >
         <header className="flex items-center gap-2 border-b border-line px-5 py-3">
           <Swords size={16} className="text-accent" />
-          <h2 id={titleId} className="flex-1 text-base font-semibold text-fg">
+          <h2 id={titleId} className="flex-1 text-title font-semibold text-fg">
             {t('game.title')}
           </h2>
           {game && (
@@ -99,7 +99,7 @@ function Setup({ lab }: { lab: LabState }) {
     timerSeconds === null ? t('game.setup.noTimer') : t('game.setup.seconds', { count: timerSeconds })
   return (
     <div className="space-y-4" data-testid="game-setup">
-      <p className="text-[13px] text-fg-muted">{t('game.setup.intro')}</p>
+      <p className="text-ui text-fg-muted">{t('game.setup.intro')}</p>
       <p className="text-xs text-fg-subtle">
         {t('game.setup.rules', { turns: maxTurns, budget: blueBudget, timer })}
       </p>
@@ -123,7 +123,7 @@ function Setup({ lab }: { lab: LabState }) {
             disabled={lab.cyber.game.aiSide === side}
             data-testid={`game-play-${side}`}
           >
-            <div className="text-sm font-semibold text-fg">{t(`game.setup.${side}`)}</div>
+            <div className="text-ui font-semibold text-fg">{t(`game.setup.${side}`)}</div>
             <div className="mt-1 text-xs text-fg-muted">{t(`game.setup.${side}Hint`)}</div>
           </button>
         ))}
@@ -139,7 +139,7 @@ function Prep({ game, lab }: { game: GameState; lab: LabState }) {
   const { setPlan, hardenInPrep, begin } = useGameStore()
   return (
     <div className="space-y-4" data-testid="game-prep">
-      <h3 className="text-sm font-semibold text-fg">{t('game.prep.title')}</h3>
+      <h3 className="text-ui font-semibold text-fg">{t('game.prep.title')}</h3>
       {game.side === 'red' ? (
         <RedPlan plan={game.redPlan} onChange={setPlan} />
       ) : (
@@ -239,7 +239,7 @@ function Countermeasures({
         >
           <div className="flex-1">
             <div className="text-fg">{cmName(t, c.id)}</div>
-            <div className="font-mono text-[11px] text-fg-subtle">
+            <div className="font-mono text-meta text-fg-subtle">
               {t(`game.cm.hint.${c.id}` as MessageKey)}
             </div>
           </div>
@@ -319,7 +319,7 @@ function Over({ game, score, onAgain }: { game: GameState; score: Score; onAgain
   return (
     <div className="space-y-4" data-testid="game-over">
       <div className="rounded-md border border-line bg-surface p-4 text-center">
-        <div className="text-lg font-semibold text-fg" data-testid="game-verdict">
+        <div className="text-title font-semibold text-fg" data-testid="game-verdict">
           {t(`game.over.${verdict}`)}
         </div>
         {score.outcome !== 'draw' && (
@@ -381,7 +381,7 @@ function Timeline({ entries }: { entries: TimelineEntry[] }) {
   if (entries.length === 0) return null
   return (
     <div data-testid="game-timeline">
-      <h3 className="mb-1 text-sm font-semibold text-fg">{t('game.timeline')}</h3>
+      <h3 className="mb-1 text-ui font-semibold text-fg">{t('game.timeline')}</h3>
       <ol className="space-y-1 text-xs">
         {entries.map((e, i) => (
           <li key={i} className="rounded-md border border-line bg-surface px-3 py-1.5">
@@ -390,7 +390,7 @@ function Timeline({ entries }: { entries: TimelineEntry[] }) {
             </span>
             <span className="text-fg">{entryText(t, e)}</span>
             {e.events && e.events.length > 0 && (
-              <ul className="selectable mt-1 space-y-0.5 font-mono text-[11px] text-fg-muted">
+              <ul className="selectable mt-1 space-y-0.5 font-mono text-meta text-fg-muted">
                 {e.events.map((ev, k) => (
                   <li key={k}>
                     {ev.deviceName}

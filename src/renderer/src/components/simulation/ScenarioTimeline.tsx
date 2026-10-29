@@ -61,14 +61,14 @@ export function ScenarioTimeline() {
               </span>
             )}
           </div>
-          {error && <p className="mb-2 text-xs text-bad">{error}</p>}
+          {error && <p className="mb-2 text-xs text-danger-text">{error}</p>}
           <ol className="space-y-1" data-testid="scenario-timeline">
             {timeline.map((r, i) => (
               <li key={`${r.stepId}-${i}`} className="flex items-start gap-1.5 text-xs">
                 {r.success ? (
-                  <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-ok" />
+                  <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-ok-text" />
                 ) : (
-                  <XCircle size={14} className="mt-0.5 shrink-0 text-bad" />
+                  <XCircle size={14} className="mt-0.5 shrink-0 text-danger-text" />
                 )}
                 <span className="text-fg">
                   {r.label}{' '}

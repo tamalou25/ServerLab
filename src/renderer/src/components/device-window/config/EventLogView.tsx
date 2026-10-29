@@ -14,21 +14,21 @@ const LEVELS = {
       return t('level.information')
     },
     icon: Info,
-    cls: 'text-info'
+    cls: 'text-info-text'
   },
   warning: {
     get label() {
       return t('level.warning')
     },
     icon: TriangleAlert,
-    cls: 'text-warn'
+    cls: 'text-warn-text'
   },
   error: {
     get label() {
       return t('level.error')
     },
     icon: CircleAlert,
-    cls: 'text-danger'
+    cls: 'text-danger-text'
   }
 } as const
 

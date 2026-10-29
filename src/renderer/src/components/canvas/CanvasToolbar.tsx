@@ -60,8 +60,8 @@ export function CanvasToolbar() {
       </div>
       {hintKey && (
         <span
-          className={`rounded-md border bg-panel/95 px-2 py-0.5 text-[11px] shadow-sm ${
-            tool === 'delete' ? 'border-danger/40 text-danger' : 'border-accent/40 text-accent-text'
+          className={`rounded-md border bg-panel/95 px-2 py-0.5 text-meta shadow-sm ${
+            tool === 'delete' ? 'border-danger/40 text-danger-text' : 'border-accent/40 text-accent-text'
           }`}
           data-testid="tool-hint"
         >

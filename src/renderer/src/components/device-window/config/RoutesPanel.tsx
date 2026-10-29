@@ -56,7 +56,7 @@ export function RoutesPanel({ device }: { device: RouterDevice }) {
                 <td className="py-1 text-right">
                   <button
                     type="button"
-                    className="rounded p-1 text-fg-subtle hover:bg-danger-soft hover:text-danger"
+                    className="rounded p-1 text-fg-subtle hover:bg-danger-soft hover:text-danger-text"
                     title={t('win.supprimerLaRoute')}
                     onClick={() => runCommand(command('net.removeStaticRoute', device.id, i))}
                   >
@@ -96,7 +96,7 @@ export function RoutesPanel({ device }: { device: RouterDevice }) {
         <p className="mt-2 text-xs text-fg-muted">{t('win.routeParDefautReseau')}</p>
       </Section>
       <Section title={t('win.tableDeRoutage')}>
-        <pre className="selectable rounded border border-line bg-app p-3 font-mono text-[11px] leading-5 text-fg">
+        <pre className="selectable rounded border border-line bg-app p-3 font-mono text-meta leading-5 text-fg">
           {table.length === 0
             ? t('win.noRoutes')
             : table

@@ -70,7 +70,7 @@ export function PortTray({ device, interactive, onMouseEnter, onMouseLeave }: Po
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <div className="mb-1 flex items-center justify-between gap-4 px-0.5 text-[10px] font-semibold tracking-wider text-fg-subtle uppercase">
+      <div className="mb-1 flex items-center justify-between gap-4 px-0.5 text-meta font-semibold tracking-wider text-fg-subtle uppercase">
         <span>{t('port.tray.title')}</span>
         <span className="font-normal normal-case">{tp('port.tray.free', free, { total: ports.length })}</span>
       </div>
@@ -83,8 +83,7 @@ export function PortTray({ device, interactive, onMouseEnter, onMouseLeave }: Po
               <span className={state === 'disabled' ? 'line-through' : ''}>{iface.name}</span>
             </>
           )
-          const base =
-            'flex items-center gap-1.5 rounded px-1.5 py-0.5 font-mono text-[10.5px] whitespace-nowrap'
+          const base = 'flex items-center gap-1.5 rounded px-1.5 py-0.5 font-mono text-meta whitespace-nowrap'
           if (!interactive)
             return (
               <div key={iface.id} className={`${base} text-fg-muted`} title={title}>

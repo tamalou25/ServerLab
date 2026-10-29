@@ -28,10 +28,10 @@ export function Modal() {
       aria-labelledby={titleId}
     >
       <div className="w-[440px] rounded-md border border-line bg-overlay p-5 shadow-lg" data-testid="modal">
-        <h2 id={titleId} className="mb-2 text-base font-semibold text-fg">
+        <h2 id={titleId} className="mb-2 text-title font-semibold text-fg">
           {modal.title}
         </h2>
-        <p className="selectable mb-5 text-[13px] whitespace-pre-line text-fg-muted">{modal.message}</p>
+        <p className="selectable mb-5 text-ui whitespace-pre-line text-fg-muted">{modal.message}</p>
         <div className="flex justify-end gap-2">
           {isConfirm && (
             <Button

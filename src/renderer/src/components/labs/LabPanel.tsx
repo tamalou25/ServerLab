@@ -13,9 +13,9 @@ import { Markdown } from './Markdown'
 import { t } from '../../lib/i18n'
 
 const DIFFICULTY_CLASS: Record<string, string> = {
-  Débutant: 'bg-ok-soft text-ok',
-  Intermédiaire: 'bg-warn-soft text-warn',
-  Avancé: 'bg-danger-soft text-danger'
+  Débutant: 'bg-ok-soft text-ok-text',
+  Intermédiaire: 'bg-warn-soft text-warn-text',
+  Avancé: 'bg-danger-soft text-danger-text'
 }
 
 export function LabPanel() {
@@ -38,11 +38,11 @@ export function LabPanel() {
       <div className="border-b border-line px-4 py-3">
         <div className="mb-1 flex items-center gap-2">
           <span
-            className={`rounded-sm px-1.5 py-0.5 text-[11px] font-semibold ${DIFFICULTY_CLASS[lab.difficulty] ?? ''}`}
+            className={`rounded-sm px-1.5 py-0.5 text-meta font-semibold ${DIFFICULTY_CLASS[lab.difficulty] ?? ''}`}
           >
             {lab.difficulty}
           </span>
-          <span className="text-[11px] text-fg-subtle">{lab.duration}</span>
+          <span className="text-meta text-fg-subtle">{lab.duration}</span>
           <button
             type="button"
             onClick={() => useLabsStore.getState().setActive(null)}
@@ -54,7 +54,7 @@ export function LabPanel() {
             <X size={14} />
           </button>
         </div>
-        <h2 className="text-sm font-semibold text-fg" data-testid="lab-title">
+        <h2 className="text-ui font-semibold text-fg" data-testid="lab-title">
           {lab.title}
         </h2>
       </div>
@@ -62,7 +62,7 @@ export function LabPanel() {
         <Markdown text={lab.statement} />
         <h3
           ref={objectives}
-          className="mt-4 mb-2 scroll-mt-2 text-[11px] font-semibold tracking-wider text-fg-subtle uppercase"
+          className="mt-4 mb-2 scroll-mt-2 text-meta font-semibold tracking-wider text-fg-subtle uppercase"
         >
           Objectifs
         </h3>
@@ -79,11 +79,11 @@ export function LabPanel() {
                 {!r ? (
                   <CircleDashed size={15} className="mt-0.5 shrink-0 text-fg-subtle" />
                 ) : r.ok ? (
-                  <CircleCheck size={15} className="mt-0.5 shrink-0 text-ok" />
+                  <CircleCheck size={15} className="mt-0.5 shrink-0 text-ok-text" />
                 ) : (
-                  <CircleX size={15} className="mt-0.5 shrink-0 text-danger" />
+                  <CircleX size={15} className="mt-0.5 shrink-0 text-danger-text" />
                 )}
-                <div className="min-w-0 text-[13px]">
+                <div className="min-w-0 text-ui">
                   <div className={r?.ok ? 'text-fg' : 'text-fg-muted'}>{c.label}</div>
                   {r && !r.ok && <Hints id={c.id} levels={[c.hint, ...c.hints]} />}
                 </div>
@@ -93,7 +93,7 @@ export function LabPanel() {
         </ul>
       </div>
       <div className="border-t border-line px-4 py-3">
-        <div className="mb-2 flex items-center justify-between text-[12px] text-fg-muted">
+        <div className="mb-2 flex items-center justify-between text-dense text-fg-muted">
           <span data-testid="lab-score">
             {progress
               ? t('lab.progress', { passed: progress.passed, total: progress.total })
@@ -138,7 +138,7 @@ function Hints({ id, levels }: { id: string; levels: string[] }) {
   const level = useLabsStore((s) => s.hintLevels[id] ?? 0)
   const shown = levels.slice(0, level + 1)
   return (
-    <div className="mt-0.5 flex flex-col gap-0.5 text-[12px] text-warn" data-testid={`lab-hint-${id}`}>
+    <div className="mt-0.5 flex flex-col gap-0.5 text-dense text-warn-text" data-testid={`lab-hint-${id}`}>
       {shown.map((hint, i) => (
         <div key={i}>
           {shown.length > 1 ? t('lab.hintN', { n: i + 1 }) : t('lab.hint')}
@@ -149,7 +149,7 @@ function Hints({ id, levels }: { id: string; levels: string[] }) {
         <button
           type="button"
           onClick={() => useLabsStore.getState().revealHint(id)}
-          className="self-start text-[11px] text-accent hover:underline"
+          className="self-start text-meta text-accent hover:underline"
           data-testid={`lab-more-hint-${id}`}
         >
           Indice suivant ({level + 2} / {levels.length})

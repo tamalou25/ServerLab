@@ -42,7 +42,7 @@ export function HelpPanel() {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 id={titleId} className="text-lg font-semibold text-fg">
+          <h2 id={titleId} className="text-title font-semibold text-fg">
             {panel === 'guide' ? t('help.guide.title') : t('help.shortcuts.title')}
           </h2>
           <button
@@ -55,7 +55,7 @@ export function HelpPanel() {
           </button>
         </div>
         {panel === 'shortcuts' ? (
-          <table className="w-full text-sm" data-testid="shortcuts-table">
+          <table className="w-full text-ui" data-testid="shortcuts-table">
             {SHORTCUT_ROWS.map(({ group, rows }) => (
               <tbody key={group}>
                 <tr>
@@ -80,14 +80,14 @@ export function HelpPanel() {
             ))}
           </table>
         ) : (
-          <ol className="flex list-decimal flex-col gap-2 pl-5 text-[13px] text-fg">
+          <ol className="flex list-decimal flex-col gap-2 pl-5 text-ui text-fg">
             <li>{t('help.guide.1')}</li>
             <li>{t('help.guide.2')}</li>
             <li>
               {rich(t('help.guide.3'), {
-                green: <b className="text-ok">{t('help.guide.green')}</b>,
-                orange: <b className="text-warn">{t('help.guide.orange')}</b>,
-                red: <b className="text-danger">{t('help.guide.red')}</b>
+                green: <b className="text-ok-text">{t('help.guide.green')}</b>,
+                orange: <b className="text-warn-text">{t('help.guide.orange')}</b>,
+                red: <b className="text-danger-text">{t('help.guide.red')}</b>
               })}
             </li>
             <li>{t('help.guide.4')}</li>

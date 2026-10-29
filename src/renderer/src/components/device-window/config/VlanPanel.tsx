@@ -148,7 +148,7 @@ export function VlanPanel({ device }: { device: SwitchDevice }) {
                   {v.id !== 1 && (
                     <button
                       type="button"
-                      className="rounded p-1 text-fg-subtle hover:bg-danger-soft hover:text-danger"
+                      className="rounded p-1 text-fg-subtle hover:bg-danger-soft hover:text-danger-text"
                       title={t('win.supprimerLeVlan')}
                       onClick={() => runCommand(command('net.removeVlan', device.id, v.id))}
                     >
