@@ -27,6 +27,7 @@ import { CableEdge, type CableFlowEdge } from './CableEdge'
 import { CablePreview } from './CablePreview'
 import { CanvasToolbar } from './CanvasToolbar'
 import { PacketAnimation } from './PacketAnimation'
+import { ProtocolLegend } from './ProtocolLegend'
 import { PduList } from './PduList'
 import { DeviceNode, type DeviceFlowNode } from './DeviceNode'
 import { PortPicker, type PortPickerState } from './PortPicker'
@@ -342,6 +343,7 @@ export function TopologyCanvas() {
         <ZoomControls />
         <CablePreview cursor={cableStart || pduSource ? cursor : null} />
         <PacketAnimation />
+        <ProtocolLegend />
       </ReactFlow>
       <CanvasToolbar />
       <PduList />
