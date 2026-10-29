@@ -1,0 +1,17 @@
+<!doctype html><meta charset="utf-8" /><title>Maquette A — Console dense</title
+><link rel="stylesheet" href="commun.css" />
+<body>
+  <script src="commun.js"></script>
+  <script src="parties.js"></script>
+  <script>
+    // A : palette à onglets horizontaux + vignettes 48 px, inspecteur à droite, panneau Simulation pleine largeur en bas.
+    render(
+      'Maquette A « Console dense »',
+      () => `${toolbar()}<div class="mid"><aside class="pal"><div class="ph">Équipements</div>
+<div class="tabs" style="flex-wrap:wrap"><span class="on">Serveurs</span><span>Postes</span><span>Réseau</span></div><div class="tabs"><span>Cisco</span><span>Internet</span><span>Pare-feu</span></div>
+<div class="search">Rechercher…</div><div class="tiles"><div class="tile on">${ic('i-server')}Serveur Windows</div><div class="tile">${ic('i-linux-server')}Serveur Linux</div></div>
+<p style="font-size:11px;color:var(--sl-fg-subtle);padding:10px;margin-top:auto;border-top:1px solid var(--sl-line)">Glisser vers le canvas, ou cliquer puis cliquer sur le canvas.</p></aside>
+${canvas()}${inspector(0)}</div><div class="sim">${simbar()}<div style="overflow:auto">${events()}</div></div>${statusbar()}`
+    )
+  </script>
+</body>
