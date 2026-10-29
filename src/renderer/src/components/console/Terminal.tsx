@@ -1,13 +1,14 @@
 /**
  * Terminal simulé : sortie défilante + ligne de saisie avec historique (↑↓) et complétion (Tab).
  */
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { memo, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { complete, IOS_CTRL_Z, iosComplete, iosHelp, type ShellKind } from '@engine/index'
-import { terminalKey, useConsoleStore } from '../../store/console'
+import { terminalKey, useConsoleStore, type TermLine } from '../../store/console'
 import { useLabStore } from '../../store/lab'
 import { cancelConsoleInput, ensureTerminal, promptOf, submitConsoleInput } from '../../lib/console'
 import { redo, undo } from '../../lib/editing'
 import { t } from '../../lib/i18n'
+import { countRender } from '../../lib/perf'
 
 interface TerminalProps {
   deviceId: string
@@ -68,6 +69,44 @@ interface CompletionCycle {
   candidates: string[]
   index: number
 }
+
+type TerminalTheme = (typeof THEMES)[ShellKind]
+
+/**
+ * Lignes de sortie (jusqu'à 2000). Mémoïsé : la saisie (état du Terminal) ne les redessine pas,
+ * seul un changement de `lines` (nouveau tableau) ou de thème le fait.
+ */
+const Lines = memo(function Lines({
+  lines,
+  theme,
+  probeKey
+}: {
+  lines: TermLine[]
+  theme: TerminalTheme
+  probeKey: string
+}) {
+  countRender(`console-lines:${probeKey}`) // mesure (tests/e2e/console-perf.spec.ts)
+  return (
+    <>
+      {lines.map((l) => (
+        <div
+          key={l.id}
+          className={`min-h-[1.35em] break-all whitespace-pre-wrap ${
+            l.kind === 'error'
+              ? theme.error
+              : l.kind === 'warning'
+                ? theme.warning
+                : l.kind === 'verbose'
+                  ? theme.verbose
+                  : ''
+          }`}
+        >
+          {l.text}
+        </div>
+      ))}
+    </>
+  )
+})
 
 export function Terminal({ deviceId, kind, autoFocus }: TerminalProps) {
   const key = terminalKey(deviceId, kind)
@@ -198,22 +237,7 @@ export function Terminal({ deviceId, kind, autoFocus }: TerminalProps) {
       }}
       data-testid={`terminal-${kind}`}
     >
-      {term.lines.map((l) => (
-        <div
-          key={l.id}
-          className={`min-h-[1.35em] break-all whitespace-pre-wrap ${
-            l.kind === 'error'
-              ? theme.error
-              : l.kind === 'warning'
-                ? theme.warning
-                : l.kind === 'verbose'
-                  ? theme.verbose
-                  : ''
-          }`}
-        >
-          {l.text}
-        </div>
-      ))}
+      <Lines lines={term.lines} theme={theme} probeKey={key} />
       {term.busy ? (
         <div className="text-cyan-300">{t('console.simulationEnCoursPanneau')}</div>
       ) : (
