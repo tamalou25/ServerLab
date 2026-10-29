@@ -19,11 +19,17 @@ export function isUnitStateEntry(e: EventLogEntry): boolean {
  * du journal (`linuxsystem.ts`) : les entrées « Started » et la dernière entrée d'état de chaque unité
  * résistent à la rotation (audit v2.11.1, M-03) et à l'effacement du journal.
  */
-export function isUnitStateAnchor(log: readonly EventLogEntry[], index: number): boolean {
-  const e = log[index]!
-  if (!isUnitStateEntry(e)) return false
-  if (e.message.startsWith('Started ')) return true
-  return !log.slice(index + 1).some((o) => o.account === e.account && isUnitStateEntry(o))
+export function unitStateAnchors(log: readonly EventLogEntry[]): boolean[] {
+  // Un seul parcours depuis la fin (linéaire) : la première entrée d'état rencontrée pour une unité est sa dernière
+  const anchors: boolean[] = new Array<boolean>(log.length).fill(false)
+  const seen = new Set<string | undefined>()
+  for (let i = log.length - 1; i >= 0; i--) {
+    const e = log[i]!
+    if (!isUnitStateEntry(e)) continue
+    if (e.message.startsWith('Started ') || !seen.has(e.account)) anchors[i] = true
+    seen.add(e.account)
+  }
+  return anchors
 }
 
 /** Écart de temps simulé entre deux événements consécutifs (ms). */
@@ -63,7 +69,7 @@ export function logEvent(draft: Draft<LabState>, deviceId: string, event: NewEve
   // Rotation : on évince d'abord les plus anciennes entrées ordinaires, celles d'état d'unité ensuite
   const log = device.host.eventLog
   while (log.length > EVENT_LOG_LIMIT) {
-    const i = log.findIndex((_, k) => !isUnitStateAnchor(log, k))
+    const i = unitStateAnchors(log).indexOf(false)
     log.splice(i < 0 ? 0 : i, 1)
   }
 }
@@ -81,8 +87,9 @@ export function clearEventLog(state: LabState, deviceId: string, log: EventLogEn
       ? `${device.host.session.domain ?? device.name}\\${device.host.session.user}`
       : 'SYSTEM'
     // Sur Linux, l'état des unités (voir isUnitStateEntry) n'est pas un journal que l'on efface
+    const anchors = unitStateAnchors(device.host.eventLog)
     device.host.eventLog = device.host.eventLog.filter(
-      (e, i, all) => e.log !== log || (device.host.os === 'linux' && isUnitStateAnchor(all, i))
+      (e, i) => e.log !== log || (device.host.os === 'linux' && anchors[i])
     )
     if (log === 'Sécurité')
       logEvent(draft, deviceId, {

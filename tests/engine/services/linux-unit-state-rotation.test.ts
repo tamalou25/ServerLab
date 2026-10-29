@@ -34,11 +34,12 @@ describe('état des unités Linux et journal plafonné (M-03)', () => {
 
   it('le PID ne change pas sans action sur l’unité', () => {
     const t = setup()
-    for (let i = 0; i < 3; i++) t.go('sudo systemctl restart ssh')
-    const avant = pidOf(t.go('systemctl status ssh --no-pager'))
+    // L'unité observée est named ; ssh, peu coûteuse, fait tourner le journal (rotation au-delà de 500 entrées)
+    for (let i = 0; i < 3; i++) t.go('sudo systemctl restart named')
+    const avant = pidOf(t.go('systemctl status named --no-pager'))
     expect(avant).toBeDefined()
-    for (let i = 0; i < 300; i++) t.go('sudo systemctl restart named')
-    expect(pidOf(t.go('systemctl status ssh --no-pager'))).toBe(avant)
+    for (let i = 0; i < 300; i++) t.go('sudo systemctl restart ssh')
+    expect(pidOf(t.go('systemctl status named --no-pager'))).toBe(avant)
   })
 
   it('effacer le journal ne réinitialise ni l’échec ni le PID', () => {
