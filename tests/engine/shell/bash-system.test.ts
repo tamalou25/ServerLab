@@ -266,8 +266,12 @@ describe('journalctl, ss, ps et valeurs dérivées', () => {
     expect(free.text).toContain('Mem:               -')
     expect(free.text).toContain('la mémoire n’est pas modélisée')
     expect(srv.run('df -h').text).toContain('Filesystem      Size  Used Avail Use% Mounted on')
-    expect(srv.run('uname -r').text).toContain('n’est pas modélisée')
-    expect(srv.real('uname -a')).toBe('Linux LSRV1 x86_64 GNU/Linux')
+    expect(srv.run('uname -r').errors).toContain('n’est pas simulée')
+    // F-06 : jamais de sortie partielle suivie d'un avertissement (double sortie contradictoire)
+    const all = srv.run('uname -a')
+    expect(all.text).not.toContain('x86_64')
+    expect(all.errors).toContain('uname')
+    expect(srv.real('uname -s -n -m -o')).toBe('Linux LSRV1 x86_64 GNU/Linux')
     const ctl = srv.run('hostnamectl').text
     expect(ctl).toContain('Operating System: Debian GNU/Linux 12 (bookworm)')
     expect(ctl).toContain('Static hostname: LSRV1')
@@ -355,5 +359,26 @@ describe('état : format .slab et commandes encore non simulées', () => {
       expect(isUnsimulated('bash', name), name).toBe(false)
     for (const name of ['netstat', 'ufw', 'iptables', 'top', 'service'])
       expect(isUnsimulated('bash', name), name).toBe(true)
+  })
+})
+
+describe('audit v2.11.1 : ss (F-07) et grep fichier (F-05)', () => {
+  it('F-07 : ss -tln sans colonne Netid, en-tête « Peer Address:Port Process »', () => {
+    const { srv } = lab()
+    const head = srv.run('sudo ss -tln').text.split('\n')[0] as string
+    expect(head.startsWith('State')).toBe(true)
+    expect(head).not.toContain('Netid')
+    expect(head.endsWith('Peer Address:Port Process')).toBe(true)
+    // Deux types de socket : la colonne Netid est présente
+    expect(srv.run('sudo ss -tuln').text.split('\n')[0]).toMatch(/^Netid State/)
+  })
+
+  it('F-05 : grep motif fichier lit le fichier', () => {
+    const { srv } = lab()
+    const r = srv.run('grep root /etc/passwd')
+    expect(r.errors).toBe('')
+    expect(r.text).toContain('root:x:0:0')
+    expect(srv.run('grep -v root /etc/passwd').text).not.toContain('root:x:0:0')
+    expect(srv.run('grep root /nexiste').errors).toBe('grep: /nexiste: No such file or directory')
   })
 })

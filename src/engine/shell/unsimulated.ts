@@ -180,3 +180,8 @@ export function unsimulatedOptionMessage(tool: string, option: string): string {
 export function unsimulatedFileMessage(tool: string, file: string): string {
   return `${tool}: ${file} : ce fichier existe réellement mais n’est pas simulé dans ServerLab.`
 }
+
+/** Construction réelle du langage bash (`$(…)`, `&`, `for`, `if`, sous-shell…) que ServerLab ne simule pas. */
+export function unsimulatedSyntaxMessage(construct: string): string {
+  return `bash: la construction « ${construct} » existe réellement mais n’est pas simulée dans ServerLab.`
+}
