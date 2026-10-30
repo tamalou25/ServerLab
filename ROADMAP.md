@@ -216,3 +216,8 @@ appliquée est visible dans la trace. Hors périmètre : VPN, proxy, IDS.
 - Hyper-V (équipements imbriqués), VLAN (refonte du L2) et client Linux (nouveau type d'équipement
   et nouveau shell) sont les plus gros changements de modèle.
 - Le bundle de l'interface tient en un seul bloc de 1,9 Mo ; les chaînes sont en français codé en dur.
+
+## Recommandation après la v2.11.1
+
+Pas de nouvelle version de fonctionnalités tant que Gary n'a pas fait les 59 labs de la liste de contrôle
+(audit v2.11.1, § 8.1) et fourni au moins la moitié des captures « à vérifier » (§ 8.2).

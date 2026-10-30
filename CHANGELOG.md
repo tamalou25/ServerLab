@@ -6,6 +6,34 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+## [2.11.1] — 2026-10-29
+
+Stabilisation complète des versions 2.7 à 2.11 (audit : [docs/audit-v2.11.1.md](docs/audit-v2.11.1.md)).
+Aucune nouvelle fonctionnalité, format `.slab` inchangé.
+
+### Corrigé
+
+- IPC : vérification de l'expéditeur, bibliothèque lue par morceaux, autosave fiable, lab 12 (#312).
+- DNS Windows : une délégation NS existante est suivie au lieu d'un NXDOMAIN autoritatif (M-01, #318).
+- Linux : au démarrage, une unité à configuration invalide échoue au lieu de rester « active » (M-02, #319) ;
+  l'état « failed » et les compteurs d'une unité survivent à la rotation du journal (M-03, #320).
+- Mode panne : un tirage dont la réparation officielle ne guérit pas tout est écarté, bilan juste (T-01, T-02, #327, #328).
+- Labs : lab 26, l'énoncé donne la priorité HSRP attendue (L-01, #329) ; lab 8, le refus RDP est rattaché à la
+  restriction (L-02, #330) ; lab 50, la passerelle est vérifiée (L-03, #331).
+- bash : `grep motif fichier` hors tube, `uname -a` sans sortie partielle, en-tête de `ss` (F-05 à F-07, #323 à #325).
+- Contrastes AA des teintes de catégories et de `fg-subtle` (X-01, #332).
+- Performance : lignes de la console et du panneau Simulation mémoïsées (P-01, P-02, #333, #334).
+- Tests : services Linux testés, seuils de couverture, fuzzing des consoles, propriétés et fichiers hostiles,
+  endurance E2E et lab mixte de 100 équipements (#316, #317, #363, #364).
+- Documentation : README et ROADMAP à jour des versions 2.9 à 2.11 (R-01, R-02, #336, #337).
+- Dépendances : `zod` 4.6.7, `electron` 44.10.0, `vite` 7.3.7, `undici` et `fast-uri` corrigés ; `npm audit` complet
+  (sans `--omit=dev`, qui masquait zod, immer et electron, embarqués mais classés en `devDependencies`) passe à
+  0 vulnérabilité, et la CI échoue désormais sur toute vulnérabilité « high » (revue A1, #370).
+- Linux : la rotation du journal est factorisée (`appendEventEntry`) ; `pushUntimed` n'évince plus les entrées d'état
+  des unités et ses identifiants négatifs restent uniques (revue A2, M-03, #371).
+- CI : la couverture et ses seuils sont réellement exécutés (`npm run test:coverage`), seuils réalignés sur le
+  mesuré moins 0,5 point (revue A3, Q-01, #372).
+
 ## [2.11.0] — 2026-10-28
 
 Interface v2 : refonte graphique du chrome de l'application (« console d'ingénierie »), sans changement du moteur,
