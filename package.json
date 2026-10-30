@@ -1,7 +1,7 @@
 {
   "name": "serverlab",
   "productName": "ServerLab",
-  "version": "2.11.0",
+  "version": "2.11.2",
   "private": true,
   "description": "Simulateur d'administration de serveurs (AD DS, DNS, DHCP, GPO, partages) pour réviser l'E6 du BTS SIO SISR",
   "author": "tamalou25",
