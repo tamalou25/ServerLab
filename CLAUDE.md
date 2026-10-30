@@ -53,6 +53,7 @@ npm run lint         # ESLint + Prettier
 npm run format       # Prettier (écrit les fichiers)
 npm run typecheck    # tsc sur main/preload, renderer, moteur, tests
 npm test             # Vitest (moteur)
+npm run test:long    # tests longs (*.long.test.ts, exclus de npm test) : p. ex. tirage des pannes, 100 graines
 npm run test:coverage # Vitest avec couverture
 npm run perf:measure # mesures de performance du moteur
 npm run fixture:slab # écrit le fichier .slab de référence de la version de schéma

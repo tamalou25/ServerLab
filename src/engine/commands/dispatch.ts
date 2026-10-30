@@ -81,6 +81,18 @@ export function dispatch(state: LabState, command: AnyCommand & { label?: string
 }
 
 /**
+ * Exécute une commande SANS construire l'entrée de journal : même décision et même état que
+ * `dispatch`, sans le calcul des patches (différence profonde de deux états, coûteuse). Pour les
+ * appelants qui n'enregistrent rien (essais de réparation du tirage des pannes, par exemple).
+ */
+export function execute(state: LabState, command: AnyCommand): EngineResult<unknown> {
+  const def = definition(command.type)
+  if (!def)
+    return { ok: false, error: { code: 'UnknownCommand', message: `Commande inconnue : ${command.type}.` } }
+  return def.run(state, ...command.args)
+}
+
+/**
  * Rejoue une suite de commandes depuis un état initial (déterministe : même suite = même état).
  * S'arrête à la première commande en échec.
  */
