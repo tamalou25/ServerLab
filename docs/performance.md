@@ -105,3 +105,31 @@ carte adressée, et `linkOnInterface` parcourait tous les câbles pour chaque po
 - `src/engine/topology/queries.ts` : `linkOnInterface` lit l'index `portIndex` sur un état figé ;
   dans un brouillon immer, les câbles changent sous la même référence et le parcours direct reste
   utilisé (test « à jour dans un brouillon immer »).
+
+## Lab mixte de 100 équipements et endurance (audit v2.11.1, phase 4)
+
+`buildLargeLab({ mixed: true })` (`tests/support/large-lab.ts`, outil de test seulement, jamais
+embarqué) produit 100 équipements hétérogènes : cœur Catalyst 9200, 7 Catalyst 2960, routeur Cisco
+1921, pare-feu FW1, serveur Linux SRV3, SRV1/SRV2 Windows, postes Windows et Linux en alternance.
+`npm run perf:measure` mesure les deux variantes et écrit `out/lab-100.slab` et `out/lab-100-mixte.slab`.
+
+| Mesure (E2E, même environnement) | Standard | Mixte   |
+| -------------------------------- | -------- | ------- |
+| Ouverture                        | 251 ms   | 217 ms  |
+| Glisser (par mouvement)          | 37,4 ms  | 34,6 ms |
+| Image p95                        | 16,8 ms  | 16,7 ms |
+| Rendus des autres nœuds / câbles | 0 / 0    | 0 / 0   |
+| Tas du renderer après ouverture  | 36 Mo    | 36 Mo   |
+| Moteur — ouverture (médiane)     | 16,7 ms  | 11,3 ms |
+| Moteur — glisser par mouvement   | 0,37 ms  | 0,18 ms |
+
+Endurance (`tests/e2e/endurance.spec.ts`) : 50 ouvertures de labs intégrés à la suite, tas mesuré
+après GC forcé (DevTools). Début 8,7 Mo, après 10 : 11,3 Mo, après 50 : 11,5 Mo (DOM stable à 1 091
+éléments, RSS du processus principal 164 → 175 Mo). Seuil : croissance du tas entre 10 et 50
+ouvertures inférieure à **1 Mo** (resserré depuis 10 Mo, issue #377), et du DOM inférieure à 200 éléments.
+
+Calibrage du seuil, trois passages consécutifs (tas après GC, 10 → 50 ouvertures) : 11,35 → 11,46 Mo,
+11,34 → 11,45 Mo, 11,33 → 11,44 Mo, soit +0,11 Mo à chaque fois. 3 × le maximum = 0,33 Mo, d'où le
+plancher de 1 Mo. Vérification : une fuite simulée (référence de 12 500 objets conservée à chaque
+ouverture, non commitée) donne +9,6 Mo, sous l'ancien seuil de 10 Mo (le test passait) mais au-dessus
+du nouveau (il échoue).
