@@ -30,6 +30,8 @@ export class ExecContext {
   root = false
   /** Console bash : sortie standard de l'étape précédente d'un tube (null = aucune). */
   stdin: string[] | null = null
+  /** Console bash : statut de sortie fixé par la dernière commande (null = déduit : 1 si elle a écrit une erreur). */
+  status: number | null = null
   private answerIndex = 0
 
   constructor(
