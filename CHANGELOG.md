@@ -6,6 +6,21 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+## [2.11.2] — 2026-10-30
+
+Correctifs issus de la revue de l'audit v2.11.1 (lot B). Aucune nouvelle fonctionnalité, format `.slab` inchangé.
+
+### Corrigé
+
+- bash : les opérateurs `;`, `&&` et `||` s'exécutent avec le statut de sortie de chaque commande (le tube lie plus
+  fort) ; `$(…)`, backticks, `&`, `for`, `if`… donnent une erreur explicite au lieu d'une sortie fausse (B1, #373).
+- bash : `grep -c` et `grep -n`, refus explicite des autres options (au lieu de « command not found »), plus de
+  ligne vide finale avec `-v`, statut de sortie 1 quand rien ne correspond (B2, #374).
+- Tests : les propriétés (annuler/rétablir, enregistrer/rouvrir, rejeu) exercent 99 types de commandes sur 239
+  (14 avant) (B3a, #375) ; le test de réparabilité des pannes retrouve sa couverture d'origine, version rapide dans
+  `npm test` et version complète dans `npm run test:long` (B3b, #376) ; seuil d'endurance mémoire resserré, de
+  10 Mo à 1 Mo (B3c, #377) ; capture de référence claire du canvas régénérée après X-01 (B3d, #378).
+
 ## [2.11.1] — 2026-10-29
 
 Stabilisation complète des versions 2.7 à 2.11 (audit : [docs/audit-v2.11.1.md](docs/audit-v2.11.1.md)).
