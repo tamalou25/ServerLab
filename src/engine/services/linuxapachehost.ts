@@ -6,7 +6,7 @@
  */
 import type { Draft } from 'immer'
 import { LAB_EPOCH_MS } from '../core/clock'
-import { EVENT_LOG_LIMIT, logEvent, type NewEvent } from '../core/eventlog'
+import { appendEventEntry, logEvent, type NewEvent } from '../core/eventlog'
 import { LINUX_USER } from '../model/factory'
 import type { EventLogEntry, HostDevice, LabState } from '../model/schema'
 import { ERROR_LOG, parseConfig, type ApacheConfig, type ServerContext } from './linuxapache'
@@ -116,11 +116,11 @@ export function renderApacheLine(host: AnyHost, e: EventLogEntry): string {
 export function pushUntimed(draft: Draft<LabState>, deviceId: string, event: NewEvent): void {
   const dev = draft.devices[deviceId]
   if (!dev || (dev.kind !== 'server' && dev.kind !== 'client')) return
-  // Identifiant négatif propre à ces lignes : le compteur d'identifiants du lab (state.seq) n'est pas consommé
-  const id = -1 - dev.host.eventLog.filter((e) => e.id < 0).length
-  dev.host.eventLog.push({ log: 'Système', ...event, id, time: draft.clock })
-  if (dev.host.eventLog.length > EVENT_LOG_LIMIT)
-    dev.host.eventLog.splice(0, dev.host.eventLog.length - EVENT_LOG_LIMIT)
+  // Identifiant négatif propre à ces lignes : le compteur d'identifiants du lab (state.seq) n'est pas consommé.
+  // Toujours sous le plus petit identifiant négatif présent : compter les entrées créerait des doublons
+  // une fois les plus anciennes évincées par la rotation.
+  const id = dev.host.eventLog.reduce((min, e) => Math.min(min, e.id), 0) - 1
+  appendEventEntry(dev.host.eventLog, { log: 'Système', ...event, id, time: draft.clock })
 }
 
 /** Ajoute une ligne à error.log (ou au journal d'erreurs d'un site) : « [date] [module:niveau] [pid P:tid T] message ». */
