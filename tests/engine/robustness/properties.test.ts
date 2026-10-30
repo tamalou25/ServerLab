@@ -5,7 +5,7 @@
  *  - sérialiser en .slab puis rouvrir redonne le même lab ;
  *  - rejouer le journal depuis l'état initial redonne le même état.
  */
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import {
   applyStatePatches,
   commandDefinitions,
@@ -24,10 +24,15 @@ import {
   type LabState
 } from '@engine/index'
 import { loadAllLabs, prng, type Rng } from './prng'
+import { COMMAND_TYPES, factoryCommand, makePool, warmupCommands } from './command-factories'
 
 const TYPES = Object.keys(commandDefinitions()).filter((t) => t !== 'batch')
-const STEPS_PER_LAB = 40
-const ATTEMPTS_PER_LAB = 400
+/** Au plus HISTORY_LIMIT (100) étapes : au-delà, l’historique d’annulation oublie les plus anciennes. */
+const STEPS_PER_LAB = 100
+const ATTEMPTS_PER_LAB = 1000
+/** Nombre minimal de types de commandes distincts acceptés sur l'ensemble des labs (99 mesurés sur 239 ; graine fixe donc déterministe, marge pour de petites évolutions). */
+const MIN_DISTINCT_TYPES = 90
+const SLAB_OPTIONS = { savedAt: '2026-10-05T12:00:00.000Z', appVersion: 'test' }
 
 /** Valeur d'argument plausible, tirée de l'état (identifiants, noms, adresses) ou du bruit. */
 function randomArg(rng: Rng, state: LabState, depth = 0): unknown {
@@ -72,6 +77,8 @@ interface Run {
   final: LabState
   history: History
   commands: AnyCommand[]
+  /** Types de commandes acceptés pendant cette exécution. */
+  accepted: Set<string>
 }
 
 /** Exécute des commandes aléatoires ; les exceptions dues à des arguments absurdes sont ignorées. */
@@ -80,8 +87,28 @@ function randomRun(initial: LabState, seed: number): Run {
   let state = initial
   let history = emptyHistory()
   const commands: AnyCommand[] = []
+  const accepted = new Set<string>()
+  // Fabriques d'arguments par type : on parcourt d'abord tout le catalogue (décalé selon la graine),
+  // puis on tire au hasard ; 20 % des tentatives reste du bruit pur (arguments absurdes)
+  let pool = makePool(state)
+  const offset = rng.int(COMMAND_TYPES.length)
+  // Préparation : rôles installés et forêt créée, pour que les commandes des rôles aient prise
+  const warmup = warmupCommands(initial)
   for (let i = 0; i < ATTEMPTS_PER_LAB && commands.length < STEPS_PER_LAB; i++) {
-    const command = randomCommand(rng, state)
+    const noise = i >= warmup.length && rng.next() < 0.2
+    const command =
+      i < warmup.length
+        ? (warmup[i] as AnyCommand)
+        : noise
+          ? randomCommand(rng, state)
+          : factoryCommand(
+              i < warmup.length + COMMAND_TYPES.length * 2
+                ? (COMMAND_TYPES[(offset + i) % COMMAND_TYPES.length] as string)
+                : rng.pick(COMMAND_TYPES),
+              rng,
+              state,
+              pool
+            )
     let result: ReturnType<typeof dispatch>
     try {
       result = dispatch(state, command)
@@ -94,11 +121,16 @@ function randomRun(initial: LabState, seed: number): Run {
     // (ni explicitement `undefined` là où le schéma impose une valeur par défaut)
     const normalised = LabStateSchema.safeParse(result.state)
     if (!normalised.success || !isDeepStrictEqualJson(normalised.data, result.state)) continue
+    // Le bruit peut écrire des valeurs hors schéma dans l'état des rôles (non validé par LabStateSchema) :
+    // on ne garde que ce que l'application pourrait réenregistrer puis rouvrir
+    if (noise && !parseSlab(serializeSlab(result.state, SLAB_OPTIONS)).ok) continue
     state = result.state
     history = recordEntry(history, result.entry)
     commands.push(command)
+    accepted.add(command.type)
+    pool = makePool(state)
   }
-  return { initial, final: state, history, commands }
+  return { initial, final: state, history, commands, accepted }
 }
 
 const labs = loadAllLabs()
@@ -113,9 +145,23 @@ function runOf(file: string, state: LabState, index: number): Run {
 }
 
 describe('propriétés sur les labs avec commandes aléatoires', () => {
+  // Les exécutions aléatoires (59 labs) sont calculées une fois, hors du délai d'un test unitaire
+  beforeAll(() => {
+    for (const [i, l] of labs.entries()) runOf(l.file, l.state, i)
+  }, 120_000)
+
   it('au moins quelques commandes aléatoires aboutissent (le test n’est pas vide)', () => {
     const total = labs.reduce((n, l, i) => n + runOf(l.file, l.state, i).commands.length, 0)
     expect(total).toBeGreaterThan(labs.length)
+  })
+
+  it('couvre un large éventail de types de commandes acceptés', () => {
+    const distinct = new Set<string>()
+    for (const [i, l] of labs.entries()) for (const t of runOf(l.file, l.state, i).accepted) distinct.add(t)
+    expect(
+      distinct.size,
+      `${distinct.size} / ${COMMAND_TYPES.length} types acceptés (minimum ${MIN_DISTINCT_TYPES})`
+    ).toBeGreaterThanOrEqual(MIN_DISTINCT_TYPES)
   })
 
   describe.each(labs.map((l, i) => [l.file, l, i] as const))('%s', (file, lab, index) => {
@@ -145,10 +191,10 @@ describe('propriétés sur les labs avec commandes aléatoires', () => {
 
     it('.slab : sérialiser puis rouvrir donne le même lab', () => {
       const run = runOf(file, lab.state, index)
-      const options = { savedAt: '2026-10-05T12:00:00.000Z', appVersion: 'test' }
+      const options = SLAB_OPTIONS
       const text = serializeSlab(run.final, options)
       const parsed = parseSlab(text)
-      expect(parsed.ok).toBe(true)
+      expect(parsed.ok, parsed.ok ? '' : parsed.message).toBe(true)
       if (!parsed.ok) return
       expect(parsed.doc.lab).toEqual(run.final)
       // Idempotence : un second aller-retour ne change plus rien
