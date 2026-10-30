@@ -5,19 +5,22 @@ chaque fonctionnalité (critères à cocher) est dans son issue GitHub, rattach�
 version. Source unique : [`.github/roadmap/roadmap.json`](.github/roadmap/roadmap.json), synchronisé
 avec GitHub par le workflow **Roadmap sync** (ne crée que ce qui manque).
 
-| Version | Thème                                                         | Milestone                                                            |
-| ------- | ------------------------------------------------------------- | -------------------------------------------------------------------- |
-| v1.1    | Consolider (prérequis d'architecture, ergonomie, performance) | [v1.1](https://github.com/tamalou25/ServerLab/milestone/1)           |
-| v2.1    | Nouveaux rôles serveur                                        | [v2.1](https://github.com/tamalou25/ServerLab/milestone/2)           |
-| v2.2    | Réseau avancé                                                 | [v2.2](https://github.com/tamalou25/ServerLab/milestone/3)           |
-| v2.3    | Cybersécurité défensive                                       | [v2.3](https://github.com/tamalou25/ServerLab/milestone/4)           |
-| v2.4    | Pédagogie et communauté                                       | [v2.4](https://github.com/tamalou25/ServerLab/milestone/5)           |
-| v2.5    | Équipements Cisco IOS                                         | [v2.5](https://github.com/tamalou25/ServerLab/milestone/6)           |
-| v2.6    | Cybersécurité défensive                                       | [v2.6](https://github.com/tamalou25/ServerLab/milestones?q=v2.6)     |
-| v2.6.1  | Cybersécurité, volet attaque                                  | [v2.6.1](https://github.com/tamalou25/ServerLab/milestones?q=v2.6.1) |
-| v2.8    | Services à état et mode panne (dépannage)                     | [v2.8](https://github.com/tamalou25/ServerLab/milestones?q=v2.8)     |
-| v2.9    | Serveurs Linux (Debian 12 / Ubuntu Server 24.04)              | [v2.9](https://github.com/tamalou25/ServerLab/milestones?q=v2.9)     |
-| v2.10   | Pare-feu pfSense                                              | [v2.10](https://github.com/tamalou25/ServerLab/milestones?q=v2.10)   |
+| Version | Thème                                                         | Milestone                                                              | Statut   |
+| ------- | ------------------------------------------------------------- | ---------------------------------------------------------------------- | -------- |
+| v1.1    | Consolider (prérequis d'architecture, ergonomie, performance) | [v1.1](https://github.com/tamalou25/ServerLab/milestone/1)             | Livrée   |
+| v2.1    | Nouveaux rôles serveur                                        | [v2.1](https://github.com/tamalou25/ServerLab/milestone/2)             | Livrée   |
+| v2.2    | Réseau avancé                                                 | [v2.2](https://github.com/tamalou25/ServerLab/milestone/3)             | Livrée   |
+| v2.3    | Cybersécurité défensive                                       | [v2.3](https://github.com/tamalou25/ServerLab/milestone/4)             | Livrée   |
+| v2.4    | Pédagogie et communauté                                       | [v2.4](https://github.com/tamalou25/ServerLab/milestone/5)             | Livrée   |
+| v2.5    | Équipements Cisco IOS                                         | [v2.5](https://github.com/tamalou25/ServerLab/milestone/6)             | Livrée   |
+| v2.6    | Cybersécurité défensive                                       | [v2.6](https://github.com/tamalou25/ServerLab/milestones?q=v2.6)       | Livrée   |
+| v2.6.1  | Cybersécurité, volet attaque                                  | [v2.6.1](https://github.com/tamalou25/ServerLab/milestones?q=v2.6.1)   | Livrée   |
+| v2.8    | Services à état et mode panne (dépannage)                     | [v2.8](https://github.com/tamalou25/ServerLab/milestones?q=v2.8)       | Livrée   |
+| v2.9    | Serveurs Linux (Debian 12 / Ubuntu Server 24.04)              | [v2.9](https://github.com/tamalou25/ServerLab/milestones?q=v2.9)       | Livrée   |
+| v2.10   | Pare-feu pfSense                                              | [v2.10](https://github.com/tamalou25/ServerLab/milestones?q=v2.10)     | Livrée   |
+| v2.11   | Interface v2 (refonte du chrome)                              | [v2.11](https://github.com/tamalou25/ServerLab/milestones?q=v2.11)     | Livrée   |
+| v2.11.1 | Corrections de l'audit v2.11.1                                | [v2.11.1](https://github.com/tamalou25/ServerLab/milestones?q=v2.11.1) | En cours |
+| v2.11.2 | Corrections de la revue de l'audit v2.11.1                    | [v2.11.2](https://github.com/tamalou25/ServerLab/milestones?q=v2.11.2) | En cours |
 
 > Le milestone v1.1 est sorti sous le numéro de version **2.0.0** (choix de Gary), suivi de la 2.0.1
 > (stabilisation). Les milestones suivants ajoutent des fonctionnalités sans casser les fichiers
@@ -208,6 +211,25 @@ fidèles, labs DMZ.
 
 Critère d'acceptation : le même ping ou la même requête web réussit ou échoue selon la règle, et la règle
 appliquée est visible dans la trace. Hors périmètre : VPN, proxy, IDS.
+
+## v2.11 — Interface v2
+
+**Livrée** (CHANGELOG [2.11.0], 2026-10-28). Refonte graphique du chrome (« console d'ingénierie ») : tokens
+sombre et clair AA, icônes et nœuds de 64 px, barre d'outils, palette à onglets, câbles et légende des
+protocoles, inspecteur à onglets, panneau Simulation inférieur, fenêtres d'équipement et menu contextuel.
+Sans changement du moteur, du format `.slab` ni des raccourcis. Détail : [docs/ui-v2.md](docs/ui-v2.md).
+
+## v2.11.1 — Corrections de l'audit
+
+**En cours.** Corrections issues de l'audit v2.11.1 (documentation, fidélité, labs, accessibilité,
+performance), une issue = une PR, sans nouvelle fonctionnalité ni changement du format `.slab`.
+
+## v2.11.2 — Corrections de la revue
+
+**En cours.** Suite de la revue de l'audit v2.11.1 : opérateurs `;`, `&&`, `||` et options de `grep` dans bash,
+propriétés testées sur davantage de commandes, test de réparabilité des pannes allégé (`npm run test:long`),
+seuil d'endurance resserré. Sans nouvelle fonctionnalité ni changement du format `.slab`. Le lot A (dépendances,
+rotation du journal, couverture en CI) est dans la 2.11.1.
 
 ## Points d'attention (audit v1.0)
 
