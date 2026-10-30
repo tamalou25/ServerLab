@@ -65,9 +65,16 @@ export function logEvent(draft: Draft<LabState>, deviceId: string, event: NewEve
   const device = draft.devices[deviceId]
   if (!device || (device.kind !== 'server' && device.kind !== 'client')) return
   draft.clock += EVENT_TICK_MS
-  device.host.eventLog.push({ log: 'Système', ...event, id: nextSeq(draft), time: draft.clock })
-  // Rotation : on évince d'abord les plus anciennes entrées ordinaires, celles d'état d'unité ensuite
-  const log = device.host.eventLog
+  appendEventEntry(device.host.eventLog, { log: 'Système', ...event, id: nextSeq(draft), time: draft.clock })
+}
+
+/**
+ * Ajoute une entrée à un journal et applique le plafond : on évince d'abord les plus anciennes entrées
+ * ordinaires, celles d'état d'unité ensuite. Point d'entrée UNIQUE de la rotation (logEvent et pushUntimed) :
+ * un splice(0, …) direct évincerait les entrées d'état dont dépend l'état des unités Linux (audit v2.11.1, M-03).
+ */
+export function appendEventEntry(log: EventLogEntry[], entry: EventLogEntry): void {
+  log.push(entry)
   while (log.length > EVENT_LOG_LIMIT) {
     const i = unitStateAnchors(log).indexOf(false)
     log.splice(i < 0 ? 0 : i, 1)
