@@ -13,7 +13,7 @@ constat non reproduit est marqué « à confirmer ». Détails bruts des audits 
 - Socle solide : moteur pur respecté (0 import interdit, 0 `Math.random`/`Date.now`), 8 279 tests
   verts et stables sur 5 passages, 100 E2E (dont captures) stables sur 3 passages, 93,1 % des lignes
   du moteur couvertes (mode panne 98,8 %, services Linux 94,4 %, pare-feu 95,2 %), 59 labs résolus
-  à 100 %, 28 fixtures `.slab` qui migrent, aucune vulnérabilité en production, aucune fuite trouvée.
+  à 100 %, 28 fixtures `.slab` qui migrent, aucune fuite trouvée. (La phrase d'origine « aucune vulnérabilité en production » était fausse : `npm audit --omit=dev` ignorait zod, immer et electron, embarqués mais classés en `devDependencies`. L'audit complet donnait 4 « high » et 1 modérée, corrigées par la revue, A1.)
 - Ce qui retire des points : des incohérences du modèle reproduites (délégation DNS ignorée M-01,
   services Linux « active » malgré une configuration cassée M-02, état « failed » perdu après rotation
   du journal M-03) ; trois critères de lab faux (L-01 à L-03) ; un tirage du mode panne au bilan faux
@@ -28,25 +28,25 @@ constat non reproduit est marqué « à confirmer ». Détails bruts des audits 
 Environnement : conteneur Linux, Node 22.22, Electron 44 sous xvfb. Durées indicatives (machine
 partagée avec les audits).
 
-| Mesure                                             | Avant (v2.11.0, `dec9461`)                                                                                                                      | Après (v2.11.1)                                                                                       |
-| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `npm run lint`                                     | ⚠️ Prettier OK ; ESLint à court de mémoire en local (exit 134, Q-03) ; ✅ en CI                                                                 | ✅ Prettier OK ; ESLint vert en CI sur toutes les PR (Q-03 local inchangé)                            |
-| `npm run typecheck` (4 projets)                    | ✅ 0 erreur                                                                                                                                     | ✅ 0 erreur                                                                                           |
-| `npm test` (Vitest)                                | ✅ 8 279 réussis, 4 ignorés, 166 fichiers (149 à 187 s)                                                                                         | ✅ **8 522** réussis, 6 ignorés (153 à 204 s) ; 1 délai dépassé corrigé dans #365                     |
-| Stabilité Vitest (5 passages)                      | 5 × 8 279, **0 test instable**                                                                                                                  | 5 passages identiques, 0 test instable (hors délai #365, corrigé)                                     |
-| `npm run test:e2e` (3 passages)                    | ✅ 3 × 100/100, 0 échec `toHaveScreenshot` (≈ 250 s)                                                                                            | ✅ 3 × **104/104**, 0 échec `toHaveScreenshot`                                                        |
-| `npm run build`                                    | ✅ 20 s ; renderer 3,23 Mo, JS en un seul fichier de 2,84 Mo (P-07)                                                                             | ✅ 24 s ; JS 2,84 Mo (inchangé, P-07 reporté)                                                         |
-| Couverture moteur — lignes / branches / fonctions  | **93,1 %** / 78,0 % / 94,5 % (instructions 89,9 %)                                                                                              | **93,5 %** / 79,0 % / 94,6 % (instructions 90,5 %) ; seuils en CI (#366)                              |
-| Couverture — fichiers les plus faibles (lignes)    | `adds/site-cmdlets.ts` 57 % · `shell/ps/expression.ts` 59 % · `shell/tools/netsh.ts` 73 % · `topology/queries.ts` 73 % · `rras/cmdlets.ts` 74 % | non remesuré                                                                                          |
-| Couverture — zones 2.7 à 2.11                      | `troubleshoot/` 98,8 % · `services/` 94,9 % · `services/linux*` 94,4 % · `services/firewall.ts` 95,2 % · `net/pf*` 93,9 %                       | non remesuré (services Linux : tests dédiés, #353)                                                    |
-| `perf:measure` (100 équipements)                   | ouverture 14,5 ms · glisser 0,30 ms · IP d'un poste 3,4 ms                                                                                      | 16,1 ms · 0,35 ms · 3,95 ms (machine partagée, à confirmer à vide)                                    |
-| Lab mixte 100 équipements (Linux, pare-feu, Cisco) | non mesuré (outil à écrire en phase 4)                                                                                                          | E2E : ouverture 217 ms, glisser 34,6 ms, 0 rendu d'autre nœud ; moteur 11,9 ms (#368)                 |
-| Labs / solution officielle à 100 %                 | 59 / 59                                                                                                                                         | 59 / 59                                                                                               |
-| Fixtures `.slab`                                   | 28 (v1 à v28), toutes migrent                                                                                                                   | 28 / 28 migrent ; fichiers hostiles rejetés (#367)                                                    |
-| Pannes du catalogue                                | 55 réparables sur tous les labs de base (60 graines chacune)                                                                                    | tirages composés invalides écartés (#361)                                                             |
-| Lignes « à vérifier » (`docs/fidelite.md`)         | 34                                                                                                                                              | —                                                                                                     |
-| `npm audit` production / total                     | 0 / 5 (4 hautes, 1 modérée, dev) ; 22 paquets obsolètes                                                                                         | 0 / 5 (inchangé, issue #348)                                                                          |
-| Branches distantes / tags                          | 178 / 18 (jusqu'à `v2.9.0` ; `v2.10.0`, `v2.11.0` absents)                                                                                      | tags `v2.10.0` (`ae83d78`) et `v2.11.0` (`dec9461`) **déjà présents** (la colonne Avant était fausse) |
+| Mesure                                             | Avant (v2.11.0, `dec9461`)                                                                                                                      | Après (v2.11.1)                                                                                                                                           |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run lint`                                     | ⚠️ Prettier OK ; ESLint à court de mémoire en local (exit 134, Q-03) ; ✅ en CI                                                                 | ✅ Prettier OK ; ESLint OK sur `src tests` (45 s, sans OOM) ; ✅ en CI                                                                                    |
+| `npm run typecheck` (4 projets)                    | ✅ 0 erreur                                                                                                                                     | ✅ 0 erreur                                                                                                                                               |
+| `npm test` (Vitest)                                | ✅ 8 279 réussis, 4 ignorés, 166 fichiers (149 à 187 s)                                                                                         | ✅ **8 568** réussis, 6 ignorés (141 à 185 s), lot A et B inclus                                                                                          |
+| Stabilité Vitest (5 passages)                      | 5 × 8 279, **0 test instable**                                                                                                                  | 5 passages, 0 test en échec                                                                                                                               |
+| `npm run test:e2e` (3 passages)                    | ✅ 3 × 100/100, 0 échec `toHaveScreenshot` (≈ 250 s)                                                                                            | ✅ 3 × **104/104**, 0 échec `toHaveScreenshot` (234 à 252 s, build compris)                                                                               |
+| `npm run build`                                    | ✅ 20 s ; renderer 3,23 Mo, JS en un seul fichier de 2,84 Mo (P-07)                                                                             | ✅ 18 s ; JS 2,85 Mo (inchangé, P-07 reporté)                                                                                                             |
+| Couverture moteur — lignes / branches / fonctions  | **93,1 %** / 78,0 % / 94,5 % (instructions 89,9 %)                                                                                              | **93,7 %** / 79,5 % / 94,7 % (instructions 90,8 %) ; seuils 92,6 / 77,4 / 94,0 / 89,4 **réellement exécutés en CI** (A3)                                  |
+| Couverture — fichiers les plus faibles (lignes)    | `adds/site-cmdlets.ts` 57 % · `shell/ps/expression.ts` 59 % · `shell/tools/netsh.ts` 73 % · `topology/queries.ts` 73 % · `rras/cmdlets.ts` 74 % | non remesuré                                                                                                                                              |
+| Couverture — zones 2.7 à 2.11                      | `troubleshoot/` 98,8 % · `services/` 94,9 % · `services/linux*` 94,4 % · `services/firewall.ts` 95,2 % · `net/pf*` 93,9 %                       | non remesuré (services Linux : tests dédiés, #353)                                                                                                        |
+| `perf:measure` (100 équipements)                   | ouverture 14,5 ms · glisser 0,30 ms · IP d'un poste 3,4 ms                                                                                      | médianes de 3 passages : ouverture 10,0 ms · glisser 0,21 ms · IP 2,2 ms (machine libre ; l'Avant, mesuré sur une machine partagée, n'est pas comparable) |
+| Lab mixte 100 équipements (Linux, pare-feu, Cisco) | non mesuré (outil à écrire en phase 4)                                                                                                          | E2E : ouverture 217 ms, glisser 34,6 ms, 0 rendu d'autre nœud ; moteur 11,9 ms (#368)                                                                     |
+| Labs / solution officielle à 100 %                 | 59 / 59                                                                                                                                         | 59 / 59                                                                                                                                                   |
+| Fixtures `.slab`                                   | 28 (v1 à v28), toutes migrent                                                                                                                   | 28 / 28 migrent ; fichiers hostiles rejetés (#367)                                                                                                        |
+| Pannes du catalogue                                | 55 réparables sur tous les labs de base (60 graines chacune)                                                                                    | tirages composés invalides écartés (#361)                                                                                                                 |
+| Lignes « à vérifier » (`docs/fidelite.md`)         | 34                                                                                                                                              | —                                                                                                                                                         |
+| `npm audit` production / total                     | 0 / 5 (4 hautes, 1 modérée, dev) ; 22 paquets obsolètes                                                                                         | **0 / 0** (audit complet, étape `npm audit --audit-level=high` ajoutée à la CI, A1)                                                                       |
+| Branches distantes / tags                          | 178 / 18 (jusqu'à `v2.9.0` ; `v2.10.0`, `v2.11.0` absents)                                                                                      | tags `v2.10.0` (`ae83d78`) et `v2.11.0` (`dec9461`) **déjà présents** (la colonne Avant était fausse)                                                     |
 
 ## 3. Constats
 
@@ -472,7 +472,7 @@ pare-feu web, consoles cmd, PowerShell, bash et IOS. Noter écran, thème et ce 
 
 ## 9. Bilan de clôture
 
-### Corrigé (PR brouillon, CI verte)
+### Corrigé (PR brouillon)
 
 | Constat(s)                                       | PR   | Constat(s)                       | PR   |
 | ------------------------------------------------ | ---- | -------------------------------- | ---- |
@@ -482,12 +482,28 @@ pare-feu web, consoles cmd, PowerShell, bash et IOS. Noter écran, thème et ce 
 | L-02 lab 8                                       | #356 | L-03 lab 50                      | #357 |
 | F-05, F-06, F-07 bash                            | #358 | X-01 contrastes AA               | #354 |
 | P-01 console                                     | #352 | P-02 panneau Simulation          | #359 |
-| Q-01 seuils de couverture                        | #366 | Q-02 tests des services Linux    | #353 |
-| R-01 README                                      | #350 | R-02 ROADMAP                     | #351 |
+| Q-02 tests des services Linux                    | #353 | R-01 README                      | #350 |
+| R-02 ROADMAP                                     | #351 | Rapport d'audit                  | #313 |
 | Phase 4 : fuzzing, propriétés, fichiers hostiles | #367 | Phase 4 : endurance, lab mixte   | #368 |
-| Version 2.11.1, CHANGELOG (à merger en dernier)  | #369 | Rapport d'audit                  | #313 |
 
-Toutes ces branches fusionnent ensemble sans conflit (vérifié sur une branche d'intégration locale).
+### Revue de l'audit : corrections (lot A, version 2.11.1, et lot B, version 2.11.2)
+
+La revue des branches a trouvé 5 problèmes, dont 2 correctifs annoncés mais incomplets.
+
+| Revue    | Constat                                                                                                                                         | PR               |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| A1       | 4 vulnérabilités « high » (zod, electron, undici, vite) + fast-uri ; `--omit=dev` masquait zod, immer, electron                                 | #385             |
+| A2       | M-03 incomplet : `pushUntimed` évinçait les entrées d'état ; ses identifiants négatifs créaient des **doublons** (confirmé)                     | #380             |
+| A3       | Q-01 **n'était pas corrigé** : la CI n'exécutait pas la couverture, et les seuils de #366 (posés au mesuré arrondi) auraient fait échouer la CI | #386 (avec #366) |
+| B1       | bash : `;`, `&&`, `\|\|`                                                                                                                        | #379             |
+| B2       | `grep -c`, `-n`, options non simulées refusées, statut de sortie                                                                                | #382             |
+| B3a      | propriétés : 14 → 99 types de commandes exercés sur 239                                                                                         | #381             |
+| B3b      | test de réparabilité allégé (28 s dans `npm test`), version complète dans `npm run test:long` (124 s)                                           | #387             |
+| B3c      | seuil d'endurance 10 Mo → 1 Mo (mesuré +0,11 Mo sur 3 passages)                                                                                 | #383             |
+| B3d      | `canvas-clair.png` périmée (200 px d'écart masqués par la tolérance), régénérée                                                                 | #384             |
+| Versions | 2.11.1 (CHANGELOG lots audit + A) / 2.11.2 (lot B) / ROADMAP                                                                                    | #369, #388, #389 |
+
+Toutes les branches de la mission fusionnent ensemble sans conflit (vérifié sur une branche d'intégration locale).
 
 ### Non corrigé
 
@@ -496,42 +512,52 @@ Toutes ces branches fusionnent ensemble sans conflit (vérifié sur une branche 
 | F-03 `ipconfig`, F-04 `whoami /groups` | aucune capture source : notés « à vérifier » (#349), captures de Gary attendues       |
 | F-08 erreurs `ping` IOS                | non reproduit (branches jamais atteintes depuis la console), « à confirmer » sur #326 |
 | P-03 panneau Audit                     | mesuré négligeable (0,27 ms sur 100 équipements), « à confirmer » sur #335            |
-| A-01, S-01                             | reportés avec l'accord de Gary (#314, #315)                                           |
+| A-01, S-01                             | reportés avec l'accord de Gary (#314, #315), à reconfirmer par lui                    |
 | 🟡 et ⚪                               | regroupés dans #338 à #348, non traités dans cette mission                            |
+| Packaging                              | zod, immer et electron sont embarqués mais en `devDependencies` : décision de Gary    |
 
 ### Nouveaux constats de la mission
 
 - 🟡 `docs/ui-v2.md` nomme l'onglet « Résumé » de l'inspecteur, l'application affiche « Propriétés ».
+- 🟡 En tolérance 0, `canvas-sombre` (17 px) et `accueil-sombre` (2 337 px) diffèrent encore des références : bruit
+  de rendu ou effet de X-01 à confirmer (les références claires étaient, elles, périmées : B3d).
 - ⚪ Les commandes nommées ne valident pas le type de leurs arguments (état hors schéma possible) ; aucun chemin
-  d'entrée non typé (le `.slab` ne contient pas de journal de commandes).
+  d'entrée non typé (le `.slab` ne contient pas de journal de commandes). `wsus.setTargeting` et
+  `wsus.setClassification` acceptent une valeur hors énumération (état non réouvrable en `.slab`).
 - ⚪ #365 conserve toutes les entrées « Started » des unités Linux (compteur de démarrages) : un très grand nombre
   de redémarrages peut évincer les autres évènements du journal (plafond de 500 respecté).
-- ⚪ Le test du tirage de pannes de #361 dure ≈ 190 s : à surveiller dans la durée de la CI.
+- ⚪ Le test du tirage de pannes complet dure 124 s (`npm run test:long`, hors CI par défaut).
+- ⚪ Les seuils de couverture ont de la marge (mesuré 93,7 / 79,5 / 94,7 / 90,8 contre 92,6 / 77,4 / 94,0 / 89,4) :
+  à resserrer une fois les PR mergées.
 
 ### Écarts à la méthode
 
-- Les corrections du cœur (DNS, Linux, mode panne) ont été écrites par des sous-agents `sonnet` puis relues par la
-  session principale, au lieu d'être écrites par elle.
+- Les corrections du cœur (DNS, Linux, mode panne, rotation du journal) ont été écrites par `sonnet` (agents puis
+  session principale en `sonnet` pour la revue), jamais par `opus` comme prévu.
 - `lab/mode-enseignant` : `main` y a été **fusionnée** (sans réécriture d'historique) au lieu d'un rebase ; le
   force-push a été refusé. Documentation à jour, typecheck et tests verts, branche non mergée.
-- Deux PR couvrent plusieurs issues de même cause (#358 : F-05 à F-07 ; #361 : T-01 et T-02).
+- Plusieurs PR couvrent plusieurs issues de même cause (#358 : F-05 à F-07 ; #361 : T-01 et T-02).
+- La colonne Avant de la première version de ce rapport était fausse sur deux points (tags `v2.10.0` et `v2.11.0`
+  déjà présents ; « aucune vulnérabilité en production »), et Q-01 était déclaré corrigé à tort.
 - Branche en double à supprimer avec l'accord de Gary : `fix/m01-dns-delegation` (identique à
   `fix/318-dns-delegation`).
 
 ### Ordre de merge proposé
 
-#312, #313, puis #349 à #368 dans n'importe quel ordre, enfin #369. Ensuite Gary pousse le tag :
+1. **Lot A (version 2.11.1)** : #312, #313, #349 à #366 (hors dépendances ci-dessous), #370 à #372 via #380, #385,
+   #386, puis #369. Dépendances : #380 après #365 ; #386 après #366 ; #369 en dernier du lot.
+2. Tag : `git checkout main && git pull && git tag -a v2.11.1 -m "ServerLab 2.11.1" && git push origin v2.11.1`.
+3. **Lot B (version 2.11.2)** : #379 puis #382 (après #358) ; #381 (après #367) ; #387 (après #361) ; #383 (après
+   #368) ; #384 (après #354) ; #389 (après #351) ; enfin #388 (après #369).
+4. Tag : `git tag -a v2.11.2 -m "ServerLab 2.11.2" && git push origin v2.11.2`.
 
-```bash
-git checkout main && git pull
-git tag -a v2.11.1 -m "ServerLab 2.11.1" && git push origin v2.11.1
-```
+Chaque PR « Dépend de » une autre l'indique dans son corps : merger la branche de base d'abord.
 
 ### Hygiène du dépôt (en attente de l'accord de Gary)
 
 - Branches : 86 fusionnées dans `main` et 40 abandonnées (plus de 14 jours) proposées à la suppression ; 45 actives
   ; exclues : `lab/mode-enseignant` et 7 branches `release/*`. Les branches de cette mission s'ajoutent aux
   fusionnées après merge. Réglage proposé : suppression automatique des branches après merge.
-- Tags : `v2.10.0` et `v2.11.0` existent ; seul `v2.11.1` reste à pousser.
-- Issues : aucune issue ouverte n'est déjà résolue par une PR mergée ; les issues #316 à #337 se fermeront au merge
-  de leur PR (`Closes`).
+- Tags : `v2.10.0` et `v2.11.0` existent ; restent `v2.11.1` puis `v2.11.2`.
+- Issues : aucune issue ouverte n'est déjà résolue par une PR mergée ; les issues se fermeront au merge de leur PR
+  (`Closes`).
