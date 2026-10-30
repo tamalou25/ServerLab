@@ -26,6 +26,13 @@ Aucune nouvelle fonctionnalité, format `.slab` inchangé.
 - Tests : services Linux testés, seuils de couverture, fuzzing des consoles, propriétés et fichiers hostiles,
   endurance E2E et lab mixte de 100 équipements (#316, #317, #363, #364).
 - Documentation : README et ROADMAP à jour des versions 2.9 à 2.11 (R-01, R-02, #336, #337).
+- Dépendances : `zod` 4.6.7, `electron` 44.10.0, `vite` 7.3.7, `undici` et `fast-uri` corrigés ; `npm audit` complet
+  (sans `--omit=dev`, qui masquait zod, immer et electron, embarqués mais classés en `devDependencies`) passe à
+  0 vulnérabilité, et la CI échoue désormais sur toute vulnérabilité « high » (revue A1, #370).
+- Linux : la rotation du journal est factorisée (`appendEventEntry`) ; `pushUntimed` n'évince plus les entrées d'état
+  des unités et ses identifiants négatifs restent uniques (revue A2, M-03, #371).
+- CI : la couverture et ses seuils sont réellement exécutés (`npm run test:coverage`), seuils réalignés sur le
+  mesuré moins 0,5 point (revue A3, Q-01, #372).
 
 ## [2.11.0] — 2026-10-28
 
