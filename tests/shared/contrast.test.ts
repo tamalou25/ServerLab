@@ -36,11 +36,17 @@ const PAIRS: [string, string][] = [
   ['fg-subtle', 'panel'],
   ['fg-subtle', 'surface'],
   ['fg-subtle', 'surface-2'],
+  ['fg-subtle', 'surface-3'],
   ['fg-muted', 'panel'],
   ['fg-muted', 'surface-2'],
   ['on-accent', 'accent'],
   ['on-accent', 'accent-hover'],
-  ['on-danger', 'danger']
+  ['on-danger', 'danger'],
+  // Libellé posé sur la teinte de chaque catégorie d'équipement (audit X-01)
+  ...['server', 'client', 'switch', 'router', 'cloud', 'firewall'].map((k): [string, string] => [
+    'on-kind',
+    `kind-${k}`
+  ])
 ]
 
 describe.each([
