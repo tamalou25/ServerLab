@@ -1,6 +1,6 @@
 /**
  * Console bash simulée des postes Linux (Ubuntu) : découpage façon shell (guillemets simples et
- * doubles, échappement), préfixe sudo (droits root), tube vers grep, commandes intégrées (cd,
+ * doubles, échappement), listes ; && ||, préfixe sudo (droits root), tube vers grep, commandes intégrées (cd,
  * pwd, echo, clear, exit, help) puis commandes du système de base et des modules de rôles.
  * Les outils affichent leurs messages d'origine, non traduits (locale C).
  */
@@ -19,7 +19,12 @@ import {
   resolvePath
 } from './linuxfs'
 import type { ToolDef } from '../tools/types'
-import { isUnsimulated, unsimulatedMessage, unsimulatedSyntaxMessage } from '../unsimulated'
+import {
+  isUnsimulated,
+  unsimulatedMessage,
+  unsimulatedOptionMessage,
+  unsimulatedSyntaxMessage
+} from '../unsimulated'
 
 /** Découpe une commande façon bash ; null si un guillemet n'est pas refermé. */
 export function splitBashArgs(line: string): string[] | null {
@@ -271,8 +276,8 @@ function runCommand(ctx: ExecContext, args: string[], tools: ToolDef[]): void {
       return
     case 'grep':
       // grep motif fichier (hors tube) ; sans fichier, le comportement historique est conservé
-      if (grepFiles(ctx, rest)) return
-      break
+      grepFiles(ctx, rest)
+      return
     default:
       break
   }
@@ -290,45 +295,109 @@ function runCommand(ctx: ExecContext, args: string[], tools: ToolDef[]): void {
   tool.run(ctx, rest)
 }
 
-/** grep [-i] [-v] motif fichier… : renvoie false si la forme n'est pas prise en charge. */
-function grepFiles(ctx: ExecContext, args: string[]): boolean {
-  const opts = args.filter((a) => a.startsWith('-'))
-  const operands = args.filter((a) => !a.startsWith('-'))
-  if (opts.some((o) => !/^-[iv]+$/.test(o)) || operands.length < 2) return false
-  const [pattern = '', ...paths] = operands
-  const ignore = opts.some((o) => o.includes('i'))
-  const invert = opts.some((o) => o.includes('v'))
-  const needle = ignore ? pattern.toLowerCase() : pattern
-  for (const path of paths) {
-    const text = readLocal(ctx, 'grep', path)
-    if (text === null) continue
-    for (const line of text.split('\n')) {
-      const hay = ignore ? line.toLowerCase() : line
-      if (hay.includes(needle) !== invert) ctx.write(paths.length > 1 ? `${path}:${line}` : line)
-    }
-  }
-  return true
+interface GrepOptions {
+  ignore: boolean
+  invert: boolean
+  count: boolean
+  number: boolean
+  /** Premier opérande : le motif ; les suivants : les fichiers. */
+  operands: string[]
 }
 
-/** Filtre de tube : grep [-i] [-v] motif. */
-function applyGrep(ctx: ExecContext, from: number, args: string[]): void {
-  const flags = args.filter((a) => a.startsWith('-')).join('')
-  const pattern = args.find((a) => !a.startsWith('-'))
-  if (pattern === undefined) {
-    ctx.output.splice(from)
+/**
+ * Options de grep(1) simulées : -i, -v, -c, -n (combinables : -ci, -nv…). Toute autre option réelle
+ * est refusée explicitement, jamais ignorée ni traitée comme un motif.
+ */
+function parseGrepOptions(args: string[]): GrepOptions {
+  const o: GrepOptions = { ignore: false, invert: false, count: false, number: false, operands: [] }
+  for (const a of args) {
+    if (a === '--' || !a.startsWith('-') || a === '-') {
+      o.operands.push(a)
+      continue
+    }
+    if (a.startsWith('--')) throw new CommandFailure(unsimulatedOptionMessage('grep', a), 'NotSupported')
+    for (const c of a.slice(1)) {
+      if (c === 'i') o.ignore = true
+      else if (c === 'v') o.invert = true
+      else if (c === 'c') o.count = true
+      else if (c === 'n') o.number = true
+      else throw new CommandFailure(unsimulatedOptionMessage('grep', `-${c}`), 'NotSupported')
+    }
+  }
+  return o
+}
+
+/** Applique grep à des lignes : lignes sélectionnées avec leur numéro (base 1). */
+function grepSelect(o: GrepOptions, lines: string[]): { n: number; line: string }[] {
+  const needle = o.ignore ? (o.operands[0] ?? '').toLowerCase() : (o.operands[0] ?? '')
+  const kept: { n: number; line: string }[] = []
+  for (const [k, line] of lines.entries()) {
+    const hay = o.ignore ? line.toLowerCase() : line
+    if (hay.includes(needle) !== o.invert) kept.push({ n: k + 1, line })
+  }
+  return kept
+}
+
+/** Texte d'une sortie grep : compte (-c) ou lignes, préfixées du fichier et du numéro (-n). */
+function grepFormat(o: GrepOptions, kept: { n: number; line: string }[], prefix: string): string[] {
+  if (o.count) return [`${prefix}${kept.length}`]
+  return kept.map((k) => `${prefix}${o.number ? `${k.n}:` : ''}${k.line}`)
+}
+
+/** grep [-i] [-v] [-c] [-n] motif fichier… (hors tube) ; statut 0/1 (aucune ligne)/2 (erreur). */
+function grepFiles(ctx: ExecContext, args: string[]): void {
+  const o = parseGrepOptions(args)
+  if (o.operands.length === 0) {
+    ctx.status = 2
     ctx.write('Usage: grep [OPTION]... PATTERNS [FILE]...', 'error')
     return
   }
-  const ignore = flags.includes('i')
-  const invert = flags.includes('v')
-  const needle = ignore ? pattern.toLowerCase() : pattern
+  const paths = o.operands.slice(1)
+  if (paths.length === 0) {
+    // Sans fichier le vrai grep lit l'entrée standard : aucune entrée dans cette console
+    ctx.status = 2
+    ctx.write(
+      'grep: lecture de l’entrée standard non simulée : indiquez un fichier ou utilisez un tube',
+      'error'
+    )
+    return
+  }
+  let matched = false
+  let failed = false
+  for (const path of paths) {
+    const text = readLocal(ctx, 'grep', path)
+    if (text === null) {
+      failed = true
+      continue
+    }
+    const lines = text.split('\n')
+    // Un fichier terminé par un saut de ligne n'a pas de dernière ligne vide
+    if (lines[lines.length - 1] === '') lines.pop()
+    const kept = grepSelect(o, lines)
+    if (kept.length > 0) matched = true
+    ctx.writeLines(grepFormat(o, kept, paths.length > 1 ? `${path}:` : ''))
+  }
+  ctx.status = failed ? 2 : matched ? 0 : 1
+}
+
+/** Filtre de tube : grep [-i] [-v] [-c] [-n] motif ; statut 1 si aucune ligne sélectionnée. */
+function applyGrep(ctx: ExecContext, from: number, args: string[]): void {
+  const o = parseGrepOptions(args)
+  if (o.operands.length === 0) {
+    ctx.output.splice(from)
+    ctx.status = 2
+    ctx.write('Usage: grep [OPTION]... PATTERNS [FILE]...', 'error')
+    return
+  }
   // Seule la sortie standard passe dans le tube : les erreurs restent affichées
-  const kept = ctx.output.slice(from).filter((l) => {
-    if (l.kind !== 'out') return true
-    const hay = ignore ? l.text.toLowerCase() : l.text
-    return hay.includes(needle) !== invert
-  })
-  ctx.output.splice(from, ctx.output.length - from, ...kept)
+  const tail = ctx.output.splice(from)
+  const kept = grepSelect(
+    o,
+    tail.filter((l) => l.kind === 'out').map((l) => l.text)
+  )
+  ctx.status = kept.length > 0 ? 0 : 1
+  ctx.output.push(...tail.filter((l) => l.kind !== 'out'))
+  ctx.writeLines(grepFormat(o, kept, ''))
 }
 
 interface Redirect {
