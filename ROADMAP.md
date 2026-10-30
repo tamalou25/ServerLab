@@ -20,6 +20,7 @@ avec GitHub par le workflow **Roadmap sync** (ne crée que ce qui manque).
 | v2.10   | Pare-feu pfSense                                              | [v2.10](https://github.com/tamalou25/ServerLab/milestones?q=v2.10)     | Livrée   |
 | v2.11   | Interface v2 (refonte du chrome)                              | [v2.11](https://github.com/tamalou25/ServerLab/milestones?q=v2.11)     | Livrée   |
 | v2.11.1 | Corrections de l'audit v2.11.1                                | [v2.11.1](https://github.com/tamalou25/ServerLab/milestones?q=v2.11.1) | En cours |
+| v2.11.2 | Corrections de la revue de l'audit v2.11.1                    | [v2.11.2](https://github.com/tamalou25/ServerLab/milestones?q=v2.11.2) | En cours |
 
 > Le milestone v1.1 est sorti sous le numéro de version **2.0.0** (choix de Gary), suivi de la 2.0.1
 > (stabilisation). Les milestones suivants ajoutent des fonctionnalités sans casser les fichiers
@@ -222,6 +223,13 @@ Sans changement du moteur, du format `.slab` ni des raccourcis. Détail : [docs/
 
 **En cours.** Corrections issues de l'audit v2.11.1 (documentation, fidélité, labs, accessibilité,
 performance), une issue = une PR, sans nouvelle fonctionnalité ni changement du format `.slab`.
+
+## v2.11.2 — Corrections de la revue
+
+**En cours.** Suite de la revue de l'audit v2.11.1 : opérateurs `;`, `&&`, `||` et options de `grep` dans bash,
+propriétés testées sur davantage de commandes, test de réparabilité des pannes allégé (`npm run test:long`),
+seuil d'endurance resserré. Sans nouvelle fonctionnalité ni changement du format `.slab`. Le lot A (dépendances,
+rotation du journal, couverture en CI) est dans la 2.11.1.
 
 ## Points d'attention (audit v1.0)
 
