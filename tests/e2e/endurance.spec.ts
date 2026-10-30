@@ -9,12 +9,15 @@ import { clickMenu, launchApp } from './helpers'
  * chaque mesure par le protocole DevTools (`HeapProfiler.collectGarbage`, deux passes).
  *
  * Seuil : la croissance du tas après GC entre la mesure « 10 » (caches chauds) et « 50 » ne doit pas
- * dépasser 10 Mo (0,25 Mo par ouverture au plus ; mesuré : +0,2 Mo). Un lab intégré pèse quelques centaines de Ko ;
- * une fuite de nœuds, d'écouteurs ou d'états conservés ferait dépasser ce seuil largement. La marge
- * absorbe la variabilité de V8 et des runners. Le nombre d'éléments DOM est aussi borné.
+ * dépasser 1 Mo. Trois passages consécutifs ont mesuré +0,11 Mo, +0,11 Mo et +0,11 Mo (tas 11,35 → 11,46 ;
+ * 11,34 → 11,45 ; 11,33 → 11,44 Mo), soit une variance quasi nulle ; 3 × le maximum donne 0,33 Mo, on
+ * retient le plancher de 1 Mo pour absorber la variabilité de V8 et des runners. L'ancien seuil de 10 Mo
+ * était 50 fois la mesure : une fuite de ~0,24 Mo par ouverture (+9,6 Mo mesurés avec une référence de
+ * 12 500 objets conservée à chaque ouverture, simulation non commitée) passait encore, elle échoue
+ * maintenant. Le nombre d'éléments DOM est aussi borné.
  */
 const OPENINGS = 50
-const MAX_HEAP_GROWTH_MB = 10
+const MAX_HEAP_GROWTH_MB = 1
 const MAX_DOM_GROWTH = 200
 
 const labIds = readdirSync(resolve(__dirname, '../../labs'))
@@ -47,7 +50,7 @@ test(`endurance : ${OPENINGS} ouvertures de labs sans fuite mémoire`, async () 
     }
     for (const [k, v] of Object.entries(samples))
       console.log(
-        `[endurance] ${k} : tas ${v.heapMb.toFixed(1)} Mo · DOM ${v.dom} · RSS main ${v.rssMb.toFixed(0)} Mo`
+        `[endurance] ${k} : tas ${v.heapMb.toFixed(2)} Mo · DOM ${v.dom} · RSS main ${v.rssMb.toFixed(0)} Mo`
       )
     const b = samples['après 10']
     const c = samples[`après ${OPENINGS}`]

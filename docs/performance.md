@@ -126,4 +126,10 @@ embarqué) produit 100 équipements hétérogènes : cœur Catalyst 9200, 7 Cata
 Endurance (`tests/e2e/endurance.spec.ts`) : 50 ouvertures de labs intégrés à la suite, tas mesuré
 après GC forcé (DevTools). Début 8,7 Mo, après 10 : 11,3 Mo, après 50 : 11,5 Mo (DOM stable à 1 091
 éléments, RSS du processus principal 164 → 175 Mo). Seuil : croissance du tas entre 10 et 50
-ouvertures inférieure à 10 Mo, et du DOM inférieure à 200 éléments.
+ouvertures inférieure à **1 Mo** (resserré depuis 10 Mo, issue #377), et du DOM inférieure à 200 éléments.
+
+Calibrage du seuil, trois passages consécutifs (tas après GC, 10 → 50 ouvertures) : 11,35 → 11,46 Mo,
+11,34 → 11,45 Mo, 11,33 → 11,44 Mo, soit +0,11 Mo à chaque fois. 3 × le maximum = 0,33 Mo, d'où le
+plancher de 1 Mo. Vérification : une fuite simulée (référence de 12 500 objets conservée à chaque
+ouverture, non commitée) donne +9,6 Mo, sous l'ancien seuil de 10 Mo (le test passait) mais au-dessus
+du nouveau (il échoue).
