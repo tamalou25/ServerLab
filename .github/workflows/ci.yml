@@ -29,6 +29,11 @@ jobs:
       - name: Installation des dépendances
         run: npm ci
 
+      # Audit complet (dépendances de développement incluses : zod, immer et electron
+      # sont embarqués dans l'application alors qu'ils sont déclarés en devDependencies).
+      - name: Audit des dépendances (gravité haute ou critique)
+        run: npm audit --audit-level=high
+
       - name: Lint (ESLint + Prettier)
         run: npm run lint
 
