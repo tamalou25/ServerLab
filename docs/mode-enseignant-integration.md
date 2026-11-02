@@ -77,3 +77,14 @@ Moteur pur, `src/engine/teacher/` ; aucun changement du `.slab`.
 - Le rendu ne contient ni état final ni note : la correction rejoue le journal (chantier 4).
 - Champs réservés 2.13 (`classId`, `studentId`) : toujours `null`.
 - Fichiers de référence : `tests/engine/teacher/fixtures/<type>-v<N>.json`, jamais modifiés.
+
+## Chantier 4 : correction (moteur)
+
+`replay.ts`, `grading.ts`, `classReport.ts`.
+
+- **Rejeu** : le journal est réexécuté depuis `buildLabState(sujet.lab)` avec les fonctions de l'interface (`dispatch`, `recordEntry`/`undoStep`/`redoStep`, `runBackgroundTasks` après chaque pas, comme le mode Temps réel). La passation se fait donc en mode Temps réel.
+- **Erreur** : commande refusée par le moteur (`ok: false`, commande inconnue comprise) ; chaque annulation appliquée compte aussi si `undoIsError`. Une annulation sans rien à annuler est ignorée.
+- **Note** : composantes critères (points validés / points totaux), temps (1 jusqu'à mi-durée, puis linéaire jusqu'à 0), erreurs (1 − erreurs / `maxErrors`) ; moyenne pondérée × points des critères − pénalités d'indices + oral, ramenée sur `outOf`, bornée à [0, `outOf`].
+- **Signalements** : `subject-mismatch` (empreinte), `replay-failed` (exception au rejeu : arguments que l'interface ne peut produire), `timestamps-incoherent` (hors période, désordre, indice/réponse hors sujet), `duration-out-of-bounds` (au-delà de la durée + 2 min, ou « temps écoulé » trop tôt).
+- **CSV** : `;`, CRLF, UTF-8 avec BOM, une colonne par critère ; cellules commençant par `= + - @` neutralisées (injection de formules).
+- **Limite** : les solutions officielles des labs (`tests/engine/labs`) sont des fonctions, pas des journaux. Le test « solution rejouée = 100 % » couvre le lab 37 (console) ; l'étendre aux 59 labs demande d'écrire leurs solutions en commandes nommées (issue séparée).
