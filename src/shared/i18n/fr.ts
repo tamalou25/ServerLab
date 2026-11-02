@@ -920,7 +920,30 @@ export const fr = {
   'attempt.close': 'Fermer',
   'attempt.ok': 'validé',
   'attempt.ko': 'non validé',
-  'attempt.summary': 'Erreurs : {errors} · indices : {hints} (−{penalty} pt)'
+  'attempt.summary': 'Erreurs : {errors} · indices : {hints} (−{penalty} pt)',
+  'teacher.view.subject': 'Sujet',
+  'teacher.view.grading': 'Correction',
+  'grading.title': 'Correction',
+  'grading.intro':
+    'Choisissez le sujet corrigé, puis importez les rendus des élèves. Chaque note est recalculée en rejouant le journal de l’élève.',
+  'grading.useEdited': 'Corriger le sujet en cours',
+  'grading.openSubject': 'Ouvrir le sujet…',
+  'grading.failed': 'Correction impossible',
+  'grading.someFailed': 'Certains rendus n’ont pas pu être importés',
+  'grading.copies': 'Rendus · {title}',
+  'grading.import': 'Importer des rendus…',
+  'grading.mean': 'Moyenne',
+  'grading.meanTime': 'Temps moyen',
+  'grading.mostFailed': 'Le plus raté',
+  'grading.flagged': 'Signalement : à vérifier',
+  'grading.line':
+    'Temps {time} · erreurs {errors} ({refused} refusée(s), {undos} annulation(s)) · indices −{penalty}',
+  'grading.noAnswer': 'Pas de réponse.',
+  'grading.oralPoints': 'Points de la question {index}',
+  'grading.comment': 'Commentaire',
+  'grading.export': 'Exporter la correction…',
+  'grading.exported': 'Fichier enregistré : {path}',
+  'grading.exportFailed': 'Export impossible'
 } as const
 
 /** Clé d'un message de l'interface. */

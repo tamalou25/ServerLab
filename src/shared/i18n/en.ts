@@ -911,5 +911,27 @@ export const en: Record<MessageKey, string> = {
   'attempt.close': 'Close',
   'attempt.ok': 'passed',
   'attempt.ko': 'not passed',
-  'attempt.summary': 'Errors: {errors} · hints: {hints} (−{penalty} pt)'
+  'attempt.summary': 'Errors: {errors} · hints: {hints} (−{penalty} pt)',
+  'teacher.view.subject': 'Assignment',
+  'teacher.view.grading': 'Grading',
+  'grading.title': 'Grading',
+  'grading.intro':
+    'Pick the assignment, then import the students’ submissions. Each grade is recomputed by replaying the student’s log.',
+  'grading.useEdited': 'Grade the current assignment',
+  'grading.openSubject': 'Open assignment…',
+  'grading.failed': 'Cannot grade',
+  'grading.someFailed': 'Some submissions could not be imported',
+  'grading.copies': 'Submissions · {title}',
+  'grading.import': 'Import submissions…',
+  'grading.mean': 'Average',
+  'grading.meanTime': 'Average time',
+  'grading.mostFailed': 'Most missed',
+  'grading.flagged': 'Flagged: check it',
+  'grading.line': 'Time {time} · errors {errors} ({refused} refused, {undos} undo(s)) · hints −{penalty}',
+  'grading.noAnswer': 'No answer.',
+  'grading.oralPoints': 'Points for question {index}',
+  'grading.comment': 'Comment',
+  'grading.export': 'Export grading…',
+  'grading.exported': 'File saved: {path}',
+  'grading.exportFailed': 'Cannot export'
 }

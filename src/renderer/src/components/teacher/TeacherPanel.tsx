@@ -4,6 +4,7 @@
  */
 import { FileDown, FolderOpen, PlayCircle, Plus, Trash2 } from 'lucide-react'
 import { openSubjectForAttempt } from '../../lib/attempt'
+import { GradingPanel } from './GradingPanel'
 import { useMemo, useState } from 'react'
 import { checkSubjectSolution, type OralQuestion, type Subject } from '@engine/index'
 import { useT } from '../../lib/i18n'
@@ -37,9 +38,34 @@ const fmt = (n: number) => String(Math.round(n * 100) / 100).replace('.', ',')
 
 export function TeacherPanel() {
   const subject = useTeacherStore((s) => s.subject)
+  const [view, setView] = useState<'subject' | 'grading'>('subject')
+  const { t } = useT()
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto" data-testid="teacher-panel">
-      {subject ? <SubjectEditor subject={subject} /> : <SubjectStart />}
+      <div className="flex gap-1 border-b border-line p-2" role="tablist" aria-label={t('panel.teacher')}>
+        {(['subject', 'grading'] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            role="tab"
+            aria-selected={view === v}
+            onClick={() => setView(v)}
+            data-testid={`teacher-view-${v}`}
+            className={`flex-1 rounded-md px-2 py-1 text-dense font-medium ${
+              view === v ? 'bg-accent-soft text-accent-text' : 'text-fg-muted hover:bg-surface-2'
+            }`}
+          >
+            {t(`teacher.view.${v}`)}
+          </button>
+        ))}
+      </div>
+      {view === 'grading' ? (
+        <GradingPanel />
+      ) : subject ? (
+        <SubjectEditor subject={subject} />
+      ) : (
+        <SubjectStart />
+      )}
     </div>
   )
 }
