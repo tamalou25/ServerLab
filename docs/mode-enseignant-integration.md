@@ -7,7 +7,7 @@ Cette branche est `lab/mode-enseignant`, créée depuis `main`. Le chantier est 
 - [x] Branche longue durée créée depuis `main`.
 - [x] Lecture initiale des consignes, feuille de route, suivi de fidélité, moteur des labs, historique/dispatch, sérialisation et composants d’interface demandés.
 - [x] Chantier 1 : formats autonomes, validation, export/import sujet et barème (`src/engine/teacher/`).
-- [ ] Chantiers suivants : passation, correction, démonstration et documentation.
+- [x] Chantiers 2 à 6 : création de sujet, passation, correction, démonstration, documentation ([mode-enseignant.md](mode-enseignant.md)).
 
 ## Points d’accroche prévus (aucun changement de fichier existant à ce stade)
 

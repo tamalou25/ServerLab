@@ -71,5 +71,24 @@ for (const theme of THEMES) {
         await close()
       }
     })
+
+    test('onglet Enseignant : création de sujet', async () => {
+      const { app, page, close } = await launchApp()
+      try {
+        await fixWindow(app, page)
+        await clickMenu(app, ['Affichage', 'Thème', theme.menu])
+        await clickMenu(app, ['Affichage', 'Mode enseignant'])
+        await page.getByTestId('right-tab-teacher').click()
+        const panel = page.getByTestId('teacher-panel')
+        await panel.getByTestId('teacher-lab-select').selectOption('lab-02-dhcp')
+        await panel.getByTestId('teacher-from-library').click()
+        await panel.getByTestId('teacher-add-question').click()
+        await expect(page.getByRole('complementary', { name: 'Panneau latéral' })).toHaveScreenshot(
+          `enseignant-${theme.id}.png`
+        )
+      } finally {
+        await close()
+      }
+    })
   })
 }

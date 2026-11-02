@@ -177,6 +177,11 @@ l'application ou abandon est signalé dans le résultat.
 
 ![Vérification d'un lab](docs/captures/labs/2-verification.webp)
 
+Le **mode enseignant** (Affichage › Mode enseignant, désactivé par défaut) crée des sujets d'évaluation
+(barème, pénalités d'indices, questions d'oral), les fait passer (rendu `.slabrendu`, ou auto-évaluation pour
+réviser seul), les corrige par rejeu du journal de l'élève (note recalculée, signalements, CSV de la classe) et
+rejoue une copie pas à pas. Hors ligne, par fichiers : voir [`docs/mode-enseignant.md`](docs/mode-enseignant.md).
+
 ## Poste Linux
 
 La palette propose un **Poste Linux** (Ubuntu simulé) avec une console bash : `ip a`, `ip route`, `ping`,
