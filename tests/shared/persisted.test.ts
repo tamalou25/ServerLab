@@ -29,7 +29,8 @@ describe('settings.json', () => {
       theme: 'light',
       language: 'system',
       showHomeOnStartup: true,
-      showTutorialOnStartup: true
+      showTutorialOnStartup: true,
+      teacherMode: false
     })
   })
 
@@ -74,7 +75,8 @@ describe('settings.json', () => {
       theme: 'dark',
       language: 'system',
       showHomeOnStartup: false,
-      showTutorialOnStartup: true
+      showTutorialOnStartup: true,
+      teacherMode: false
     })
     expect(parseSettings('{"showTutorialOnStartup":false}').showTutorialOnStartup).toBe(false)
     expect(parseSettings('{"showTutorialOnStartup":0}').showTutorialOnStartup).toBe(true)

@@ -13,6 +13,8 @@
  * - note = (partie pratique + points de l'oral) / (points des critères + points de l'oral) × outOf,
  *   bornée entre 0 et outOf, arrondie au centième.
  */
+import { evaluateCriteria } from '../labs/criteria'
+import type { LabState } from '../model/schema'
 import { CORRECTION_FORMAT_VERSION, type Correction, type CorrectionFlag } from './correction'
 import { replaySubmission, type ReplayResult } from './replay'
 import { subjectFingerprint, type Subject } from './subject'
@@ -197,5 +199,36 @@ export function correctSubmission(
     grade: { value: grade.value, outOf: grade.outOf },
     comment: options.comment ?? '',
     flags: detectFlags(subject, submission, replay)
+  }
+}
+
+export interface SubjectCheck {
+  /** Critères non validés par l'état donné (libellés). */
+  failing: string[]
+  passed: number
+  total: number
+  /** Note obtenue par cet état (sans erreur, sans indice, oral non noté, temps nul). */
+  grade: Grade
+}
+
+/**
+ * Contrôle à l'export d'un sujet : la solution du professeur (son état courant) doit valider
+ * tous les critères. Sert aussi à prévisualiser la note.
+ */
+export function checkSubjectSolution(subject: Subject, state: LabState): SubjectCheck {
+  const results = evaluateCriteria(state, subject.lab.criteria)
+  const passed = new Set(results.filter((r) => r.ok).map((r) => r.id))
+  return {
+    failing: subject.lab.criteria.filter((c) => !passed.has(c.id)).map((c) => c.label),
+    passed: passed.size,
+    total: subject.lab.criteria.length,
+    grade: computeGrade({
+      subject,
+      passed,
+      elapsedMs: 0,
+      errors: 0,
+      hintsTaken: 0,
+      oralPoints: subject.oral.map((q) => q.points)
+    })
   }
 }

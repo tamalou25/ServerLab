@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildLabState,
+  checkSubjectSolution,
   classCsv,
   classStats,
   computeGrade,
@@ -278,5 +279,20 @@ describe('bilan de classe', () => {
       mostFailed: null,
       flagged: 0
     })
+  })
+})
+
+describe('contrôle à l’export du sujet', () => {
+  it('solution du professeur : 100 %, aucun critère manquant', () => {
+    const s = subject()
+    const solved = replaySubmission(s, submission(s, [exec(s, LIGNE, T0 + 1)])).state
+    const check = checkSubjectSolution(s, solved)
+    expect(check.failing).toEqual([])
+    expect(check.grade.value).toBe(20)
+  })
+  it('lab de départ : critères manquants listés', () => {
+    const s = subject()
+    const check = checkSubjectSolution(s, buildLabState(s.lab))
+    expect(check.failing.length).toBe(check.total)
   })
 })

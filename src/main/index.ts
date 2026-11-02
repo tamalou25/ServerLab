@@ -21,6 +21,7 @@ import { FileService, findSlabArg } from './files'
 import { applyLanguage, currentLanguage, t } from './i18n'
 import { buildMenu } from './menu'
 import { exportExamResult, exportLabFile, importLabFile } from './labfiles'
+import { openTeacherFiles, saveTeacherFile } from './teacherfiles'
 import { fetchLibraryIndex, fetchLibraryLab } from './library'
 import { exportAuditPdf } from './report'
 import { applyGlobalSecurity } from './security'
@@ -75,6 +76,8 @@ function refreshMenu(): void {
       recent: files.recentFiles(),
       theme: settings.theme,
       onTheme: applyThemePreference,
+      teacherMode: settings.teacherMode,
+      onTeacherMode: applyTeacherMode,
       language: settings.language,
       onLanguage: applyLanguagePreference,
       onCheckUpdates: checkForUpdatesFromMenu
@@ -199,6 +202,14 @@ function createWindow(): BrowserWindow {
   return win
 }
 
+/** Active ou désactive le mode enseignant : préférence, menu, renderer (commande `view:teacherMode`). */
+function applyTeacherMode(on: boolean): void {
+  settings = { ...settings, teacherMode: on }
+  saveSettings(settings)
+  refreshMenu()
+  mainWindow?.webContents.send(IPC.menuCommand, { command: 'view:teacherMode', arg: on ? 'on' : 'off' })
+}
+
 function registerIpc(): void {
   const win = (): BrowserWindow => {
     if (!mainWindow) throw new Error('Fenêtre principale indisponible')
@@ -265,6 +276,11 @@ function registerIpc(): void {
   ipcMain.handle(IPC.examExport, (_e, content: unknown, name: unknown) =>
     exportExamResult(win(), content, name)
   )
+  ipcMain.handle(IPC.teacherMode, () => settings.teacherMode)
+  ipcMain.handle(IPC.teacherSave, (_e, kind: unknown, content: unknown, name: unknown) =>
+    saveTeacherFile(win(), kind, content, name)
+  )
+  ipcMain.handle(IPC.teacherOpen, (_e, kind: unknown) => openTeacherFiles(win(), kind))
   ipcMain.on(IPC.closeConfirmed, () => {
     closeConfirmed = true
     closeIntent = intentAfterSave
