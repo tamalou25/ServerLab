@@ -3,10 +3,15 @@
  * qui masque un enregistrement A erroné, graine fixe), réparation officielle = 100 % des critères,
  * cas partiel (service relancé seul : la seconde cause apparaît).
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { activeFaults, allRepaired, checkLab, getFault, type LabState } from '@engine/index'
 import { run } from '../shell/helpers'
 import { failing, loadTroubleshootingLab, play, repairOfficial } from './depannage-helpers'
+
+// Solution enregistrée en commandes nommées et rejouée comme un rendu (mode enseignant, #405)
+vi.mock('@engine/index', async (importOriginal) =>
+  (await import('../teacher/recorder')).instrumentEngine(importOriginal)
+)
 
 const { lab, start } = loadTroubleshootingLab('lab-45-depannage-compose.json')
 const id = (s: LabState, name: string) => Object.values(s.devices).find((d) => d.name === name)?.id ?? ''

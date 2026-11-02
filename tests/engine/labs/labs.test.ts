@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   addPrimaryZone,
   auditLab,
@@ -14,7 +14,8 @@ import {
   createItem,
   createShare,
   domainToken,
-  grantNtfs,
+  resolvePrincipal,
+  setNtfsEntry,
   installFeatures,
   joinDomain,
   logon,
@@ -58,6 +59,12 @@ import lab19 from '../../../labs/lab-19-durcissement-ad.json'
 import lab20 from '../../../labs/lab-20-durcissement-partages.json'
 import lab21 from '../../../labs/lab-21-durcissement-pare-feu.json'
 import { run } from '../shell/helpers'
+import { replayAsSubmission, startRecording } from '../teacher/recorder'
+
+// Actions enregistrées en commandes nommées : la solution est aussi rejouée comme un rendu (#405)
+vi.mock('@engine/index', async (importOriginal) =>
+  (await import('../teacher/recorder')).instrumentEngine(importOriginal)
+)
 
 function load(raw: unknown): LabDefinition {
   const parsed = parseLab(raw)
@@ -165,15 +172,18 @@ const SOLUTIONS: Record<string, (s: LabState) => LabState> = {
     s = unwrap(createShare(s, srv, { name: 'Compta', path, full: ['Tout le monde'] }, admin)).state
     s = unwrap(setNtfsInheritance(s, srv, path, 'convert', admin)).state
     s = unwrap(removeNtfs(s, srv, path, 'BUILTIN\\Utilisateurs', 'all', admin)).state
+    // Onglet Sécurité (commande files.setNtfsEntry) : équivalent de icacls /grant
+    const principal = (name: string) => resolvePrincipal(s, s.devices[srv]!, name)!
     s = unwrap(
-      grantNtfs(s, srv, path, { principal: 'LAB\\GG_Compta', type: 'Allow', rights: ['Modify'] }, admin)
+      setNtfsEntry(s, srv, path, principal('LAB\\GG_Compta'), { allow: ['Modify'], deny: [] }, admin)
     ).state
     s = unwrap(
-      grantNtfs(
+      setNtfsEntry(
         s,
         srv,
         path,
-        { principal: 'LAB\\GG_Direction', type: 'Allow', rights: ['ReadAndExecute'] },
+        principal('LAB\\GG_Direction'),
+        { allow: ['ReadAndExecute'], deny: [] },
         admin
       )
     ).state
@@ -649,9 +659,16 @@ describe('Labs', () => {
       expect(before.passed).toBeLessThan(before.total)
       const solve = SOLUTIONS[lab.id]
       expect(solve).toBeDefined()
-      const after = checkLab(solve!(start), lab)
+      const recording = startRecording()
+      const after = checkLab(solve!(recording.begin(start)), lab)
+      const recorded = recording.stop()
       expect(after.results.filter((r) => !r.ok).map((r) => r.id)).toEqual([])
       expect(after.passed).toBe(after.total)
+      // Mode enseignant : la même solution, rejouée comme le rendu d'un élève, obtient 100 %
+      expect([...recorded.unmapped]).toEqual([])
+      const correction = replayAsSubmission(lab, recorded)
+      expect(correction.criteria.filter((c) => !c.ok).map((c) => c.id)).toEqual([])
+      expect(correction.flags).toEqual([])
     })
   }
 

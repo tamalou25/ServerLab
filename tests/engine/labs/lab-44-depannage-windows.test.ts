@@ -3,7 +3,7 @@
  * (horloge de PC1 décalée + service DNS arrêté, graine fixe), réparation officielle = 100 % des
  * critères, cas partiels.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   activeFaults,
   allRepaired,
@@ -15,6 +15,11 @@ import {
 } from '@engine/index'
 import { run } from '../shell/helpers'
 import { failing, loadTroubleshootingLab, repairOfficial } from './depannage-helpers'
+
+// Solution enregistrée en commandes nommées et rejouée comme un rendu (mode enseignant, #405)
+vi.mock('@engine/index', async (importOriginal) =>
+  (await import('../teacher/recorder')).instrumentEngine(importOriginal)
+)
 
 const { lab, start } = loadTroubleshootingLab('lab-44-depannage-windows.json')
 const id = (s: LabState, name: string) => Object.values(s.devices).find((d) => d.name === name)?.id ?? ''

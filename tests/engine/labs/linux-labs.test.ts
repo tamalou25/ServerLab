@@ -2,7 +2,7 @@
  * Labs Linux 46 à 52 (v2.9, #241) : départ sain (aucun critère validé sauf ceux du sujet déjà acquis),
  * la solution saisie dans les consoles bash et cmd valide 100 % des critères, cas partiels.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   buildLabState,
   checkLab,
@@ -15,6 +15,11 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { run } from '../shell/helpers'
 import { failing } from './depannage-helpers'
+
+// Solution enregistrée en commandes nommées et rejouée comme un rendu (mode enseignant, #405)
+vi.mock('@engine/index', async (importOriginal) =>
+  (await import('../teacher/recorder')).instrumentEngine(importOriginal)
+)
 
 function load(file: string): { lab: LabDefinition; start: LabState } {
   const parsed = parseLabText(readFileSync(join(__dirname, '../../../labs', file), 'utf8'))

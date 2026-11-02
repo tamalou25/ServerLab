@@ -3,7 +3,7 @@
  * du réseau L2, sujet Red/Blue. Chaque lab démarre incomplet ; la solution, saisie comme le ferait
  * l'étudiant (scénarios du panneau Simulation, console PowerShell, GPO, console IOS), est validée à 100 %.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   buildLabStart,
   checkLab,
@@ -27,6 +27,11 @@ import lab33 from '../../../labs/lab-33-attaque-l2.json'
 import lab34 from '../../../labs/lab-34-durcissement-reseau.json'
 import lab35 from '../../../labs/lab-35-red-blue.json'
 import { run } from '../shell/helpers'
+
+// Solution enregistrée en commandes nommées et rejouée comme un rendu (mode enseignant, #405)
+vi.mock('@engine/index', async (importOriginal) =>
+  (await import('../teacher/recorder')).instrumentEngine(importOriginal)
+)
 
 const id = (s: LabState, name: string) => Object.values(s.devices).find((d) => d.name === name)?.id ?? ''
 const load = (raw: unknown): LabDefinition => {

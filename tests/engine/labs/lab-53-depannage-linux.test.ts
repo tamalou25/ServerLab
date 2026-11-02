@@ -3,10 +3,15 @@
  * (droits du DocumentRoot + port de sshd, graine fixe), symptômes vus depuis les postes, réparation à la
  * console puis réparation officielle = 100 % des critères, cas partiels.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { activeFaults, allRepaired, checkLab, getFault, type LabState } from '@engine/index'
 import { run } from '../shell/helpers'
 import { failing, loadTroubleshootingLab, repairOfficial } from './depannage-helpers'
+
+// Solution enregistrée en commandes nommées et rejouée comme un rendu (mode enseignant, #405)
+vi.mock('@engine/index', async (importOriginal) =>
+  (await import('../teacher/recorder')).instrumentEngine(importOriginal)
+)
 
 const { lab, start } = loadTroubleshootingLab('lab-53-depannage-linux.json')
 const id = (s: LabState, name: string) => Object.values(s.devices).find((d) => d.name === name)?.id ?? ''
