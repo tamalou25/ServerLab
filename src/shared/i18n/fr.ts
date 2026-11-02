@@ -943,7 +943,19 @@ export const fr = {
   'grading.comment': 'Commentaire',
   'grading.export': 'Exporter la correction…',
   'grading.exported': 'Fichier enregistré : {path}',
-  'grading.exportFailed': 'Export impossible'
+  'grading.exportFailed': 'Export impossible',
+  'demo.start': 'Rejouer pas à pas',
+  'demo.label': 'Démonstration',
+  'demo.first': 'Départ',
+  'demo.back': 'Pas précédent',
+  'demo.play': 'Lecture',
+  'demo.pause': 'Pause',
+  'demo.forward': 'Pas suivant',
+  'demo.last': 'Fin',
+  'demo.refused': 'refusée',
+  'demo.speed': 'Vitesse',
+  'demo.projection': 'Projection',
+  'demo.close': 'Fermer la démonstration'
 } as const
 
 /** Clé d'un message de l'interface. */

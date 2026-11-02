@@ -14,6 +14,7 @@ import {
   parseSubmission,
   recordEntry,
   emptyHistory,
+  replayFrames,
   replaySubmission,
   serializeSubmission,
   startAttempt,
@@ -105,5 +106,32 @@ describe('transaction (glisser un équipement)', () => {
     const entry = journalEntry(base, state, { type: 'batch', args: [], label: 'Déplacer' })!
     const undone = undoStep(state, recordEntry(emptyHistory(), entry))
     expect(undone.ok && undone.state.devices[id]!.position).toEqual(base.devices[id]!.position)
+  })
+})
+
+describe('démonstration', () => {
+  it('une image par pas, la dernière égale à l’état du rejeu', () => {
+    const s = subject()
+    const base = buildLabState(s.lab)
+    const id = Object.keys(base.devices)[0]!
+    const r = finishAttempt(
+      {
+        ...startAttempt(s, 'A', 'exam', T0),
+        journal: [
+          {
+            kind: 'command',
+            at: T0 + 1,
+            command: { type: 'topology.moveDevice', args: [id, { x: 5, y: 5 }] }
+          },
+          { kind: 'command', at: T0 + 2, command: { type: 'x.y', args: [] } },
+          { kind: 'undo', at: T0 + 3 }
+        ]
+      },
+      { now: T0 + 4, ending: 'finish', appVersion: 't' }
+    )
+    const frames = replayFrames(s, r)
+    expect(frames.map((f) => f.outcome)).toEqual(['start', 'applied', 'refused', 'undone'])
+    expect(frames[1]!.state.devices[id]!.position).toEqual({ x: 5, y: 5 })
+    expect(frames.at(-1)!.state).toEqual(replaySubmission(s, r).state)
   })
 })

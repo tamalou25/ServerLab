@@ -160,6 +160,13 @@ test('Correction : rendus importés, signalement, oral noté, CSV de la classe',
   const bob = finishAttempt(
     {
       ...startAttempt(subject, 'Bob', 'exam', t0),
+      journal: [
+        {
+          kind: 'command',
+          at: t0 + 500,
+          command: { type: 'x.inconnue', args: [], label: 'Commande inconnue' }
+        }
+      ],
       answers: [{ questionId: 'q1', text: 'Sortir du réseau local.', at: t0 + 1000 }]
     },
     { now: t0 + 60_000, ending: 'finish', appVersion: 'e2e' }
@@ -207,6 +214,18 @@ test('Correction : rendus importés, signalement, oral noté, CSV de la classe',
     await panel.getByTestId('grading-oral-0').fill('2')
     await panel.getByTestId('grading-oral-0').blur()
     await expect(panel.getByTestId('grading-grade')).not.toHaveText('0')
+    // Démonstration : rejeu pas à pas du rendu de Bob (une commande refusée)
+    await panel.getByTestId('grading-demo').click()
+    const bar = page.getByTestId('demo-bar')
+    await expect(bar.getByTestId('demo-position')).toHaveText('0 / 1')
+    await bar.getByTestId('demo-forward').click()
+    await expect(bar.getByTestId('demo-position')).toHaveText('1 / 1')
+    await expect(bar.getByTestId('demo-label')).toContainText('refusée')
+    await bar.getByTestId('demo-projection').click()
+    await expect(page.locator('html')).toHaveAttribute('data-projection', '')
+    await bar.getByTestId('demo-close').click()
+    await expect(page.locator('html')).not.toHaveAttribute('data-projection', '')
+    await expect(bar).toHaveCount(0)
     await panel.getByTestId('grading-csv').click()
     await expect(page.getByText(`Fichier enregistré : ${csv}.csv`)).toBeVisible()
     const text = readFileSync(`${csv}.csv`, 'utf8')

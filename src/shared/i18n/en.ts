@@ -933,5 +933,17 @@ export const en: Record<MessageKey, string> = {
   'grading.comment': 'Comment',
   'grading.export': 'Export grading…',
   'grading.exported': 'File saved: {path}',
-  'grading.exportFailed': 'Cannot export'
+  'grading.exportFailed': 'Cannot export',
+  'demo.start': 'Replay step by step',
+  'demo.label': 'Demonstration',
+  'demo.first': 'Start',
+  'demo.back': 'Previous step',
+  'demo.play': 'Play',
+  'demo.pause': 'Pause',
+  'demo.forward': 'Next step',
+  'demo.last': 'End',
+  'demo.refused': 'refused',
+  'demo.speed': 'Speed',
+  'demo.projection': 'Projection',
+  'demo.close': 'Close the demonstration'
 }

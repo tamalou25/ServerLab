@@ -123,3 +123,39 @@ export function replaySubmission(subject: Subject, submission: Submission): Repl
     criteria: subject.lab.criteria.map((c, i) => ({ id: c.id, label: c.label, ok: results[i]?.ok ?? false }))
   }
 }
+
+/** Image du rejeu pas à pas (démonstration). */
+export interface ReplayFrame {
+  state: LabState
+  /** Libellé du pas (« Départ » pour l'image initiale). */
+  label: string
+  /** Horodatage réel du pas (début de passation pour l'image initiale). */
+  at: number
+  outcome: ReplayStepOutcome | 'start'
+}
+
+/**
+ * Toutes les images d'un rendu, du départ à la fin (démonstration : avancer, reculer). Les états
+ * partagent leur structure (immer) : la mémoire reste proportionnelle aux modifications.
+ */
+export function replayFrames(subject: Subject, submission: Submission): ReplayFrame[] {
+  let cursor = startReplay(subject)
+  const frames: ReplayFrame[] = [
+    { state: cursor.state, label: 'Départ', at: submission.startedAt, outcome: 'start' }
+  ]
+  for (const step of submission.journal) {
+    const next = replayStep(cursor, step)
+    if (!next.ok) break
+    cursor = next.cursor
+    const label =
+      step.kind === 'command'
+        ? (step.command.label ?? step.command.type)
+        : step.kind === 'transaction'
+          ? step.label
+          : step.kind === 'undo'
+            ? 'Annuler'
+            : 'Rétablir'
+    frames.push({ state: cursor.state, label, at: step.at, outcome: next.outcome })
+  }
+  return frames
+}
