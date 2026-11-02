@@ -1,0 +1,212 @@
+{
+  "app": "ServerLab",
+  "kind": "sujet",
+  "formatVersion": 1,
+  "appVersion": "2.12.0",
+  "meta": {
+    "title": "Distribuer les adresses avec un serveur DHCP",
+    "author": "Professeur",
+    "version": "1.0",
+    "sourceLabId": "lab-02-dhcp",
+    "classId": null
+  },
+  "lab": {
+    "formatVersion": 1,
+    "id": "lab-02-dhcp",
+    "title": "Distribuer les adresses avec un serveur DHCP",
+    "difficulty": "Débutant",
+    "duration": "25 min",
+    "summary": "Installer le rôle DHCP, créer une étendue avec ses options et équiper les postes.",
+    "statement": "# Contexte\n\nLe cabinet **Medi’Santé** ajoute régulièrement des postes. L’administrateur ne veut plus configurer les adresses à la main : le serveur **SRV1** (`192.168.10.1`, déjà serveur DNS) doit les distribuer.\n\n## Paramètres attendus\n\n- Étendue « LAN » : de `192.168.10.100` à `192.168.10.200`, masque `255.255.255.0`\n- Routeur (option 003) : `192.168.10.254`\n- Serveur DNS (option 006) : `192.168.10.1`\n\n## Travail demandé\n\n1. Installez le rôle **Serveur DHCP** sur SRV1 (assistant d’ajout de rôles ou PowerShell).\n2. Créez et activez l’étendue avec ses options (console DHCP ou cmdlets `Add-DhcpServerv4Scope`, `Set-DhcpServerv4OptionValue`).\n3. Vérifiez que PC1 et PC2 obtiennent une adresse (`ipconfig /all`, `ipconfig /renew`), puis cliquez sur **Vérifier**.\n\n> Astuce : en mode **Simulation**, observez les quatre messages DHCP (Discover, Offer, Request, Ack).",
+    "start": {
+      "devices": [
+        {
+          "kind": "server",
+          "name": "SRV1",
+          "x": 330,
+          "y": 100,
+          "powered": true,
+          "ip": "192.168.10.1/24",
+          "dns": ["127.0.0.1"],
+          "features": ["DNS"]
+        },
+        {
+          "kind": "switch",
+          "name": "SW1",
+          "x": 330,
+          "y": 300,
+          "powered": true
+        },
+        {
+          "kind": "client",
+          "name": "PC1",
+          "x": 120,
+          "y": 440,
+          "powered": true,
+          "dhcp": true
+        },
+        {
+          "kind": "client",
+          "name": "PC2",
+          "x": 540,
+          "y": 440,
+          "powered": true,
+          "dhcp": true
+        }
+      ],
+      "links": [
+        ["SRV1:Ethernet0", "SW1:Fa0/1"],
+        ["PC1:Ethernet0", "SW1:Fa0/2"],
+        ["PC2:Ethernet0", "SW1:Fa0/3"]
+      ]
+    },
+    "criteria": [
+      {
+        "id": "role",
+        "label": "Le rôle Serveur DHCP est installé sur SRV1",
+        "hint": "Les rôles s’ajoutent depuis le Gestionnaire de serveur (Gérer) ou avec Install-WindowsFeature.",
+        "hints": [],
+        "check": {
+          "type": "featureInstalled",
+          "device": "SRV1",
+          "feature": "DHCP"
+        }
+      },
+      {
+        "id": "scope",
+        "label": "L’étendue 192.168.10.100 – 192.168.10.200 (/24) est active",
+        "hint": "Vérifiez les adresses de début et de fin, le masque, et que l’étendue est bien activée.",
+        "hints": [],
+        "check": {
+          "type": "dhcpScope",
+          "server": "SRV1",
+          "start": "192.168.10.100",
+          "end": "192.168.10.200",
+          "prefixLength": 24
+        }
+      },
+      {
+        "id": "router",
+        "label": "L’étendue distribue la passerelle 192.168.10.254 (option 003)",
+        "hint": "Sans l’option Routeur, les postes n’auront pas de passerelle par défaut.",
+        "hints": [],
+        "check": {
+          "type": "dhcpScope",
+          "server": "SRV1",
+          "start": "192.168.10.100",
+          "end": "192.168.10.200",
+          "router": "192.168.10.254"
+        }
+      },
+      {
+        "id": "dns",
+        "label": "L’étendue distribue le serveur DNS 192.168.10.1 (option 006)",
+        "hint": "Les options de l’étendue se règlent dans la console DHCP (Options d’étendue) ou en PowerShell.",
+        "hints": [],
+        "check": {
+          "type": "dhcpScope",
+          "server": "SRV1",
+          "start": "192.168.10.100",
+          "end": "192.168.10.200",
+          "dnsServer": "192.168.10.1"
+        }
+      },
+      {
+        "id": "pc1",
+        "label": "PC1 a obtenu un bail de SRV1",
+        "hint": "Un poste resté en APIPA réessaie avec ipconfig /renew ; vérifiez aussi le câblage et l’activation de l’étendue.",
+        "hints": [],
+        "check": {
+          "type": "dhcpLease",
+          "client": "PC1",
+          "server": "SRV1"
+        }
+      },
+      {
+        "id": "pc2",
+        "label": "PC2 a obtenu un bail de SRV1",
+        "hint": "Consultez les baux de l’étendue dans la console DHCP pour voir quels postes ont été servis.",
+        "hints": [],
+        "check": {
+          "type": "dhcpLease",
+          "client": "PC2",
+          "server": "SRV1"
+        }
+      },
+      {
+        "id": "ping",
+        "label": "PC1 joint le serveur (ping)",
+        "hint": "Comparez l’adresse obtenue par le poste avec le réseau du serveur (ipconfig).",
+        "hints": [],
+        "check": {
+          "type": "ping",
+          "from": "PC1",
+          "to": "192.168.10.1",
+          "success": true
+        }
+      }
+    ]
+  },
+  "scale": {
+    "criteria": [
+      {
+        "criterionId": "role",
+        "points": 1
+      },
+      {
+        "criterionId": "scope",
+        "points": 1
+      },
+      {
+        "criterionId": "router",
+        "points": 1
+      },
+      {
+        "criterionId": "dns",
+        "points": 1
+      },
+      {
+        "criterionId": "pc1",
+        "points": 1
+      },
+      {
+        "criterionId": "pc2",
+        "points": 1
+      },
+      {
+        "criterionId": "ping",
+        "points": 1
+      }
+    ],
+    "hintPenalty": 0.5,
+    "weights": {
+      "criteria": 100,
+      "time": 0,
+      "errors": 0
+    },
+    "minutes": 25,
+    "maxErrors": 20,
+    "undoIsError": false,
+    "outOf": 20
+  },
+  "oral": [
+    {
+      "id": "q1",
+      "text": "Pourquoi exclure des adresses de l’étendue ?",
+      "trigger": {
+        "kind": "criterion",
+        "criterionId": "role"
+      },
+      "points": 2
+    },
+    {
+      "id": "q2",
+      "text": "Qu’est-ce qu’un bail ?",
+      "trigger": {
+        "kind": "minute",
+        "minute": 5
+      },
+      "points": 1
+    }
+  ]
+}

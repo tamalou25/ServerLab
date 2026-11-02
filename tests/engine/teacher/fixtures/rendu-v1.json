@@ -1,0 +1,57 @@
+{
+  "app": "ServerLab",
+  "kind": "rendu",
+  "formatVersion": 1,
+  "appVersion": "2.12.0",
+  "subject": {
+    "fingerprint": "9e7fdfcffc7ab3b80be7897cf6bbeadaa835cf6fe4c549c23b5a9f323782e7b7",
+    "title": "Distribuer les adresses avec un serveur DHCP"
+  },
+  "student": {
+    "name": "Élève Test",
+    "studentId": null,
+    "classId": null
+  },
+  "mode": "exam",
+  "startedAt": 1793000000000,
+  "endedAt": 1793000600000,
+  "ending": "finish",
+  "journal": [
+    {
+      "kind": "command",
+      "at": 1793000001000,
+      "command": {
+        "type": "dhcp.addScope",
+        "args": [
+          "srv",
+          {
+            "name": "LAN"
+          }
+        ],
+        "label": "Étendue"
+      }
+    },
+    {
+      "kind": "undo",
+      "at": 1793000002000
+    },
+    {
+      "kind": "redo",
+      "at": 1793000003000
+    }
+  ],
+  "hints": [
+    {
+      "criterionId": "role",
+      "index": 0,
+      "at": 1793000004000
+    }
+  ],
+  "answers": [
+    {
+      "questionId": "q1",
+      "text": "Pour les serveurs à adresse fixe.",
+      "at": 1793000005000
+    }
+  ]
+}

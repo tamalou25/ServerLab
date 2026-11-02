@@ -1,0 +1,62 @@
+{
+  "app": "ServerLab",
+  "kind": "correction",
+  "formatVersion": 1,
+  "appVersion": "2.12.0",
+  "subject": {
+    "fingerprint": "9e7fdfcffc7ab3b80be7897cf6bbeadaa835cf6fe4c549c23b5a9f323782e7b7",
+    "title": "Distribuer les adresses avec un serveur DHCP"
+  },
+  "submission": {
+    "fingerprint": "bf2e7f9528bce75a110f4f918fc19757ad368640a7ba0d5e2d3af58ae2823f06"
+  },
+  "student": {
+    "name": "Élève Test",
+    "studentId": null,
+    "classId": null
+  },
+  "correctedAt": "2026-11-02T10:00:00.000Z",
+  "criteria": [
+    {
+      "id": "c1",
+      "label": "Étendue créée",
+      "ok": true,
+      "points": 1,
+      "max": 1
+    }
+  ],
+  "elapsedMs": 600000,
+  "errors": {
+    "refused": 0,
+    "undos": 1,
+    "total": 0
+  },
+  "hintsTaken": 1,
+  "penalties": {
+    "hints": 0.5
+  },
+  "components": {
+    "criteria": 1,
+    "time": 1,
+    "errors": 1
+  },
+  "oral": [
+    {
+      "questionId": "q1",
+      "answer": "Pour les serveurs à adresse fixe.",
+      "points": 2,
+      "max": 2
+    }
+  ],
+  "grade": {
+    "value": 19.5,
+    "outOf": 20
+  },
+  "comment": "Bon travail.",
+  "flags": [
+    {
+      "code": "mode-mismatch",
+      "message": "Exemple de signalement."
+    }
+  ]
+}

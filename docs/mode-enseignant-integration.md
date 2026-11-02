@@ -6,7 +6,7 @@ Cette branche est `lab/mode-enseignant`, créée depuis `main`. Le chantier est 
 
 - [x] Branche longue durée créée depuis `main`.
 - [x] Lecture initiale des consignes, feuille de route, suivi de fidélité, moteur des labs, historique/dispatch, sérialisation et composants d’interface demandés.
-- [ ] Chantier 1 : formats autonomes, validation, export/import sujet et barème.
+- [x] Chantier 1 : formats autonomes, validation, export/import sujet et barème (`src/engine/teacher/`).
 - [ ] Chantiers suivants : passation, correction, démonstration et documentation.
 
 ## Points d’accroche prévus (aucun changement de fichier existant à ce stade)
@@ -60,3 +60,20 @@ Le drapeau de fonctionnalité reste désactivé par défaut : onglet, entrée de
 - Onglet « Enseignant », entrée de menu natif, bouton de barre d'outils, textes FR/EN, tests Vitest du moteur et E2E.
 - Références visuelles (`tests/e2e/visual.spec.ts`) à régénérer si l'interface change.
 - Version et CHANGELOG uniquement à la demande de Gary (« on intègre »).
+
+## Chantier 1 : formats (2.12)
+
+Moteur pur, `src/engine/teacher/` ; aucun changement du `.slab`.
+
+| Format            | Fichier         | Contenu                                                                                                  |      Taille max |
+| ----------------- | --------------- | -------------------------------------------------------------------------------------------------------- | --------------: |
+| `.slabsujet`      | `subject.ts`    | lab complet (`LabDefinition`), barème, questions d'oral, métadonnées                                     |            4 Mo |
+| `.slabrendu`      | `submission.ts` | empreinte du sujet, nom de l'élève, journal (commandes, annulations, rétablissements), indices, réponses | 8 Mo, 5 000 pas |
+| `.slabcorrection` | `correction.ts` | détail par critère, temps, erreurs, pénalités, oral, note, commentaire, signalements                     |            1 Mo |
+
+- Enveloppe commune `{ app, kind, formatVersion, appVersion }` ; numéro de format et migrations propres à chaque type (`format.ts`) ; fichier plus récent refusé.
+- Schémas zod stricts (champ inconnu = refus), références croisées vérifiées (barème, déclencheurs, doublons).
+- Empreinte du sujet : SHA-256 de la forme canonique (clés triées), hors `appVersion`.
+- Le rendu ne contient ni état final ni note : la correction rejoue le journal (chantier 4).
+- Champs réservés 2.13 (`classId`, `studentId`) : toujours `null`.
+- Fichiers de référence : `tests/engine/teacher/fixtures/<type>-v<N>.json`, jamais modifiés.
