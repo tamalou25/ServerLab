@@ -2,7 +2,8 @@
  * Onglet « Enseignant » de l'inspecteur (visible seulement si le mode enseignant est activé).
  * Chantier 2 : création d'un sujet (lab de départ, énoncé, barème, questions d'oral, export).
  */
-import { FileDown, FolderOpen, Plus, Trash2 } from 'lucide-react'
+import { FileDown, FolderOpen, PlayCircle, Plus, Trash2 } from 'lucide-react'
+import { openSubjectForAttempt } from '../../lib/attempt'
 import { useMemo, useState } from 'react'
 import { checkSubjectSolution, type OralQuestion, type Subject } from '@engine/index'
 import { useT } from '../../lib/i18n'
@@ -48,38 +49,49 @@ function SubjectStart() {
   const { t } = useT()
   const [labId, setLabId] = useState(LABS[0]?.id ?? '')
   return (
-    <Section title={t('teacher.subject.new')}>
-      <div className="flex flex-col gap-3">
-        <p className="text-dense text-fg-muted">{t('teacher.subject.intro')}</p>
-        <Field label={t('teacher.subject.fromLibrary')}>
-          <select
-            className={inputClass}
-            value={labId}
-            onChange={(e) => setLabId(e.target.value)}
-            data-testid="teacher-lab-select"
+    <>
+      <Section title={t('teacher.subject.new')}>
+        <div className="flex flex-col gap-3">
+          <p className="text-dense text-fg-muted">{t('teacher.subject.intro')}</p>
+          <Field label={t('teacher.subject.fromLibrary')}>
+            <select
+              className={inputClass}
+              value={labId}
+              onChange={(e) => setLabId(e.target.value)}
+              data-testid="teacher-lab-select"
+            >
+              {LABS.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.title}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Button
+            variant="primary"
+            onClick={() => subjectFromLibrary(labId)}
+            data-testid="teacher-from-library"
           >
-            {LABS.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.title}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Button
-          variant="primary"
-          onClick={() => subjectFromLibrary(labId)}
-          data-testid="teacher-from-library"
-        >
-          {t('teacher.subject.create')}
-        </Button>
-        <Button onClick={subjectFromActiveLab}>{t('teacher.subject.fromActive')}</Button>
-        <Button onClick={subjectFromEditor}>{t('teacher.subject.fromEditor')}</Button>
-        <Button onClick={() => void openSubjectFile()} data-testid="teacher-open-subject">
-          <FolderOpen size={14} aria-hidden />
-          {t('teacher.subject.open')}
-        </Button>
-      </div>
-    </Section>
+            {t('teacher.subject.create')}
+          </Button>
+          <Button onClick={subjectFromActiveLab}>{t('teacher.subject.fromActive')}</Button>
+          <Button onClick={subjectFromEditor}>{t('teacher.subject.fromEditor')}</Button>
+          <Button onClick={() => void openSubjectFile()} data-testid="teacher-open-subject">
+            <FolderOpen size={14} aria-hidden />
+            {t('teacher.subject.open')}
+          </Button>
+        </div>
+      </Section>
+      <Section title={t('attempt.section')}>
+        <div className="flex flex-col gap-2">
+          <p className="text-dense text-fg-muted">{t('attempt.intro')}</p>
+          <Button onClick={() => void openSubjectForAttempt()} data-testid="teacher-take-subject">
+            <PlayCircle size={14} aria-hidden />
+            {t('attempt.open')}
+          </Button>
+        </div>
+      </Section>
+    </>
   )
 }
 

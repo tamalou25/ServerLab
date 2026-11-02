@@ -10,7 +10,9 @@ import { TroubleshootPanel, TroubleshootSummaryPanel } from './labs/Troubleshoot
 import { openTroubleshootDialog } from '../lib/troubleshoot'
 import { Button } from './common/ui'
 import { PropertiesPanel } from './properties/PropertiesPanel'
+import { AttemptPanel } from './teacher/AttemptPanel'
 import { TeacherPanel } from './teacher/TeacherPanel'
+import { useAttemptStore } from '../store/attempt'
 import { useTeacherStore } from '../store/teacher'
 import { useT } from '../lib/i18n'
 import { useExamStore } from '../store/exam'
@@ -26,29 +28,41 @@ export function RightPanel() {
   const tshoot = useTroubleshootStore((s) => s.session)
   const tshootSummary = useTroubleshootStore((s) => s.summary)
   const teacher = useTeacherStore((s) => s.enabled)
+  // Épreuve (passation) : sujet ouvert, passation en cours ou rendu à consulter
+  const inAttempt = useAttemptStore((s) => !!(s.pending || s.attempt || s.submission))
+  const running = useAttemptStore((s) => s.attempt !== null)
   const { t } = useT()
   // Le résultat d'un examen reste consultable même si le lab a été fermé
   const lab = active ?? examResult
   const inTshoot = !!(tshoot || tshootSummary)
   // Un dépannage en cours a son propre onglet : l'onglet Lab sert aux labs et à l'examen
   const showLab = !!lab && !inTshoot
-  const TABS: { id: RightTab; label: string }[] = [
-    { id: 'properties', label: t('panel.properties') },
-    ...(showLab ? [{ id: 'lab' as const, label: t('panel.lab') }] : []),
-    { id: 'audit', label: t('panel.audit') },
-    { id: 'troubleshoot', label: t('panel.troubleshoot') },
-    // Drapeau désactivé : aucun onglet Enseignant
-    ...(teacher ? [{ id: 'teacher' as const, label: t('panel.teacher') }] : [])
-  ]
+  const TABS: { id: RightTab; label: string }[] = running
+    ? // Pendant l'épreuve : ni Lab, ni Audit, ni Dépannage, ni Enseignant (solution inaccessible)
+      [
+        { id: 'properties', label: t('panel.properties') },
+        { id: 'attempt', label: t('panel.attempt') }
+      ]
+    : [
+        { id: 'properties', label: t('panel.properties') },
+        ...(showLab ? [{ id: 'lab' as const, label: t('panel.lab') }] : []),
+        { id: 'audit', label: t('panel.audit') },
+        { id: 'troubleshoot', label: t('panel.troubleshoot') },
+        // Drapeau désactivé : aucun onglet Enseignant
+        ...(inAttempt ? [{ id: 'attempt' as const, label: t('panel.attempt') }] : []),
+        ...(teacher ? [{ id: 'teacher' as const, label: t('panel.teacher') }] : [])
+      ]
   // Onglet Lab demandé sans lab (ou pendant un dépannage) : onglet correspondant
   const tab =
     selected === 'lab' && !showLab
       ? inTshoot
         ? 'troubleshoot'
         : 'properties'
-      : selected === 'teacher' && !teacher
+      : (selected === 'teacher' && (!teacher || running)) || (selected === 'attempt' && !inAttempt)
         ? 'properties'
-        : selected
+        : running && selected !== 'properties'
+          ? 'attempt'
+          : selected
   return (
     <aside
       className="flex w-80 shrink-0 flex-col border-l border-line bg-panel"
@@ -92,6 +106,8 @@ export function RightPanel() {
             </Button>
           </div>
         )
+      ) : tab === 'attempt' ? (
+        <AttemptPanel />
       ) : tab === 'teacher' ? (
         <TeacherPanel />
       ) : tab === 'properties' ? (
