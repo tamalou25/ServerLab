@@ -2,7 +2,7 @@
  * Labs notés Cisco IOS : chacun démarre incomplet et la solution (lignes saisies à la console,
  * comme un élève) le valide à 100 %.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   addScope,
   buildLabStart,
@@ -23,6 +23,11 @@ import lab26 from '../../../labs/lab-26-ios-hsrp.json'
 import lab27 from '../../../labs/lab-27-ios-securite.json'
 import lab28 from '../../../labs/lab-28-ios-sujet-e6.json'
 import { run } from '../shell/helpers'
+
+// Solution enregistrée en commandes nommées et rejouée comme un rendu (mode enseignant, #405)
+vi.mock('@engine/index', async (importOriginal) =>
+  (await import('../teacher/recorder')).instrumentEngine(importOriginal)
+)
 
 function load(raw: unknown): LabDefinition {
   const parsed = parseLab(raw)

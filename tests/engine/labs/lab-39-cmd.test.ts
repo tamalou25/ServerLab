@@ -2,10 +2,15 @@
  * Lab 39 « Administration en ligne de commande (CMD) » : départ incomplet, la solution saisie dans
  * la console cmd (net user / net group / dsadd / redirection / dcdiag) valide 100 % des critères.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { buildLabStart, checkLab, parseLab, type LabState } from '@engine/index'
 import lab39 from '../../../labs/lab-39-cmd.json'
 import { run } from '../shell/helpers'
+
+// Solution enregistrée en commandes nommées et rejouée comme un rendu (mode enseignant, #405)
+vi.mock('@engine/index', async (importOriginal) =>
+  (await import('../teacher/recorder')).instrumentEngine(importOriginal)
+)
 
 const parsed = parseLab(lab39)
 if (!parsed.ok) throw new Error(parsed.message)

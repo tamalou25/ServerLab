@@ -3,10 +3,15 @@
  * le port de PC2 + passerelle erronée sur WEB, graine fixe), réparation officielle = 100 % des critères,
  * cas partiels. Le départ sain est vérifié par la réparation (aucune panne ne reste active).
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { activeFaults, allRepaired, checkLab, getFault, type LabState } from '@engine/index'
 import { run } from '../shell/helpers'
 import { failing, loadTroubleshootingLab, repairOfficial } from './depannage-helpers'
+
+// Solution enregistrée en commandes nommées et rejouée comme un rendu (mode enseignant, #405)
+vi.mock('@engine/index', async (importOriginal) =>
+  (await import('../teacher/recorder')).instrumentEngine(importOriginal)
+)
 
 const { lab, start } = loadTroubleshootingLab('lab-43-depannage-reseau.json')
 const id = (s: LabState, name: string) => Object.values(s.devices).find((d) => d.name === name)?.id ?? ''

@@ -2,10 +2,15 @@
  * Lab 42 « Diagnostic de services Windows » : départ cassé (DNS arrêté, LanmanServer arrêté, horloge
  * de PC1 décalée), la solution en PowerShell et cmd valide 100 % des critères ; cas partiels.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { buildLabStart, checkLab, parseLab, type LabState } from '@engine/index'
 import lab42 from '../../../labs/lab-42-diagnostic-services.json'
 import { run } from '../shell/helpers'
+
+// Solution enregistrée en commandes nommées et rejouée comme un rendu (mode enseignant, #405)
+vi.mock('@engine/index', async (importOriginal) =>
+  (await import('../teacher/recorder')).instrumentEngine(importOriginal)
+)
 
 const parsed = parseLab(lab42)
 if (!parsed.ok) throw new Error(parsed.message)

@@ -2,10 +2,15 @@
  * Lab 41 « Services et comptes locaux en PowerShell » : départ avec DNS arrêté, la solution saisie
  * en PowerShell valide 100 % des critères ; les critères `serviceState` et `localAccount` sont testés.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { buildLabStart, checkLab, parseLab, type LabState } from '@engine/index'
 import lab41 from '../../../labs/lab-41-services-comptes.json'
 import { run } from '../shell/helpers'
+
+// Solution enregistrée en commandes nommées et rejouée comme un rendu (mode enseignant, #405)
+vi.mock('@engine/index', async (importOriginal) =>
+  (await import('../teacher/recorder')).instrumentEngine(importOriginal)
+)
 
 const parsed = parseLab(lab41)
 if (!parsed.ok) throw new Error(parsed.message)

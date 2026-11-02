@@ -3,10 +3,15 @@
  * solution saisie avec les commandes `pf.*` valide 100 % des critères, une solution incomplète échoue.
  * Le lab 59 (dépannage) est couvert par `lab-59-depannage-pare-feu.test.ts`.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { command, type AnyCommand, type LabState } from '@engine/index'
 import { run } from '../shell/helpers'
 import { failing, loadTroubleshootingLab, play } from './depannage-helpers'
+
+// Solution enregistrée en commandes nommées et rejouée comme un rendu (mode enseignant, #405)
+vi.mock('@engine/index', async (importOriginal) =>
+  (await import('../teacher/recorder')).instrumentEngine(importOriginal)
+)
 
 const idOf = (s: LabState, name: string): string =>
   Object.values(s.devices).find((d) => d.name === name)?.id ?? ''

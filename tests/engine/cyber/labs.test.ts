@@ -2,7 +2,7 @@
  * Labs de la v2.6 (durcissement L2 Cisco, durcissement AD complet) : départ incomplet, solution
  * saisie comme le ferait l'étudiant (console IOS, PowerShell, GPO) validée à 100 %.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   auditLab,
   buildLabStart,
@@ -20,6 +20,11 @@ import {
 import l2 from '../../../labs/lab-29-durcissement-l2.json'
 import ad from '../../../labs/lab-30-durcissement-ad-complet.json'
 import { run } from '../shell/helpers'
+
+// Solution enregistrée en commandes nommées et rejouée comme un rendu (mode enseignant, #405)
+vi.mock('@engine/index', async (importOriginal) =>
+  (await import('../teacher/recorder')).instrumentEngine(importOriginal)
+)
 
 const id = (s: LabState, name: string) => Object.values(s.devices).find((d) => d.name === name)?.id ?? ''
 const load = (raw: unknown): LabDefinition => {
