@@ -8,7 +8,10 @@ import {
   parseLab,
   parseSubject,
   parseSubmission,
-  serializeSubject
+  serializeSubject,
+  serializeSubmission,
+  finishAttempt,
+  startAttempt
 } from '../../src/engine/index'
 import lab1 from '../../labs/lab-01-adressage.json'
 import { clickMenu, configureHostIp, launchApp } from './helpers'
@@ -130,6 +133,86 @@ test('Passation : lab 1 résolu dans l’interface, indice, rendu ; la correctio
     expect(correction.flags).toEqual([])
     expect(correction.criteria.filter((c) => !c.ok)).toEqual([])
     expect(correction.grade.value).toBeCloseTo(20 - (0.5 / 7) * 20, 2)
+    expect(consoleErrors).toEqual([])
+  } finally {
+    await close()
+  }
+})
+
+test('Correction : rendus importés, signalement, oral noté, CSV de la classe', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'serverlab-correction-'))
+  const lab = parseLab(lab1)
+  if (!lab.ok) throw new Error(lab.message)
+  const subject = {
+    ...createSubject(lab.lab, { appVersion: 'e2e' }),
+    oral: [
+      {
+        id: 'q1',
+        text: 'Rôle de la passerelle ?',
+        trigger: { kind: 'minute' as const, minute: 0 },
+        points: 2
+      }
+    ]
+  }
+  const subjectPath = join(dir, 'sujet.slabsujet')
+  writeFileSync(subjectPath, serializeSubject(subject))
+  const t0 = Date.now()
+  const bob = finishAttempt(
+    {
+      ...startAttempt(subject, 'Bob', 'exam', t0),
+      answers: [{ questionId: 'q1', text: 'Sortir du réseau local.', at: t0 + 1000 }]
+    },
+    { now: t0 + 60_000, ending: 'finish', appVersion: 'e2e' }
+  )
+  const eve = {
+    ...bob,
+    student: { ...bob.student, name: 'Eve' },
+    subject: { ...bob.subject, fingerprint: '0'.repeat(64) }
+  }
+  const files = [join(dir, 'bob.slabrendu'), join(dir, 'eve.slabrendu')]
+  writeFileSync(files[0]!, serializeSubmission(bob))
+  writeFileSync(files[1]!, serializeSubmission(eve))
+  const csv = join(dir, 'notes')
+  const { app, close, page, consoleErrors } = await launchApp()
+  try {
+    await clickMenu(app, ['Affichage', 'Mode enseignant'])
+    await page.getByTestId('right-tab-teacher').click()
+    const panel = page.getByTestId('teacher-panel')
+    await panel.getByTestId('teacher-view-grading').click()
+    await app.evaluate(({ dialog }, path) => {
+      dialog.showOpenDialog = (async () => ({
+        canceled: false,
+        filePaths: [path]
+      })) as typeof dialog.showOpenDialog
+    }, subjectPath)
+    await panel.getByTestId('grading-open-subject').click()
+    await app.evaluate(
+      ({ dialog }, p) => {
+        dialog.showOpenDialog = (async () => ({
+          canceled: false,
+          filePaths: p.files
+        })) as typeof dialog.showOpenDialog
+        dialog.showSaveDialog = (async () => ({
+          canceled: false,
+          filePath: p.csv
+        })) as typeof dialog.showSaveDialog
+      },
+      { files, csv }
+    )
+    await panel.getByTestId('grading-import').click()
+    await panel.getByTestId('grading-row-Eve').click()
+    await expect(panel.getByTestId('grading-flag')).toContainText('empreinte')
+    await panel.getByTestId('grading-row-Bob').click()
+    await expect(panel.getByTestId('grading-grade')).toHaveText('0')
+    await panel.getByTestId('grading-oral-0').fill('2')
+    await panel.getByTestId('grading-oral-0').blur()
+    await expect(panel.getByTestId('grading-grade')).not.toHaveText('0')
+    await panel.getByTestId('grading-csv').click()
+    await expect(page.getByText(`Fichier enregistré : ${csv}.csv`)).toBeVisible()
+    const text = readFileSync(`${csv}.csv`, 'utf8')
+    expect(text.startsWith('﻿')).toBe(true)
+    expect(text).toContain('Bob;')
+    expect(text).toContain('Eve;')
     expect(consoleErrors).toEqual([])
   } finally {
     await close()
