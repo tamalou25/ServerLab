@@ -34,6 +34,7 @@ import { getFlowInstance } from './lib/flow'
 import { useLangStore } from './lib/i18n'
 import { offerTutorial } from './lib/tutorial'
 import { useAttemptClock } from './lib/attempt'
+import { DemoBar } from './components/teacher/DemoBar'
 import { setTeacherMode } from './lib/teacher'
 import { useSimStore } from './store/sim'
 import { useUiStore } from './store/ui'
@@ -174,6 +175,7 @@ export function App() {
             {showProperties && <RightPanel />}
           </div>
           <SimulationPanel />
+          <DemoBar />
           <StatusBar />
         </div>
         <HomeScreen />

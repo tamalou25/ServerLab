@@ -317,3 +317,8 @@
 .react-flow__controls-button svg {
   fill: currentColor;
 }
+
+/* Mode projection (démonstration du mode enseignant) : tout le chrome agrandi pour le vidéoprojecteur */
+html[data-projection] body {
+  zoom: 1.35;
+}

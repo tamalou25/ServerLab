@@ -2,7 +2,8 @@
  * Correction (onglet Enseignant) : rendus importés, note recalculée par rejeu, signalements,
  * saisie de l'oral et du commentaire, export par élève et CSV de la classe, statistiques.
  */
-import { FileDown, FolderOpen, Table, Upload } from 'lucide-react'
+import { FileDown, FolderOpen, PlayCircle, Table, Upload } from 'lucide-react'
+import { startDemo } from '../../lib/demo'
 import { classStats } from '@engine/index'
 import { useT } from '../../lib/i18n'
 import {
@@ -197,6 +198,10 @@ function CopyDetail({ copy }: { copy: GradedCopy }) {
             onBlur={(e) => updateCopy(copy.file, { comment: e.target.value })}
           />
         </Field>
+        <Button onClick={() => startDemo(subject, copy.submission)} data-testid="grading-demo">
+          <PlayCircle size={14} aria-hidden />
+          {t('demo.start')}
+        </Button>
         <Button
           variant="primary"
           onClick={() => void exportCorrection(copy.file)}
