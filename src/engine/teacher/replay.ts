@@ -4,7 +4,7 @@
  * mode Temps réel). L'état final et les critères en découlent : rien n'est lu dans le rendu.
  */
 import type { AnyCommand } from '../commands/define'
-import { dispatch } from '../commands/dispatch'
+import { dispatch, journalEntry } from '../commands/dispatch'
 import { emptyHistory, recordEntry, redoStep, undoStep, type History } from '../commands/history'
 import { evaluateCriteria } from '../labs/criteria'
 import { buildLabState } from '../labs/lab'
@@ -65,6 +65,22 @@ export function replayStep(
       return {
         ok: true,
         cursor: settle({ ...cursor, history: recordEntry(cursor.history, result.entry) }, result.state),
+        outcome: 'applied'
+      }
+    }
+    if (step.kind === 'transaction') {
+      // Comme l'interface : commandes appliquées (tâches de fond comprises), une seule entrée
+      const base = cursor.state
+      let current = cursor
+      for (const command of step.commands) {
+        const result = dispatch(current.state, command as AnyCommand)
+        if (result.ok && result.state !== current.state) current = settle(current, result.state)
+      }
+      const entry = journalEntry(base, current.state, { type: 'batch', args: [], label: step.label })
+      if (!entry) return { ok: true, cursor: current, outcome: 'unchanged' }
+      return {
+        ok: true,
+        cursor: { ...current, history: recordEntry(current.history, entry) },
         outcome: 'applied'
       }
     }

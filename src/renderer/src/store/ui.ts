@@ -7,6 +7,7 @@ import { create } from 'zustand'
 import type { Device, Link } from '@engine/index'
 import type { SimMode, Theme } from '@shared/ipc'
 import { readPref, writePref } from '../lib/prefs'
+import { useAttemptStore } from './attempt'
 import { useLabStore } from './lab'
 
 /** Outil actif sur le canvas. */
@@ -51,7 +52,7 @@ export interface PduResult {
   success: boolean
 }
 
-export type RightTab = 'lab' | 'properties' | 'audit' | 'troubleshoot' | 'teacher'
+export type RightTab = 'lab' | 'properties' | 'audit' | 'troubleshoot' | 'teacher' | 'attempt'
 
 /** Boîte de dialogue modale applicative. */
 export interface ModalState {
@@ -174,6 +175,8 @@ export const useUiStore = create<UiState>()((set, get) => ({
     set({ theme })
   },
   setMode: (mode) => {
+    // Passation (mode enseignant) : Temps réel imposé, sinon le rejeu ne retrouverait pas l'état
+    if (mode === 'simulation' && useAttemptStore.getState().attempt) return
     // Le panneau Simulation est en bas de la fenêtre : l'onglet de l'inspecteur ne change pas
     set({ mode })
     // Tâches de fond des rôles : actives en Temps réel, suspendues en Simulation

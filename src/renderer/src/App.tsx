@@ -33,6 +33,7 @@ import { copySelection, deleteSelection, paste, redo, selectAll, undo } from './
 import { getFlowInstance } from './lib/flow'
 import { useLangStore } from './lib/i18n'
 import { offerTutorial } from './lib/tutorial'
+import { useAttemptClock } from './lib/attempt'
 import { setTeacherMode } from './lib/teacher'
 import { useSimStore } from './store/sim'
 import { useUiStore } from './store/ui'
@@ -154,6 +155,7 @@ export function App() {
   useConsoleSessionSync()
   useExamGuards()
   useTroubleshootTracking()
+  useAttemptClock()
   useEffect(() => {
     // Mode enseignant : préférence enregistrée (désactivé par défaut)
     void window.serverlab.teacherMode().then(setTeacherMode)

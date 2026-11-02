@@ -38,7 +38,17 @@ export const RecordedCommandSchema = z.strictObject({
 export const JournalStepSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('command'), at: TimestampSchema, command: RecordedCommandSchema }),
   z.strictObject({ kind: z.literal('undo'), at: TimestampSchema }),
-  z.strictObject({ kind: z.literal('redo'), at: TimestampSchema })
+  z.strictObject({ kind: z.literal('redo'), at: TimestampSchema }),
+  /**
+   * Transaction (glisser un équipement) : commandes intermédiaires appliquées sans être
+   * journalisées, puis une seule entrée d'historique sous `label` (comme `commitTransaction`).
+   */
+  z.strictObject({
+    kind: z.literal('transaction'),
+    at: TimestampSchema,
+    label: boundedText(300),
+    commands: z.array(RecordedCommandSchema).max(MAX_REPLAY_STEPS)
+  })
 ])
 
 export const HintTakenSchema = z.strictObject({
@@ -68,7 +78,15 @@ export const SubmissionSchema = z.strictObject({
   startedAt: TimestampSchema,
   endedAt: TimestampSchema,
   ending: z.enum(['finish', 'timeout', 'abandon']),
-  journal: z.array(JournalStepSchema).max(MAX_REPLAY_STEPS),
+  journal: z
+    .array(JournalStepSchema)
+    .max(MAX_REPLAY_STEPS)
+    .refine(
+      (steps) =>
+        steps.reduce((n, s) => n + (s.kind === 'transaction' ? Math.max(1, s.commands.length) : 1), 0) <=
+        MAX_REPLAY_STEPS,
+      `au plus ${MAX_REPLAY_STEPS} pas de rejeu`
+    ),
   hints: z.array(HintTakenSchema).max(2000),
   answers: z.array(OralAnswerSchema).max(MAX_ORAL_QUESTIONS)
 })

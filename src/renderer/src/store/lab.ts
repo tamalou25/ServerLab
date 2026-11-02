@@ -31,7 +31,7 @@ import {
 
 export const UNTITLED = 'Sans titre'
 
-type LabelledCommand = AnyCommand & { label?: string }
+export type LabelledCommand = AnyCommand & { label?: string }
 
 /** Commande déjà exécutée sur un état de base, validée plus tard (fin de lecture en Simulation). */
 export interface PreparedCommand<T = unknown> {
@@ -94,6 +94,27 @@ interface LabStore {
   setRealtime(on: boolean): void
 }
 
+/**
+ * Enregistreur de la passation (mode enseignant) : reçoit chaque commande exécutée par
+ * l'interface, refusée ou non, ainsi que les annulations, rétablissements et transactions.
+ * null hors passation.
+ */
+export type JournalRecorder = (
+  step:
+    | { kind: 'command'; command: LabelledCommand }
+    | { kind: 'undo' | 'redo' }
+    | { kind: 'transaction'; label: string; commands: LabelledCommand[] }
+) => void
+
+let recorder: JournalRecorder | null = null
+/** Commandes intermédiaires d'une transaction en cours (enregistrées en un seul pas). */
+let transactionCommands: LabelledCommand[] = []
+
+export function setJournalRecorder(next: JournalRecorder | null): void {
+  recorder = next
+  transactionCommands = []
+}
+
 export const useLabStore = create<LabStore>()((set, get) => {
   /** Dépendances des tâches de fond à leur dernier passage (tâches incrémentales du moteur). */
   let backgroundMemo: BackgroundMemo = {}
@@ -131,6 +152,10 @@ export const useLabStore = create<LabStore>()((set, get) => {
 
     dispatch: ((command: LabelledCommand, options?: DispatchOptions) => {
       const before = get().lab
+      if (recorder) {
+        if (get().transactionBase !== null) transactionCommands.push(command)
+        else recorder({ kind: 'command', command })
+      }
       const result = dispatchCommand(before, command)
       if (result.ok && result.state !== before) {
         const record = (options?.record ?? true) && get().transactionBase === null
@@ -150,12 +175,13 @@ export const useLabStore = create<LabStore>()((set, get) => {
 
     commit(prepared) {
       const { result, base, command } = prepared
-      if (!result.ok) return
       if (get().lab !== base) {
         // Le lab a changé pendant la lecture : la commande est rejouée sur l'état courant
-        get().dispatch(command)
+        if (result.ok) get().dispatch(command)
         return
       }
+      recorder?.({ kind: 'command', command })
+      if (!result.ok) return
       if (result.state === base) return
       const entry = journalEntry(base, result.state, command)
       set((s) => ({
@@ -172,15 +198,19 @@ export const useLabStore = create<LabStore>()((set, get) => {
     commitTransaction(command) {
       const base = get().transactionBase
       if (base === null) return
+      recorder?.({ kind: 'transaction', label: command.label ?? command.type, commands: transactionCommands })
+      transactionCommands = []
       const entry = journalEntry(base, get().lab, command)
       set((s) => ({ transactionBase: null, ...(entry ? { history: recordEntry(s.history, entry) } : {}) }))
     },
 
     undo() {
+      recorder?.({ kind: 'undo' })
       return applyStep(undoStep(get().lab, get().history))
     },
 
     redo() {
+      recorder?.({ kind: 'redo' })
       return applyStep(redoStep(get().lab, get().history))
     },
 
