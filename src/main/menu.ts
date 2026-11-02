@@ -27,6 +27,9 @@ export interface MenuContext {
   /** Préférence de langue (bouton radio coché dans Affichage > Langue). */
   language: LanguagePreference
   onLanguage: (preference: LanguagePreference) => void
+  /** Mode enseignant (case cochée dans Affichage). */
+  teacherMode: boolean
+  onTeacherMode: (on: boolean) => void
   onCheckUpdates?: () => void
 }
 
@@ -149,6 +152,13 @@ export function buildMenu(ctx: MenuContext): Menu {
             checked: ctx.language === preference,
             click: () => ctx.onLanguage(preference)
           }))
+        },
+        { type: 'separator' },
+        {
+          label: t('menu.view.teacherMode'),
+          type: 'checkbox',
+          checked: ctx.teacherMode,
+          click: (item) => ctx.onTeacherMode(item.checked)
         },
         { type: 'separator' },
         {

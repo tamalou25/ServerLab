@@ -37,7 +37,9 @@ export const SettingsSchema = z.object({
   theme: ThemePreferenceSchema.catch('system'),
   language: LanguagePreferenceSchema.catch('system'),
   showHomeOnStartup: z.boolean().catch(true),
-  showTutorialOnStartup: z.boolean().catch(true)
+  showTutorialOnStartup: z.boolean().catch(true),
+  /** Mode enseignant (Affichage > Mode enseignant) : désactivé par défaut. */
+  teacherMode: z.boolean().catch(false)
 })
 
 export type Settings = z.infer<typeof SettingsSchema>
@@ -46,7 +48,8 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   language: 'system',
   showHomeOnStartup: true,
-  showTutorialOnStartup: true
+  showTutorialOnStartup: true,
+  teacherMode: false
 }
 
 /** Préférences lues depuis le contenu de settings.json (défauts si absent ou invalide). */

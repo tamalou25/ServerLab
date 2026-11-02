@@ -28,6 +28,8 @@ export type MenuCommand =
   | 'view:toggleProperties'
   | 'view:theme'
   | 'view:language'
+  /** Mode enseignant activé ou désactivé (argument 'on' ou 'off'). */
+  | 'view:teacherMode'
   | 'sim:realtime'
   | 'sim:simulation'
   | 'sim:step'
@@ -150,7 +152,10 @@ export const IPC = {
   labExport: 'lab:export',
   examExport: 'exam:export',
   libraryIndex: 'library:index',
-  libraryLab: 'library:lab'
+  libraryLab: 'library:lab',
+  teacherMode: 'teacher:mode',
+  teacherSave: 'teacher:save',
+  teacherOpen: 'teacher:open'
 } as const
 
 /** Taille maximale acceptée pour un fichier .slab (protection contre les fichiers aberrants). */
@@ -158,6 +163,30 @@ export const MAX_SLAB_BYTES = 20 * 1024 * 1024
 
 /** Taille maximale d'un fichier de lab JSON (même limite que MAX_LAB_LENGTH du moteur). */
 export const MAX_LAB_BYTES = 1024 * 1024
+
+/** Fichiers du mode enseignant (sujet, rendu, correction, CSV de la classe). */
+export type TeacherFileKind = 'sujet' | 'rendu' | 'correction' | 'csv'
+
+export const TEACHER_FILE_KINDS: readonly TeacherFileKind[] = ['sujet', 'rendu', 'correction', 'csv']
+
+/** Extension de chaque type de fichier du mode enseignant. */
+export const TEACHER_EXTENSIONS: Record<TeacherFileKind, string> = {
+  sujet: 'slabsujet',
+  rendu: 'slabrendu',
+  correction: 'slabcorrection',
+  csv: 'csv'
+}
+
+/** Taille maximale (octets) par type : mêmes bornes que le moteur (src/engine/teacher). */
+export const MAX_TEACHER_BYTES: Record<TeacherFileKind, number> = {
+  sujet: 4 * 1024 * 1024,
+  rendu: 8 * 1024 * 1024,
+  correction: 1024 * 1024,
+  csv: 8 * 1024 * 1024
+}
+
+/** Nombre maximal de fichiers importés en une fois (rendus d'une classe). */
+export const MAX_TEACHER_FILES = 60
 
 /** API exposée au renderer via contextBridge (window.serverlab). */
 export interface ServerLabApi {
@@ -224,4 +253,11 @@ export interface ServerLabApi {
   libraryIndex(): Promise<FileResult<string>>
   /** Bibliothèque communautaire : texte d'un lab (labs/<nom>.json), vérifié ensuite par le moteur. */
   libraryLab(file: string): Promise<FileResult<string>>
+
+  /** Mode enseignant activé (préférence ; `view:teacherMode` ensuite). */
+  teacherMode(): Promise<boolean>
+  /** Dialogue « Enregistrer sous » puis écriture atomique d'un fichier du mode enseignant. */
+  saveTeacherFile(kind: TeacherFileKind, content: string, suggestedName: string): Promise<FileResult<string>>
+  /** Dialogue « Ouvrir » (plusieurs fichiers pour les rendus) ; contenus validés ensuite par le moteur. */
+  openTeacherFiles(kind: TeacherFileKind): Promise<FileResult<OpenedFile[]>>
 }

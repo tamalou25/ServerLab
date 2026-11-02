@@ -1,7 +1,7 @@
 /**
  * Mise en page principale : palette à gauche, canvas au centre, propriétés à droite.
  */
-import { Fragment, useCallback } from 'react'
+import { Fragment, useCallback, useEffect } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
 import type { MenuCommandMessage } from '@shared/ipc'
 import { TopologyCanvas } from './components/canvas/TopologyCanvas'
@@ -33,6 +33,7 @@ import { copySelection, deleteSelection, paste, redo, selectAll, undo } from './
 import { getFlowInstance } from './lib/flow'
 import { useLangStore } from './lib/i18n'
 import { offerTutorial } from './lib/tutorial'
+import { setTeacherMode } from './lib/teacher'
 import { useSimStore } from './store/sim'
 import { useUiStore } from './store/ui'
 
@@ -105,6 +106,9 @@ function handleMenuCommand(msg: MenuCommandMessage): void {
     case 'view:theme':
       if (msg.arg === 'dark' || msg.arg === 'light') ui.setTheme(msg.arg)
       break
+    case 'view:teacherMode':
+      setTeacherMode(msg.arg === 'on')
+      break
     case 'view:language':
       if (msg.arg === 'fr' || msg.arg === 'en') useLangStore.getState().setLang(msg.arg)
       break
@@ -150,6 +154,10 @@ export function App() {
   useConsoleSessionSync()
   useExamGuards()
   useTroubleshootTracking()
+  useEffect(() => {
+    // Mode enseignant : préférence enregistrée (désactivé par défaut)
+    void window.serverlab.teacherMode().then(setTeacherMode)
+  }, [])
 
   return (
     <ReactFlowProvider>

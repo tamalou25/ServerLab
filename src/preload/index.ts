@@ -73,7 +73,12 @@ const api: ServerLabApi = {
   exportExamResult: (content, suggestedName) => ipcRenderer.invoke(IPC.examExport, content, suggestedName),
 
   libraryIndex: () => ipcRenderer.invoke(IPC.libraryIndex),
-  libraryLab: (file) => ipcRenderer.invoke(IPC.libraryLab, file)
+  libraryLab: (file) => ipcRenderer.invoke(IPC.libraryLab, file),
+
+  teacherMode: () => ipcRenderer.invoke(IPC.teacherMode),
+  saveTeacherFile: (kind, content, suggestedName) =>
+    ipcRenderer.invoke(IPC.teacherSave, kind, content, suggestedName),
+  openTeacherFiles: (kind) => ipcRenderer.invoke(IPC.teacherOpen, kind)
 }
 
 contextBridge.exposeInMainWorld('serverlab', api)
