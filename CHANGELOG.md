@@ -6,6 +6,39 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+## [2.12.0] — 2026-11-02
+
+Mode enseignant, hors ligne et par fichiers : sujets d'évaluation, passation, correction par rejeu,
+démonstration. Activé par Affichage › Mode enseignant (désactivé par défaut). Format `.slab` inchangé.
+Documentation : [docs/mode-enseignant.md](docs/mode-enseignant.md).
+
+### Moteur
+
+- Formats `.slabsujet`, `.slabrendu`, `.slabcorrection` : schémas zod stricts, numéro de format et migrations
+  propres, tailles et pas de rejeu bornés, empreinte SHA-256 canonique du sujet, champs réservés 2.13 (#390).
+- Correction par rejeu du journal de l'élève (dispatch, historique, tâches de fond comme l'interface) ; note
+  selon le barème (poids critères / temps / erreurs, pénalités d'indices, oral) ; signalements ; CSV de la
+  classe (`;`, BOM, formules neutralisées) et statistiques (#392).
+- Passation : questions d'oral au déclencheur, indices sans révéler les critères, rendu ; glisser-déposer rejoué
+  en une seule entrée d'historique (#396). Rejeu image par image pour la démonstration (#400).
+
+### Interface
+
+- Onglet Enseignant : sujet depuis un lab, le lab ouvert, l'éditeur de labs ou un `.slabsujet` ; barème, oral,
+  prévisualisation, contrôle « solution = 100 % » à l'export (#394).
+- Onglet Épreuve : chronomètre, critères masqués, Temps réel imposé, indices avec pénalité confirmée, questions
+  d'oral, rendu, auto-évaluation (#396).
+- Correction : import de plusieurs rendus, note recalculée, signalements, oral noté à la main, commentaire,
+  export par élève et CSV (#398).
+- Démonstration pas à pas (avancer, reculer, vitesse) et mode projection (#400).
+- Textes français et anglais ; références visuelles de l'onglet Enseignant (clair et sombre) (#402).
+
+### Sécurité
+
+- Fichiers du mode enseignant : type et taille vérifiés par le process principal, écriture atomique, 60 rendus
+  au plus par import.
+- Electron 44.10.1 (`npm audit fix`) : plus aucune vulnérabilité « high ».
+
 ## [2.11.0] — 2026-10-28
 
 Interface v2 : refonte graphique du chrome de l'application (« console d'ingénierie »), sans changement du moteur,

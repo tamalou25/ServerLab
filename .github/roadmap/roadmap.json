@@ -115,6 +115,10 @@
     {
       "title": "v2.10",
       "description": "Pare-feu pfSense CE 2.7 : règles par interface avec état des connexions, NAT, DHCP/DNS, interface web et console fidèles, labs DMZ."
+    },
+    {
+      "title": "v2.12",
+      "description": "Mode enseignant hors ligne, par fichiers : sujets, passation et auto-évaluation, correction par rejeu, démonstration."
     }
   ],
   "issues": [

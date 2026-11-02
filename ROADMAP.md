@@ -18,6 +18,9 @@ avec GitHub par le workflow **Roadmap sync** (ne crée que ce qui manque).
 | v2.8    | Services à état et mode panne (dépannage)                     | [v2.8](https://github.com/tamalou25/ServerLab/milestones?q=v2.8)     |
 | v2.9    | Serveurs Linux (Debian 12 / Ubuntu Server 24.04)              | [v2.9](https://github.com/tamalou25/ServerLab/milestones?q=v2.9)     |
 | v2.10   | Pare-feu pfSense                                              | [v2.10](https://github.com/tamalou25/ServerLab/milestones?q=v2.10)   |
+| v2.12   | Mode enseignant (hors ligne, par fichiers)                    | [v2.12](https://github.com/tamalou25/ServerLab/milestones?q=v2.12)   |
+| v2.13   | Mode enseignant : serveur de l'école, code de classe          | à créer                                                              |
+| v2.14   | Mode enseignant : oral E6 avec jury en direct                 | à créer                                                              |
 
 > Le milestone v1.1 est sorti sous le numéro de version **2.0.0** (choix de Gary), suivi de la 2.0.1
 > (stabilisation). Les milestones suivants ajoutent des fonctionnalités sans casser les fichiers
@@ -208,6 +211,22 @@ fidèles, labs DMZ.
 
 Critère d'acceptation : le même ping ou la même requête web réussit ou échoue selon la règle, et la règle
 appliquée est visible dans la trace. Hors périmètre : VPN, proxy, IDS.
+
+## v2.12 — Mode enseignant (hors ligne)
+
+Sujets (`.slabsujet`), passation et auto-évaluation (`.slabrendu`), correction par rejeu (`.slabcorrection`,
+CSV de la classe), démonstration pas à pas. Échanges par fichiers uniquement. Voir
+[docs/mode-enseignant.md](docs/mode-enseignant.md).
+
+## v2.13 — Serveur de l'école (prévu)
+
+Serveur hébergé par l'établissement : code de classe, dépôt des rendus et retour des corrections. Les formats
+2.12 prévoient déjà `classId` et `studentId` (vides en 2.12). Hors périmètre : hébergement par ServerLab.
+
+## v2.14 — Oral E6 en direct (prévu)
+
+Jury connecté en direct pendant l'épreuve : questions posées à la volée, notation en temps réel. En 2.12,
+seules les questions écrites prévues dans le sujet existent.
 
 ## Points d'attention (audit v1.0)
 
