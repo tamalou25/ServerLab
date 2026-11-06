@@ -45,7 +45,7 @@ test('Parcours PME : étape recommandée, ouverture, réussite enregistrée, pro
     await pathway.getByTestId('pathway-open-etape-01').click()
     await expect(page.getByTestId('lab-title')).toHaveText('Adressage IP et routage entre deux réseaux')
     await solveLab01(page)
-    await page.getByTestId('right-tab-lab').click()
+    await page.getByTestId('mission-tab-mission').click()
     await page.getByTestId('lab-check').click()
     await expect(page.getByTestId('lab-score')).toHaveText('7 / 7 critère(s) validé(s)')
 
@@ -100,8 +100,8 @@ test('Progression : fichier corrompu toléré, lab de dépannage fourni avec ind
     await clickMenu(app, ['Fichier', 'Ouvrir un lab…'])
     await page.getByTestId('lab-open-lab-60-mission-compta').click()
     await expect(page.getByTestId('lab-title')).toContainText('la comptabilité ne peut plus enregistrer')
-    // Un lab de dépannage fourni garde son énoncé dans l'onglet Lab et a un onglet Dépannage actif
-    await page.getByTestId('right-tab-troubleshoot').click()
+    // Un lab de dépannage fourni garde son énoncé dans l'onglet Mission et a un onglet Dépannage actif
+    await page.getByTestId('mission-tab-troubleshoot').click()
     const panel = page.getByTestId('tshoot-panel')
     await expect(panel.getByTestId('tshoot-tickets')).toContainText('onglet Lab')
     await expect(panel.getByTestId('tshoot-hints-count')).toHaveText('0 / 6')
@@ -110,7 +110,7 @@ test('Progression : fichier corrompu toléré, lab de dépannage fourni avec ind
     await expect(panel.getByTestId('tshoot-hints')).not.toContainText('rabaissées')
     await panel.getByTestId('tshoot-repaired').click()
     await expect(panel.getByTestId('tshoot-persists')).toHaveText('Le problème persiste.')
-    await page.getByTestId('right-tab-lab').click()
+    await page.getByTestId('mission-tab-mission').click()
     await expect(page.getByTestId('lab-title')).toBeVisible()
     expect(consoleErrors).toEqual([])
   } finally {

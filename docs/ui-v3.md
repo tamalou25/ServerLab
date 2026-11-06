@@ -31,4 +31,33 @@ comme une suggestion.
 | `--sl-zone`, `--sl-zone-line`                                         | zones réseau du plan (fond translucide, contour) |
 | `--sl-motion-fast`, `--sl-motion-base`                                | durées des transitions                           |
 
-(Suite : disposition, espaces, écarts par rapport aux maquettes et procédure d'essai, complétés lot par lot.)
+## Disposition et espaces
+
+| Zone                      | Composant         | Rôle                                                                                                                           |
+| ------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| En-tête (44 px)           | `shell/AppHeader` | marque et badge de l'espace, nom du document et état d'enregistrement, Temps réel / Simulation, Nouveau / Ouvrir / Enregistrer |
+| Rail (64 px, 48 px serré) | `shell/AppRail`   | Atelier, Mission, Labs (sélecteur), Enseignant (mode activé), Aide ; `aria-current` sur l'espace affiché                       |
+| Barre du plan (40 px)     | `shell/CanvasBar` | « Vue d'ensemble » et compteurs réels, annuler / rétablir, outils, zoom                                                        |
+| Barre d'état (24 px)      | `StatusBar`       | outil actif, paquets en attente, zoom, thème                                                                                   |
+
+Trois espaces (`ui.workspace`, raccourcis `Ctrl+Maj+A / M / E`, menu Affichage > Espace) :
+
+- **Atelier** : palette | plan | inspecteur (`RightPanel`, onglets Résumé / Audit / Dépannage, largeur
+  280–480 px mémorisée).
+- **Mission** : contexte (`mission/MissionSidebar` : titre, difficulté, résumé, durée, régime, consoles) |
+  plan | lecteur (`mission/MissionReader` : Mission / Dépannage / Résumé, 320 px à 60 % de la fenêtre,
+  bouton Élargir à 560 px, largeur mémorisée). Disponible dès qu'un lab, un résultat d'examen, un
+  dépannage ou une épreuve est ouvert ; sélectionné automatiquement à l'ouverture. Le plan reste le même
+  composant monté : sélection, fenêtres d'équipement et vue sont conservées d'un espace à l'autre.
+- **Enseignant** (`teacher/TeacherWorkspace`) : page qui recouvre la zone centrale ; palette, plan et
+  inspecteur restent montés mais **inertes** (`inert`), les fenêtres d'équipement et le panneau Simulation
+  ne sont pas rendus, les raccourcis et commandes de menu du canvas sont sans effet. Visible seulement si
+  Affichage > Mode enseignant est coché, jamais pendant une épreuve ni pendant le tutoriel. Le focus arrive
+  sur le titre de la page et revient au bouton du rail à la sortie. La démonstration (rejeu) bascule sur
+  l'Atelier et revient à l'espace Enseignant à sa fermeture.
+
+Les règles d'affichage de la v2 sont conservées : pendant une épreuve, seuls Atelier et Mission existent et
+le lecteur ne montre jamais les critères ; un dépannage généré remplace l'énoncé, un lab de dépannage fourni
+garde son énoncé à côté de l'onglet Dépannage.
+
+(Suite : écarts par rapport aux maquettes et procédure d'essai, complétés lot par lot.)

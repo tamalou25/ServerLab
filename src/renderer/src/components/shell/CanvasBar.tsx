@@ -1,41 +1,29 @@
 /**
- * Barre d'outils principale (32 px, sous le menu natif) : fichier, annuler / rétablir, outils du
- * canvas, zoom et bascule Temps réel / Simulation. Chaque bouton appelle la même action que le menu
- * natif ou le raccourci clavier correspondant (infobulle avec le raccourci du catalogue).
+ * Barre du plan (au-dessus du canvas) : titre et compteurs réels de la topologie, annuler / rétablir,
+ * outils du canvas, zoom. Chaque bouton appelle la même action que le menu natif ou le raccourci
+ * clavier correspondant (infobulle avec le raccourci du catalogue).
  */
 import { useReactFlow, useViewport } from '@xyflow/react'
-import {
-  Clock,
-  FilePlus2,
-  FolderOpen,
-  Footprints,
-  Maximize,
-  Minus,
-  Plus,
-  Redo2,
-  Save,
-  Undo2,
-  type LucideIcon
-} from 'lucide-react'
+import { Maximize, Minus, Plus, Redo2, Undo2, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { historyLabels } from '@engine/index'
 import { accelerator, formatShortcut, type ShortcutId } from '@shared/shortcuts'
 import type { MessageKey } from '@shared/i18n'
-import { newDocument, openDocument, saveDocument } from '../lib/document'
-import { redo, undo } from '../lib/editing'
-import { useT } from '../lib/i18n'
-import { useLabStore } from '../store/lab'
-import { useUiStore } from '../store/ui'
-import { TOOLS } from './canvas/CanvasToolbar'
-import { Tooltip } from './common/Tooltip'
+import { useWindowSize, COMPACT_HEIGHT, NARROW_WIDTH } from '../../hooks/useWindowSize'
+import { redo, undo } from '../../lib/editing'
+import { useT } from '../../lib/i18n'
+import { useLabStore } from '../../store/lab'
+import { useUiStore } from '../../store/ui'
+import { TOOLS } from '../canvas/CanvasToolbar'
+import { Tooltip } from '../common/Tooltip'
 
 const ANIMATION = { duration: 150 }
 
 const button =
-  'flex h-7 w-7 items-center justify-center rounded text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:pointer-events-none disabled:opacity-40'
+  'flex h-7 w-7 items-center justify-center rounded-control text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:pointer-events-none disabled:opacity-40'
 
 function Separator() {
-  return <span className="mx-1.5 h-4 w-px bg-line" aria-hidden="true" />
+  return <span className="mx-1 h-4 w-px bg-line" aria-hidden="true" />
 }
 
 interface ActionProps {
@@ -60,7 +48,7 @@ function Action({ label, icon: Icon, shortcut, onClick, disabled, testId }: Acti
         className={button}
         data-testid={testId}
       >
-        <Icon size={15} />
+        <Icon size={15} aria-hidden />
       </button>
     </Tooltip>
   )
@@ -74,7 +62,7 @@ function Group({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-/** Outils du canvas (mêmes outils, raccourcis et identifiants que la barre flottante d'avant). */
+/** Outils du canvas (mêmes outils, raccourcis et identifiants qu'avant). */
 function ToolButtons() {
   const tool = useUiStore((s) => s.tool)
   const setTool = useUiStore((s) => s.setTool)
@@ -89,7 +77,7 @@ function ToolButtons() {
             aria-pressed={tool === id}
             data-testid={`tool-${id}`}
             onClick={() => setTool(id)}
-            className={`flex h-7 w-7 items-center justify-center rounded transition-colors ${
+            className={`flex h-7 w-7 items-center justify-center rounded-control transition-colors ${
               tool === id
                 ? id === 'delete'
                   ? 'bg-danger text-on-danger'
@@ -97,7 +85,7 @@ function ToolButtons() {
                 : 'text-fg-muted hover:bg-surface-2 hover:text-fg'
             }`}
           >
-            <Icon size={15} />
+            <Icon size={15} aria-hidden />
           </button>
         </Tooltip>
       ))}
@@ -119,11 +107,11 @@ function ZoomButtons() {
         aria-label={t('zoom.out')}
         data-testid="zoom-out"
       >
-        <Minus size={14} />
+        <Minus size={14} aria-hidden />
       </button>
       <button
         type="button"
-        className="h-7 w-12 rounded font-mono text-meta text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
+        className="h-7 w-12 rounded-control font-mono text-meta text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
         onClick={() => void flow.zoomTo(1, ANIMATION)}
         title={t('zoom.reset')}
         data-testid="zoom-level"
@@ -138,7 +126,7 @@ function ZoomButtons() {
         aria-label={t('zoom.in')}
         data-testid="zoom-in"
       >
-        <Plus size={14} />
+        <Plus size={14} aria-hidden />
       </button>
       <button
         type="button"
@@ -148,85 +136,35 @@ function ZoomButtons() {
         aria-label={t('zoom.fit')}
         data-testid="zoom-fit"
       >
-        <Maximize size={13} />
+        <Maximize size={13} aria-hidden />
       </button>
     </>
   )
 }
 
-/** Bascule Temps réel / Simulation (déplacée depuis la barre d'état, mêmes identifiants). */
-function ModeSwitch() {
-  const mode = useUiStore((s) => s.mode)
-  const setMode = useUiStore((s) => s.setMode)
-  const { t } = useT()
-  const segment = 'flex items-center gap-1.5 px-2.5 text-dense transition-colors'
-  return (
-    <div
-      className="ml-auto flex h-6 items-stretch overflow-hidden rounded border border-line"
-      role="radiogroup"
-      aria-label={t('status.mode')}
-    >
-      <button
-        type="button"
-        role="radio"
-        aria-checked={mode === 'realtime'}
-        data-testid="mode-realtime"
-        title={t('status.realtimeHint')}
-        onClick={() => setMode('realtime')}
-        className={`${segment} ${mode === 'realtime' ? 'bg-ok-soft font-semibold text-ok-text' : 'text-fg-muted hover:bg-surface-2 hover:text-fg'}`}
-      >
-        <Clock size={12} /> {t('status.realtime')}
-      </button>
-      <button
-        type="button"
-        role="radio"
-        aria-checked={mode === 'simulation'}
-        data-testid="mode-simulation"
-        title={t('status.simulationHint')}
-        onClick={() => setMode('simulation')}
-        className={`${segment} border-l border-line ${mode === 'simulation' ? 'bg-accent-soft font-semibold text-accent-text' : 'text-fg-muted hover:bg-surface-2 hover:text-fg'}`}
-      >
-        <Footprints size={12} /> {t('status.simulation')}
-      </button>
-    </div>
-  )
-}
-
-export function MainToolbar() {
+export function CanvasBar() {
   const history = useLabStore((s) => s.history)
+  const devices = useLabStore((s) => Object.keys(s.lab.devices).length)
+  const links = useLabStore((s) => Object.keys(s.lab.links).length)
   const labels = historyLabels(history)
-  const { t } = useT()
+  const { width, height } = useWindowSize()
+  const narrow = width < NARROW_WIDTH
+  const short = height < COMPACT_HEIGHT
+  const { t, tp } = useT()
   return (
     <div
-      className="flex h-8 shrink-0 items-center gap-1 border-b border-line bg-panel px-2"
+      className={`flex shrink-0 items-center gap-1 border-b border-line bg-panel px-3 ${short ? 'h-9' : 'h-10'}`}
       role="toolbar"
       aria-label={t('toolbar.main')}
       data-testid="main-toolbar"
     >
-      <Group label={t('menu.file').replace('&', '')}>
-        <Action
-          label="menu.file.new"
-          icon={FilePlus2}
-          shortcut="newFile"
-          onClick={() => void newDocument()}
-          testId="toolbar-new"
-        />
-        <Action
-          label="menu.file.open"
-          icon={FolderOpen}
-          shortcut="open"
-          onClick={() => void openDocument()}
-          testId="toolbar-open"
-        />
-        <Action
-          label="menu.file.save"
-          icon={Save}
-          shortcut="save"
-          onClick={() => void saveDocument()}
-          testId="toolbar-save"
-        />
-      </Group>
-      <Separator />
+      <div className="flex min-w-0 items-baseline gap-2 pr-2">
+        {!narrow && <span className="text-dense font-semibold text-fg">{t('canvas.overview')}</span>}
+        <span className="truncate text-meta text-fg-muted" data-testid="status-counts">
+          {tp('status.devices', devices)} · {tp('status.links', links)}
+        </span>
+      </div>
+      <div className="flex-1" />
       <Group label={t('menu.edit').replace('&', '')}>
         <Action
           label="menu.edit.undo"
@@ -253,7 +191,6 @@ export function MainToolbar() {
       <Group label={t('zoom.label')}>
         <ZoomButtons />
       </Group>
-      <ModeSwitch />
     </div>
   )
 }

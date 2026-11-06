@@ -1,10 +1,9 @@
 /**
- * Onglet « Enseignant » de l'inspecteur (visible seulement si le mode enseignant est activé).
- * Chantier 2 : création d'un sujet (lab de départ, énoncé, barème, questions d'oral, export).
+ * Vues « Sujet » de l'espace Enseignant (visible seulement si le mode enseignant est activé) :
+ * point de départ d'un sujet, puis éditeur (lab de départ, énoncé, barème, questions d'oral, export).
  */
 import { FileDown, FolderOpen, PlayCircle, Plus, Trash2 } from 'lucide-react'
 import { openSubjectForAttempt } from '../../lib/attempt'
-import { GradingPanel } from './GradingPanel'
 import { useMemo, useState } from 'react'
 import { checkSubjectSolution, type OralQuestion, type Subject } from '@engine/index'
 import { useT } from '../../lib/i18n'
@@ -36,42 +35,8 @@ function num(text: string, fallback: number): number {
 
 const fmt = (n: number) => String(Math.round(n * 100) / 100).replace('.', ',')
 
-export function TeacherPanel() {
-  const subject = useTeacherStore((s) => s.subject)
-  const [view, setView] = useState<'subject' | 'grading'>('subject')
-  const { t } = useT()
-  return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto" data-testid="teacher-panel">
-      <div className="flex gap-1 border-b border-line p-2" role="tablist" aria-label={t('panel.teacher')}>
-        {(['subject', 'grading'] as const).map((v) => (
-          <button
-            key={v}
-            type="button"
-            role="tab"
-            aria-selected={view === v}
-            onClick={() => setView(v)}
-            data-testid={`teacher-view-${v}`}
-            className={`flex-1 rounded-md px-2 py-1 text-dense font-medium ${
-              view === v ? 'bg-accent-soft text-accent-text' : 'text-fg-muted hover:bg-surface-2'
-            }`}
-          >
-            {t(`teacher.view.${v}`)}
-          </button>
-        ))}
-      </div>
-      {view === 'grading' ? (
-        <GradingPanel />
-      ) : subject ? (
-        <SubjectEditor subject={subject} />
-      ) : (
-        <SubjectStart />
-      )}
-    </div>
-  )
-}
-
 /** Point de départ d'un sujet : lab de la bibliothèque, lab ouvert, éditeur de labs, fichier. */
-function SubjectStart() {
+export function SubjectStart() {
   const { t } = useT()
   const [labId, setLabId] = useState(LABS[0]?.id ?? '')
   return (
@@ -121,7 +86,7 @@ function SubjectStart() {
   )
 }
 
-function SubjectEditor({ subject }: { subject: Subject }) {
+export function SubjectEditor({ subject }: { subject: Subject }) {
   const { t } = useT()
   const lab = useLabStore((s) => s.lab)
   // Prévisualisation recalculée à chaque modification du sujet ou du lab courant

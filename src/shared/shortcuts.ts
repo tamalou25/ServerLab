@@ -7,7 +7,7 @@
 import type { Lang } from './ipc'
 import { translate, type MessageKey } from './i18n'
 
-export type ShortcutGroup = 'file' | 'edit' | 'tools' | 'view' | 'simulation' | 'help'
+export type ShortcutGroup = 'file' | 'edit' | 'tools' | 'view' | 'workspace' | 'simulation' | 'help'
 
 export interface Shortcut {
   /** Touches équivalentes ; la première est celle affichée dans le menu. */
@@ -46,6 +46,11 @@ export const SHORTCUTS = {
   fit: { keys: ['CmdOrCtrl+0'], group: 'view' },
   fullScreen: { keys: ['F11'], group: 'view' },
 
+  // Espaces de travail (Ctrl+1 / Ctrl+2 restent Temps réel / Simulation)
+  workspaceAtelier: { keys: ['CmdOrCtrl+Shift+A'], group: 'workspace' },
+  workspaceMission: { keys: ['CmdOrCtrl+Shift+M'], group: 'workspace' },
+  workspaceTeacher: { keys: ['CmdOrCtrl+Shift+E'], group: 'workspace' },
+
   realtime: { keys: ['CmdOrCtrl+1'], group: 'simulation' },
   simulation: { keys: ['CmdOrCtrl+2'], group: 'simulation' },
   step: { keys: ['F6'], group: 'simulation' },
@@ -63,6 +68,7 @@ export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
   'edit',
   'tools',
   'view',
+  'workspace',
   'simulation',
   'help'
 ]

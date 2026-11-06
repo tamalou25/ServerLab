@@ -35,7 +35,7 @@ test('Lab IOS : ouverture depuis le menu, configuration à la console, vérifica
     await expect(page.getByTestId('device-window-R1').getByTestId('terminal-ios')).toContainText('[OK]')
     await page.getByTestId('device-window-R1').getByTestId('close-device-window').click()
 
-    await page.getByTestId('right-tab-lab').click()
+    await page.getByTestId('mission-tab-mission').click()
     await page.getByTestId('lab-check').click()
     await expect(page.getByTestId('lab-score')).toHaveText('5 / 5 critère(s) validé(s)')
     await expect(page.locator('[data-testid^="lab-hint-"]')).toHaveCount(0)

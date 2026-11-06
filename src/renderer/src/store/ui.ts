@@ -52,7 +52,14 @@ export interface PduResult {
   success: boolean
 }
 
-export type RightTab = 'lab' | 'properties' | 'audit' | 'troubleshoot' | 'teacher' | 'attempt'
+/** Onglets de l'inspecteur (espace Atelier). */
+export type RightTab = 'properties' | 'audit' | 'troubleshoot'
+
+/** Espaces de travail : Atelier (topologie et inspecteur), Mission (lecteur), Enseignant (correction). */
+export type Workspace = 'atelier' | 'mission' | 'teacher'
+
+/** Onglets du lecteur de mission (espace Mission). */
+export type MissionTab = 'mission' | 'troubleshoot' | 'summary'
 
 /** Boîte de dialogue modale applicative. */
 export interface ModalState {
@@ -100,6 +107,9 @@ export interface UiState {
   pduSource: string | null
   pduResults: PduResult[]
   rightTab: RightTab
+  /** Espace demandé ; l'espace affiché peut retomber sur Atelier si celui-ci n'est pas disponible. */
+  workspace: Workspace
+  missionTab: MissionTab
   windows: DeviceWindowState[]
   toasts: Toast[]
   modal: ModalState | null
@@ -126,6 +136,10 @@ export interface UiState {
   addPduResult: (result: Omit<PduResult, 'id'>) => void
   clearPduResults: () => void
   setRightTab: (tab: RightTab) => void
+  setWorkspace: (workspace: Workspace) => void
+  setMissionTab: (tab: MissionTab) => void
+  /** Ouvre l'espace Mission sur son onglet principal (lab, examen, dépannage ou épreuve ouvert). */
+  openMission: (tab?: MissionTab) => void
   openWindow: (deviceId: string, tab?: DeviceTab) => void
   closeWindow: (deviceId: string) => void
   focusWindow: (deviceId: string) => void
@@ -160,6 +174,8 @@ export const useUiStore = create<UiState>()((set, get) => ({
   pduSource: null,
   pduResults: [],
   rightTab: 'properties',
+  workspace: 'atelier',
+  missionTab: 'mission',
   windows: [],
   toasts: [],
   modal: null,
@@ -199,6 +215,9 @@ export const useUiStore = create<UiState>()((set, get) => ({
     set((s) => ({ pduResults: [...s.pduResults, { ...result, id: ++pduSeq }].slice(-8) })),
   clearPduResults: () => set({ pduResults: [] }),
   setRightTab: (rightTab) => set({ rightTab }),
+  setWorkspace: (workspace) => set({ workspace }),
+  setMissionTab: (missionTab) => set({ missionTab }),
+  openMission: (tab = 'mission') => set({ workspace: 'mission', missionTab: tab }),
 
   openWindow: (deviceId, tab) =>
     set((s) => {

@@ -31,7 +31,7 @@ test('Lab 29 : durcissement L2 Cisco, critères validés au fil de la configurat
     await page.getByTestId('device-window-SW1').getByTestId('close-device-window').click()
 
     // Ping vers R1 (déjà valide), DHCP snooping, DTP, VLAN natif, enregistrement : 5 critères sur 9
-    await page.getByTestId('right-tab-lab').click()
+    await page.getByTestId('mission-tab-mission').click()
     await page.getByTestId('lab-check').click()
     await expect(page.getByTestId('lab-score')).toHaveText('5 / 9 critère(s) validé(s)')
     await expect(page.getByTestId('lab-hint-dai')).toBeVisible()

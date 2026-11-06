@@ -37,7 +37,7 @@ export function askStartExam(): void {
       resetDocumentUi()
       useLabStore.getState().load(buildLabState(lab), { path: null, name: `${lab.id}.slab` })
       useLabsStore.getState().setActive(lab)
-      useUiStore.getState().setRightTab('lab')
+      useUiStore.getState().openMission()
       useExamStore.getState().set({
         session: startExam(lab, Date.now(), minutes),
         lab,

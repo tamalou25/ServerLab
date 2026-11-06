@@ -1,5 +1,7 @@
 /**
- * Mise en page principale : palette à gauche, canvas au centre, propriétés à droite.
+ * Mise en page principale : en-tête, rail des espaces, puis selon l'espace : Atelier (palette, plan,
+ * inspecteur), Mission (contexte, plan, lecteur) ou Enseignant (page recouvrant la zone centrale,
+ * le plan restant monté et inerte).
  */
 import { Fragment, useCallback, useEffect } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
@@ -12,7 +14,6 @@ import { DeviceWindows } from './components/device-window/DeviceWindow'
 import { RedBlueGame } from './components/cyber/RedBlueGame'
 import { HomeScreen } from './components/home/HomeScreen'
 import { TutorialCoach } from './components/tutorial/TutorialCoach'
-import { MainToolbar } from './components/MainToolbar'
 import { Palette } from './components/Palette'
 import { RightPanel } from './components/RightPanel'
 import { SimulationPanel } from './components/simulation/SimulationPanel'
@@ -31,18 +32,45 @@ import { useSimulationPlayback } from './hooks/useSimulationPlayback'
 import { newDocument, openDocument, openRecentDocument, saveDocument } from './lib/document'
 import { copySelection, deleteSelection, paste, redo, selectAll, undo } from './lib/editing'
 import { getFlowInstance } from './lib/flow'
-import { useLangStore } from './lib/i18n'
+import { t, useLangStore } from './lib/i18n'
 import { offerTutorial } from './lib/tutorial'
 import { useAttemptClock } from './lib/attempt'
 import { DemoBar } from './components/teacher/DemoBar'
+import { TeacherWorkspace } from './components/teacher/TeacherWorkspace'
+import { MissionReader } from './components/mission/MissionReader'
+import { MissionSidebar } from './components/mission/MissionSidebar'
+import { AppHeader } from './components/shell/AppHeader'
+import { AppRail } from './components/shell/AppRail'
+import { CanvasBar } from './components/shell/CanvasBar'
 import { setTeacherMode } from './lib/teacher'
+import { requestWorkspace, useWorkspace } from './lib/workspace'
 import { useSimStore } from './store/sim'
 import { useUiStore } from './store/ui'
 
 /** Exécute une commande du menu natif. */
+/** Commandes du canvas et de la simulation : sans effet tant que l'espace Enseignant recouvre le plan. */
+const CANVAS_COMMANDS = new Set<MenuCommandMessage['command']>([
+  'edit:undo',
+  'edit:redo',
+  'edit:copy',
+  'edit:paste',
+  'edit:delete',
+  'edit:selectAll',
+  'view:zoomIn',
+  'view:zoomOut',
+  'view:fit',
+  'view:togglePortLabels',
+  'sim:realtime',
+  'sim:simulation',
+  'sim:step',
+  'sim:play',
+  'sim:reset'
+])
+
 function handleMenuCommand(msg: MenuCommandMessage): void {
   const ui = useUiStore.getState()
   const flow = getFlowInstance()
+  if (ui.workspace === 'teacher' && CANVAS_COMMANDS.has(msg.command)) return
   switch (msg.command) {
     case 'file:home':
       ui.setHome(true)
@@ -111,6 +139,11 @@ function handleMenuCommand(msg: MenuCommandMessage): void {
     case 'view:teacherMode':
       setTeacherMode(msg.arg === 'on')
       break
+    case 'view:workspace':
+      if (msg.arg === 'atelier' || msg.arg === 'mission' || msg.arg === 'teacher') {
+        if (!requestWorkspace(msg.arg)) ui.notify('info', t('workspace.unavailable'))
+      }
+      break
     case 'view:language':
       if (msg.arg === 'fr' || msg.arg === 'en') useLangStore.getState().setLang(msg.arg)
       break
@@ -143,8 +176,12 @@ function handleMenuCommand(msg: MenuCommandMessage): void {
   }
 }
 
+/** Attribut `inert` (React 18 ne le type pas) : la zone recouverte ne reçoit ni focus, ni clic. */
+const inertWhen = (on: boolean): Record<string, string> => (on ? { inert: '' } : {})
+
 export function App() {
   const showProperties = useUiStore((s) => s.showProperties)
+  const { workspace } = useWorkspace()
   // Changement de langue : l'interface est reconstruite (textes traduits au rendu) ; l'état vit
   // dans les stores, le canvas garde sa vue (ReactFlowProvider conservé)
   const lang = useLangStore((s) => s.lang)
@@ -166,21 +203,30 @@ export function App() {
     <ReactFlowProvider>
       <Fragment key={lang}>
         <div className="flex h-full flex-col">
-          <MainToolbar />
+          <AppHeader />
           <div className="flex min-h-0 flex-1">
-            <Palette />
-            <main className="min-w-0 flex-1">
-              <TopologyCanvas />
-            </main>
-            {showProperties && <RightPanel />}
+            <AppRail />
+            <div className="relative flex min-w-0 flex-1 flex-col" data-workspace={workspace}>
+              <div className="flex min-h-0 flex-1" {...inertWhen(workspace === 'teacher')}>
+                {workspace === 'mission' ? <MissionSidebar /> : <Palette />}
+                <main className="flex min-w-0 flex-1 flex-col">
+                  <CanvasBar />
+                  <div className="relative min-h-0 flex-1">
+                    <TopologyCanvas />
+                  </div>
+                </main>
+                {workspace === 'mission' ? <MissionReader /> : showProperties && <RightPanel />}
+              </div>
+              {workspace !== 'teacher' && <SimulationPanel />}
+              {workspace === 'teacher' && <TeacherWorkspace />}
+            </div>
           </div>
-          <SimulationPanel />
           <DemoBar />
           <StatusBar />
         </div>
         <HomeScreen />
         <TutorialCoach />
-        <DeviceWindows />
+        {workspace !== 'teacher' && <DeviceWindows />}
         <LabPicker />
         <TroubleshootDialog />
         <LabEditor />

@@ -52,7 +52,7 @@ export async function openSubjectForAttempt(): Promise<void> {
   const parsed = parseSubject(res.value[0]?.content ?? '')
   if (!parsed.ok) return showError(t('attempt.openFailed'), parsed.message)
   useAttemptStore.getState().set({ pending: parsed.doc, submission: null, correction: null, savedPath: null })
-  useUiStore.getState().setRightTab('attempt')
+  useUiStore.getState().openMission()
 }
 
 /** Démarre la passation : lab de départ du sujet, Temps réel, journal activé. */
@@ -78,7 +78,7 @@ export function beginAttempt(name: string, mode: Submission['mode']): void {
     lastHint: null
   })
   setJournalRecorder(record)
-  useUiStore.getState().setRightTab('attempt')
+  useUiStore.getState().openMission()
 }
 
 /** Révèle le prochain indice (pénalité confirmée avant par l'élève). */
