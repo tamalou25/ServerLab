@@ -29,7 +29,10 @@ export function TeacherWorkspace() {
       aria-label={t('teacher.workspace.eyebrow')}
       data-testid="teacher-workspace"
     >
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6 py-5" data-testid="teacher-panel">
+      <div
+        className={`mx-auto flex w-full flex-col gap-4 px-6 py-5 ${view === 'grading' ? 'max-w-7xl' : 'max-w-4xl'}`}
+        data-testid="teacher-panel"
+      >
         <header className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="text-meta font-semibold tracking-wider text-fg-subtle uppercase">
