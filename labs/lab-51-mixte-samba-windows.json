@@ -86,14 +86,43 @@
     },
     {
       "id": "invites",
-      "label": "Les invités peuvent lire le partage lecture",
-      "hint": "Cherchez le paramètre qui autorise les connexions sans compte.",
+      "label": "Depuis LNX1, un invité (sans compte) lit le partage lecture",
+      "hint": "Testez smbclient -N //192.168.20.10/lecture -c ls : le partage doit admettre les invités (guest ok) et smbd doit avoir relu sa configuration.",
+      "hints": [
+        "smbd ne relit smb.conf qu’au redémarrage ; testparm lit le fichier, smbclient interroge le service."
+      ],
       "check": {
-        "type": "linuxFileContains",
-        "device": "LSRV1",
-        "path": "/etc/samba/smb.conf",
-        "text": "\\[lecture\\][^\\[]*guest ok = yes",
-        "regex": true
+        "type": "smbAccess",
+        "from": "LNX1",
+        "server": "192.168.20.10",
+        "share": "lecture"
+      }
+    },
+    {
+      "id": "lecture-seule",
+      "label": "Un invité ne peut pas écrire dans le partage lecture",
+      "hint": "Le partage lecture est en lecture seule : la création d’un fichier doit être refusée.",
+      "check": {
+        "type": "smbAccess",
+        "from": "LNX1",
+        "server": "192.168.20.10",
+        "share": "lecture",
+        "write": true,
+        "success": false
+      }
+    },
+    {
+      "id": "alice-public",
+      "label": "Depuis LNX1, alice écrit toujours dans le partage public",
+      "hint": "Non-régression : la modification de smb.conf ne doit pas casser le partage existant.",
+      "check": {
+        "type": "smbAccess",
+        "from": "LNX1",
+        "server": "192.168.20.10",
+        "share": "public",
+        "user": "alice",
+        "password": "Passw0rd",
+        "write": true
       }
     },
     {

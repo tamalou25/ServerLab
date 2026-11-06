@@ -36,6 +36,8 @@ export interface CriterionTypeInfo {
 const FIELD_LABELS: Record<string, string> = {
   min: 'Score minimal',
   unit: 'Service (unité systemd)',
+  write: 'Écriture attendue',
+  password: 'Mot de passe',
   active: 'Actif',
   text: 'Texte cherché',
   regex: 'Expression régulière',

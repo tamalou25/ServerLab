@@ -21,15 +21,30 @@ const ALREADY_MET: Record<string, Record<string, string>> = {
   'lab-19-durcissement-ad': { dupont: 'non-régression : le compte légitime reste actif' },
   'lab-21-durcissement-pare-feu': { ping: 'non-régression : le ping reste autorisé' },
   'lab-46-linux-ssh-fail2ban': {
-    f2b: 'non-régression : fail2ban installé tourne déjà, il doit rester actif'
+    f2b: 'non-régression : fail2ban installé tourne déjà, il doit rester actif',
+    'ssh-applique':
+      'contrainte : sshd applique sa configuration au départ ; toute modification doit être relue',
+    'f2b-applique':
+      'contrainte : fail2ban applique sa configuration au départ ; toute modification doit être relue'
   },
-  'lab-47-linux-apache2': { web: 'non-régression : la page par défaut répond avant les deux sites (200)' },
+  'lab-47-linux-apache2': {
+    web: 'non-régression : la page par défaut répond avant les deux sites (200)',
+    applique: 'contrainte : Apache applique sa configuration au départ ; toute modification doit être relue'
+  },
   'lab-48-linux-samba': {
     smbd: 'non-régression : smbd installé tourne déjà, il doit rester actif',
-    port: 'non-régression : le port 445 reste ouvert'
+    port: 'non-régression : le port 445 reste ouvert',
+    applique: 'contrainte : smbd applique sa configuration au départ ; toute modification doit être relue',
+    bob: 'contrainte de sécurité : le partage n’existe pas encore, bob ne doit jamais pouvoir l’ouvrir',
+    invite:
+      'contrainte de sécurité : le partage n’existe pas encore, un invité ne doit jamais pouvoir l’ouvrir'
   },
   'lab-51-mixte-samba-windows': {
-    smbd: 'non-régression : smbd est déjà démarré avec le partage public, il doit le rester'
+    smbd: 'non-régression : smbd est déjà démarré avec le partage public, il doit le rester',
+    'lecture-seule':
+      'contrainte : le partage lecture n’existe pas encore ; une fois créé, il doit rester en lecture seule',
+    'alice-public':
+      'non-régression : alice écrit déjà dans public, la modification de smb.conf ne doit pas le casser'
   },
   'lab-49-linux-bind9': { named: 'non-régression : named installé tourne déjà, il doit rester actif' },
   'lab-54-pfsense-regles-lan-dmz': {
