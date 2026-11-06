@@ -182,6 +182,15 @@ Le **mode enseignant** (Affichage › Mode enseignant, désactivé par défaut) 
 réviser seul), les corrige par rejeu du journal de l'élève (note recalculée, signalements, CSV de la classe) et
 rejoue une copie pas à pas. Hors ligne, par fichiers : voir [`docs/mode-enseignant.md`](docs/mode-enseignant.md).
 
+**Parcours PME** (onglet **Parcours** du sélecteur, bouton « Parcours » de l'accueil) : douze étapes autour de
+l'Atelier Lambert, du premier ping à la mission transversale « la comptabilité ne peut plus enregistrer »
+(lab 60) et à une révision différée en mode examen. Chaque étape annonce ses prérequis, les compétences
+travaillées, le résultat attendu, le niveau d'aide et l'étape suivante ; la progression (tentatives, aide
+utilisée, compétences travaillées ou **démontrées**) est enregistrée dans `progress.json`. Les labs restent
+ouvrables librement. Le **bilan de dépannage** juge le résultat (rétablissement, usage vérifié depuis les
+postes, contraintes de sécurité préservées) et affiche l'autonomie à part ; il s'exporte en compte rendu.
+Détails, règles de calcul et exercices équivalents sur de vraies machines : [`docs/parcours.md`](docs/parcours.md).
+
 ## Poste Linux
 
 La palette propose un **Poste Linux** (Ubuntu simulé) avec une console bash : `ip a`, `ip route`, `ping`,

@@ -72,6 +72,16 @@
       }
     },
     {
+      "id": "ssh-applique",
+      "label": "sshd applique la configuration enregistrée (service redémarré)",
+      "hint": "sshd ne relit sshd_config qu’au redémarrage : comparez ss -tlnp avec le fichier.",
+      "check": {
+        "type": "linuxConfigApplied",
+        "device": "LSRV1",
+        "unit": "ssh"
+      }
+    },
+    {
       "id": "jail",
       "label": "La prison sshd limite à 3 essais",
       "hint": "Les réglages locaux de fail2ban se placent dans jail.local ; la prison sshd porte le nom de son service.",
@@ -101,6 +111,16 @@
       "hint": "fail2ban relit sa configuration à son (re)démarrage.",
       "check": {
         "type": "linuxServiceActive",
+        "device": "LSRV1",
+        "unit": "fail2ban"
+      }
+    },
+    {
+      "id": "f2b-applique",
+      "label": "fail2ban applique jail.local (service redémarré)",
+      "hint": "fail2ban-client status sshd montre la prison telle que le service l’a chargée ; un fichier modifié sans redémarrage n’a aucun effet.",
+      "check": {
+        "type": "linuxConfigApplied",
         "device": "LSRV1",
         "unit": "fail2ban"
       }

@@ -5,6 +5,7 @@
  * (Fichier séparé de ipc.ts : le preload n'embarque pas zod.)
  */
 import { z } from 'zod'
+import { ProgressAttemptSchema, parseProgress, type ProgressAttempt } from '../engine/labs/progress'
 import type { LanguagePreference, MenuState, RecentFile, ThemePreference } from './ipc'
 
 /** Nombre maximal de fichiers récents mémorisés. */
@@ -12,6 +13,8 @@ export const MAX_RECENT = 10
 /** Tailles maximales acceptées pour les fichiers de préférences (protection contre un fichier aberrant). */
 export const MAX_SETTINGS_BYTES = 64 * 1024
 export const MAX_RECENT_BYTES = 1024 * 1024
+/** Taille maximale du fichier de progression (progress.json). */
+export const MAX_PROGRESS_BYTES = 4 * 1024 * 1024
 
 /** JSON du texte, ou undefined s'il est trop long ou illisible. */
 export function readJson(text: string, maxLength: number): unknown {
@@ -96,3 +99,16 @@ export const DocStateSchema = z.object({
   name: z.string().max(200),
   dirty: z.boolean()
 })
+
+// --- Progression (parcours) ---------------------------------------------------------------------
+
+/** Tentatives lues depuis progress.json : entrées invalides écartées une à une, fichier illisible → vide. */
+export function parseProgressFile(text: string): ProgressAttempt[] {
+  return parseProgress(readJson(text, MAX_PROGRESS_BYTES))
+}
+
+/** Tentative reçue du renderer (IPC) : validée par le schéma du moteur, sinon null. */
+export function parseAttempt(value: unknown): ProgressAttempt | null {
+  const parsed = ProgressAttemptSchema.safeParse(value)
+  return parsed.success ? parsed.data : null
+}

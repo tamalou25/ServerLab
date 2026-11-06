@@ -9,6 +9,8 @@ import { useLabsStore } from '../store/labs'
 import { useUiStore } from '../store/ui'
 import { confirmDiscard, resetDocumentUi } from './document'
 import { t, tp } from './i18n'
+import { labHintsUsed, recordAttempt } from './progress'
+import { beginTroubleshootSession } from './troubleshoot'
 
 /** Ouvre un lab : nouvel état de départ (document sans fichier) et onglet Lab affiché. */
 export async function openLab(lab: LabDefinition): Promise<boolean> {
@@ -31,6 +33,9 @@ export async function openLab(lab: LabDefinition): Promise<boolean> {
   useLabsStore.getState().setActive(lab)
   useLabsStore.getState().setPickerOpen(false)
   useUiStore.getState().setRightTab('lab')
+  // Lab de dépannage fourni : session de dépannage (indices, « J'ai réparé », bilan) en plus de l'énoncé
+  if (lab.troubleshooting)
+    beginTroubleshootSession(lab.id, lab.troubleshooting.seed, { exam: false, generated: false })
   return true
 }
 
@@ -40,8 +45,19 @@ export function verifyLab(): void {
   if (!lab) return
   const progress = checkLab(useLabStore.getState().lab, lab)
   useLabsStore.getState().setProgress(progress)
-  if (progress.passed === progress.total)
+  if (progress.passed === progress.total) {
     useUiStore.getState().notify('success', tp('labs.passed', progress.total))
+    // Tentative réussie enregistrée dans la progression (fusionnée avec le bilan d'un dépannage)
+    void recordAttempt({
+      lab,
+      mode: 'lab',
+      passed: progress.passed,
+      total: progress.total,
+      success: true,
+      hintsUsed: labHintsUsed(),
+      hintsAvailable: lab.criteria.reduce((n, c) => n + c.hints.length, 0)
+    })
+  }
 }
 
 /** Recommence le lab : l'état de départ est reconstruit (les modifications sont perdues). */
@@ -57,6 +73,8 @@ export function restartLab(): void {
       useLabStore.getState().load(buildLabState(lab), { path: null, name: `${lab.id}.slab` })
       useLabsStore.getState().setActive(lab)
       useUiStore.getState().setRightTab('lab')
+      if (lab.troubleshooting)
+        beginTroubleshootSession(lab.id, lab.troubleshooting.seed, { exam: false, generated: false })
     }
   })
 }

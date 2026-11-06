@@ -35,8 +35,8 @@ export function RightPanel() {
   // Le résultat d'un examen reste consultable même si le lab a été fermé
   const lab = active ?? examResult
   const inTshoot = !!(tshoot || tshootSummary)
-  // Un dépannage en cours a son propre onglet : l'onglet Lab sert aux labs et à l'examen
-  const showLab = !!lab && !inTshoot
+  // Un dépannage généré a son propre onglet ; un lab de dépannage fourni garde son énoncé dans l'onglet Lab
+  const showLab = !!lab && !(inTshoot && (tshoot?.generated ?? true))
   const TABS: { id: RightTab; label: string }[] = running
     ? // Pendant l'épreuve : ni Lab, ni Audit, ni Dépannage, ni Enseignant (solution inaccessible)
       [

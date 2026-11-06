@@ -4,13 +4,15 @@
  * être retiré de la liste) et labs fournis. Se ferme dès qu'un document est chargé.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { Clock, FilePlus2, FileText, FolderOpen, Network, X, type LucideIcon } from 'lucide-react'
+import { Clock, FilePlus2, FileText, FolderOpen, Network, Route, X, type LucideIcon } from 'lucide-react'
 import type { RecentEntry } from '@shared/ipc'
 import { formatOpenedAt, splitPath } from '@shared/recent'
 import { accelerator, formatShortcut, type ShortcutId } from '@shared/shortcuts'
 import { newDocument, openDocument, openRecentDocument } from '../../lib/document'
 import { useT } from '../../lib/i18n'
 import { LABS } from '../../lib/labCatalog'
+import { loadProgress, recommendedStep } from '../../lib/progress'
+import { useProgressStore } from '../../store/progress'
 import { openLab } from '../../lib/labs'
 import { useLabStore } from '../../store/lab'
 import { useLabsStore } from '../../store/labs'
@@ -34,6 +36,8 @@ function HomePage() {
   const revisionAtOpen = useRef(revision)
   const [recent, setRecent] = useState<RecentEntry[] | null>(null)
   const [atStartup, setAtStartup] = useState<boolean | null>(null)
+  const attempts = useProgressStore((s) => s.attempts)
+  const nextStep = recommendedStep(attempts ?? [])
 
   const refresh = useCallback(() => {
     void window.serverlab.listRecent().then(setRecent)
@@ -42,6 +46,7 @@ function HomePage() {
   useEffect(() => {
     refresh()
     void window.serverlab.homeAtStartup().then(setAtStartup)
+    void loadProgress()
   }, [refresh])
 
   // Nouveau, Ouvrir, récent, lab fourni, double-clic sur un .slab, menu : l'accueil se ferme
@@ -124,6 +129,16 @@ function HomePage() {
                   shortcut="open"
                   onClick={() => void openDocument()}
                   testId="home-open"
+                />
+                <Action
+                  icon={Route}
+                  label={t('home.pathway')}
+                  detail={
+                    nextStep ? t('home.pathway.detail', { step: nextStep.title }) : t('home.pathway.done')
+                  }
+                  shortcut="openLab"
+                  onClick={() => useLabsStore.getState().setPickerOpen(true, 'pathway')}
+                  testId="home-pathway"
                 />
               </div>
             </section>

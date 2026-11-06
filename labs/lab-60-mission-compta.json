@@ -1,0 +1,214 @@
+{
+  "formatVersion": 1,
+  "id": "lab-60-mission-compta",
+  "title": "Mission : la comptabilité ne peut plus enregistrer ses documents",
+  "difficulty": "Avancé",
+  "duration": "30 min",
+  "summary": "Mission transversale de l’Atelier Lambert : rétablir l’enregistrement des documents de la comptabilité sans ouvrir le dossier aux autres salariés, puis rendre compte de l’intervention.",
+  "statement": "## Ticket n° 2041 — Atelier Lambert\n\n> « Depuis ce matin, personne au service comptabilité n'arrive plus à **enregistrer** ses documents dans le dossier commun `\\\\SRV1\\Compta` : Windows répond « Accès refusé ». Le serveur répond, le lecteur réseau est bien là, mais rien ne passe. La clôture mensuelle est demain. » — Jean Dupont, comptable (PC1)\n\n## L'entreprise\n\nL'Atelier Lambert (ferronnerie, 30 salariés) travaille dans le domaine **lab.local**, hébergé par **SRV1** (contrôleur de domaine, DNS, serveur de fichiers, 192.168.10.1/24).\n\n| Service | Groupe | Utilisateurs | Postes | Droit attendu sur `\\\\SRV1\\Compta` |\n| --- | --- | --- | --- | --- |\n| Comptabilité | `GG_Compta` | jdupont (PC1), sleroy (PC2) | PC1, PC2 | lecture, création, modification, suppression |\n| Direction | `GG_Direction` | mmartin | — | **lecture seule** |\n| Atelier | — | pdurand | — | **aucun accès** |\n\nCompte d'administration : `LAB\\Administrateur` / `P@ssw0rd`. Mot de passe des utilisateurs : `Azerty123!`. Hier soir, tout fonctionnait : c'est la configuration **attendue**.\n\n## Votre intervention\n\n1. **Reproduisez** le symptôme depuis PC1 (session de jdupont déjà ouverte) : ouverture du dossier, création d'un fichier (Explorateur, `echo test > S:\\essai.txt` ou `New-Item`). Notez le message exact.\n2. **Départagez les hypothèses** avec des observations : état du service Serveur, autorisations du partage (onglet Partage > Autorisations, `Get-SmbShareAccess`), autorisations NTFS du dossier (onglet Sécurité, `Get-Acl`, Accès effectif de jdupont et de mmartin). Le droit effectif au travers d'un partage est le **plus restrictif** des deux listes.\n3. **Réparez** proprement : plusieurs réparations sont acceptables, à condition que la comptabilité retrouve l'écriture, que la direction garde la lecture seule et que pdurand n'ait toujours aucun accès. Évitez les raccourcis qui « ouvrent tout ».\n4. **Vérifiez** depuis PC1 et PC2 que l'écriture fonctionne, puis contrôlez l'accès effectif de mmartin et de pdurand.\n5. **Rendez compte** : cliquez sur « J'ai réparé » puis exportez le bilan ; complétez-le avec le symptôme observé, les causes trouvées, les changements effectués et la vérification réalisée.\n\nIl peut y avoir plusieurs causes, et un symptôme peut en cacher un autre : retestez après chaque correction (ouverture du dossier, puis écriture).",
+  "start": {
+    "devices": [
+      {
+        "kind": "server",
+        "name": "SRV1",
+        "x": 330,
+        "y": 100,
+        "ip": "192.168.10.1/24",
+        "dns": ["127.0.0.1"],
+        "shares": [
+          {
+            "name": "Compta",
+            "path": "C:\\Partages\\Compta",
+            "full": ["Tout le monde"]
+          }
+        ],
+        "ntfs": [
+          {
+            "path": "C:\\Partages\\Compta",
+            "inheritance": "convert",
+            "remove": ["BUILTIN\\Utilisateurs"],
+            "grant": [
+              {
+                "principal": "LAB\\GG_Compta",
+                "rights": ["Modify"]
+              },
+              {
+                "principal": "LAB\\GG_Direction",
+                "rights": ["ReadAndExecute"]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "switch",
+        "name": "SW1",
+        "x": 330,
+        "y": 300
+      },
+      {
+        "kind": "client",
+        "name": "PC1",
+        "x": 180,
+        "y": 470,
+        "ip": "192.168.10.10/24",
+        "dns": ["192.168.10.1"],
+        "logon": {
+          "user": "jdupont",
+          "password": "Azerty123!"
+        }
+      },
+      {
+        "kind": "client",
+        "name": "PC2",
+        "x": 480,
+        "y": 470,
+        "ip": "192.168.10.11/24",
+        "dns": ["192.168.10.1"],
+        "logon": {
+          "user": "sleroy",
+          "password": "Azerty123!"
+        }
+      }
+    ],
+    "links": [
+      ["SRV1:Ethernet0", "SW1:Fa0/1"],
+      ["PC1:Ethernet0", "SW1:Fa0/2"],
+      ["PC2:Ethernet0", "SW1:Fa0/3"]
+    ],
+    "domain": {
+      "name": "lab.local",
+      "netbios": "LAB",
+      "dc": "SRV1",
+      "ous": ["Societe"],
+      "users": [
+        {
+          "name": "Jean Dupont",
+          "sam": "jdupont",
+          "ou": "Societe",
+          "password": "Azerty123!"
+        },
+        {
+          "name": "Sophie Leroy",
+          "sam": "sleroy",
+          "ou": "Societe",
+          "password": "Azerty123!"
+        },
+        {
+          "name": "Marie Martin",
+          "sam": "mmartin",
+          "ou": "Societe",
+          "password": "Azerty123!"
+        },
+        {
+          "name": "Paul Durand",
+          "sam": "pdurand",
+          "ou": "Societe",
+          "password": "Azerty123!"
+        }
+      ],
+      "groups": [
+        {
+          "name": "GG_Compta",
+          "ou": "Societe",
+          "members": ["jdupont", "sleroy"]
+        },
+        {
+          "name": "GG_Direction",
+          "ou": "Societe",
+          "members": ["mmartin"]
+        }
+      ],
+      "join": ["PC1", "PC2"]
+    }
+  },
+  "troubleshooting": {
+    "seed": 11,
+    "faults": [
+      {
+        "id": "win.share-acl"
+      },
+      {
+        "id": "win.ntfs-rights"
+      }
+    ]
+  },
+  "criteria": [
+    {
+      "id": "causes",
+      "label": "Toutes les causes de l’incident sont corrigées",
+      "hint": "Deux listes d’autorisations se combinent au travers d’un partage. Retestez après chaque correction : un symptôme identique peut avoir une seconde cause.",
+      "hints": [
+        "Le droit effectif = autorisations du partage ∩ autorisations NTFS. Comparez chacune avec la configuration attendue du tableau."
+      ],
+      "check": {
+        "type": "faultRepaired"
+      }
+    },
+    {
+      "id": "jdupont",
+      "label": "jdupont (GG_Compta) lit, crée et supprime au travers de \\\\SRV1\\Compta",
+      "hint": "Vérifiez l’accès effectif de jdupont au travers du partage, pas seulement sur le dossier.",
+      "check": {
+        "type": "effectiveAccess",
+        "server": "SRV1",
+        "path": "C:\\Partages\\Compta",
+        "share": "Compta",
+        "account": "LAB\\jdupont",
+        "allow": ["list", "read", "write", "delete"]
+      }
+    },
+    {
+      "id": "sleroy",
+      "label": "sleroy (GG_Compta) lit, crée et supprime au travers de \\\\SRV1\\Compta",
+      "hint": "La réparation doit valoir pour tout le groupe, pas pour un seul compte.",
+      "check": {
+        "type": "effectiveAccess",
+        "server": "SRV1",
+        "path": "C:\\Partages\\Compta",
+        "share": "Compta",
+        "account": "LAB\\sleroy",
+        "allow": ["list", "read", "write", "delete"]
+      }
+    },
+    {
+      "id": "direction",
+      "label": "mmartin (GG_Direction) garde la lecture seule : ni écriture ni suppression",
+      "hint": "Une réparation trop large (Tout le monde en modification) donnerait l’écriture à la direction.",
+      "check": {
+        "type": "effectiveAccess",
+        "server": "SRV1",
+        "path": "C:\\Partages\\Compta",
+        "share": "Compta",
+        "account": "LAB\\mmartin",
+        "allow": ["list", "read"],
+        "deny": ["write", "delete"]
+      }
+    },
+    {
+      "id": "atelier",
+      "label": "pdurand (atelier) n’a toujours aucun accès au dossier",
+      "hint": "Contrôlez l’accès effectif de pdurand après votre réparation : rouvrir BUILTIN\\Utilisateurs ou Tout le monde en NTFS lui donnerait la lecture.",
+      "check": {
+        "type": "effectiveAccess",
+        "server": "SRV1",
+        "path": "C:\\Partages\\Compta",
+        "share": "Compta",
+        "account": "LAB\\pdurand",
+        "deny": ["list", "read"]
+      }
+    },
+    {
+      "id": "admins",
+      "label": "Les administrateurs gardent le contrôle total du dossier",
+      "hint": "Ne retirez pas les administrateurs des autorisations NTFS.",
+      "check": {
+        "type": "effectiveAccess",
+        "server": "SRV1",
+        "path": "C:\\Partages\\Compta",
+        "account": "BUILTIN\\Administrateurs",
+        "allow": ["list", "read", "write", "delete", "changePermissions"]
+      }
+    }
+  ]
+}

@@ -200,6 +200,9 @@ export const fr = {
   'home.recent.missing': 'Introuvable',
   'home.recent.removeLabel': 'Retirer {name} de la liste',
   'home.recent.remove': 'Retirer de la liste',
+  'home.pathway': 'Parcours PME : l’Atelier Lambert',
+  'home.pathway.detail': 'Prochaine étape : {step}',
+  'home.pathway.done': 'Parcours terminé : toutes les étapes sont réussies.',
 
   // --- Barre d'état, panneau latéral, difficulté ---------------------------------------------------
   'tool.select': 'Sélection',
@@ -785,6 +788,7 @@ export const fr = {
   'lab.hint': 'Indice : ',
   'lab.tab.builtin': 'Labs fournis',
   'lab.tab.library': 'Bibliothèque',
+  'lab.tab.pathway': 'Parcours',
   'lab.pickerHelp':
     'Chaque lab part d’une topologie prête à l’emploi. Réalisez les tâches de l’énoncé, puis cliquez sur {check} dans l’onglet Lab : chaque objectif est validé, avec un indice en cas d’échec.',
   'lab.libraryHelp':

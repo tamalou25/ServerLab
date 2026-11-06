@@ -18,7 +18,7 @@ import { IOS_MODELS } from '../ios/models'
 import { createLab } from '../model/factory'
 import { DEVICE_KINDS } from '../model/kinds'
 import type { LabState } from '../model/schema'
-import { FaultParamsSchema, FIREWALL_PROFILES } from '../model/schema'
+import { FaultParamsSchema, FIREWALL_PROFILES, NTFS_RIGHTS } from '../model/schema'
 import { localToken } from '../roles/files/acl'
 import { DEFAULT_DOMAIN_POLICY_ID } from '../roles/gpo/defaults'
 import { parseSlabValue } from '../serialization/slab'
@@ -91,6 +91,29 @@ export const LabDeviceSchema = z.object({
     .optional(),
   /** Fichiers présents au départ (dossiers parents créés au besoin) : chemin local et contenu texte. */
   files: z.array(z.object({ path: z.string(), content: z.string() })).optional(),
+  /**
+   * Autorisations NTFS de dossiers existants, appliquées après la création du domaine (comptes et groupes
+   * du domaine utilisables) : héritage (`convert` : copie des autorisations héritées, `remove`), comptes
+   * dont toutes les entrées sont retirées, puis entrées accordées (Allow) ou refusées (Deny).
+   */
+  ntfs: z
+    .array(
+      z.object({
+        path: z.string(),
+        inheritance: z.enum(['enable', 'convert', 'remove']).optional(),
+        remove: z.array(z.string()).default([]),
+        grant: z
+          .array(
+            z.object({
+              principal: z.string(),
+              rights: z.array(z.enum(NTFS_RIGHTS)).min(1),
+              type: z.enum(['Allow', 'Deny']).default('Allow')
+            })
+          )
+          .default([])
+      })
+    )
+    .optional(),
   /** Serveur Linux : paquets installés au départ (apache2, bind9…), leurs services démarrés comme avec `apt install`. */
   packages: z.array(z.string()).optional(),
   /**
@@ -501,6 +524,26 @@ function buildDeclarativeStart(start: LabDeclarativeStart): LabState {
         throw new Error(`Session de ${d.logon.user} sur ${d.name} impossible : ${logged.message}`)
     }
   }
+  // Autorisations NTFS : après le domaine (groupes et comptes du domaine), par l'administrateur local
+  for (const d of start.devices)
+    for (const entry of d.ntfs ?? []) {
+      const id = idOf(d.name)
+      const token = localToken(d.name, 'Administrateur')
+      if (entry.inheritance)
+        apply(command('files.setNtfsInheritance', id, entry.path, entry.inheritance, token))
+      for (const account of entry.remove)
+        apply(command('files.removeNtfs', id, entry.path, account, 'all', token))
+      for (const g of entry.grant)
+        apply(
+          command(
+            'files.grantNtfs',
+            id,
+            entry.path,
+            { principal: g.principal, type: g.type, rights: g.rights, replace: true },
+            token
+          )
+        )
+    }
   // Services système : appliqués en dernier (rôles installés, redémarrages de jonction terminés)
   for (const d of start.devices)
     for (const svc of d.services ?? []) {

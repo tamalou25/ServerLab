@@ -15,6 +15,7 @@ import {
   removeItem,
   removeNtfs,
   removeShare,
+  grantNtfs,
   renameItem,
   setNtfsEntry,
   setNtfsInheritance,
@@ -84,6 +85,11 @@ export const filesCommands = {
   'files.setNtfsEntry': def(
     setNtfsEntry,
     (_s, _id, path, principal) => `Modifier les autorisations de ${principal} sur ${path}`
+  ),
+  'files.grantNtfs': def(
+    grantNtfs,
+    (_s, _id, path, change) =>
+      `${change.type === 'Deny' ? 'Refuser' : 'Accorder'} ${change.rights.join(', ')} à ${change.principal} sur ${path}`
   ),
   'files.removeNtfs': def(
     removeNtfs,

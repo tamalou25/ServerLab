@@ -3,12 +3,18 @@
  * fichier, port en écoute, paquet installé. Chaque évaluateur lit l'état simulé (mêmes fonctions que
  * `systemctl`, `cat`, `ls -l`, `ss`, `dpkg`) ; la configuration d'un service est jugée sur le fichier,
  * son effet (port, hôtes virtuels) sur la configuration en vigueur, relue au redémarrage.
+ *
+ * Fiabilisation (v2.14) : un fichier de configuration conforme ne prouve pas que le service l'applique
+ * ni que l'usage fonctionne. `linuxConfigApplied` exige que la configuration en vigueur soit celle des
+ * fichiers (service redémarré ou rechargé) ; l'accès à un partage Samba depuis un poste (`smbAccess`) est
+ * un critère du rôle Fichiers (`roles/files/criteria.ts`), qui possède la sonde SMB.
  */
 import { z } from 'zod'
 import { isLinuxHost } from '../model/host'
 import type { LabState } from '../model/schema'
 import { defineCriterion, type CriterionType } from '../roles/types'
 import { findUnit } from '../services/linuxcatalog'
+import { configTextOf } from '../services/linuxconfig'
 import { fileText } from '../services/linuxconfig'
 import { isInstalled } from '../services/linuxpackages'
 import { linuxSockets, unitStatus } from '../services/linuxsystem'
@@ -117,5 +123,25 @@ export const LINUX_CRITERIA: CriterionType[] = [
       return !!host && isInstalled(host, check.package)
     },
     'Paquet Debian installé'
+  ),
+  defineCriterion(
+    z.object({
+      type: z.literal('linuxConfigApplied'),
+      device: z.string(),
+      /** Unité dont la configuration est relue au (re)démarrage : ssh, apache2, smbd, named, isc-dhcp-server, fail2ban, rsyslog. */
+      unit: z.string()
+    }),
+    (state, check) => {
+      const host = linuxHost(state, check.device)
+      const unit = findUnit(check.unit)
+      if (!host || !unit || !isInstalled(host, unit.pkg)) return false
+      const current = configTextOf(check.unit, hostFiles(host))
+      if (current === null) return false
+      // Un instantané n'existe que si les fichiers ont changé depuis le dernier (re)démarrage ou
+      // rechargement : sans instantané, le service applique les fichiers actuels
+      const snapshot = host.host.linux?.loaded?.[check.unit]
+      return snapshot === undefined || snapshot === current
+    },
+    'Configuration Linux relue par le service (redémarré ou rechargé)'
   )
 ]

@@ -552,6 +552,15 @@ describe('catalogue des commandes', () => {
         token
       )
     )
+    r.run(
+      command(
+        'files.grantNtfs',
+        srv,
+        'C:\\Partages',
+        { principal: 'LAB\\GG_Compta', type: 'Allow', rights: ['ReadAndExecute'], replace: true },
+        token
+      )
+    )
     r.run(command('files.removeNtfs', srv, 'C:\\Partages', 'LAB\\GG_Compta', 'all', token))
     r.run(command('files.setNtfsInheritance', srv, 'C:\\Partages', 'convert', token))
     r.run(command('files.setNtfsInheritance', srv, 'C:\\Partages', 'enable', token))

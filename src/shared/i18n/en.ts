@@ -197,6 +197,9 @@ export const en: Record<MessageKey, string> = {
   'home.recent.missing': 'Not found',
   'home.recent.removeLabel': 'Remove {name} from the list',
   'home.recent.remove': 'Remove from the list',
+  'home.pathway': 'SMB pathway: Atelier Lambert',
+  'home.pathway.detail': 'Next step: {step}',
+  'home.pathway.done': 'Pathway complete: every step passed.',
 
   // --- Barre d'état, panneau latéral, difficulté ---------------------------------------------------
   'tool.select': 'Select',
@@ -777,6 +780,7 @@ export const en: Record<MessageKey, string> = {
   'lab.hint': 'Hint: ',
   'lab.tab.builtin': 'Included labs',
   'lab.tab.library': 'Library',
+  'lab.tab.pathway': 'Pathway',
   'lab.pickerHelp':
     'Each lab starts from a ready-made topology. Do the tasks in the instructions, then click {check} in the Lab tab: each objective is checked, with a hint on failure.',
   'lab.libraryHelp':

@@ -103,13 +103,17 @@ test('Dépannage : ticket, indice, « Le problème persiste », réparation à l
 
     await panel.getByTestId('tshoot-repaired').click()
 
-    // Bilan : cause, correction officielle, chemin le plus court, indices
+    // Bilan : issue, cause, correction de référence, résultat, autonomie, objectifs
     const summary = page.getByTestId('tshoot-summary')
     await expect(summary.getByTestId('tshoot-outcome')).toHaveText('Problème résolu')
     await expect(summary.getByTestId('tshoot-cause')).toContainText('Le masque de sous-réseau')
     await expect(summary.getByTestId('tshoot-official')).toHaveText('1 commande(s)')
-    await expect(summary.getByTestId('tshoot-playedcount')).toHaveText('2 commande(s)')
-    await expect(summary.getByTestId('tshoot-verdict')).toContainText('1 commande de plus')
+    await expect(summary.getByTestId('tshoot-playedcount')).toContainText('2 commande(s)')
+    await expect(summary.getByTestId('tshoot-verdict')).toContainText('Service rétabli')
+    await expect(summary.getByTestId('tshoot-score')).toContainText('100')
+    await expect(summary.getByTestId('tshoot-autonomy')).toContainText('guidé')
+    await expect(summary.getByTestId('tshoot-objectives').locator('li')).toHaveCount(1)
+    await expect(summary).not.toContainText('chemin le plus court')
     await expect(summary.getByTestId('tshoot-repair-steps').locator('li')).toHaveCount(1)
     await expect(summary).toContainText('Indices utilisés')
     await summary.getByTestId('tshoot-summary-close').click()

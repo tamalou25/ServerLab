@@ -4,8 +4,8 @@
   "title": "Linux : un partage Samba pour un groupe",
   "difficulty": "Intermédiaire",
   "duration": "40 min",
-  "summary": "Créez un compte, un groupe et un dossier partagé par Samba avec les bons droits Unix et un compte Samba.",
-  "statement": "## Contexte\n\n**LSRV1** (192.168.20.10/24) a Samba installé avec sa configuration d'origine. Le service comptabilité doit disposer d'un partage **compta**.\n\n## Travail demandé\n\n1. Créez le groupe `compta` et l'utilisateur `alice` membre de ce groupe.\n2. Créez `/srv/compta`, propriété du groupe `compta`, droits **770**.\n3. Déclarez le partage `[compta]` dans `/etc/samba/smb.conf` (chemin, `read only = no`, `valid users = @compta`), contrôlez avec `testparm`.\n4. Créez le compte Samba d'alice (`smbpasswd -a alice`) puis redémarrez `smbd`.\n5. Depuis LNX1, listez et ouvrez le partage avec `smbclient`.\n\nÀ rendre : la section `[compta]`, la sortie de `testparm -s` et celle de `smbclient`.",
+  "summary": "Créez un compte, un groupe et un dossier partagé par Samba avec les bons droits Unix et un compte Samba ; vérifiez l’accès depuis un poste et le refus des autres salariés.",
+  "statement": "## Contexte\n\n**LSRV1** (192.168.20.10/24) a Samba installé avec sa configuration d'origine. Le service comptabilité doit disposer d'un partage **compta** réservé à ses membres. Un compte Samba existe déjà pour **bob** (service commercial, mot de passe `Passw0rd`) : il ne doit **pas** pouvoir ouvrir ce partage.\n\n## Travail demandé\n\n1. Créez le groupe `compta` et l'utilisateur `alice` membre de ce groupe.\n2. Créez `/srv/compta`, propriété du groupe `compta`, droits **770**.\n3. Déclarez le partage `[compta]` dans `/etc/samba/smb.conf` (chemin, écriture permise, `valid users = @compta`), contrôlez avec `testparm`.\n4. Créez le compte Samba d'alice (`smbpasswd -a alice`, mot de passe `Passw0rd`) puis redémarrez `smbd` : il ne relit sa configuration qu'à ce moment-là.\n5. Depuis LNX1, vérifiez avec `smbclient` qu'alice liste et écrit dans le partage, et que bob est refusé.\n\nÀ rendre : la section `[compta]`, la sortie de `testparm -s` et celles des deux `smbclient`.",
   "start": {
     "devices": [
       {
@@ -21,7 +21,14 @@
         "x": 330,
         "y": 100,
         "ip": "192.168.20.10/24",
-        "packages": ["samba"]
+        "packages": ["samba"],
+        "bash": [
+          "sudo useradd -m bob",
+          {
+            "line": "sudo smbpasswd -a bob",
+            "answers": ["Passw0rd", "Passw0rd"]
+          }
+        ]
       },
       {
         "kind": "client",
@@ -64,25 +71,82 @@
     },
     {
       "id": "partage",
-      "label": "Le partage [compta] est déclaré avec son chemin",
-      "hint": "Un partage Samba est une section de smb.conf avec un paramètre path.",
+      "label": "Le partage [compta] est déclaré dans smb.conf avec son chemin",
+      "hint": "Un partage Samba est une section de smb.conf avec un paramètre path ; testparm -s montre ce que Samba a compris.",
       "check": {
         "type": "linuxFileContains",
         "device": "LSRV1",
         "path": "/etc/samba/smb.conf",
-        "text": "\\[compta\\][^\\[]*path = /srv/compta",
+        "text": "\\[compta\\][^\\[]*path\\s*=\\s*/srv/compta",
         "regex": true
       }
     },
     {
       "id": "valid",
-      "label": "L’accès est réservé au groupe compta",
-      "hint": "Un paramètre de la section limite les comptes admis, un groupe se note avec @.",
+      "label": "La section [compta] réserve l’accès au groupe compta (valid users)",
+      "hint": "Un paramètre de la section limite les comptes admis ; un groupe Unix se note avec @ (ou +).",
       "check": {
         "type": "linuxFileContains",
         "device": "LSRV1",
         "path": "/etc/samba/smb.conf",
-        "text": "valid users = @compta"
+        "text": "\\[compta\\][^\\[]*valid users\\s*=\\s*[^\\n]*[@+]compta",
+        "regex": true
+      }
+    },
+    {
+      "id": "applique",
+      "label": "smbd applique la configuration enregistrée (service redémarré ou rechargé)",
+      "hint": "testparm lit le fichier ; smbd garde en mémoire la configuration lue à son dernier démarrage. Comparez ce que voit smbclient avec le fichier.",
+      "hints": [
+        "Un service ne relit sa configuration qu’au redémarrage (systemctl restart) ou au rechargement (systemctl reload)."
+      ],
+      "check": {
+        "type": "linuxConfigApplied",
+        "device": "LSRV1",
+        "unit": "smbd"
+      }
+    },
+    {
+      "id": "alice",
+      "label": "Depuis LNX1, alice ouvre le partage compta et peut y écrire",
+      "hint": "Rejouez l’accès avec smbclient //192.168.20.10/compta -U alice -c ls : le message d’erreur dit à quelle étape l’accès échoue (session, partage, droits).",
+      "hints": [
+        "NT_STATUS_ACCESS_DENIED juste après la session : avec map to guest = bad user (défaut Debian), un compte inconnu de la base Samba (pdbedit -L) est traité en invité, refusé sur ce partage. NT_STATUS_BAD_NETWORK_NAME : smbd ne connaît pas le partage (configuration non relue ?).",
+        "L’écriture dépend de read only / writable dans la section et des droits Unix du groupe sur le dossier."
+      ],
+      "check": {
+        "type": "smbAccess",
+        "from": "LNX1",
+        "server": "192.168.20.10",
+        "share": "compta",
+        "user": "alice",
+        "write": true
+      }
+    },
+    {
+      "id": "bob",
+      "label": "bob (service commercial) ne peut pas ouvrir le partage compta",
+      "hint": "Vérifiez depuis LNX1 avec le compte bob : l’accès doit être refusé, pas seulement « non testé ».",
+      "check": {
+        "type": "smbAccess",
+        "from": "LNX1",
+        "server": "192.168.20.10",
+        "share": "compta",
+        "user": "bob",
+        "password": "Passw0rd",
+        "success": false
+      }
+    },
+    {
+      "id": "invite",
+      "label": "Une session anonyme (invité) ne peut pas ouvrir le partage compta",
+      "hint": "Testez smbclient -N //192.168.20.10/compta -c ls : le partage ne doit pas être ouvert aux invités.",
+      "check": {
+        "type": "smbAccess",
+        "from": "LNX1",
+        "server": "192.168.20.10",
+        "share": "compta",
+        "success": false
       }
     },
     {

@@ -15,6 +15,8 @@ export interface TroubleshootSession {
   startedAt: number
   /** Dépannage chronométré (mode examen, indices désactivés). */
   exam: boolean
+  /** Dépannage généré depuis le lab ouvert (graine) ; faux pour un lab de dépannage fourni (lab 44, 45, 60…). */
+  generated: boolean
   /** Révision du document au lancement : un autre document ouvert met fin à la session. */
   revision: number
   /** Commandes nommées jouées depuis le départ (hors demandes d'indice). */

@@ -103,6 +103,16 @@
       }
     },
     {
+      "id": "applique",
+      "label": "Apache applique la configuration enregistrée (rechargé ou redémarré)",
+      "hint": "apache2ctl configtest lit les fichiers ; le service garde la configuration de son dernier démarrage tant qu’il n’est pas rechargé.",
+      "check": {
+        "type": "linuxConfigApplied",
+        "device": "LSRV1",
+        "unit": "apache2"
+      }
+    },
+    {
       "id": "web",
       "label": "Le site répond depuis PC1",
       "hint": "Apache ne prend en compte les sites qu’après un rechargement ; testez avec un navigateur ou curl.",
