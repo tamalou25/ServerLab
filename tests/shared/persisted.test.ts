@@ -13,6 +13,9 @@ import {
   MAX_RECENT_BYTES,
   MAX_SETTINGS_BYTES,
   MenuStateSchema,
+  MAX_PROGRESS_BYTES,
+  parseAttempt,
+  parseProgressFile,
   parseRecentFiles,
   parseSettings
 } from '../../src/shared/persisted'
@@ -153,4 +156,41 @@ describe('messages IPC', () => {
 
 it('la limite de taille des .slab est la même dans le moteur et le process principal', () => {
   expect(MAX_SLAB_LENGTH).toBe(MAX_SLAB_BYTES)
+})
+
+describe('progress.json (progression du parcours)', () => {
+  const attempt = {
+    id: 'lab-01-adressage-1',
+    labId: 'lab-01-adressage',
+    mode: 'lab',
+    finishedAt: '2026-11-02T09:00:00.000Z',
+    passed: 7,
+    total: 7,
+    success: true
+  }
+
+  it('lit les tentatives valides, écarte les autres, remplit les défauts', () => {
+    const text = JSON.stringify({ formatVersion: 1, attempts: [attempt, { id: 'x' }, 42] })
+    const parsed = parseProgressFile(text)
+    expect(parsed).toHaveLength(1)
+    expect(parsed[0]).toMatchObject({ ...attempt, hintsUsed: 0, gaveUp: false, competences: [] })
+  })
+
+  it('fichier absent, corrompu, trop gros ou d’un autre format : progression vide', () => {
+    expect(parseProgressFile('')).toEqual([])
+    expect(parseProgressFile('{"formatVersion":1,"attempts":[')).toEqual([])
+    expect(parseProgressFile('{"formatVersion":9,"attempts":[]}')).toEqual([])
+    expect(parseProgressFile('[]')).toEqual([])
+    expect(
+      parseProgressFile(`{"formatVersion":1,"attempts":[${'0,'.repeat(MAX_PROGRESS_BYTES / 2)}0]}`)
+    ).toEqual([])
+  })
+
+  it('tentative IPC : validée par le schéma du moteur, refusée sinon', () => {
+    expect(parseAttempt(attempt)).toMatchObject({ labId: 'lab-01-adressage', success: true })
+    expect(parseAttempt({ ...attempt, passed: 'sept' })).toBeNull()
+    expect(parseAttempt({ ...attempt, mode: 'triche' })).toBeNull()
+    expect(parseAttempt(null)).toBeNull()
+    expect(parseAttempt({ ...attempt, id: 'x'.repeat(200) })).toBeNull()
+  })
 })

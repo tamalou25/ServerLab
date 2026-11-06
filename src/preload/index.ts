@@ -78,7 +78,10 @@ const api: ServerLabApi = {
   teacherMode: () => ipcRenderer.invoke(IPC.teacherMode),
   saveTeacherFile: (kind, content, suggestedName) =>
     ipcRenderer.invoke(IPC.teacherSave, kind, content, suggestedName),
-  openTeacherFiles: (kind) => ipcRenderer.invoke(IPC.teacherOpen, kind)
+  openTeacherFiles: (kind) => ipcRenderer.invoke(IPC.teacherOpen, kind),
+  listProgress: () => ipcRenderer.invoke(IPC.progressList),
+  recordAttempt: (attempt) => ipcRenderer.invoke(IPC.progressRecord, attempt),
+  resetProgress: () => ipcRenderer.invoke(IPC.progressReset)
 }
 
 contextBridge.exposeInMainWorld('serverlab', api)

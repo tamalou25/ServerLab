@@ -21,6 +21,8 @@ import { useLabsStore } from '../store/labs'
 import { useUiStore } from '../store/ui'
 import { resetDocumentUi } from './document'
 import { t } from './i18n'
+import { recordAttempt } from './progress'
+import { useTroubleshootStore } from '../store/troubleshoot'
 
 /** Propose de démarrer l'examen sur le lab en cours (départ reconstruit). */
 export function askStartExam(): void {
@@ -58,6 +60,16 @@ export function endExam(
   if (!session || !lab) return
   const result = finishExam(session, state, lab, Date.now(), ending)
   useExamStore.getState().set({ session: null, result })
+  // Un dépannage chronométré est enregistré par son bilan, pas deux fois
+  if (!useTroubleshootStore.getState().session?.exam)
+    void recordAttempt({
+      lab,
+      mode: 'exam',
+      passed: result.passed,
+      total: result.total,
+      success: result.passed === result.total && result.ending === 'finish',
+      startedAt: result.startedAt
+    })
 }
 
 export function askFinishExam(): void {

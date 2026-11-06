@@ -251,14 +251,24 @@ export function TroubleshootPanel() {
         <h3 className="mb-2 flex items-center gap-1 text-meta font-semibold tracking-wider text-fg-subtle uppercase">
           <Ticket size={12} /> {tickets.length > 1 ? 'Tickets' : 'Ticket'}
         </h3>
-        <ul className="flex flex-col gap-2" data-testid="tshoot-tickets">
-          {tickets.map((text, i) => (
-            <li key={i} className="rounded-md border border-line bg-surface px-3 py-2 text-ui text-fg">
-              {tickets.length > 1 && <span className="font-semibold">Ticket {i + 1} — </span>}
-              {text}
-            </li>
-          ))}
-        </ul>
+        {session.generated ? (
+          <ul className="flex flex-col gap-2" data-testid="tshoot-tickets">
+            {tickets.map((text, i) => (
+              <li key={i} className="rounded-md border border-line bg-surface px-3 py-2 text-ui text-fg">
+                {tickets.length > 1 && <span className="font-semibold">Ticket {i + 1} — </span>}
+                {text}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p
+            className="rounded-md border border-line bg-surface px-3 py-2 text-ui text-fg"
+            data-testid="tshoot-tickets"
+          >
+            Le ticket, le contexte de l’entreprise et les objectifs sont dans l’onglet <strong>Lab</strong>.
+            Ici : indices comptés, « J’ai réparé » et bilan.
+          </p>
+        )}
         <p className="mt-2 text-dense text-fg-muted">
           Reproduisez le symptôme avec les consoles et l’interface, trouvez la cause puis réparez.
         </p>

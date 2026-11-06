@@ -155,7 +155,10 @@ export const IPC = {
   libraryLab: 'library:lab',
   teacherMode: 'teacher:mode',
   teacherSave: 'teacher:save',
-  teacherOpen: 'teacher:open'
+  teacherOpen: 'teacher:open',
+  progressList: 'progress:list',
+  progressRecord: 'progress:record',
+  progressReset: 'progress:reset'
 } as const
 
 /** Taille maximale acceptée pour un fichier .slab (protection contre les fichiers aberrants). */
@@ -260,4 +263,11 @@ export interface ServerLabApi {
   saveTeacherFile(kind: TeacherFileKind, content: string, suggestedName: string): Promise<FileResult<string>>
   /** Dialogue « Ouvrir » (plusieurs fichiers pour les rendus) ; contenus validés ensuite par le moteur. */
   openTeacherFiles(kind: TeacherFileKind): Promise<FileResult<OpenedFile[]>>
+
+  /** Progression (parcours) : tentatives enregistrées dans userData/progress.json, validées par le moteur. */
+  listProgress(): Promise<unknown[]>
+  /** Enregistre une tentative terminée (validée dans le main) ; renvoie la liste à jour. */
+  recordAttempt(attempt: unknown): Promise<unknown[]>
+  /** Efface toute la progression (demande explicite de l'utilisateur). */
+  resetProgress(): Promise<unknown[]>
 }

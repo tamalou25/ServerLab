@@ -23,6 +23,7 @@ import { buildMenu } from './menu'
 import { exportExamResult, exportLabFile, importLabFile } from './labfiles'
 import { openTeacherFiles, saveTeacherFile } from './teacherfiles'
 import { fetchLibraryIndex, fetchLibraryLab } from './library'
+import { ProgressStore } from './progress'
 import { exportAuditPdf } from './report'
 import { applyGlobalSecurity } from './security'
 import { isThemePreference, loadSettings, saveSettings, THEME_BACKGROUND, type Settings } from './settings'
@@ -65,6 +66,7 @@ let closeIntent: CloseIntent = 'quit'
 let intentAfterSave: CloseIntent = 'quit'
 
 const files = new FileService(() => refreshMenu())
+const progress = new ProgressStore()
 
 /** Reconstruit le menu natif à partir de l'état courant. */
 function refreshMenu(): void {
@@ -281,6 +283,9 @@ function registerIpc(): void {
     saveTeacherFile(win(), kind, content, name)
   )
   ipcMain.handle(IPC.teacherOpen, (_e, kind: unknown) => openTeacherFiles(win(), kind))
+  ipcMain.handle(IPC.progressList, () => progress.list())
+  ipcMain.handle(IPC.progressRecord, (_e, attempt: unknown) => progress.record(attempt))
+  ipcMain.handle(IPC.progressReset, () => progress.reset())
   ipcMain.on(IPC.closeConfirmed, () => {
     closeConfirmed = true
     closeIntent = intentAfterSave
@@ -320,6 +325,7 @@ app
       if (settings.theme === 'system') pushTheme()
     })
     await files.init()
+    await progress.init()
     registerIpc()
 
     // Fichier passé au lancement (association de l'extension .slab)

@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { useDialog } from '../../hooks/useDialog'
 import { FlaskConical, GraduationCap, Upload, Wrench, X } from 'lucide-react'
+import { PathwayList } from './PathwayList'
 import { LABS } from '../../lib/labCatalog'
 import { importAndOpenLab, openLabEditor } from '../../lib/labEditor'
 import { openLab } from '../../lib/labs'
@@ -17,7 +18,7 @@ import { rich, t } from '../../lib/i18n'
 
 export function LabPicker() {
   const open = useLabsStore((s) => s.pickerOpen)
-  const [tab, setTab] = useState<'builtin' | 'library'>('builtin')
+  const [tab, setTab] = useState<'pathway' | 'builtin' | 'library'>('builtin')
   const close = () => useLabsStore.getState().setPickerOpen(false)
   const { ref, titleId } = useDialog(open, close)
   if (!open) return null
@@ -31,7 +32,7 @@ export function LabPicker() {
       aria-labelledby={titleId}
     >
       <div
-        className="flex max-h-[85vh] w-[640px] flex-col rounded-md border border-line bg-overlay shadow-lg"
+        className="flex max-h-[85vh] w-[720px] flex-col rounded-md border border-line bg-overlay shadow-lg"
         data-testid="lab-picker"
       >
         <div className="flex items-center gap-2 border-b border-line px-5 py-3">
@@ -51,6 +52,7 @@ export function LabPicker() {
         <div className="flex border-b border-line px-5" role="tablist">
           {(
             [
+              ['pathway', t('lab.tab.pathway')],
               ['builtin', t('lab.tab.builtin')],
               ['library', t('lab.tab.library')]
             ] as const
@@ -72,6 +74,8 @@ export function LabPicker() {
         </div>
         {tab === 'library' ? (
           <LibraryList />
+        ) : tab === 'pathway' ? (
+          <PathwayList />
         ) : (
           <>
             <p className="px-5 pt-3 text-ui text-fg-muted">

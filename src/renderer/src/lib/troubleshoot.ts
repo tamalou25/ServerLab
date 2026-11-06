@@ -28,6 +28,7 @@ import { useTroubleshootStore } from '../store/troubleshoot'
 import { useUiStore } from '../store/ui'
 import { confirmDiscard, resetDocumentUi } from './document'
 import { askFinishExam, endExam } from './exam'
+import { attemptFromSummary, recordAttempt } from './progress'
 
 export interface TroubleshootOptions {
   /** Difficulté maximale des pannes tirées (1 à 3). */
@@ -121,32 +122,45 @@ export async function launchTroubleshoot(o: TroubleshootOptions): Promise<string
   useLabStore.getState().load(r.state, { path: null, name: `${lab.id}.slab` })
   useLabsStore.getState().setActive(lab)
   useUiStore.getState().setRightTab('troubleshoot')
+  beginTroubleshootSession(lab.id, o.seed, { exam: o.exam, generated: true })
+  if (o.exam)
+    useExamStore.getState().set({
+      session: startExam(lab, Date.now(), minutes),
+      lab,
+      revision: useLabStore.getState().revision,
+      result: null
+    })
+  return null
+}
+
+/**
+ * Ouvre une session de dépannage sur le document qui vient d'être chargé (état cassé = départ) : tickets,
+ * indices, « J'ai réparé », bilan. `generated` : dépannage tiré depuis un lab ouvert (onglet Lab masqué) ;
+ * faux pour un lab de dépannage fourni, dont l'énoncé reste dans l'onglet Lab.
+ */
+export function beginTroubleshootSession(
+  labId: string,
+  seed: number,
+  opts: { exam: boolean; generated: boolean }
+): void {
   seen = new WeakSet()
-  const store = useTroubleshootStore.getState()
   const labState = useLabStore.getState()
-  store.set({
+  useTroubleshootStore.getState().set({
     dialogOpen: false,
     summary: null,
     session: {
-      labId: lab.id,
+      labId,
       start: labState.loadedLab,
-      seed: o.seed,
+      seed,
       startedAt: Date.now(),
-      exam: o.exam,
+      exam: opts.exam,
+      generated: opts.generated,
       revision: labState.revision,
       played: 0,
       peakHints: 0,
       failedChecks: 0
     }
   })
-  if (o.exam)
-    useExamStore.getState().set({
-      session: startExam(lab, Date.now(), minutes),
-      lab,
-      revision: labState.revision,
-      result: null
-    })
-  return null
 }
 
 /** Demande l'indice suivant (commande nommée `troubleshoot.useHint`) ; faux si aucun n'est disponible. */
@@ -166,23 +180,25 @@ function conclude(gaveUp: boolean, elapsedMs?: number): void {
   const labState = useLabStore.getState()
   const lab = labState.lab
   const active = useLabsStore.getState().active
-  store.set({
-    summary: summarizeTroubleshooting(
-      session.start,
-      {
-        commandsPlayed: session.played,
-        hintsUsed: Math.max(session.peakHints, hintsUsedTotal(lab)),
-        elapsedMs: elapsedMs ?? Date.now() - session.startedAt,
-        repaired: allRepaired(lab),
-        gaveUp,
-        mode: session.exam ? 'exam' : 'training',
-        // Journal des commandes jouées (annuler retire une entrée : descriptif seulement)
-        journal: labState.history.past.filter((e) => e.type !== 'troubleshoot.useHint').map((e) => e.label)
-      },
-      // État final et lab : objectifs fonctionnels et contraintes du lab de dépannage
-      { current: lab, ...(active && active.id === session.labId ? { lab: active } : {}) }
-    )
-  })
+  const summary = summarizeTroubleshooting(
+    session.start,
+    {
+      commandsPlayed: session.played,
+      hintsUsed: Math.max(session.peakHints, hintsUsedTotal(lab)),
+      elapsedMs: elapsedMs ?? Date.now() - session.startedAt,
+      repaired: allRepaired(lab),
+      gaveUp,
+      mode: session.exam ? 'exam' : 'training',
+      // Journal des commandes jouées (annuler retire une entrée : descriptif seulement)
+      journal: labState.history.past.filter((e) => e.type !== 'troubleshoot.useHint').map((e) => e.label)
+    },
+    // État final et lab : objectifs fonctionnels et contraintes du lab de dépannage
+    { current: lab, ...(active && active.id === session.labId ? { lab: active } : {}) }
+  )
+  store.set({ summary })
+  // Progression : un lab de dépannage fourni (lab 44, 45, 60…) compte comme tentative, pas un dépannage généré
+  if (active && active.id === session.labId && !session.generated)
+    void recordAttempt(attemptFromSummary(active, summary, session.startedAt, lab.troubleshooting?.seed))
 }
 
 /** « J'ai réparé » : le bilan si toutes les pannes sont guéries, sinon un message qui ne dit pas quoi. */
