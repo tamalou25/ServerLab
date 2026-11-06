@@ -207,7 +207,9 @@ export function CanvasBar() {
           onClick={toggleZones}
           data-testid="toggle-zones"
           className={`flex h-7 items-center gap-1 rounded-control px-1.5 text-meta font-medium transition-colors disabled:opacity-40 ${
-            showZones && !tooMany ? 'bg-accent-soft text-accent-text' : 'text-fg-muted hover:bg-surface-2 hover:text-fg'
+            showZones && !tooMany
+              ? 'bg-accent-soft text-accent-text'
+              : 'text-fg-muted hover:bg-surface-2 hover:text-fg'
           }`}
         >
           <LayoutGrid size={14} aria-hidden />

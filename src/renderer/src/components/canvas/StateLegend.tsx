@@ -40,9 +40,12 @@ export function StateLegend() {
   const devices = useLabStore((s) => Object.keys(s.lab.devices).length)
   const showZones = zonesOn && zones > 0 && devices <= ZONES_MAX_DEVICES
   const items: { key: string; label: string; swatch: React.ReactNode }[] = []
-  if (link) items.push({ key: 'selected', label: t('legend.selected'), swatch: <Line className="stroke-accent" /> })
-  if (branch) items.push({ key: 'branch', label: t('legend.branch'), swatch: <Line className="stroke-accent" /> })
-  if (path) items.push({ key: 'path', label: t('legend.path'), swatch: <Line className="stroke-info" dashed /> })
+  if (link)
+    items.push({ key: 'selected', label: t('legend.selected'), swatch: <Line className="stroke-accent" /> })
+  if (branch)
+    items.push({ key: 'branch', label: t('legend.branch'), swatch: <Line className="stroke-accent" /> })
+  if (path)
+    items.push({ key: 'path', label: t('legend.path'), swatch: <Line className="stroke-info" dashed /> })
   if (mode === 'simulation' && exchange)
     items.push({
       key: 'exchange',
@@ -53,7 +56,12 @@ export function StateLegend() {
     items.push({
       key: 'zone',
       label: t('legend.zone'),
-      swatch: <span className="h-3 w-5 shrink-0 rounded-sm border border-dashed border-zone-line bg-zone" aria-hidden />
+      swatch: (
+        <span
+          className="h-3 w-5 shrink-0 rounded-sm border border-dashed border-zone-line bg-zone"
+          aria-hidden
+        />
+      )
     })
   if (items.length === 0) return null
   return (

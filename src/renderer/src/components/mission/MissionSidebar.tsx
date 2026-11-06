@@ -3,7 +3,7 @@
  * difficulté, régime), résumé, durée indicative et accès direct aux consoles des équipements du lab.
  * Aucune démarche n'y est cochée : rien dans l'état ne permettrait de la valider.
  */
-import { Clock3, SquareTerminal } from 'lucide-react'
+import { Clock3, ListChecks, SquareTerminal } from 'lucide-react'
 import { useWindowSize, NARROW_WIDTH } from '../../hooks/useWindowSize'
 import { useT } from '../../lib/i18n'
 import { useAttemptStore } from '../../store/attempt'
@@ -46,6 +46,22 @@ export function MissionSidebar() {
         </h2>
         {lab && !subject && <DifficultyBadge difficulty={lab.difficulty} />}
         {summary && <p className="text-dense leading-relaxed text-fg-muted">{summary}</p>}
+      </div>
+      <div className="border-t border-line pt-3" data-testid="mission-approach">
+        <h3 className="mb-1.5 flex items-center gap-1.5 text-meta font-semibold tracking-wider text-fg-subtle uppercase">
+          <ListChecks size={13} aria-hidden /> {t('mission.approach.title')}
+        </h3>
+        <ol className="flex flex-col gap-1">
+          {(['observe', 'diagnose', 'fix', 'verify'] as const).map((step, i) => (
+            <li key={step} className="flex items-center gap-2 text-dense text-fg-muted">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-line text-meta font-semibold text-fg-subtle">
+                {i + 1}
+              </span>
+              {t(`mission.approach.${step}`)}
+            </li>
+          ))}
+        </ol>
+        <p className="mt-1.5 text-meta leading-snug text-fg-subtle">{t('mission.approach.note')}</p>
       </div>
       {duration && (
         <div className="border-t border-line pt-3">
