@@ -72,7 +72,7 @@ export function loadContent(
   // Lab pédagogique enregistré avec le document : le panneau Lab est rétabli
   const lab = parsed.doc.meta.labId ? labById(parsed.doc.meta.labId) : undefined
   useLabsStore.getState().setActive(lab ?? null)
-  if (lab) useUiStore.getState().setRightTab('lab')
+  if (lab) useUiStore.getState().openMission()
   return true
 }
 

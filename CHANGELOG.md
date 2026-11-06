@@ -6,6 +6,31 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+### Interface
+
+- Interface v3 en trois espaces (`docs/ui-v3.md`) : rail Atelier / Mission / Labs / Enseignant / Aide, en-tête
+  (document, état d'enregistrement, Temps réel / Simulation, fichier), barre du plan (compteurs réels, annuler /
+  rétablir, outils, zoom, zones réseau). Raccourcis `Ctrl+Maj+A / M / E`, menu Affichage › Espace.
+- Tokens v3 : texte courant 14 px (`text-body`, 13 px en densité Compact), titres `text-heading` et
+  `text-display`, rayons, rail, zones ; `prefers-reduced-motion` respecté (chrome et enveloppes).
+  Primitives partagées : onglets clavier, segments, badges icône + texte, états vides, poignée de
+  redimensionnement (largeurs mémorisées sur le poste).
+- Atelier : palette en liste de familles, câbles à trois mises en évidence légendées (sélection, branche de
+  l'équipement, chemin de l'échange choisi), zones réseau descriptives en lecture seule (un réseau IPv4 par zone,
+  routeurs en frontière, VLAN seulement s'il est unique), inspecteur Résumé / Interfaces / Événements / Audit /
+  Dépannage redimensionnable.
+- Mission : lecteur redimensionnable et élargissable (énoncé 14 px avec tableaux Markdown, objectifs à état réel,
+  indices progressifs, pied fixe), barre latérale (contexte, démarche suggérée sans état, consoles), règles
+  d'examen et d'épreuve inchangées.
+- Enseignant : page recouvrante (plan inerte, raccourcis neutralisés, focus géré), correction avec indicateurs
+  calculés, liste des copies à badges d'état dérivés de la correction, rendus invalides listés, tableau par
+  critère, composantes de la note, chronologie du journal réel, rejeu.
+
+### Moteur
+
+- `topology/groups.ts` : zones réseau (pur, mémoïsé sur le réseau) ; `teacher/classReport.ts` : `copyStatus` et
+  `journalTimeline` ; `shared/markdown.ts` : parseur des énoncés avec tableaux. Tests Vitest.
+
 ## [2.14.0] — 2026-11-06
 
 Apprendre à administrer **et dépanner** : validations qui jugent le fonctionnement réel, bilan de dépannage fondé

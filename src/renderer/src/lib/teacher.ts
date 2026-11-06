@@ -29,7 +29,8 @@ const showError = (title: string, message: string) => useUiStore.getState().show
 export function setTeacherMode(on: boolean): void {
   useTeacherStore.getState().setEnabled(on)
   const ui = useUiStore.getState()
-  if (!on && ui.rightTab === 'teacher') ui.setRightTab('properties')
+  // Mode désactivé : l'espace Enseignant disparaît, retour à l'Atelier
+  if (!on && ui.workspace === 'teacher') ui.setWorkspace('atelier')
 }
 
 function start(lab: LabDefinition): void {

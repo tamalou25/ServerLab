@@ -91,11 +91,15 @@ Voir [`CLAUDE.md`](./CLAUDE.md) pour les conventions détaillées.
 
 ## Interface
 
-Console d'ingénierie sobre, en thème sombre ou clair (Affichage > Thème) : barre d'outils, palette à onglets,
-canvas, inspecteur à onglets et panneau Simulation. La forme des icônes indique le type d'équipement, la couleur
-et la forme des voyants indiquent l'état. Détails : [docs/ui-v2.md](docs/ui-v2.md).
+Interface v3 en trois espaces, en thème sombre ou clair (Affichage > Thème) : **Atelier** (palette, plan avec
+zones réseau, inspecteur), **Mission** (énoncé élargi, objectifs, indices, plan et consoles) et **Enseignant**
+(sujets, copies, correction, rejeu). Rail à gauche, en-tête avec le document et le mode, barre du plan avec les
+compteurs réels, outils et zoom. La forme des icônes indique le type d'équipement, la couleur et la forme des
+voyants indiquent l'état ; chaque mise en évidence du plan est légendée. Détails : [docs/ui-v3.md](docs/ui-v3.md).
 
-![Écran principal (thème clair)](docs/captures/ui-v2/v2-ecran-principal-clair.png)
+![Espace Atelier (thème clair)](docs/captures/ui-v3/atelier-clair.png)
+
+![Espace Mission (thème sombre)](docs/captures/ui-v3/mission-sombre.png)
 
 ## Stratégies de groupe (GPO)
 

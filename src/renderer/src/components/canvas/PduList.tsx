@@ -12,7 +12,7 @@ export function PduList() {
   if (results.length === 0) return null
   return (
     <div
-      className="absolute top-14 left-3 z-10 w-72 rounded-md border border-line bg-panel/95 text-xs shadow-sm"
+      className="absolute top-14 left-3 z-10 w-72 rounded-md border border-line bg-panel/95 text-dense shadow-sm"
       data-testid="pdu-list"
     >
       <div className="flex items-center justify-between border-b border-line px-3 py-1.5 font-semibold text-fg-muted">

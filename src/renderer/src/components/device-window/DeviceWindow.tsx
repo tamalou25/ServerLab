@@ -170,7 +170,7 @@ export function DeviceWindow({ win }: { win: DeviceWindowState }) {
             aria-selected={tab === id}
             data-testid={`tab-${id}`}
             onClick={() => setWindowTab(win.deviceId, id)}
-            className={`-mb-px flex items-center gap-1.5 border-b-2 px-4 py-2 text-xs font-medium ${
+            className={`-mb-px flex items-center gap-1.5 border-b-2 px-4 py-2 text-dense font-medium ${
               tab === id ? 'border-accent text-fg' : 'border-transparent text-fg-subtle hover:text-fg-muted'
             }`}
           >

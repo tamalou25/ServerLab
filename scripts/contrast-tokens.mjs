@@ -1,5 +1,5 @@
 // Usage : node scripts/contrast-tokens.mjs src/renderer/src/styles.css (échec si un ratio est insuffisant)
-// Calcule les ratios de contraste des tokens v2 (lus dans styles.css) : texte ≥ 4,5, éléments graphiques ≥ 3.
+// Calcule les ratios de contraste des tokens v2 et v3 (lus dans styles.css) : texte ≥ 4,5, éléments graphiques ≥ 3.
 import fs from 'node:fs'
 const css = fs.readFileSync(process.argv[2], 'utf8')
 const block = (sel) => {
@@ -48,6 +48,10 @@ for (const [th, sel] of [
   chk('on-accent', ['accent', 'accent-hover'], 4.5)
   chk('on-danger', ['danger'], 4.5)
   for (const f of ['ok', 'warn', 'danger', 'idle', 'focus']) chk(f, ['panel', 'canvas'], 3)
+  // Rail des espaces (v3) : libellés et icônes sur le fond du rail ; contour des zones sur le plan
+  chk('on-rail', ['rail', 'rail-hover'], 4.5)
+  chk('on-rail-active', ['rail', 'rail-hover'], 4.5)
+  chk('zone-line', ['canvas'], 3)
 }
 console.log('| Thème | Token | Fond : ratio | Min | |\n|---|---|---|---|---|\n' + rows.join('\n'))
 process.exit(fail ? 1 : 0)

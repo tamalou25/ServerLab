@@ -118,7 +118,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
               {t('win.utiliserLadresseIpSuivante')}
             </label>
             <div className="grid grid-cols-[150px_1fr] items-center gap-2 pl-6">
-              <span className="text-xs text-fg-muted">{t('win.adresseIp')}</span>
+              <span className="text-dense text-fg-muted">{t('win.adresseIp')}</span>
               <input
                 className={inputClass}
                 disabled={!staticIp}
@@ -128,7 +128,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
                 placeholder="192.168.1.10"
                 data-testid="ip-address"
               />
-              <span className="text-xs text-fg-muted">{t('win.masqueDeSousReseau')}</span>
+              <span className="text-dense text-fg-muted">{t('win.masqueDeSousReseau')}</span>
               <input
                 className={inputClass}
                 disabled={!staticIp}
@@ -138,7 +138,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
                 placeholder={suggestedMask || '255.255.255.0'}
                 data-testid="ip-mask"
               />
-              <span className="text-xs text-fg-muted">{t('win.passerelleParDefaut')}</span>
+              <span className="text-dense text-fg-muted">{t('win.passerelleParDefaut')}</span>
               <input
                 className={inputClass}
                 disabled={!staticIp}
@@ -164,7 +164,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
               {t('win.utiliserLadresseDeServeur')}
             </label>
             <div className="grid grid-cols-[150px_1fr] items-center gap-2 pl-6">
-              <span className="text-xs text-fg-muted">{t('win.serveurDnsPrefere')}</span>
+              <span className="text-dense text-fg-muted">{t('win.serveurDnsPrefere')}</span>
               <input
                 className={inputClass}
                 disabled={!dnsStatic}
@@ -173,7 +173,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
                 aria-label={t('win.serveurDnsPrefere')}
                 data-testid="ip-dns1"
               />
-              <span className="text-xs text-fg-muted">{t('win.serveurDnsAuxiliaire')}</span>
+              <span className="text-dense text-fg-muted">{t('win.serveurDnsAuxiliaire')}</span>
               <input
                 className={inputClass}
                 disabled={!dnsStatic}
@@ -206,7 +206,7 @@ export function HostInterfaceForm({ device, iface }: { device: Device; iface: Ne
           ) : null
         }
       >
-        <dl className="selectable grid max-w-lg grid-cols-[180px_1fr] gap-y-1 text-xs">
+        <dl className="selectable grid max-w-lg grid-cols-[180px_1fr] gap-y-1 text-dense">
           <dt className="text-fg-muted">{t('win.adressePhysique')}</dt>
           <dd className="font-mono">{iface.mac}</dd>
           <dt className="text-fg-muted">{t('win.adresseIpv4')}</dt>

@@ -163,7 +163,7 @@ export async function openStep(step: PathwayStep, seed?: number): Promise<void> 
   useLabStore.getState().load(start, { path: null, name: `${lab.id}.slab` })
   useLabsStore.getState().setActive(lab)
   useLabsStore.getState().setPickerOpen(false)
-  useUiStore.getState().setRightTab('lab')
+  useUiStore.getState().openMission()
   useExamStore.getState().set({
     session: startExam(lab, Date.now(), minutes),
     lab,

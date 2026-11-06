@@ -20,7 +20,7 @@ export function InterfaceList({ device, compact = false }: { device: Device; com
         const ip = effectiveIpv4(iface)
         if (compact && !link) return null
         return (
-          <li key={iface.id} className="flex flex-col gap-0.5 px-2 py-1.5 text-xs">
+          <li key={iface.id} className="flex flex-col gap-0.5 px-2 py-1.5 text-dense">
             <div className="flex items-center gap-2">
               <StatusDot status={iface.enabled ? status : 'down'} />
               <span className="font-semibold text-fg">{iface.name}</span>

@@ -31,7 +31,7 @@ export function RoutesPanel({ device }: { device: RouterDevice }) {
   return (
     <>
       <Section title={t('win.routesStatiques')}>
-        <table className="mb-3 w-full max-w-xl text-xs">
+        <table className="mb-3 w-full max-w-xl text-dense">
           <thead className="text-left text-fg-muted">
             <tr>
               <th className="py-1">{t('win.reseau')}</th>
@@ -93,7 +93,7 @@ export function RoutesPanel({ device }: { device: RouterDevice }) {
             Ajouter
           </Button>
         </div>
-        <p className="mt-2 text-xs text-fg-muted">{t('win.routeParDefautReseau')}</p>
+        <p className="mt-2 text-dense text-fg-muted">{t('win.routeParDefautReseau')}</p>
       </Section>
       <Section title={t('win.tableDeRoutage')}>
         <pre className="selectable rounded border border-line bg-app p-3 font-mono text-meta leading-5 text-fg">

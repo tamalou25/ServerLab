@@ -129,7 +129,7 @@ export function VlanPanel({ device }: { device: SwitchDevice }) {
   return (
     <>
       <Section title={t('win.baseDesVlan')}>
-        <table className="mb-3 w-full max-w-xl text-xs" data-testid="vlan-db">
+        <table className="mb-3 w-full max-w-xl text-dense" data-testid="vlan-db">
           <thead className="text-left text-fg-muted">
             <tr>
               <th className="py-1">VLAN</th>
@@ -183,7 +183,7 @@ export function VlanPanel({ device }: { device: SwitchDevice }) {
         </div>
       </Section>
       <Section title={t('win.ports')}>
-        <table className="w-full max-w-2xl text-xs">
+        <table className="w-full max-w-2xl text-dense">
           <thead className="text-left text-fg-muted">
             <tr>
               <th className="py-1">{t('win.port')}</th>
@@ -202,7 +202,7 @@ export function VlanPanel({ device }: { device: SwitchDevice }) {
             ))}
           </tbody>
         </table>
-        <p className="mt-2 text-xs text-fg-muted">{t('win.vlanHelp')}</p>
+        <p className="mt-2 text-dense text-fg-muted">{t('win.vlanHelp')}</p>
       </Section>
     </>
   )

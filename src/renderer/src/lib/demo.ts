@@ -8,6 +8,7 @@ import { replayFrames, type Subject, type Submission } from '@engine/index'
 import { useDemoStore } from '../store/demo'
 import { useLabStore } from '../store/lab'
 import { useLabsStore } from '../store/labs'
+import { useTeacherStore } from '../store/teacher'
 import { useUiStore } from '../store/ui'
 import { resetDocumentUi } from './document'
 
@@ -26,6 +27,8 @@ export function startDemo(subject: Subject, submission: Submission): void {
   resetDocumentUi()
   useLabsStore.getState().setActive(null)
   useUiStore.getState().setMode('realtime')
+  // Le rejeu se regarde sur le plan : espace Atelier (le retour à l'espace Enseignant se fait à la fermeture)
+  useUiStore.getState().setWorkspace('atelier')
   useLabStore.getState().load(frames[0]!.state, { path: null, name: `${submission.student.name}.slab` })
   useDemoStore
     .getState()
@@ -48,6 +51,7 @@ export function setProjection(on: boolean): void {
 export function closeDemo(): void {
   setProjection(false)
   useDemoStore.getState().set({ frames: [], playing: false, index: 0 })
+  if (useTeacherStore.getState().enabled) useUiStore.getState().setWorkspace('teacher')
 }
 
 /** Lecture automatique à la vitesse choisie ; s'arrête à la dernière image. */

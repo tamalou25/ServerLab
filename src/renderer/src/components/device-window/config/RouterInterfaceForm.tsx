@@ -53,7 +53,7 @@ export function RouterInterfaceForm({ device, iface }: { device: Device; iface: 
           {t('win.interfaceActivee')}
         </label>
         <div className="grid grid-cols-[150px_1fr] items-center gap-2">
-          <span className="text-xs text-fg-muted">{t('win.adresseIpv4')}</span>
+          <span className="text-dense text-fg-muted">{t('win.adresseIpv4')}</span>
           <input
             className={inputClass}
             value={address}
@@ -61,7 +61,7 @@ export function RouterInterfaceForm({ device, iface }: { device: Device; iface: 
             aria-label={t('win.adresseIpv4')}
             data-testid="if-address"
           />
-          <span className="text-xs text-fg-muted">{t('win.masqueDeSousReseau')}</span>
+          <span className="text-dense text-fg-muted">{t('win.masqueDeSousReseau')}</span>
           <input
             className={inputClass}
             value={mask}
@@ -69,8 +69,8 @@ export function RouterInterfaceForm({ device, iface }: { device: Device; iface: 
             aria-label={t('win.masqueDeSousReseau')}
             data-testid="if-mask"
           />
-          <span className="text-xs text-fg-muted">{t('win.adresseMac')}</span>
-          <span className="selectable font-mono text-xs">{iface.mac}</span>
+          <span className="text-dense text-fg-muted">{t('win.adresseMac')}</span>
+          <span className="selectable font-mono text-dense">{iface.mac}</span>
         </div>
         <div className="flex gap-2">
           <Button variant="primary" onClick={() => apply()} data-testid="if-apply">
@@ -97,7 +97,7 @@ function HelperAddresses({ device, iface }: { device: Device; iface: NetInterfac
   }
   return (
     <div className="mt-2 border-t border-line pt-3">
-      <div className="mb-1 text-xs font-medium text-fg-muted">{t('win.relaisDhcpIpHelper')}</div>
+      <div className="mb-1 text-dense font-medium text-fg-muted">{t('win.relaisDhcpIpHelper')}</div>
       <div className="flex gap-2">
         <input
           className={inputClass}
@@ -111,7 +111,7 @@ function HelperAddresses({ device, iface }: { device: Device; iface: NetInterfac
           Enregistrer
         </Button>
       </div>
-      <p className="mt-1 text-xs text-fg-muted">{t('win.relayHelp')}</p>
+      <p className="mt-1 text-dense text-fg-muted">{t('win.relayHelp')}</p>
     </div>
   )
 }

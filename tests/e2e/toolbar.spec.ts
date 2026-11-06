@@ -41,10 +41,10 @@ test('Barre d’outils principale : annuler / rétablir, et aucun raccourci du c
     await expect(page.getByTestId('device-SRV1')).toHaveCount(0)
     await bar.getByTestId('toolbar-redo').click()
     await expect(page.getByTestId('device-SRV1')).toBeVisible()
-    // Bascule de mode dans la barre principale
-    await bar.getByTestId('mode-simulation').click()
-    await expect(bar.getByTestId('mode-simulation')).toHaveAttribute('aria-checked', 'true')
-    await bar.getByTestId('mode-realtime').click()
+    // Bascule de mode dans l'en-tête
+    await page.getByTestId('mode-simulation').click()
+    await expect(page.getByTestId('mode-simulation')).toHaveAttribute('aria-checked', 'true')
+    await page.getByTestId('mode-realtime').click()
 
     // Équipement sélectionné, fenêtre ouverte : Suppr et Ctrl+Z dans la fenêtre ne touchent pas au lab
     await page.getByTestId('device-SRV1').dblclick()

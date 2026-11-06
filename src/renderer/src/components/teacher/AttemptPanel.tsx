@@ -57,7 +57,7 @@ function Start() {
           />
         </Field>
         <fieldset className="flex flex-col gap-1">
-          <legend className="mb-1 text-xs font-medium text-fg-muted">{t('attempt.mode')}</legend>
+          <legend className="mb-1 text-dense font-medium text-fg-muted">{t('attempt.mode')}</legend>
           {(['exam', 'self'] as const).map((m) => (
             <label key={m} className="flex items-center gap-2 text-fg">
               <input type="radio" name="attempt-mode" checked={mode === m} onChange={() => setMode(m)} />
@@ -90,11 +90,11 @@ function Running() {
   const penalty = attempt.hints.length * attempt.subject.scale.hintPenalty
   return (
     <>
-      <Section title={attempt.subject.meta.title}>
+      <div className="border-b border-line bg-accent-soft px-5 py-3">
         <div className="flex items-center gap-2">
-          <Clock size={16} aria-hidden className="text-fg-muted" />
+          <Clock size={16} aria-hidden className="text-accent-text" />
           <span
-            className={`font-mono text-title ${remaining < 5 * 60_000 ? 'text-warn-text' : 'text-fg'}`}
+            className={`font-mono text-heading font-semibold tabular-nums ${remaining < 5 * 60_000 ? 'text-warn-text' : 'text-fg'}`}
             role="timer"
             aria-label={t('attempt.remaining')}
             data-testid="attempt-timer"
@@ -106,16 +106,15 @@ function Running() {
             {t('attempt.end')}
           </Button>
         </div>
-        <p className="mt-1 text-dense text-fg-muted">
-          {t('attempt.studentLine', { name: attempt.studentName })}
-        </p>
-      </Section>
+        <h2 className="mt-1 text-ui font-semibold text-fg">{attempt.subject.meta.title}</h2>
+        <p className="text-meta text-fg-muted">{t('attempt.studentLine', { name: attempt.studentName })}</p>
+      </div>
       {question && <QuestionBox id={question.id} text={question.text} />}
       <Section title={t('attempt.statement')}>
-        <div className="text-dense">
-          <Markdown text={attempt.subject.lab.statement} />
-        </div>
-        <p className="mt-2 text-dense text-fg-muted">{t('attempt.criteriaHidden')}</p>
+        <Markdown text={attempt.subject.lab.statement} />
+        <p className="mt-3 rounded-control border border-line bg-surface px-2.5 py-1.5 text-dense text-fg-muted">
+          {t('attempt.criteriaHidden')}
+        </p>
       </Section>
       <Section title={t('attempt.hints')}>
         <div className="flex flex-col gap-2 text-dense">
@@ -125,7 +124,7 @@ function Running() {
           </Button>
           {lastHint && (
             <p
-              className="rounded-md border border-line bg-surface-2 p-2 text-fg"
+              className="rounded-control border border-warn/30 bg-warn-soft/50 px-2.5 py-2 text-body text-fg"
               data-testid="attempt-hint-text"
             >
               {lastHint}

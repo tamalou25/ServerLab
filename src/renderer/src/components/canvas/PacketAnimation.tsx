@@ -12,6 +12,13 @@ import { PROTOCOL_COLORS } from '../../lib/protocols'
 
 const DURATION_MS = 650
 
+/** Préférence système de réduction des animations : l'enveloppe est placée directement à l'arrivée. */
+function reducedMotion(): boolean {
+  return (
+    typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+
 export function PacketAnimation() {
   const mode = useUiStore((s) => s.mode)
   const current = useSimStore((s) => s.current)
@@ -20,6 +27,10 @@ export function PacketAnimation() {
   const [t, setT] = useState(1)
 
   useEffect(() => {
+    if (reducedMotion()) {
+      setT(1)
+      return
+    }
     let frame = 0
     const start = performance.now()
     const animate = (now: number) => {

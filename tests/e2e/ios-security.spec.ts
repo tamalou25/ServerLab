@@ -11,7 +11,7 @@ import {
   type LabState
 } from '../../src/engine/index'
 import { openLab } from './fixtures'
-import { cableDevices, launchApp, openConsole, placeDevice, typeCommand } from './helpers'
+import { cableDevices, clickMenu, launchApp, openConsole, placeDevice, typeCommand } from './helpers'
 
 /** PC1 (192.168.1.10) — R1 Gi0/0 ; R1 Gi0/1 — PC2 (192.168.2.10). Routeur adressé et actif. */
 function aclLab(): LabState {
@@ -84,7 +84,9 @@ test('IOS : une ACL bloque le ping de PC1 vers PC2, visible en Simulation', asyn
     )
     await page.getByTestId('device-window-R1').getByTestId('close-device-window').click()
 
-    // Le ping échoue, le refus est expliqué dans la trace de Simulation
+    // Le ping échoue, le refus est expliqué dans la trace de Simulation (minimap masquée : elle recouvrirait
+    // PC2 une fois le panneau Simulation ouvert)
+    await clickMenu(app, ['Affichage', 'Afficher la minimap'])
     await page.getByTestId('mode-simulation').click()
     await page.getByTestId('tool-pdu').click()
     await page.getByTestId('device-PC1').click()

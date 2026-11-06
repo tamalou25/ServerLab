@@ -32,7 +32,7 @@ export async function openLab(lab: LabDefinition): Promise<boolean> {
   useLabStore.getState().load(start, { path: null, name: `${lab.id}.slab` })
   useLabsStore.getState().setActive(lab)
   useLabsStore.getState().setPickerOpen(false)
-  useUiStore.getState().setRightTab('lab')
+  useUiStore.getState().openMission()
   // Lab de dépannage fourni : session de dépannage (indices, « J'ai réparé », bilan) en plus de l'énoncé
   if (lab.troubleshooting)
     beginTroubleshootSession(lab.id, lab.troubleshooting.seed, { exam: false, generated: false })
@@ -72,7 +72,7 @@ export function restartLab(): void {
       resetDocumentUi()
       useLabStore.getState().load(buildLabState(lab), { path: null, name: `${lab.id}.slab` })
       useLabsStore.getState().setActive(lab)
-      useUiStore.getState().setRightTab('lab')
+      useUiStore.getState().openMission()
       if (lab.troubleshooting)
         beginTroubleshootSession(lab.id, lab.troubleshooting.seed, { exam: false, generated: false })
     }

@@ -51,7 +51,7 @@ export function AuditPanel() {
           <div className="text-meta font-semibold tracking-wider text-fg-subtle uppercase">
             {t('audit.scoreDeSecurite')}
           </div>
-          <div className={`text-2xl font-semibold ${scoreClass(report.score)}`} data-testid="audit-score">
+          <div className={`text-display font-semibold ${scoreClass(report.score)}`} data-testid="audit-score">
             {report.score}
             <span className="text-ui text-fg-subtle"> / 100</span>
           </div>
@@ -70,7 +70,7 @@ export function AuditPanel() {
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         {report.recommendations.length === 0 ? (
-          <p className="text-xs text-fg-muted">{t('audit.aucuneRecommandationToutesLes')}</p>
+          <p className="text-dense text-fg-muted">{t('audit.aucuneRecommandationToutesLes')}</p>
         ) : (
           <ul className="flex flex-col gap-3">
             {report.recommendations.map((r) => (
@@ -85,7 +85,7 @@ export function AuditPanel() {
                   >
                     {r.severity}
                   </span>
-                  <span className="text-xs font-semibold text-fg">{r.title}</span>
+                  <span className="text-dense font-semibold text-fg">{r.title}</span>
                 </div>
                 <ul className="mb-2 flex flex-col gap-0.5">
                   {r.findings.map((f) => (
@@ -122,11 +122,11 @@ export function AuditPanel() {
           </ul>
         )}
         <section className="mt-4 border-t border-line pt-3" data-testid="detection-panel">
-          <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-fg">
+          <h3 className="mb-2 flex items-center gap-1.5 text-dense font-semibold text-fg">
             <Radar size={14} className="text-accent" /> {t('detection.title')}
           </h3>
           {alerts.length === 0 ? (
-            <p className="text-xs text-fg-muted">{t('detection.none')}</p>
+            <p className="text-dense text-fg-muted">{t('detection.none')}</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {alerts.map((a) => (
@@ -135,7 +135,9 @@ export function AuditPanel() {
                   className="rounded-md border border-line bg-surface p-2"
                   data-testid={`detection-${a.rule}`}
                 >
-                  <div className="text-xs font-semibold text-warn-text">{t(`detection.rule.${a.rule}`)}</div>
+                  <div className="text-dense font-semibold text-warn-text">
+                    {t(`detection.rule.${a.rule}`)}
+                  </div>
                   <p className="text-meta text-fg-muted">{a.detail}</p>
                 </li>
               ))}

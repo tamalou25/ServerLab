@@ -61,14 +61,14 @@ export function HelpPanel() {
                 <tr>
                   <th
                     colSpan={2}
-                    className="pt-3 pb-1 text-left text-xs font-semibold text-fg-subtle uppercase"
+                    className="pt-3 pb-1 text-left text-dense font-semibold text-fg-subtle uppercase"
                   >
                     {shortcutGroupLabel(group, lang)}
                   </th>
                 </tr>
                 {rows.map((id) => (
                   <tr key={id} className="border-b border-line">
-                    <td className="py-1.5 pr-4 font-mono text-xs whitespace-nowrap text-fg-muted">
+                    <td className="py-1.5 pr-4 font-mono text-dense whitespace-nowrap text-fg-muted">
                       {SHORTCUTS[id].keys
                         .map((key) => formatShortcut(key, lang))
                         .join(` ${t('shortcut.or')} `)}

@@ -64,7 +64,7 @@ export function RedBlueGame() {
             {t('game.title')}
           </h2>
           {game && (
-            <span className="text-xs text-fg-muted" data-testid="game-side">
+            <span className="text-dense text-fg-muted" data-testid="game-side">
               {t('game.you', { side: t(`game.side.${game.side}`) })}
             </span>
           )}
@@ -100,10 +100,10 @@ function Setup({ lab }: { lab: LabState }) {
   return (
     <div className="space-y-4" data-testid="game-setup">
       <p className="text-ui text-fg-muted">{t('game.setup.intro')}</p>
-      <p className="text-xs text-fg-subtle">
+      <p className="text-dense text-fg-subtle">
         {t('game.setup.rules', { turns: maxTurns, budget: blueBudget, timer })}
       </p>
-      <label className="flex items-center gap-2 text-xs text-fg-muted">
+      <label className="flex items-center gap-2 text-dense text-fg-muted">
         {t('game.setup.seed')}
         <input
           type="number"
@@ -124,7 +124,7 @@ function Setup({ lab }: { lab: LabState }) {
             data-testid={`game-play-${side}`}
           >
             <div className="text-ui font-semibold text-fg">{t(`game.setup.${side}`)}</div>
-            <div className="mt-1 text-xs text-fg-muted">{t(`game.setup.${side}Hint`)}</div>
+            <div className="mt-1 text-dense text-fg-muted">{t(`game.setup.${side}Hint`)}</div>
           </button>
         ))}
       </div>
@@ -144,7 +144,7 @@ function Prep({ game, lab }: { game: GameState; lab: LabState }) {
         <RedPlan plan={game.redPlan} onChange={setPlan} />
       ) : (
         <>
-          <p className="text-xs text-fg-muted">
+          <p className="text-dense text-fg-muted">
             {t('game.prep.blue', { left: game.blueBudget - game.hardened.length })}
           </p>
           <Countermeasures game={game} lab={lab} onApply={hardenInPrep} />
@@ -177,11 +177,11 @@ function RedPlan({ plan, onChange }: { plan: string[]; onChange: (ids: string[])
   }
   return (
     <div className="space-y-2">
-      <p className="text-xs text-fg-muted">{t('game.prep.red')}</p>
+      <p className="text-dense text-fg-muted">{t('game.prep.red')}</p>
       {all.map((id) => (
         <div
           key={id}
-          className="flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-xs"
+          className="flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-dense"
         >
           <input
             type="checkbox"
@@ -235,7 +235,7 @@ function Countermeasures({
       {COUNTERMEASURES.map((c) => (
         <div
           key={c.id}
-          className="flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-xs"
+          className="flex items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-dense"
         >
           <div className="flex-1">
             <div className="text-fg">{cmName(t, c.id)}</div>
@@ -252,7 +252,7 @@ function Countermeasures({
           </Button>
         </div>
       ))}
-      {usable.size === 0 && <p className="text-xs text-fg-muted">{t('game.cm.none')}</p>}
+      {usable.size === 0 && <p className="text-dense text-fg-muted">{t('game.cm.none')}</p>}
     </div>
   )
 }
@@ -265,7 +265,7 @@ function Running({ game, lab, seconds }: { game: GameState; lab: LabState; secon
   const blue = (move: Move) => playTurn(move)
   return (
     <div className="space-y-4" data-testid="game-running">
-      <div className="flex items-center gap-4 text-xs text-fg-muted">
+      <div className="flex items-center gap-4 text-dense text-fg-muted">
         <span data-testid="game-turn">{t('game.run.turn', { turn: game.turn, max: game.maxTurns })}</span>
         {seconds !== null && (
           <span data-testid="game-timer">{t('game.run.timer', { time: clock(seconds) })}</span>
@@ -282,12 +282,12 @@ function Running({ game, lab, seconds }: { game: GameState; lab: LabState; secon
             {t('game.run.redNext')}
           </Button>
           {game.redCursor >= game.redPlan.length && (
-            <p className="text-xs text-fg-muted">{t('game.run.redDone')}</p>
+            <p className="text-dense text-fg-muted">{t('game.run.redDone')}</p>
           )}
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-xs text-fg-muted">{t('game.run.blueHint')}</p>
+          <p className="text-dense text-fg-muted">{t('game.run.blueHint')}</p>
           <div className="flex gap-2">
             <Button variant="primary" onClick={() => blue({ kind: 'analyse' })} data-testid="game-analyse">
               {t('game.run.blueAnalyse')}
@@ -296,7 +296,7 @@ function Running({ game, lab, seconds }: { game: GameState; lab: LabState; secon
               {t('game.run.bluePass')}
             </Button>
           </div>
-          <p className="text-xs text-fg-muted">
+          <p className="text-dense text-fg-muted">
             {t('game.cm.budgetLeft', { left: game.blueBudget - game.hardened.length })}
           </p>
           <Countermeasures game={game} lab={lab} onApply={(id) => blue({ kind: 'harden', id })} />
@@ -323,13 +323,15 @@ function Over({ game, score, onAgain }: { game: GameState; score: Score; onAgain
           {t(`game.over.${verdict}`)}
         </div>
         {score.outcome !== 'draw' && (
-          <div className="text-xs text-fg-muted">
+          <div className="text-dense text-fg-muted">
             {t('game.over.winner', { side: t(`game.side.${score.outcome}`) })}
           </div>
         )}
-        <div className="text-xs text-fg-subtle">{t(`game.over.reason.${game.endReason ?? 'completed'}`)}</div>
+        <div className="text-dense text-fg-subtle">
+          {t(`game.over.reason.${game.endReason ?? 'completed'}`)}
+        </div>
       </div>
-      <div className="grid grid-cols-2 gap-3 text-xs">
+      <div className="grid grid-cols-2 gap-3 text-dense">
         <div className="space-y-1 rounded-md border border-line bg-surface p-3" data-testid="game-score-red">
           <div className="font-semibold text-fg">{t('game.score.red')}</div>
           <div>{t('game.score.succeeded', { done: score.red.succeeded, total: score.red.attempted })}</div>
@@ -382,7 +384,7 @@ function Timeline({ entries }: { entries: TimelineEntry[] }) {
   return (
     <div data-testid="game-timeline">
       <h3 className="mb-1 text-ui font-semibold text-fg">{t('game.timeline')}</h3>
-      <ol className="space-y-1 text-xs">
+      <ol className="space-y-1 text-dense">
         {entries.map((e, i) => (
           <li key={i} className="rounded-md border border-line bg-surface px-3 py-1.5">
             <span className="mr-2 text-fg-subtle">

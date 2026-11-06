@@ -15,10 +15,26 @@ export interface SimOperation {
 /** Événement déjà joué, affiché dans la liste. */
 export interface PlayedEvent extends PduEvent {
   key: string
+  /** Opération d'origine (chemin : événements de la même opération jusqu'au pas choisi). */
+  opId: number
   opTitle: string
   /** Rang global (pour l'affichage du temps). */
   index: number
 }
+
+/**
+ * Câbles du chemin de l'événement choisi : ceux parcourus par la même opération jusqu'à son pas,
+ * dans l'ordre. Calculé une fois par sélection (jamais par arête).
+ */
+export function pathLinks(played: PlayedEvent[], selectedKey: string | null): ReadonlySet<string> {
+  const selected = selectedKey ? played.find((e) => e.key === selectedKey) : undefined
+  if (!selected) return EMPTY
+  return new Set(
+    played.filter((e) => e.opId === selected.opId && e.step <= selected.step).map((e) => e.linkId)
+  )
+}
+
+const EMPTY: ReadonlySet<string> = new Set()
 
 /** Vitesses proposées pour la lecture automatique. */
 export const SIM_SPEEDS = [0.5, 1, 2, 4] as const
@@ -36,6 +52,8 @@ interface SimState {
   speed: SimSpeed
   filters: Record<Protocol, boolean>
   selectedKey: string | null
+  /** Câbles du chemin de l'événement choisi (voir pathLinks). */
+  highlighted: ReadonlySet<string>
   /** Incrémenté à chaque pas (relance l'animation). */
   tick: number
 
@@ -72,6 +90,7 @@ export const useSimStore = create<SimState>()((set, get) => ({
   speed: 1,
   filters: Object.fromEntries(PROTOCOLS.map((p) => [p, true])) as Record<Protocol, boolean>,
   selectedKey: null,
+  highlighted: EMPTY,
   tick: 0,
 
   enqueue: (op) => set((s) => ({ queue: [...s.queue, { ...op, id: ++opSeq }] })),
@@ -98,16 +117,22 @@ export const useSimStore = create<SimState>()((set, get) => ({
     const played = events.map((e) => ({
       ...e,
       key: `${op.id}-${++playedSeq}`,
+      opId: op.id,
       opTitle: op.trace.title,
       index: playedSeq
     }))
-    set((st) => ({
-      stepCursor: st.stepCursor + 1,
-      current: events,
-      played: [...st.played, ...played].slice(-500),
-      tick: st.tick + 1,
-      selectedKey: played[played.length - 1]?.key ?? st.selectedKey
-    }))
+    set((st) => {
+      const all = [...st.played, ...played].slice(-500)
+      const selectedKey = played[played.length - 1]?.key ?? st.selectedKey
+      return {
+        stepCursor: st.stepCursor + 1,
+        current: events,
+        played: all,
+        tick: st.tick + 1,
+        selectedKey,
+        highlighted: pathLinks(all, selectedKey)
+      }
+    })
   },
 
   setPlaying: (playing) => set({ playing }),
@@ -115,7 +140,7 @@ export const useSimStore = create<SimState>()((set, get) => ({
 
   reset: () => {
     get().flush()
-    set({ played: [], selectedKey: null, current: [] })
+    set({ played: [], selectedKey: null, current: [], highlighted: EMPTY })
   },
 
   flush: () => {
@@ -125,8 +150,16 @@ export const useSimStore = create<SimState>()((set, get) => ({
   },
 
   discard: () =>
-    set({ queue: [], stepCursor: 0, current: [], played: [], playing: false, selectedKey: null }),
+    set({
+      queue: [],
+      stepCursor: 0,
+      current: [],
+      played: [],
+      playing: false,
+      selectedKey: null,
+      highlighted: EMPTY
+    }),
 
   toggleFilter: (p) => set((s) => ({ filters: { ...s.filters, [p]: !s.filters[p] } })),
-  select: (selectedKey) => set({ selectedKey })
+  select: (selectedKey) => set((s) => ({ selectedKey, highlighted: pathLinks(s.played, selectedKey) }))
 }))
