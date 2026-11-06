@@ -67,6 +67,11 @@ const ALREADY_MET: Record<string, Record<string, string>> = {
   'lab-59-depannage-pare-feu': {
     c5: 'non-régression : la DMZ est isolée du LAN, elle doit le rester après la réparation'
   },
+  'lab-60-mission-compta': {
+    direction: 'contrainte : la direction est déjà en lecture seule, elle doit le rester après la réparation',
+    atelier: 'contrainte : pdurand n’a déjà aucun accès, il ne doit pas en gagner',
+    admins: 'contrainte : les administrateurs gardent le contrôle total'
+  },
   'lab-28-ios-sujet-e6': {
     'acl-block': 'ping bloqué au départ faute de routage ; les autres critères exigent le routage'
   }
