@@ -154,6 +154,8 @@ export function CanvasBar() {
   const labels = historyLabels(history)
   const { width, height } = useWindowSize()
   const narrow = width < NARROW_WIDTH
+  // Barre serrée (fenêtre < 1 400 px CSS) : titre et libellés masqués, compteurs seuls
+  const tight = width < 1400
   const short = height < COMPACT_HEIGHT
   const { t, tp } = useT()
   return (
@@ -163,8 +165,8 @@ export function CanvasBar() {
       aria-label={t('toolbar.main')}
       data-testid="main-toolbar"
     >
-      <div className="flex min-w-0 items-baseline gap-2 pr-2">
-        {!narrow && <span className="text-dense font-semibold text-fg">{t('canvas.overview')}</span>}
+      <div className="flex min-w-0 items-baseline gap-2 pr-2 whitespace-nowrap">
+        {!tight && <span className="text-dense font-semibold text-fg">{t('canvas.overview')}</span>}
         <span className="truncate text-meta text-fg-muted" data-testid="status-counts">
           {tp('status.devices', devices)} · {tp('status.links', links)}
           {subnets > 0 && !narrow && ` · ${t('canvas.subnets', { count: subnets })}`}
@@ -206,14 +208,14 @@ export function CanvasBar() {
           disabled={tooMany}
           onClick={toggleZones}
           data-testid="toggle-zones"
-          className={`flex h-7 items-center gap-1 rounded-control px-1.5 text-meta font-medium transition-colors disabled:opacity-40 ${
+          className={`flex h-7 items-center gap-1 rounded-control px-1.5 text-meta font-medium whitespace-nowrap transition-colors disabled:opacity-40 ${
             showZones && !tooMany
               ? 'bg-accent-soft text-accent-text'
               : 'text-fg-muted hover:bg-surface-2 hover:text-fg'
           }`}
         >
           <LayoutGrid size={14} aria-hidden />
-          {!narrow && t('canvas.zones')}
+          {!tight && t('canvas.zones')}
         </button>
       </Tooltip>
     </div>

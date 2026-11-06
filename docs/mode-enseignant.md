@@ -3,8 +3,9 @@
 Créer un sujet d'évaluation, le faire passer, corriger les rendus et rejouer une copie devant la classe.
 Tout fonctionne **hors ligne, par fichiers** : aucun serveur, aucun compte.
 
-Activation : **Affichage > Mode enseignant** (désactivé par défaut). Désactivé, aucun onglet, menu ni bouton du
-mode enseignant n'est visible.
+Activation : **Affichage > Mode enseignant** (désactivé par défaut). Désactivé, aucun espace, menu ni bouton du
+mode enseignant n'est visible. Activé, l'espace **Enseignant** apparaît dans le rail (raccourci `Ctrl+Maj+E`) ;
+il recouvre le plan, qui reste intact et inerte, et n'est jamais accessible pendant une épreuve.
 
 | Fichier           | Qui l'écrit | Contenu                                                                                  |
 | ----------------- | ----------- | ---------------------------------------------------------------------------------------- |
@@ -17,9 +18,9 @@ mode enseignant n'est visible.
 
 ### 1. Créer un sujet
 
-![Création d'un sujet](captures/enseignant/01-creation.png)
+![Création d'un sujet](captures/ui-v3/enseignant-sujet-clair.png)
 
-Onglet **Enseignant > Sujet**, au choix :
+Espace **Enseignant > Sujet**, au choix :
 
 - **Lab de la bibliothèque** : un des 59 labs, puis ajuster l'énoncé et le barème ;
 - **À partir du lab ouvert** ;
@@ -38,35 +39,39 @@ ouvert : à l'export, si elle n'obtient pas 100 %, un avertissement liste les cr
 
 ### 2. Corriger
 
-![Correction](captures/enseignant/03-correction.png)
+![Correction](captures/ui-v3/enseignant-correction-clair.png)
 
-Onglet **Enseignant > Correction** : choisissez le sujet (celui en cours ou un `.slabsujet`), puis **Importer des
-rendus…** (plusieurs fichiers à la fois, 60 au plus).
+Espace **Enseignant > Correction** : choisissez le sujet (celui en cours ou un `.slabsujet`), puis **Importer des
+rendus…** (plusieurs fichiers à la fois, 60 au plus). Un fichier refusé reste listé comme « rendu invalide » avec
+le message du contrôle.
 
 Chaque note est **recalculée** : le journal de l'élève est rejoué depuis le lab de départ du sujet, puis les
 critères sont évalués sur l'état obtenu. La note n'est jamais lue dans le fichier de l'élève.
 
-Pour chaque élève : critères ✓ / ✗ avec leurs points, temps, erreurs, pénalités, signalements ⚑, réponses à
-l'oral (à noter à la main), commentaire libre, puis **Exporter la correction…**. Pour la classe : moyenne (sur
-20), temps moyen, critère le plus raté et **CSV**.
+Pour chaque copie : badges d'état dérivés de la correction (signalée, rejeu interrompu, oral à renseigner,
+critères validés), critères ✓ / ✗ avec leurs points, composantes de la note, temps, erreurs, pénalités,
+réponses à l'oral (à noter à la main), commentaire libre, chronologie du journal réel de l'élève, puis
+**Exporter la correction…**. Pour la classe, seulement ce qui se calcule depuis les copies importées : nombre de
+copies, moyenne (sur 20), temps moyen face à la durée prévue, critère le plus raté, signalements, et **CSV**.
 
 ### 3. Démonstration
 
-**Rejouer pas à pas** (dans le détail d'un élève) : la barre du bas permet d'avancer, reculer, lire à vitesse
-réglable (×0,5 à ×4). Le canvas, l'inspecteur et le panneau Simulation montrent l'état à chaque pas ; une commande
-refusée est signalée. **Projection** agrandit toute l'interface pour le vidéoprojecteur.
+**Rejouer pas à pas** (dans le détail d'une copie) bascule sur l'espace Atelier : la barre du bas permet
+d'avancer, reculer, lire à vitesse réglable (×0,5 à ×4). Le plan, l'inspecteur et le panneau Simulation montrent
+l'état à chaque pas ; une commande refusée est signalée. **Projection** agrandit toute l'interface pour le
+vidéoprojecteur. Fermer la démonstration ramène à l'espace Enseignant.
 
 ## Guide de l'élève
 
-![Passation](captures/enseignant/02-passation.png)
+![Passation](captures/ui-v3/passation-clair.png)
 
-1. Activez **Affichage > Mode enseignant**, onglet **Enseignant**, **Passer un sujet…**, choisissez le fichier
-   donné par le professeur.
+1. Activez **Affichage > Mode enseignant**, espace **Enseignant**, **Passer un sujet…**, choisissez le fichier
+   donné par le professeur. L'épreuve s'ouvre dans l'espace **Mission**.
 2. Saisissez votre nom et choisissez le mode :
    - **Examen** : le rendu est enregistré pour le professeur ;
    - **Auto-évaluation** : même épreuve, puis la note s'affiche tout de suite (pour réviser l'E6 seul).
-3. Pendant l'épreuve : chronomètre, énoncé, critères masqués, mode Temps réel imposé. Les onglets Lab, Audit,
-   Dépannage et Enseignant sont masqués.
+3. Pendant l'épreuve : chronomètre, énoncé, critères masqués, mode Temps réel imposé. Seuls les espaces Atelier
+   et Mission restent accessibles ; ni objectifs du lab, ni Audit, ni Dépannage, ni espace Enseignant.
 4. **Indices** : la pénalité est affichée avant de confirmer.
 5. **Questions d'oral** : elles s'affichent au moment prévu ; « Plus tard » les referme, la réponse reste
    modifiable jusqu'à la fin.

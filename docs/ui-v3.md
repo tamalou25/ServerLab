@@ -24,6 +24,8 @@ comme une suggestion.
 
 ## Tokens ajoutés
 
+Ratios de contraste : [ui-v3-contrastes.md](ui-v3-contrastes.md) (script `scripts/contrast-tokens.mjs`).
+
 | Token                                                                 | Usage                                            |
 | --------------------------------------------------------------------- | ------------------------------------------------ |
 | `--sl-text-body` (14 px, 13 px en Compact)                            | taille du texte courant (`text-body`)            |
@@ -85,8 +87,77 @@ garde son énoncé à côté de l'onglet Dépannage.
   apparaît hors zone, ce qui est voulu. Calcul pur `engine/topology/groups.ts` (mémoïsé sur le réseau :
   un déplacement ne recalcule que la géométrie), désactivé au-delà de 60 équipements.
 - **Inspecteur** (280–480 px, largeur mémorisée) : Résumé (carte d'identité, badge d'état forme + texte,
-  actions, Général, Interfaces, Rôles, Services, Routes), Interfaces, Événements (journal complet d'un
-  hôte), Audit, Dépannage. Câble : extrémités en cartes avec badge d'état ; multi-sélection : liste avec
+  actions, Général, Interfaces, Rôles, Services, Routes), Interfaces, Journal (évènements d'un hôte),
+  Audit, Dépannage. Câble : extrémités en cartes avec badge d'état ; multi-sélection : liste avec
   icônes ; rien de sélectionné : compteurs par famille en cartes, liaisons, domaines, état vide.
 
-(Suite : écarts par rapport aux maquettes et procédure d'essai, complétés lot par lot.)
+## Espace Mission
+
+- **Barre latérale** : titre, difficulté, résumé, **démarche suggérée** (observer, diagnostiquer, corriger,
+  vérifier) présentée comme un repère de méthode sans aucune étape cochée (rien dans l'état ne permettrait
+  de la valider), durée indicative, régime (entraînement, examen, épreuve, dépannage), accès direct aux
+  consoles des équipements. Masquée sous 1 200 px CSS.
+- **Lecteur** : énoncé en texte courant 14 px (titres, listes, citations, **tableaux** : `shared/markdown.ts`,
+  parseur pur testé, aucun HTML interprété), objectifs numérotés avec symbole et texte d'état d'après le
+  dernier clic sur Vérifier (« À vérifier », « Validé », « Non validé » : `data-state`), indices progressifs
+  en carte sous l'objectif non validé (« Indice suivant (2 / 3) »), pied fixe (progression avec barre
+  accessible, Vérifier, Examen, Recommencer).
+- **Examen** : bandeau du chronomètre (rôle `timer`), objectifs sans résultat intermédiaire ni indice,
+  « Terminer l'examen » ; résultat en carte (note, critères, durée, fin, sorties) avec export.
+- **Épreuve** (mode enseignant) : chronomètre et « Terminer et rendre » en tête, énoncé, rappel que les
+  critères sont masqués, indice avec pénalité confirmée, question d'oral au déclencheur. Les règles de
+  masquage de la v2 sont reprises à l'identique.
+
+## Espace Enseignant
+
+- **Page** : eyebrow « Espace enseignant », titre, sous-titre (titre du sujet), commande Sujet / Correction.
+  Sujet : point de départ (bibliothèque, lab ouvert, éditeur, fichier) puis éditeur (méta, énoncé, barème,
+  oral, prévisualisation, export) ; aucune règle de barème modifiée.
+- **Correction** : indicateurs **uniquement calculables** par `classStats` : « Copies importées » (le nombre
+  d'élèves attendus n'est pas connu), moyenne sur 20 recalculée par rejeu, durée moyenne face à la durée
+  prévue du barème, critère le plus raté (« manqué dans k copies sur N »), signalements. Masqués sans copie.
+- **Copies** : recherche, initiales, nom, temps et indices, note, badges dérivés de la correction
+  (`copyStatus`, moteur) : « Signalée » (drapeaux), « Rejeu interrompu » (`replay-failed`), « Oral à
+  renseigner » (question sans points), « k / N critères ». Les fichiers refusés à l'import sont listés
+  « Rendu invalide » avec le message du moteur, en plus de la modale.
+- **Détail** : badges, nom, méta, note recalculée, tableau Critère / Résultat (Validé ✓ / Non validé ✗) /
+  Points, composantes de la note (critères, temps, erreurs : valeurs réelles et poids du barème), oral à
+  noter, commentaire, export, chronologie du **journal réel** de l'élève (`journalTimeline` : commandes,
+  annulations, glisser, indices, réponses, en temps relatif) et « Rejouer pas à pas » (bascule sur l'Atelier,
+  retour à l'espace Enseignant à la fermeture). Mention : « La note décrit le résultat de cette épreuve, pas
+  une mesure générale de maîtrise de la compétence. »
+
+## Écarts volontaires par rapport aux maquettes
+
+| Maquette                                                  | Décision                                                                                           |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Avatar « GF », entrée « Réglages » du rail                | Supprimés : aucun compte ni écran de réglages réel (thème, langue au menu natif).                  |
+| Onglet « Journal » du lecteur de mission                  | Non repris : aucun journal d'observations ; le journal d'évènements est dans l'inspecteur.         |
+| Onglet « Indices » séparé                                 | Indices progressifs sous l'objectif concerné (mécanisme réel, ids de test conservés).              |
+| Étapes « Observer / Diagnostiquer… » cochées              | « Démarche suggérée » sans état.                                                                   |
+| « 4 / 4 élèves », « Rejeu terminé » sur toutes les copies | « N copies importées » ; badges dérivés des drapeaux réels de la correction.                       |
+| Chronologie rédigée (« Prise en charge », …)              | Chronologie du journal réel.                                                                       |
+| Liens orthogonaux, nœuds de 126 px avec sous-titre        | Câbles droits et nœuds de 64 px conservés (performance, centre d'icône) ; sous-titre en étiquette. |
+| Console ancrée sous le plan                               | Fenêtres flottantes conservées (plusieurs consoles, Bureau) ; raccourcis dans la barre latérale.   |
+| Inspecteur sans Audit ni Dépannage                        | Conservés comme onglets (fonctions existantes).                                                    |
+| Pied du plan « Votre infrastructure est opérationnelle »  | Compteurs réels dans la barre du plan ; aucun verdict global inventé.                              |
+
+## Repli des panneaux (petits écrans, zoom 125 %)
+
+Référence : 1 366 × 768 à 125 % = 1 093 × 614 px CSS. Sous 1 200 px CSS : rail en icônes (48 px, infobulles),
+palette repliée en colonne (dépliable pour la session), barre latérale Mission masquée, inspecteur borné à
+300 px, lecteur borné à 50 % de la fenêtre, libellés des boutons de la barre du plan masqués. Sous 680 px CSS
+de haut : en-tête 40 px, barre du plan 36 px. Les préférences de largeur sont bornées à l'affichage, jamais
+réécrites. Les pieds de panneaux (Vérifier, Terminer, Importer) restent visibles sans défilement.
+
+## Essayer les trois espaces
+
+1. **Atelier** : nouveau document, glisser deux postes et un switch, câbler, configurer les adresses
+   (fenêtre d'équipement) : la zone « 192.168.10.0/24 · VLAN 1 » apparaît ; sélectionner un poste met sa
+   branche en évidence et la légende l'explique ; onglets Résumé / Interfaces / Journal de l'inspecteur,
+   poignée de largeur (flèches au clavier, double-clic pour revenir à 348 px).
+2. **Mission** : Labs › lab 1, lire l'énoncé, Vérifier, ouvrir les indices, Examen (indices absents,
+   chronomètre), Terminer ; la bascule Atelier ↔ Mission conserve la sélection et les fenêtres.
+3. **Enseignant** : Affichage › Mode enseignant, rail › Enseignant, Sujet depuis la bibliothèque, puis
+   Correction › Ouvrir le sujet… et Importer des rendus… ; indicateurs, badges, détail, chronologie, Rejouer
+   (retour automatique à l'espace Enseignant à la fermeture), CSV.

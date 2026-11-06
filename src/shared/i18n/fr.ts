@@ -265,7 +265,7 @@ export const fr = {
   'legend.exchange': 'Échange en cours (enveloppes)',
   'legend.zone': 'Zone : même réseau IPv4',
   'panel.interfaces': 'Interfaces',
-  'panel.events': 'Événements',
+  'panel.events': 'Journal',
   'props.identity': 'Identité',
   'props.kind': 'Type',
   'props.address': 'Adresse IP',

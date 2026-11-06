@@ -16,7 +16,7 @@ import { useT } from '../lib/i18n'
 import { useTroubleshootStore } from '../store/troubleshoot'
 import { useUiStore, type RightTab } from '../store/ui'
 
-export const INSPECTOR_DEFAULT_WIDTH = 320
+export const INSPECTOR_DEFAULT_WIDTH = 348
 
 export function RightPanel() {
   const selected = useUiStore((s) => s.rightTab)

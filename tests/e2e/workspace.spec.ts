@@ -96,19 +96,19 @@ test('Panneaux redimensionnables : poignée au clavier, largeur bornée et mémo
   const { app, close, page, consoleErrors, userData } = await launchApp()
   try {
     const handle = page.getByTestId('inspector-resize')
-    await expect(handle).toHaveAttribute('aria-valuenow', '320')
+    await expect(handle).toHaveAttribute('aria-valuenow', '348')
     await handle.focus()
     await page.keyboard.press('ArrowLeft')
     await page.keyboard.press('ArrowLeft')
-    await expect(handle).toHaveAttribute('aria-valuenow', '352')
+    await expect(handle).toHaveAttribute('aria-valuenow', '380')
     await page.keyboard.press('End')
     await expect(handle).toHaveAttribute('aria-valuenow', '480')
     await page.keyboard.press('Home')
     await expect(handle).toHaveAttribute('aria-valuenow', '280')
     await page.keyboard.press('Enter')
-    await expect(handle).toHaveAttribute('aria-valuenow', '320')
+    await expect(handle).toHaveAttribute('aria-valuenow', '348')
     await page.keyboard.press('ArrowLeft')
-    await expect(page.getByTestId('inspector')).toHaveCSS('width', '336px')
+    await expect(page.getByTestId('inspector')).toHaveCSS('width', '364px')
 
     // Lecteur de mission : bouton Élargir (560 px) puis retour
     await clickMenu(app, ['Fichier', 'Ouvrir un lab…'])
@@ -125,7 +125,7 @@ test('Panneaux redimensionnables : poignée au clavier, largeur bornée et mémo
     // Largeur de l'inspecteur retrouvée au lancement suivant (préférence du poste)
     const second = await launchApp({ userData })
     try {
-      await expect(second.page.getByTestId('inspector-resize')).toHaveAttribute('aria-valuenow', '336')
+      await expect(second.page.getByTestId('inspector-resize')).toHaveAttribute('aria-valuenow', '364')
     } finally {
       await second.close()
     }

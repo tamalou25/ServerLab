@@ -54,7 +54,7 @@ export function Tabs<T extends string>({
   }
   const base =
     variant === 'underline'
-      ? 'h-full border-b-2 px-1 text-dense font-semibold transition-colors'
+      ? 'h-full border-b-2 px-0.5 text-dense font-semibold transition-colors'
       : 'rounded-control px-2.5 py-1 text-dense font-medium transition-colors'
   const on = variant === 'underline' ? 'border-accent text-fg' : 'bg-accent-soft text-accent-text'
   const off =
@@ -63,14 +63,14 @@ export function Tabs<T extends string>({
       : 'text-fg-muted hover:bg-surface-2 hover:text-fg'
   return (
     <div
-      className={`flex items-center ${variant === 'underline' ? 'gap-4 border-b border-line' : 'gap-1'} ${className}`}
+      className={`flex items-center ${variant === 'underline' ? 'gap-2 border-b border-line' : 'gap-1'} ${className}`}
       data-testid={testId}
     >
       <div
         role="tablist"
         aria-label={label}
         onKeyDown={onKeyDown}
-        className={`flex min-w-0 items-stretch ${variant === 'underline' ? 'h-full gap-4' : 'gap-1'}`}
+        className={`flex min-w-0 items-stretch overflow-x-auto [scrollbar-width:none] ${variant === 'underline' ? 'h-full gap-2' : 'gap-1'}`}
       >
         {items.map((item) => {
           const selected = item.id === value

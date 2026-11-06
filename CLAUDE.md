@@ -65,7 +65,7 @@ npm run test:coverage # Vitest avec couverture
 npm run perf:measure # mesures de performance du moteur
 npm run fixture:slab # écrit le fichier .slab de référence de la version de schéma
 npm run build        # build electron-vite → out/
-npm run test:e2e     # build + Playwright (sous Linux sans écran : xvfb-run -a npm run test:e2e)
+npm run test:e2e     # build + Playwright (sous Linux sans écran : xvfb-run -a -s "-screen 0 1920x1080x24" npm run test:e2e)
 npm run dist         # installeur local via electron-builder → dist/
 ```
 

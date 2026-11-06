@@ -261,7 +261,7 @@ export const en: Record<MessageKey, string> = {
   'legend.exchange': 'Exchange in progress (envelopes)',
   'legend.zone': 'Zone: same IPv4 network',
   'panel.interfaces': 'Interfaces',
-  'panel.events': 'Events',
+  'panel.events': 'Log',
   'props.identity': 'Identity',
   'props.kind': 'Type',
   'props.address': 'IP address',
