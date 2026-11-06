@@ -150,6 +150,14 @@ palette repliée en colonne (dépliable pour la session), barre latérale Missio
 de haut : en-tête 40 px, barre du plan 36 px. Les préférences de largeur sont bornées à l'affichage, jamais
 réécrites. Les pieds de panneaux (Vérifier, Terminer, Importer) restent visibles sans défilement.
 
+## Références visuelles
+
+`tests/e2e/visual.spec.ts` compare les écrans clés (sombre et clair) à `tests/e2e/__screenshots__/visual.spec.ts/`.
+Le lissage des polices dépend de la machine : les références sont celles **rendues par le runner de la CI**
+(Ubuntu). Après un changement volontaire d'apparence, récupérer les images `*-actual.png` de l'artefact
+`playwright-report` du run rouge, les inspecter, puis les copier à la place des références ; une
+régénération locale (`--update-snapshots`) ne correspond pas au runner.
+
 ## Essayer les trois espaces
 
 1. **Atelier** : nouveau document, glisser deux postes et un switch, câbler, configurer les adresses
