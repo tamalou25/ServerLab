@@ -5,7 +5,7 @@
  * réparation officielle et réparation alternative acceptées, raccourci « tout ouvrir » refusé par les
  * contraintes de sécurité, variantes par graine toutes solubles.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   activeFaults,
   allRepaired,
@@ -24,6 +24,11 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { run } from '../shell/helpers'
 import { failing, loadTroubleshootingLab, play, repairOfficial } from './depannage-helpers'
+
+// Solution enregistrée en commandes nommées et rejouée comme un rendu (mode enseignant, #405)
+vi.mock('@engine/index', async (importOriginal) =>
+  (await import('../teacher/recorder')).instrumentEngine(importOriginal)
+)
 
 const { lab, start } = loadTroubleshootingLab('lab-60-mission-compta.json')
 const id = (s: LabState, name: string) => Object.values(s.devices).find((d) => d.name === name)?.id ?? ''
