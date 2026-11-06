@@ -221,14 +221,30 @@ moteur reste seul juge : l'interface orchestre `startTroubleshooting`, `troubles
    rejouer). Si aucune panne ne s'applique, le message du moteur (`NoFaultAvailable`…) est affiché dans la boîte.
 2. **Ticket** : l'onglet Lab affiche le ticket de l'utilisateur (`FaultDef.ticket`), jamais la cause.
 3. **Indices** : bouton « Indice » (symptôme, zone, piste) ; chaque clic est la commande nommée
-   `troubleshoot.useHint`. Le compteur est affiché et pénalise le score (10 points par indice).
+   `troubleshoot.useHint`. Le compteur est affiché et fixe le niveau d'autonomie du bilan (pas de pénalité).
 4. **« J'ai réparé »** : vérifie `allRepaired` ; sinon « Le problème persiste. » sans dire quoi.
    **« Abandonner »** révèle la cause et la correction officielle (libellés des commandes de `FaultDef.repair`).
 5. **Journal** : nombre de commandes nommées jouées depuis le départ (annuler puis rétablir ne recompte pas),
    liste des libellés, indices et durée réelle (fournie par le renderer, le moteur ne lit pas l'horloge).
-6. **Bilan** : symptôme, cause, correction officielle, « chemin le plus court » (commandes de la réparation
-   officielle) comparé à la démarche de l'élève. Score sur 100 = `100 × officielles / max(jouées, officielles)`
-   moins 10 par indice ; 0 sans réparation.
+6. **Bilan** (`summary.ts`, v2.12) : l'issue (résolu, résolu avec réserves, partiel, non résolu, abandonné), le
+   **résultat sur 100** et, pour chaque panne, le symptôme signalé, la **chaîne des causes** (panne composée :
+   la masquante puis la masquée), la correction de référence et son explication, une piste de révision ; puis
+   les objectifs du lab (rétablissement, usage attendu, contraintes préservées), les changements effectués
+   (journal), et ce que le bilan ne mesure pas. Exportable en compte rendu texte (bouton Télécharger).
+   Règles de calcul (`SCORE_WEIGHTS`, testées dans `tests/engine/troubleshoot/summary.test.ts`) :
+   - **Rétablissement** (60 pts) : critères `faultRepaired` validés / total (sans lab : guérison des pannes).
+   - **Usage attendu** (25 pts) : critères du lab faux au départ et à rétablir (accès au partage, résolution…).
+   - **Contraintes préservées** (15 pts) : critères du lab déjà vrais au départ cassé (sécurité, autres usages)
+     qui doivent le rester ; une contrainte dégradée donne « résolu avec réserves ».
+   - Chaque catégorie compte au prorata des objectifs validés ; le poids d'une catégorie absente du lab est
+     redistribué aux autres (un dépannage généré, sans critères fonctionnels, repose sur le seul rétablissement
+     et le dit dans ses limites).
+   - **Autonomie**, séparée du résultat : autonome (0 indice), guidé (≤ 1 indice par panne), assisté ; non
+     évaluée en examen. **Un indice n'enlève aucun point** : en entraînement, l'indice soutient l'apprentissage.
+   - **Descriptif** sans effet sur le résultat : durée, commandes jouées, commandes de diagnostic reconnues
+     (`isDiagnosticLabel`), nombre de commandes de la correction de référence. La correction de référence est
+     une réparation qui fonctionne, pas un « chemin le plus court » : rien ne démontre son optimalité.
+   - **Limites écrites dans le bilan** : le moteur ne mesure ni la compréhension ni la qualité du compte rendu.
 7. **Chronométré** : case « Dépannage chronométré » : session et résultat du mode examen (`labs/exam.ts`),
    durée imposée, indices désactivés, vérification unique ; un critère `faultRepaired` par panne donne la note
    sur 20, affichée avec le bilan.

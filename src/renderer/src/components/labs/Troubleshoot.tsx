@@ -4,12 +4,27 @@
  * Aucune logique métier ici : pannes, indices et bilan viennent du moteur (lib/troubleshoot.ts).
  */
 import { useEffect, useState } from 'react'
-import { Dices, Flag, Lightbulb, ListOrdered, CircleCheck, CircleX, Ticket, Wrench, X } from 'lucide-react'
 import {
+  Dices,
+  Download,
+  Flag,
+  Info,
+  Lightbulb,
+  ListOrdered,
+  CircleCheck,
+  CircleX,
+  Ticket,
+  Wrench,
+  X
+} from 'lucide-react'
+import {
+  autonomyLabel,
   faultTickets,
   formatDuration,
   hintsUsedTotal,
   HINTS_PER_FAULT,
+  objectiveKindLabel,
+  outcomeLabel,
   revealedHints,
   nextHintFaultId
 } from '@engine/index'
@@ -21,6 +36,7 @@ import {
   closeTroubleshootDialog,
   DOMAIN_LABELS,
   drawSeed,
+  exportTroubleshootSummary,
   launchTroubleshoot,
   requestHint,
   type TroubleshootOptions
@@ -314,11 +330,16 @@ export function TroubleshootPanel() {
   )
 }
 
-/** Bilan : cause, symptôme, correction officielle, chemin le plus court, indices, durée. */
+/**
+ * Bilan : issue, résultat (rétablissement, usage, contraintes), autonomie, descriptif, puis pour chaque
+ * panne le symptôme, la chaîne des causes, la correction de référence expliquée et une piste de
+ * révision ; objectifs, changements effectués, limites du bilan ; export en compte rendu texte.
+ */
 export function TroubleshootSummaryPanel() {
   const summary = useTroubleshootStore((s) => s.summary)
   const exam = useExamStore((s) => s.result)
   if (!summary) return null
+  const good = summary.outcome === 'resolu'
   const scoreClass = summary.score >= 50 ? 'text-ok-text' : 'text-danger-text'
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="tshoot-summary">
@@ -328,17 +349,27 @@ export function TroubleshootSummaryPanel() {
             Bilan du dépannage
           </div>
           <h2
-            className={`flex items-center gap-1 text-ui font-semibold ${summary.repaired ? 'text-ok-text' : 'text-danger-text'}`}
+            className={`flex items-center gap-1 text-ui font-semibold ${good ? 'text-ok-text' : summary.outcome === 'resolu-avec-reserves' || summary.outcome === 'partiel' ? 'text-warn-text' : 'text-danger-text'}`}
             data-testid="tshoot-outcome"
           >
-            {summary.repaired ? <CircleCheck size={15} /> : <CircleX size={15} />}
-            {summary.repaired ? 'Problème résolu' : summary.gaveUp ? 'Dépannage abandonné' : 'Non résolu'}
+            {good ? <CircleCheck size={15} /> : <CircleX size={15} />}
+            {outcomeLabel(summary.outcome)}
           </h2>
         </div>
         <button
           type="button"
-          onClick={closeSummary}
+          onClick={() => void exportTroubleshootSummary()}
           className="ml-auto rounded p-1 text-fg-subtle hover:bg-surface-2 hover:text-fg"
+          aria-label="Exporter le bilan (compte rendu)"
+          title="Exporter le bilan en compte rendu texte"
+          data-testid="tshoot-summary-export"
+        >
+          <Download size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={closeSummary}
+          className="rounded p-1 text-fg-subtle hover:bg-surface-2 hover:text-fg"
           aria-label="Fermer le bilan"
           data-testid="tshoot-summary-close"
         >
@@ -353,19 +384,38 @@ export function TroubleshootSummaryPanel() {
         <p className="mt-1 text-ui text-fg" data-testid="tshoot-verdict">
           {summary.verdict}
         </p>
+        <ul className="mt-2 flex flex-col gap-0.5 text-dense" data-testid="tshoot-breakdown">
+          {summary.breakdown.map((b) => (
+            <li key={b.kind} className="flex justify-between gap-2">
+              <span className="text-fg-muted">{objectiveKindLabel(b.kind)}</span>
+              <span className="font-mono text-fg">
+                {b.met} / {b.total} · {b.points} / {b.weight} pts
+              </span>
+            </li>
+          ))}
+        </ul>
         <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-dense">
-          <dt className="text-fg-subtle">Chemin le plus court</dt>
-          <dd className="text-fg" data-testid="tshoot-official">
-            {summary.officialCommands} commande(s)
+          <dt className="text-fg-subtle">Autonomie</dt>
+          <dd className="text-fg" data-testid="tshoot-autonomy">
+            {autonomyLabel(summary.autonomy.level)}
           </dd>
+          <dt className="text-fg-subtle">Indices utilisés</dt>
+          <dd className="text-fg">
+            {summary.mode === 'exam'
+              ? 'désactivés'
+              : `${summary.hintsUsed} / ${summary.autonomy.hintsAvailable}`}
+          </dd>
+          <dt className="text-fg-subtle">Durée</dt>
+          <dd className="text-fg">{formatDuration(summary.elapsedMs)}</dd>
           <dt className="text-fg-subtle">Votre démarche</dt>
           <dd className="text-fg" data-testid="tshoot-playedcount">
             {summary.playedCommands} commande(s)
+            {summary.diagnosticCommands > 0 ? `, dont ${summary.diagnosticCommands} de diagnostic` : ''}
           </dd>
-          <dt className="text-fg-subtle">Indices utilisés</dt>
-          <dd className="text-fg">{summary.hintsUsed}</dd>
-          <dt className="text-fg-subtle">Durée</dt>
-          <dd className="text-fg">{formatDuration(summary.elapsedMs)}</dd>
+          <dt className="text-fg-subtle">Correction de référence</dt>
+          <dd className="text-fg" data-testid="tshoot-official">
+            {summary.officialCommands} commande(s)
+          </dd>
           {exam && (
             <>
               <dt className="text-fg-subtle">Note d’examen</dt>
@@ -375,27 +425,95 @@ export function TroubleshootSummaryPanel() {
             </>
           )}
         </dl>
+        <p className="mt-1 text-meta text-fg-subtle">
+          Durée et nombre de commandes sont descriptifs : ils n’entrent pas dans le résultat.
+        </p>
         {summary.faults.map((f, i) => (
           <section key={i} className="mt-4 rounded-md border border-line bg-surface px-3 py-2">
-            <h3 className="text-ui font-semibold text-fg">{f.title}</h3>
+            <h3 className="flex items-center gap-1 text-ui font-semibold text-fg">
+              {f.healed === null ? null : f.healed ? (
+                <CircleCheck size={13} className="text-ok-text" />
+              ) : (
+                <CircleX size={13} className="text-danger-text" />
+              )}
+              {f.title}
+            </h3>
             <p className="mt-1 text-dense text-fg-muted">
-              <span className="font-semibold text-fg">Symptôme : </span>
+              <span className="font-semibold text-fg">Symptôme signalé : </span>
               {f.symptom}
             </p>
-            <p className="mt-1 text-dense text-fg-muted" data-testid="tshoot-cause">
-              <span className="font-semibold text-fg">Cause : </span>
-              {f.cause}
-            </p>
+            <div className="mt-1 text-dense text-fg-muted" data-testid="tshoot-cause">
+              <span className="font-semibold text-fg">
+                {f.chain.length > 1 ? 'Chaîne des causes :' : 'Cause : '}
+              </span>
+              {f.chain.length > 1 ? (
+                <ol className="list-decimal pl-5">
+                  {f.chain.map((c, k) => (
+                    <li key={k}>{c}</li>
+                  ))}
+                </ol>
+              ) : (
+                f.cause
+              )}
+            </div>
             <div className="mt-1 text-dense text-fg-muted">
-              <span className="font-semibold text-fg">Correction officielle :</span>
+              <span className="font-semibold text-fg">Correction de référence :</span>
               <ol className="list-decimal pl-5" data-testid="tshoot-repair-steps">
                 {f.repairSteps.map((step, k) => (
                   <li key={k}>{step}</li>
                 ))}
               </ol>
+              <p className="mt-1">{f.referenceExplanation}</p>
             </div>
+            <p className="mt-1 text-dense text-fg-muted" data-testid="tshoot-review">
+              <span className="font-semibold text-fg">À revoir : </span>
+              {f.review}
+            </p>
           </section>
         ))}
+        <section className="mt-4">
+          <h3 className="mb-1 text-meta font-semibold tracking-wider text-fg-subtle uppercase">
+            Objectifs et contraintes
+          </h3>
+          <ul className="flex flex-col gap-1 text-dense" data-testid="tshoot-objectives">
+            {summary.objectives.map((o) => (
+              <li key={o.id} className="flex gap-2">
+                {o.ok ? (
+                  <CircleCheck size={13} className="mt-0.5 shrink-0 text-ok-text" />
+                ) : (
+                  <CircleX size={13} className="mt-0.5 shrink-0 text-danger-text" />
+                )}
+                <span className={o.ok ? 'text-fg' : 'text-fg-muted'}>
+                  <span className="text-fg-subtle">{objectiveKindLabel(o.kind)} · </span>
+                  {o.label}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <details className="mt-3">
+          <summary className="flex cursor-pointer items-center gap-1 text-dense text-fg-muted">
+            <ListOrdered size={12} /> Changements effectués ({summary.changes.length})
+          </summary>
+          <ol
+            className="mt-1 list-decimal pl-5 font-mono text-meta text-fg-muted"
+            data-testid="tshoot-changes"
+          >
+            {summary.changes.map((c, k) => (
+              <li key={k}>{c}</li>
+            ))}
+          </ol>
+        </details>
+        <details className="mt-2">
+          <summary className="flex cursor-pointer items-center gap-1 text-dense text-fg-muted">
+            <Info size={12} /> Ce que ce bilan ne mesure pas ({summary.limits.length})
+          </summary>
+          <ul className="mt-1 list-disc pl-5 text-meta text-fg-muted" data-testid="tshoot-limits">
+            {summary.limits.map((l, k) => (
+              <li key={k}>{l}</li>
+            ))}
+          </ul>
+        </details>
       </div>
     </div>
   )

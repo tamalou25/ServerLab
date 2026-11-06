@@ -16,6 +16,7 @@ import {
   startExam,
   startTroubleshooting,
   summarizeTroubleshooting,
+  troubleshootSummaryText,
   type FaultDomain,
   type LabDefinition,
   type LabState
@@ -162,15 +163,25 @@ function conclude(gaveUp: boolean, elapsedMs?: number): void {
   const store = useTroubleshootStore.getState()
   const { session } = store
   if (!session || store.summary) return
-  const lab = useLabStore.getState().lab
+  const labState = useLabStore.getState()
+  const lab = labState.lab
+  const active = useLabsStore.getState().active
   store.set({
-    summary: summarizeTroubleshooting(session.start, {
-      commandsPlayed: session.played,
-      hintsUsed: Math.max(session.peakHints, hintsUsedTotal(lab)),
-      elapsedMs: elapsedMs ?? Date.now() - session.startedAt,
-      repaired: allRepaired(lab),
-      gaveUp
-    })
+    summary: summarizeTroubleshooting(
+      session.start,
+      {
+        commandsPlayed: session.played,
+        hintsUsed: Math.max(session.peakHints, hintsUsedTotal(lab)),
+        elapsedMs: elapsedMs ?? Date.now() - session.startedAt,
+        repaired: allRepaired(lab),
+        gaveUp,
+        mode: session.exam ? 'exam' : 'training',
+        // Journal des commandes jouées (annuler retire une entrée : descriptif seulement)
+        journal: labState.history.past.filter((e) => e.type !== 'troubleshoot.useHint').map((e) => e.label)
+      },
+      // État final et lab : objectifs fonctionnels et contraintes du lab de dépannage
+      { current: lab, ...(active && active.id === session.labId ? { lab: active } : {}) }
+    )
   })
 }
 
@@ -198,6 +209,18 @@ export function askGiveUp(): void {
       else conclude(true)
     }
   })
+}
+
+/** Exporte le bilan en texte (compte rendu d'intervention), par le dialogue d'export du mode examen. */
+export async function exportTroubleshootSummary(): Promise<void> {
+  const { summary, session } = useTroubleshootStore.getState()
+  if (!summary) return
+  const name = `bilan-${session?.labId ?? 'depannage'}.txt`
+  const res = await window.serverlab.exportExamResult(troubleshootSummaryText(summary), name)
+  const ui = useUiStore.getState()
+  if (res.ok) ui.notify('success', `Bilan enregistré : ${res.value}`)
+  else if (!res.canceled)
+    ui.showModal({ title: 'Export impossible', message: res.error ?? 'Erreur inconnue.' })
 }
 
 /** Ferme le bilan (et le résultat d'examen associé) ; le lab reste ouvert. */

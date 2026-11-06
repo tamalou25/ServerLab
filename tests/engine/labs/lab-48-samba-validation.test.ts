@@ -12,6 +12,7 @@ import {
   checkLab,
   parseLabText,
   smbProbe,
+  type HostDevice,
   type LabState,
   type ShellSession
 } from '@engine/index'
@@ -127,9 +128,8 @@ describe('lab 48 : configuration enregistrée, appliquée, fonctionnement depuis
     expect(smbProbe(state, lnx, 'LSRV1', 'compta').status).toBe('access-denied')
     expect(play(state, [BOB]).last).toContain('tree connect failed: NT_STATUS_ACCESS_DENIED')
     // La sonde n'a rien écrit dans le partage
-    expect(Object.keys(state.devices[deviceId(state, 'LSRV1')]!.host?.linux?.files ?? {})).not.toContain(
-      '/srv/compta/sonde-serverlab.txt'
-    )
+    const srv = state.devices[deviceId(state, 'LSRV1')] as HostDevice
+    expect(Object.keys(srv.host.linux?.files ?? {})).not.toContain('/srv/compta/sonde-serverlab.txt')
   })
 
   it('solution alternative valable (writable = yes, +compta, reload) : acceptée', () => {
