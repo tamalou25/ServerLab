@@ -57,7 +57,7 @@ function Start() {
           />
         </Field>
         <fieldset className="flex flex-col gap-1">
-          <legend className="mb-1 text-xs font-medium text-fg-muted">{t('attempt.mode')}</legend>
+          <legend className="mb-1 text-dense font-medium text-fg-muted">{t('attempt.mode')}</legend>
           {(['exam', 'self'] as const).map((m) => (
             <label key={m} className="flex items-center gap-2 text-fg">
               <input type="radio" name="attempt-mode" checked={mode === m} onChange={() => setMode(m)} />

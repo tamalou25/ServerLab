@@ -387,7 +387,7 @@ export function TroubleshootSummaryPanel() {
         </button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-        <div className={`text-2xl font-semibold ${scoreClass}`} data-testid="tshoot-score">
+        <div className={`text-display font-semibold ${scoreClass}`} data-testid="tshoot-score">
           {summary.score}
           <span className="text-ui text-fg-subtle"> / 100</span>
         </div>

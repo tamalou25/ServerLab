@@ -94,7 +94,7 @@ function HomePage() {
             <Network size={22} />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl font-semibold text-fg">ServerLab</h1>
+            <h1 className="text-heading font-semibold text-fg">ServerLab</h1>
             <p className="text-dense text-fg-muted">{t('home.subtitle', { version })}</p>
           </div>
           <button

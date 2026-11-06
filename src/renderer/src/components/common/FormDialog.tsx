@@ -61,7 +61,7 @@ export function FormDialog({
         }}
       >
         <h3 className="mb-1 text-title font-semibold">{title}</h3>
-        {description && <p className="mb-3 text-xs text-fg-muted">{description}</p>}
+        {description && <p className="mb-3 text-dense text-fg-muted">{description}</p>}
         <div className="flex flex-col gap-2">
           {fields.map((f) =>
             f.type === 'checkbox' ? (
@@ -75,7 +75,7 @@ export function FormDialog({
                 {f.label}
               </label>
             ) : f.type === 'select' ? (
-              <label key={f.key} className="flex flex-col gap-1 text-xs text-fg-muted">
+              <label key={f.key} className="flex flex-col gap-1 text-dense text-fg-muted">
                 {f.label}
                 <select
                   className={inputClass}
@@ -91,7 +91,7 @@ export function FormDialog({
                 </select>
               </label>
             ) : (
-              <label key={f.key} className="flex flex-col gap-1 text-xs text-fg-muted">
+              <label key={f.key} className="flex flex-col gap-1 text-dense text-fg-muted">
                 {f.label}
                 <input
                   className={inputClass}

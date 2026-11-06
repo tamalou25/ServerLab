@@ -21,7 +21,7 @@ export function SubinterfacesPanel({ device }: { device: RouterDevice }) {
 
   return (
     <Section title={t('win.sousInterfaces8021q')}>
-      <table className="mb-3 w-full max-w-xl text-xs" data-testid="subif-list">
+      <table className="mb-3 w-full max-w-xl text-dense" data-testid="subif-list">
         <thead className="text-left text-fg-muted">
           <tr>
             <th className="py-1">{t('win.interface')}</th>
@@ -84,7 +84,7 @@ export function SubinterfacesPanel({ device }: { device: RouterDevice }) {
           Créer
         </Button>
       </div>
-      <p className="mt-2 text-xs text-fg-muted">
+      <p className="mt-2 text-dense text-fg-muted">
         Chaque sous-interface reçoit les trames étiquetées de son VLAN ; configurez ensuite son adresse IPv4
         (passerelle des postes du VLAN) dans la liste des interfaces.
       </p>

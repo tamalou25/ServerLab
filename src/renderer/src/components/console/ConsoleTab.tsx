@@ -30,7 +30,7 @@ export function ConsoleTab({ device }: { device: HostDevice }) {
             type="button"
             onClick={() => setKind(k)}
             data-testid={`console-${k}`}
-            className={`rounded px-3 py-1 text-xs font-medium ${kind === k ? 'bg-accent text-on-accent' : 'text-fg-muted hover:bg-surface-3'}`}
+            className={`rounded px-3 py-1 text-dense font-medium ${kind === k ? 'bg-accent text-on-accent' : 'text-fg-muted hover:bg-surface-3'}`}
           >
             {k === 'cmd' ? t('console.cmd') : 'PowerShell'}
           </button>

@@ -103,7 +103,7 @@ function IconAction({
 /** Liste clé / valeur dense. */
 function KeyValues({ rows }: { rows: [string, ReactNode][] }) {
   return (
-    <dl className="grid grid-cols-[104px_1fr] gap-x-2 gap-y-1 text-xs">
+    <dl className="grid grid-cols-[104px_1fr] gap-x-2 gap-y-1 text-dense">
       {rows.map(([k, v]) => (
         <div key={k} className="contents">
           <dt className="text-fg-muted">{k}</dt>
@@ -132,7 +132,7 @@ function DeviceProperties({ device }: { device: Device }) {
           </span>
           <div className="min-w-0">
             <div className="truncate text-title font-semibold text-fg">{device.name}</div>
-            <div className="flex items-center gap-1.5 text-xs text-fg-muted" title={health.label}>
+            <div className="flex items-center gap-1.5 text-dense text-fg-muted" title={health.label}>
               {deviceLabel(device)}
               <span className="text-fg-subtle">·</span>
               <StatusLed status={health.status} label={health.label} />
@@ -205,7 +205,7 @@ function DeviceProperties({ device }: { device: Device }) {
 
       <PanelSection id="general" title={t('props.general')}>
         <div className="flex flex-col gap-2">
-          <label className="flex flex-col gap-1 text-xs text-fg-muted">
+          <label className="flex flex-col gap-1 text-dense text-fg-muted">
             {host ? t('props.computerName') : t('props.name')}
             <EditableName deviceId={device.id} name={device.name} />
           </label>
@@ -273,7 +273,7 @@ function RolesSection({ device }: { device: HostDevice }) {
   return (
     <PanelSection id="roles" title={t('props.rolesInstalles')} count={roles.length}>
       {roles.length === 0 ? (
-        <p className="text-xs text-fg-subtle">{t('props.aucunRoleInstalle')}</p>
+        <p className="text-dense text-fg-subtle">{t('props.aucunRoleInstalle')}</p>
       ) : (
         <ul className="flex flex-wrap gap-1">
           {roles.map((r) => (
@@ -350,7 +350,7 @@ function RoutesSection({ device }: { device: RouterDevice }) {
   return (
     <PanelSection id="routes" title={t('props.routesStatiques')} count={device.routes.length}>
       {device.routes.length === 0 ? (
-        <p className="text-xs text-fg-subtle">{t('props.aucuneRouteStatique')}</p>
+        <p className="text-dense text-fg-subtle">{t('props.aucuneRouteStatique')}</p>
       ) : (
         <ul className="flex flex-col gap-0.5 font-mono text-meta text-fg">
           {device.routes.map((r) => (
@@ -375,14 +375,14 @@ function EventsSection({ device }: { device: HostDevice }) {
   return (
     <PanelSection id="events" title={t('props.derniersEvenements')} count={device.host.eventLog.length}>
       {events.length === 0 ? (
-        <p className="text-xs text-fg-subtle">{t('props.aucunEvenement')}</p>
+        <p className="text-dense text-fg-subtle">{t('props.aucunEvenement')}</p>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {events.map((e) => {
             const level = LEVELS[e.level]
             const LevelIcon = level.icon
             return (
-              <li key={e.id} className="flex gap-2 text-xs" title={e.message}>
+              <li key={e.id} className="flex gap-2 text-dense" title={e.message}>
                 <LevelIcon size={13} className={`mt-0.5 shrink-0 ${level.cls}`} aria-label={level.label} />
                 <div className="min-w-0">
                   <div className="flex gap-1.5 text-meta text-fg-muted">
@@ -415,7 +415,7 @@ function MultiProperties({ devices }: { devices: Device[] }) {
       <ul className="mb-3 flex flex-col gap-1 text-ui">
         {devices.map((d) => (
           <li key={d.id}>
-            {d.name} <span className="text-xs text-fg-subtle">— {deviceLabel(d)}</span>
+            {d.name} <span className="text-dense text-fg-subtle">— {deviceLabel(d)}</span>
           </li>
         ))}
       </ul>
@@ -455,8 +455,8 @@ function LinkProperties({ link }: { link: Link }) {
           <li key={i} className="flex items-center gap-2 text-ui">
             <StatusDot status={e.status} />
             <span className="font-semibold">{e.device?.name}</span>
-            <span className="font-mono text-xs text-fg-muted">{e.iface?.name}</span>
-            <span className="ml-auto text-xs text-fg-subtle">{labels[e.status]}</span>
+            <span className="font-mono text-dense text-fg-muted">{e.iface?.name}</span>
+            <span className="ml-auto text-dense text-fg-subtle">{labels[e.status]}</span>
           </li>
         ))}
       </ul>
@@ -493,7 +493,7 @@ function LabOverview({ lab }: { lab: LabState }) {
                 title={DEVICE_KIND_INFO[kind].label}
               >
                 <Icon size={24} />
-                <span className="text-xs font-medium text-fg">{n}</span>
+                <span className="text-dense font-medium text-fg">{n}</span>
               </div>
             )
           })}
@@ -531,7 +531,7 @@ function LabOverview({ lab }: { lab: LabState }) {
           />
         </div>
       </PanelSection>
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-xs text-fg-subtle">
+      <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-dense text-fg-subtle">
         <MousePointerClick size={24} strokeWidth={1.5} />
         <p>{t('props.selectionnezUnEquipementOu')}</p>
       </div>

@@ -49,7 +49,7 @@ export function PortPicker({ picker, onPick, onClose }: PortPickerProps) {
       role="menu"
       data-testid="port-picker"
     >
-      <div className="flex items-center gap-1.5 border-b border-line px-3 py-1.5 text-xs font-semibold text-fg-muted">
+      <div className="flex items-center gap-1.5 border-b border-line px-3 py-1.5 text-dense font-semibold text-fg-muted">
         <Cable size={13} /> {device.name} — choisir un port
       </div>
       {device.interfaces
@@ -73,8 +73,8 @@ export function PortPicker({ picker, onPick, onClose }: PortPickerProps) {
               data-testid={`port-${iface.name}`}
               className="flex w-full items-center justify-between px-3 py-1.5 text-left text-ui text-fg hover:bg-accent-soft disabled:cursor-not-allowed disabled:text-fg-subtle disabled:hover:bg-transparent"
             >
-              <span className="font-mono text-xs font-medium">{iface.name}</span>
-              <span className="text-xs text-fg-muted">{link ? `→ ${peer?.name ?? '?'}` : 'libre'}</span>
+              <span className="font-mono text-dense font-medium">{iface.name}</span>
+              <span className="text-dense text-fg-muted">{link ? `→ ${peer?.name ?? '?'}` : 'libre'}</span>
             </button>
           )
         })}

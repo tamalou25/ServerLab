@@ -93,7 +93,7 @@ export function ExamResultPanel({ result }: { result: ExamResult }) {
         </button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-        <div className={`text-2xl font-semibold ${gradeClass}`} data-testid="exam-grade">
+        <div className={`text-display font-semibold ${gradeClass}`} data-testid="exam-grade">
           {String(result.grade).replace('.', ',')}
           <span className="text-ui text-fg-subtle"> / 20</span>
         </div>
