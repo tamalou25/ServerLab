@@ -6,6 +6,8 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+## [2.13.0] — 2026-11-06
+
 Apprendre à administrer **et dépanner** : validations qui jugent le fonctionnement réel, bilan de dépannage fondé
 sur le résultat, parcours PME, mission transversale, progression enregistrée. Documentation : [docs/parcours.md](docs/parcours.md).
 

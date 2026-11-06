@@ -4,7 +4,7 @@
  * `systemctl`, `cat`, `ls -l`, `ss`, `dpkg`) ; la configuration d'un service est jugée sur le fichier,
  * son effet (port, hôtes virtuels) sur la configuration en vigueur, relue au redémarrage.
  *
- * Fiabilisation (v2.12) : un fichier de configuration conforme ne prouve pas que le service l'applique
+ * Fiabilisation (v2.13) : un fichier de configuration conforme ne prouve pas que le service l'applique
  * ni que l'usage fonctionne. `linuxConfigApplied` exige que la configuration en vigueur soit celle des
  * fichiers (service redémarré ou rechargé) ; l'accès à un partage Samba depuis un poste (`smbAccess`) est
  * un critère du rôle Fichiers (`roles/files/criteria.ts`), qui possède la sonde SMB.

@@ -1,6 +1,6 @@
 # Parcours, progression, bilan et transfert vers le réel
 
-Ce document décrit ce que ServerLab apporte à partir de la version en cours (post-2.11, « v2.12 ») pour
+Ce document décrit ce que ServerLab apporte à partir de la version en cours (2.13) pour
 apprendre à **administrer et dépanner** une infrastructure : des validations qui jugent le fonctionnement
 réel, un bilan de dépannage fondé sur le résultat, un parcours cohérent autour d'une PME, une mission
 transversale, une progression enregistrée, et des exercices équivalents sur de vraies machines.

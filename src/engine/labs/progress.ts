@@ -1,5 +1,5 @@
 /**
- * Progression de l'élève (v2.12) : tentatives enregistrées (résultats, aide utilisée, compétences
+ * Progression de l'élève (v2.13) : tentatives enregistrées (résultats, aide utilisée, compétences
  * travaillées) et règles qui en déduisent l'état de chaque étape d'un parcours, l'état de chaque
  * compétence et la prochaine étape recommandée.
  *
