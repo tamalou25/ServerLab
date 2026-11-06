@@ -27,7 +27,9 @@ import { CableEdge, type CableFlowEdge } from './CableEdge'
 import { CablePreview } from './CablePreview'
 import { CanvasToolbar } from './CanvasToolbar'
 import { NodeContextMenu, type NodeMenuState } from './NodeContextMenu'
+import { NetworkZones } from './NetworkZones'
 import { PacketAnimation } from './PacketAnimation'
+import { StateLegend } from './StateLegend'
 import { ProtocolLegend } from './ProtocolLegend'
 import { PduList } from './PduList'
 import { DeviceNode, type DeviceFlowNode } from './DeviceNode'
@@ -115,25 +117,48 @@ export function TopologyCanvas() {
     return list
   }, [devices, selection.devices, sizes])
 
+  // Arêtes dérivées incrémentalement, comme les nœuds : un câble dont rien ne change (décalage,
+  // sélection, branche) garde le même objet, donc n'est pas redessiné (sélectionner un équipement ne
+  // touche que les câbles qui lui sont raccordés, un glisser n'en touche aucun).
+  const edgeCache = useRef(new Map<string, CableFlowEdge>())
   const edges = useMemo<CableFlowEdge[]>(() => {
     // Décale les câbles parallèles entre deux mêmes équipements
     const pairCount = new Map<string, number>()
-    return Object.values(links).map((l) => {
+    // Branche de l'équipement sélectionné (un seul) : ses câbles sont mis en évidence
+    const focus = selection.devices.length === 1 ? selection.devices[0] : null
+    const cache = edgeCache.current
+    const next = new Map<string, CableFlowEdge>()
+    const list = Object.values(links).map((l) => {
       const key = [l.a.deviceId, l.b.deviceId].sort().join('|')
       const index = pairCount.get(key) ?? 0
       pairCount.set(key, index + 1)
       const offset = index === 0 ? 0 : (index % 2 === 1 ? 1 : -1) * Math.ceil(index / 2) * 10
-      return {
-        id: l.id,
-        type: 'cable',
-        source: l.a.deviceId,
-        target: l.b.deviceId,
-        data: { linkId: l.id, offset },
-        selected: selection.link === l.id,
-        deletable: false
-      }
+      const branch = focus !== null && (l.a.deviceId === focus || l.b.deviceId === focus)
+      const selected = selection.link === l.id
+      const prev = cache.get(l.id)
+      const edge: CableFlowEdge =
+        prev &&
+        prev.source === l.a.deviceId &&
+        prev.target === l.b.deviceId &&
+        prev.data?.offset === offset &&
+        prev.data?.branch === branch &&
+        prev.selected === selected
+          ? prev
+          : {
+              id: l.id,
+              type: 'cable',
+              source: l.a.deviceId,
+              target: l.b.deviceId,
+              data: { linkId: l.id, offset, branch },
+              selected,
+              deletable: false
+            }
+      next.set(l.id, edge)
+      return edge
     })
-  }, [links, selection.link])
+    edgeCache.current = next
+    return list
+  }, [links, selection.link, selection.devices])
 
   const onNodesChange = useCallback((changes: NodeChange<DeviceFlowNode>[]) => {
     const ui = useUiStore.getState()
@@ -359,7 +384,9 @@ export function TopologyCanvas() {
         )}
         <ZoomControls />
         <CablePreview cursor={cableStart || pduSource ? cursor : null} />
+        <NetworkZones />
         <PacketAnimation />
+        <StateLegend />
         <ProtocolLegend />
       </ReactFlow>
       <CanvasToolbar />

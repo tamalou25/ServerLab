@@ -68,8 +68,10 @@ function DeviceNodeComponent({ data, selected, dragging }: NodeProps<DeviceFlowN
       onMouseLeave={leave}
     >
       <div
-        className={`relative flex h-16 w-16 items-center justify-center rounded-md border bg-surface text-fg-muted shadow-xs transition-colors ${
-          selected ? 'border-accent ring-1 ring-accent' : 'border-line-strong hover:border-fg-subtle'
+        className={`relative flex h-16 w-16 items-center justify-center rounded-panel border bg-surface text-fg-muted shadow-xs transition-[border-color,box-shadow] ${
+          selected
+            ? 'border-accent ring-2 ring-accent/35 shadow-[0_0_0_6px_var(--sl-accent-soft)]'
+            : 'border-line-strong hover:border-fg-subtle'
         } ${device.powered ? '' : 'opacity-50'} ${device.hostedBy ? 'border-dashed' : ''}`}
         title={device.hostedBy ? t('node.virtual') : undefined}
       >
@@ -100,7 +102,7 @@ function DeviceNodeComponent({ data, selected, dragging }: NodeProps<DeviceFlowN
       />
       <div className="pointer-events-none absolute top-full left-1/2 mt-1 flex -translate-x-1/2 flex-col items-center leading-tight whitespace-nowrap">
         <span
-          className={`max-w-36 truncate rounded bg-canvas/85 px-1 text-dense font-medium ${selected ? 'text-accent-text' : 'text-fg'}`}
+          className={`max-w-36 truncate rounded-sm bg-canvas/85 px-1 text-dense font-medium ${selected ? 'text-accent-text' : 'text-fg'}`}
         >
           {device.name}
         </span>

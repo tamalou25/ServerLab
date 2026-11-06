@@ -33,6 +33,8 @@ export function RightPanel() {
   })
   const TABS: { id: RightTab; label: string; testId: string }[] = [
     { id: 'properties', label: t('panel.properties'), testId: 'right-tab-properties' },
+    { id: 'interfaces', label: t('panel.interfaces'), testId: 'right-tab-interfaces' },
+    { id: 'events', label: t('panel.events'), testId: 'right-tab-events' },
     { id: 'audit', label: t('panel.audit'), testId: 'right-tab-audit' },
     { id: 'troubleshoot', label: t('panel.troubleshoot'), testId: 'right-tab-troubleshoot' }
   ]
@@ -76,6 +78,10 @@ export function RightPanel() {
         )
       ) : tab === 'properties' ? (
         <PropertiesPanel />
+      ) : tab === 'interfaces' ? (
+        <PropertiesPanel view="interfaces" />
+      ) : tab === 'events' ? (
+        <PropertiesPanel view="events" />
       ) : (
         <AuditPanel />
       )}

@@ -1,16 +1,21 @@
 /**
- * Panneau des propriétés (à droite) : détails de l'équipement ou du câble sélectionné,
- * en sections repliables ; vue d'ensemble du lab quand rien n'est sélectionné.
+ * Panneau des propriétés (inspecteur de l'Atelier, onglet Résumé du lecteur de mission) : détails de
+ * l'équipement ou du câble sélectionné en sections repliables ; vue d'ensemble du lab quand rien
+ * n'est sélectionné. Les vues « interfaces » et « events » isolent les ports et le journal.
  */
 import type { ReactNode } from 'react'
 import {
   AppWindow,
   CircleAlert,
+  CircleCheck,
+  CircleX,
   Info,
+  ListTree,
   Monitor,
   MousePointerClick,
   Plus,
   Power,
+  ScrollText,
   SquareTerminal,
   Trash2,
   TriangleAlert,
@@ -43,19 +48,25 @@ import { StatusLed } from '../../assets/icons/StatusLed'
 import { DEVICE_ICONS, deviceIcon, deviceLabel, iosModel, isLinux } from '../../lib/devices'
 import { formatSimTime } from '../../lib/format'
 import { EditableName } from '../common/EditableName'
+import { Badge } from '../common/Badge'
+import { EmptyState } from '../common/EmptyState'
 import { Button, StatusDot } from '../common/ui'
 import { InterfaceList } from './InterfaceList'
 import { PanelSection } from './PanelSection'
 import { t } from '../../lib/i18n'
 
-export function PropertiesPanel() {
+export type PropertiesView = 'summary' | 'interfaces' | 'events'
+
+export function PropertiesPanel({ view = 'summary' }: { view?: PropertiesView }) {
   const selection = useUiStore((s) => s.selection)
   const lab = useLabStore((s) => s.lab)
   const devices = selection.devices.map((id) => lab.devices[id]).filter((d): d is Device => !!d)
   const link = selection.link ? lab.links[selection.link] : undefined
 
   let content
-  if (devices.length === 1 && devices[0]) content = <DeviceProperties device={devices[0]} />
+  if (view !== 'summary')
+    content = <DeviceDetail device={devices.length === 1 ? devices[0]! : null} view={view} />
+  else if (devices.length === 1 && devices[0]) content = <DeviceProperties device={devices[0]} />
   else if (devices.length > 1) content = <MultiProperties devices={devices} />
   else if (link) content = <LinkProperties link={link} />
   else content = <LabOverview lab={lab} />
@@ -127,20 +138,21 @@ function DeviceProperties({ device }: { device: Device }) {
     <>
       <div className="border-b border-line px-4 pt-3 pb-2">
         <div className="flex items-center gap-3">
-          <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-line-strong bg-surface text-fg-muted">
-            <Icon size={34} />
+          <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-panel border border-line-strong bg-surface text-fg-muted">
+            <Icon size={36} />
           </span>
           <div className="min-w-0">
             <div className="truncate text-title font-semibold text-fg">{device.name}</div>
-            <div className="flex items-center gap-1.5 text-dense text-fg-muted" title={health.label}>
-              {deviceLabel(device)}
-              <span className="text-fg-subtle">·</span>
-              <StatusLed status={health.status} label={health.label} />
-              <span className="truncate" data-testid="properties-health">
-                {health.label}
-              </span>
-            </div>
+            <div className="text-dense text-fg-muted">{deviceLabel(device)}</div>
           </div>
+        </div>
+        <div className="mt-2 flex items-center gap-1.5" title={health.label}>
+          <Badge
+            tone={health.status === 'ok' ? 'ok' : health.status === 'warn' ? 'warn' : 'neutral'}
+            icon={<StatusLed status={health.status} label={health.label} />}
+          >
+            <span data-testid="properties-health">{health.label}</span>
+          </Badge>
         </div>
         <div className="mt-2 flex items-center gap-1" role="toolbar" aria-label={t('props.actions')}>
           <IconAction
@@ -213,33 +225,78 @@ function DeviceProperties({ device }: { device: Device }) {
         </div>
       </PanelSection>
 
-      <PanelSection
-        id="interfaces"
-        title={device.kind === 'switch' ? t('props.ports') : t('props.interfaces')}
-        count={device.interfaces.length}
-        actions={
-          device.kind === 'server' ? (
-            <button
-              type="button"
-              onClick={() => runCommand(command('topology.addServerInterface', device.id))}
-              title={t('props.ajouterUneCarteReseau')}
-              aria-label={t('props.ajouterUneCarteReseau')}
-              className="flex h-6 w-6 items-center justify-center rounded text-fg-muted hover:bg-surface-2 hover:text-fg"
-            >
-              <Plus size={14} />
-            </button>
-          ) : null
-        }
-      >
-        <InterfaceList device={device} compact={device.kind === 'switch'} />
-      </PanelSection>
-
+      <InterfacesSection device={device} />
       {device.kind === 'server' && <RolesSection device={device} />}
       {host && <ServicesSection lab={lab} device={host} />}
       {device.kind === 'router' && <RoutesSection device={device} />}
-      {host && <EventsSection device={host} />}
     </>
   )
+}
+
+/** Ports de l'équipement (section repliable du Résumé ; vue entière dans l'onglet Interfaces). */
+function InterfacesSection({ device }: { device: Device }) {
+  return (
+    <PanelSection
+      id="interfaces"
+      title={device.kind === 'switch' ? t('props.ports') : t('props.interfaces')}
+      count={device.interfaces.length}
+      actions={
+        device.kind === 'server' ? (
+          <button
+            type="button"
+            onClick={() => runCommand(command('topology.addServerInterface', device.id))}
+            title={t('props.ajouterUneCarteReseau')}
+            aria-label={t('props.ajouterUneCarteReseau')}
+            className="flex h-6 w-6 items-center justify-center rounded-control text-fg-muted hover:bg-surface-2 hover:text-fg"
+          >
+            <Plus size={14} aria-hidden />
+          </button>
+        ) : null
+      }
+    >
+      <InterfaceList device={device} compact={device.kind === 'switch'} />
+    </PanelSection>
+  )
+}
+
+/** Onglets Interfaces et Événements : un seul équipement sélectionné, sinon état vide. */
+function DeviceDetail({ device, view }: { device: Device | null; view: 'interfaces' | 'events' }) {
+  if (!device)
+    return (
+      <EmptyState
+        icon={view === 'interfaces' ? ListTree : ScrollText}
+        title={t('props.noSelection')}
+        testId="properties-empty"
+      >
+        {t('props.selectForInterfaces')}
+      </EmptyState>
+    )
+  if (view === 'interfaces')
+    return (
+      <div className="px-4 py-3" data-testid="properties-interfaces">
+        <h3 className="mb-2 text-meta font-semibold tracking-wider text-fg-subtle uppercase">
+          {t('props.interfacesOf', { name: device.name })}
+        </h3>
+        <InterfaceList device={device} />
+        {device.kind === 'server' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-2"
+            onClick={() => runCommand(command('topology.addServerInterface', device.id))}
+          >
+            <Plus size={14} aria-hidden /> {t('props.ajouterUneCarteReseau')}
+          </Button>
+        )}
+      </div>
+    )
+  if (!isHostDevice(device))
+    return (
+      <EmptyState icon={ScrollText} title={device.name} testId="properties-empty">
+        {t('props.noHostEvents')}
+      </EmptyState>
+    )
+  return <EventsSection device={device} full />
 }
 
 function generalRows(lab: LabState, device: Device): [string, ReactNode][] {
@@ -370,10 +427,14 @@ const LEVELS = {
   error: { icon: CircleAlert, cls: 'text-danger-text', label: 'Erreur' }
 } as const
 
-function EventsSection({ device }: { device: HostDevice }) {
-  const events = device.host.eventLog.slice(-5).reverse()
+function EventsSection({ device, full = false }: { device: HostDevice; full?: boolean }) {
+  const events = (full ? device.host.eventLog.slice(-50) : device.host.eventLog.slice(-5)).reverse()
   return (
-    <PanelSection id="events" title={t('props.derniersEvenements')} count={device.host.eventLog.length}>
+    <PanelSection
+      id={full ? 'events-full' : 'events'}
+      title={full ? t('props.eventsOf', { name: device.name }) : t('props.derniersEvenements')}
+      count={device.host.eventLog.length}
+    >
       {events.length === 0 ? (
         <p className="text-dense text-fg-subtle">{t('props.aucunEvenement')}</p>
       ) : (
@@ -412,12 +473,18 @@ function EventsSection({ device }: { device: HostDevice }) {
 function MultiProperties({ devices }: { devices: Device[] }) {
   return (
     <PanelSection id="multi" title={t('props.selected', { count: devices.length })}>
+      <p className="mb-2 text-dense text-fg-muted">{t('props.multiHint', { count: devices.length })}</p>
       <ul className="mb-3 flex flex-col gap-1 text-ui">
-        {devices.map((d) => (
-          <li key={d.id}>
-            {d.name} <span className="text-dense text-fg-subtle">— {deviceLabel(d)}</span>
-          </li>
-        ))}
+        {devices.map((d) => {
+          const Icon = deviceIcon(d)
+          return (
+            <li key={d.id} className="flex items-center gap-2">
+              <Icon size={18} />
+              <span className="font-medium text-fg">{d.name}</span>
+              <span className="text-dense text-fg-subtle">{deviceLabel(d)}</span>
+            </li>
+          )
+        })}
       </ul>
       <Button
         variant="danger"
@@ -431,7 +498,7 @@ function MultiProperties({ devices }: { devices: Device[] }) {
           useUiStore.getState().clearSelection()
         }}
       >
-        <Trash2 size={14} /> Supprimer la sélection
+        <Trash2 size={14} aria-hidden /> {t('props.deleteSelection')}
       </Button>
     </PanelSection>
   )
@@ -452,11 +519,22 @@ function LinkProperties({ link }: { link: Link }) {
     <PanelSection id="link" title={t('props.cableEthernet')}>
       <ul className="mb-3 flex flex-col gap-2">
         {ends.map((e, i) => (
-          <li key={i} className="flex items-center gap-2 text-ui">
+          <li
+            key={i}
+            className="flex flex-wrap items-center gap-2 rounded-panel border border-line bg-surface px-2.5 py-2 text-ui"
+          >
             <StatusDot status={e.status} />
-            <span className="font-semibold">{e.device?.name}</span>
+            <span className="font-semibold text-fg">{e.device?.name}</span>
             <span className="font-mono text-dense text-fg-muted">{e.iface?.name}</span>
-            <span className="ml-auto text-dense text-fg-subtle">{labels[e.status]}</span>
+            <Badge
+              className="ml-auto"
+              tone={e.status === 'up' ? 'ok' : e.status === 'degraded' ? 'warn' : 'danger'}
+              icon={
+                e.status === 'up' ? <CircleCheck size={11} aria-hidden /> : <CircleX size={11} aria-hidden />
+              }
+            >
+              {labels[e.status]}
+            </Badge>
           </li>
         ))}
       </ul>
@@ -482,18 +560,18 @@ function LabOverview({ lab }: { lab: LabState }) {
   return (
     <>
       <PanelSection id="overview" title={t('props.vueDensemble')}>
-        <div className="grid grid-cols-5 gap-1">
+        <div className="grid grid-cols-3 gap-1.5">
           {DEVICE_KINDS.map((kind) => {
             const Icon = DEVICE_ICONS[kind]
             const n = devices.filter((d) => d.kind === kind).length
             return (
               <div
                 key={kind}
-                className="flex flex-col items-center gap-0.5 rounded-md border border-line bg-surface py-1.5 text-fg-muted"
+                className={`flex items-center gap-2 rounded-panel border border-line bg-surface px-2 py-1.5 ${n === 0 ? 'text-fg-subtle' : 'text-fg-muted'}`}
                 title={DEVICE_KIND_INFO[kind].label}
               >
-                <Icon size={24} />
-                <span className="text-dense font-medium text-fg">{n}</span>
+                <Icon size={22} />
+                <span className="text-title font-semibold text-fg">{n}</span>
               </div>
             )
           })}
@@ -531,10 +609,9 @@ function LabOverview({ lab }: { lab: LabState }) {
           />
         </div>
       </PanelSection>
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-dense text-fg-subtle">
-        <MousePointerClick size={24} strokeWidth={1.5} />
-        <p>{t('props.selectionnezUnEquipementOu')}</p>
-      </div>
+      <EmptyState icon={MousePointerClick} title={t('props.noSelection')} className="flex-1">
+        {t('props.overviewHint')}
+      </EmptyState>
     </>
   )
 }

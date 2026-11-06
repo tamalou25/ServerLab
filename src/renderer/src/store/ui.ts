@@ -53,7 +53,7 @@ export interface PduResult {
 }
 
 /** Onglets de l'inspecteur (espace Atelier). */
-export type RightTab = 'properties' | 'audit' | 'troubleshoot'
+export type RightTab = 'properties' | 'interfaces' | 'events' | 'audit' | 'troubleshoot'
 
 /** Espaces de travail : Atelier (topologie et inspecteur), Mission (lecteur), Enseignant (correction). */
 export type Workspace = 'atelier' | 'mission' | 'teacher'
@@ -98,6 +98,8 @@ export interface UiState {
   showPortLabels: boolean
   showProperties: boolean
   showMinimap: boolean
+  /** Zones réseau dessinées sur le plan (regroupement visuel en lecture seule). */
+  showZones: boolean
   tool: Tool
   /** Équipement de la palette « armé » (clic puis clic sur le canvas). */
   armed: PaletteKind | null
@@ -126,6 +128,7 @@ export interface UiState {
   setMode: (mode: SimMode) => void
   togglePortLabels: () => void
   toggleMinimap: () => void
+  toggleZones: () => void
   toggleProperties: () => void
   setTool: (tool: Tool) => void
   setArmed: (kind: PaletteKind | null) => void
@@ -167,6 +170,7 @@ export const useUiStore = create<UiState>()((set, get) => ({
   showPortLabels: false,
   showProperties: true,
   showMinimap: readPref('minimap', true),
+  showZones: readPref('zones', true),
   tool: 'select',
   armed: null,
   selection: { devices: [], link: null },
@@ -203,6 +207,11 @@ export const useUiStore = create<UiState>()((set, get) => ({
     set((s) => {
       writePref('minimap', !s.showMinimap)
       return { showMinimap: !s.showMinimap }
+    }),
+  toggleZones: () =>
+    set((s) => {
+      writePref('zones', !s.showZones)
+      return { showZones: !s.showZones }
     }),
   toggleProperties: () => set((s) => ({ showProperties: !s.showProperties })),
   setTool: (tool) => set({ tool, cableStart: null, pduSource: null, armed: null }),

@@ -60,4 +60,33 @@ Les règles d'affichage de la v2 sont conservées : pendant une épreuve, seuls 
 le lecteur ne montre jamais les critères ; un dépannage généré remplace l'énoncé, un lab de dépannage fourni
 garde son énoncé à côté de l'onglet Dépannage.
 
+## Espace Atelier
+
+- **Palette** : en-tête « Équipements » et nombre de types, recherche avec état vide, liste des familles
+  (icône, nom, compteur ; la famille active cliquée revient à « Tous »), vignettes sur deux colonnes.
+  Sur un écran serré (moins de 1 200 px CSS, ex. 1 366 × 768 à 125 %), la palette est repliée en colonne
+  d'icônes et se déplie pour la session.
+- **Nœuds** : carte de 64 px conservée (même centre d'icône, mêmes performances à 100 équipements), halo
+  de sélection (anneau accent et ombre `accent-soft`), focus clavier visible.
+- **Câbles, trois mises en évidence** (légende du plan en haut à gauche dès que l'une est visible) :
+  câble sélectionné (accent, 2,5 px), branche de l'équipement sélectionné (accent, 2 px), chemin de
+  l'échange choisi dans le panneau Simulation (info, tirets : câbles traversés par la même opération
+  jusqu'au pas choisi, d'après le `linkId` de chaque trame). L'échange produit par le moteur reste
+  représenté par les enveloppes animées. Attribut `data-state` (`selected`, `path`, `branch`, `plain`)
+  sur la zone de survol du câble.
+- **Zones réseau** (bascule « Zones réseau » dans la barre du plan, préférence du poste) : une zone par
+  réseau IPv4 calculé depuis l'adresse et le masque effectifs de chaque interface (statique ou bail
+  DHCP ; APIPA, interfaces désactivées ou débranchées exclues). Membres enveloppés : hôtes adressés dans
+  le réseau, et switch seulement s'il ne sert qu'un réseau. Routeurs et pare-feu ne sont jamais
+  enveloppés : ils sont la frontière, leur interface figure dans l'étiquette (« passerelle R1 Gi0/0 ·
+  192.168.10.254 »). Le VLAN n'est indiqué que si tous les hôtes membres sont raccordés par un port
+  d'accès du même VLAN. La zone est **descriptive** (« ces adresses partagent un préfixe ») : elle ne
+  modifie rien et n'implique pas la connectivité ; un hôte dont le masque le place dans un autre réseau
+  apparaît hors zone, ce qui est voulu. Calcul pur `engine/topology/groups.ts` (mémoïsé sur le réseau :
+  un déplacement ne recalcule que la géométrie), désactivé au-delà de 60 équipements.
+- **Inspecteur** (280–480 px, largeur mémorisée) : Résumé (carte d'identité, badge d'état forme + texte,
+  actions, Général, Interfaces, Rôles, Services, Routes), Interfaces, Événements (journal complet d'un
+  hôte), Audit, Dépannage. Câble : extrémités en cartes avec badge d'état ; multi-sélection : liste avec
+  icônes ; rien de sélectionné : compteurs par famille en cartes, liaisons, domaines, état vide.
+
 (Suite : écarts par rapport aux maquettes et procédure d'essai, complétés lot par lot.)

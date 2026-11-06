@@ -4,9 +4,9 @@
  * clavier correspondant (infobulle avec le raccourci du catalogue).
  */
 import { useReactFlow, useViewport } from '@xyflow/react'
-import { Maximize, Minus, Plus, Redo2, Undo2, type LucideIcon } from 'lucide-react'
+import { LayoutGrid, Maximize, Minus, Plus, Redo2, Undo2, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { historyLabels } from '@engine/index'
+import { historyLabels, networkZones } from '@engine/index'
 import { accelerator, formatShortcut, type ShortcutId } from '@shared/shortcuts'
 import type { MessageKey } from '@shared/i18n'
 import { useWindowSize, COMPACT_HEIGHT, NARROW_WIDTH } from '../../hooks/useWindowSize'
@@ -15,6 +15,7 @@ import { useT } from '../../lib/i18n'
 import { useLabStore } from '../../store/lab'
 import { useUiStore } from '../../store/ui'
 import { TOOLS } from '../canvas/CanvasToolbar'
+import { ZONES_MAX_DEVICES } from '../canvas/NetworkZones'
 import { Tooltip } from '../common/Tooltip'
 
 const ANIMATION = { duration: 150 }
@@ -146,6 +147,10 @@ export function CanvasBar() {
   const history = useLabStore((s) => s.history)
   const devices = useLabStore((s) => Object.keys(s.lab.devices).length)
   const links = useLabStore((s) => Object.keys(s.lab.links).length)
+  const subnets = useLabStore((s) => networkZones(s.lab).length)
+  const showZones = useUiStore((s) => s.showZones)
+  const toggleZones = useUiStore((s) => s.toggleZones)
+  const tooMany = devices > ZONES_MAX_DEVICES
   const labels = historyLabels(history)
   const { width, height } = useWindowSize()
   const narrow = width < NARROW_WIDTH
@@ -162,6 +167,7 @@ export function CanvasBar() {
         {!narrow && <span className="text-dense font-semibold text-fg">{t('canvas.overview')}</span>}
         <span className="truncate text-meta text-fg-muted" data-testid="status-counts">
           {tp('status.devices', devices)} · {tp('status.links', links)}
+          {subnets > 0 && !narrow && ` · ${t('canvas.subnets', { count: subnets })}`}
         </span>
       </div>
       <div className="flex-1" />
@@ -191,6 +197,23 @@ export function CanvasBar() {
       <Group label={t('zoom.label')}>
         <ZoomButtons />
       </Group>
+      <Separator />
+      <Tooltip label={tooMany ? t('canvas.zonesTooMany', { max: ZONES_MAX_DEVICES }) : t('canvas.zonesHint')}>
+        <button
+          type="button"
+          aria-label={t('canvas.zones')}
+          aria-pressed={showZones && !tooMany}
+          disabled={tooMany}
+          onClick={toggleZones}
+          data-testid="toggle-zones"
+          className={`flex h-7 items-center gap-1 rounded-control px-1.5 text-meta font-medium transition-colors disabled:opacity-40 ${
+            showZones && !tooMany ? 'bg-accent-soft text-accent-text' : 'text-fg-muted hover:bg-surface-2 hover:text-fg'
+          }`}
+        >
+          <LayoutGrid size={14} aria-hidden />
+          {!narrow && t('canvas.zones')}
+        </button>
+      </Tooltip>
     </div>
   )
 }
