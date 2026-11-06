@@ -1,5 +1,5 @@
 /**
- * Parcours pédagogiques (v2.13) : une suite ordonnée d'étapes qui réutilisent les labs fournis autour
+ * Parcours pédagogiques (v2.14) : une suite ordonnée d'étapes qui réutilisent les labs fournis autour
  * d'une même entreprise, avec pour chaque étape ses prérequis, les compétences travaillées, le résultat
  * concret attendu, le niveau d'aide et l'exercice suivant recommandé. Le parcours aide à choisir : il ne
  * verrouille rien, tous les labs restent ouvrables librement.

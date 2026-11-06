@@ -1,7 +1,7 @@
 /**
  * Interface du mode panne : accesseurs purs (tickets, indices révélés) et BILAN d'un dépannage.
  *
- * Le bilan (v2.13) évalue le résultat de l'intervention, pas la ressemblance de la démarche avec la
+ * Le bilan (v2.14) évalue le résultat de l'intervention, pas la ressemblance de la démarche avec la
  * correction de référence. Règles explicites (`SCORE_WEIGHTS`, testées) :
  *
  * - **Résultat sur 100** = rétablissement (pannes réparées) × 60 + usage attendu (objectifs

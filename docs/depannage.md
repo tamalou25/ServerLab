@@ -226,7 +226,7 @@ moteur reste seul juge : l'interface orchestre `startTroubleshooting`, `troubles
    **« Abandonner »** révèle la cause et la correction officielle (libellés des commandes de `FaultDef.repair`).
 5. **Journal** : nombre de commandes nommées jouées depuis le départ (annuler puis rétablir ne recompte pas),
    liste des libellés, indices et durée réelle (fournie par le renderer, le moteur ne lit pas l'horloge).
-6. **Bilan** (`summary.ts`, v2.13) : l'issue (résolu, résolu avec réserves, partiel, non résolu, abandonné), le
+6. **Bilan** (`summary.ts`, v2.14) : l'issue (résolu, résolu avec réserves, partiel, non résolu, abandonné), le
    **résultat sur 100** et, pour chaque panne, le symptôme signalé, la **chaîne des causes** (panne composée :
    la masquante puis la masquée), la correction de référence et son explication, une piste de révision ; puis
    les objectifs du lab (rétablissement, usage attendu, contraintes préservées), les changements effectués
