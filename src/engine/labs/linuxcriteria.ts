@@ -6,8 +6,8 @@
  *
  * Fiabilisation (v2.12) : un fichier de configuration conforme ne prouve pas que le service l'applique
  * ni que l'usage fonctionne. `linuxConfigApplied` exige que la configuration en vigueur soit celle des
- * fichiers (service redémarré ou rechargé) ; `smbAccess` rejoue l'accès d'un compte à un partage depuis
- * un poste (réseau, smbd, base Samba, smb.conf en vigueur, droits Unix), en réussite comme en refus.
+ * fichiers (service redémarré ou rechargé) ; l'accès à un partage Samba depuis un poste (`smbAccess`) est
+ * un critère du rôle Fichiers (`roles/files/criteria.ts`), qui possède la sonde SMB.
  */
 import { z } from 'zod'
 import { isLinuxHost } from '../model/host'
@@ -16,7 +16,6 @@ import { defineCriterion, type CriterionType } from '../roles/types'
 import { findUnit } from '../services/linuxcatalog'
 import { configTextOf } from '../services/linuxconfig'
 import { fileText } from '../services/linuxconfig'
-import { smbProbe } from '../roles/files/smbprobe'
 import { isInstalled } from '../services/linuxpackages'
 import { linuxSockets, unitStatus } from '../services/linuxsystem'
 import { hostFiles } from '../services/linuxtree'
@@ -144,34 +143,5 @@ export const LINUX_CRITERIA: CriterionType[] = [
       return snapshot === undefined || snapshot === current
     },
     'Configuration Linux relue par le service (redémarré ou rechargé)'
-  ),
-  defineCriterion(
-    z.object({
-      type: z.literal('smbAccess'),
-      /** Poste (Linux ou Windows) d'où l'accès est tenté. */
-      from: z.string(),
-      /** Serveur Samba (nom ou adresse IPv4). */
-      server: z.string(),
-      share: z.string(),
-      /** Compte Samba ; absent : session anonyme (invité). */
-      user: z.string().optional(),
-      /** Mot de passe ; absent : celui enregistré dans la base Samba (l'utilisateur tape son mot de passe). */
-      password: z.string().optional(),
-      /** L'écriture doit réussir (création d'un fichier à la racine du partage, à blanc). */
-      write: z.boolean().default(false),
-      /** false : l'accès (lecture, ou écriture si `write`) doit être REFUSÉ. */
-      success: z.boolean().default(true)
-    }),
-    (state, check) => {
-      const client = hostByName(state, check.from)
-      if (!client) return false
-      const r = smbProbe(state, client.id, check.server, check.share, {
-        user: check.user ?? null,
-        ...(check.password !== undefined ? { password: check.password } : {}),
-        write: check.write ?? false
-      })
-      return r.ok === (check.success !== false)
-    },
-    'Accès à un partage Samba depuis un poste (réussite ou refus)'
   )
 ]

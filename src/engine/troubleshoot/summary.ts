@@ -226,7 +226,10 @@ export function criteriaOutcomes(start: LabState, current: LabState, lab: LabDef
  * Résultat sur 100 : chaque catégorie présente vaut son poids × (objectifs validés / objectifs) ;
  * le poids des catégories absentes est redistribué au prorata des catégories présentes.
  */
-export function troubleshootScoreOf(objectives: ObjectiveOutcome[]): { score: number; breakdown: ScoreBreakdown[] } {
+export function troubleshootScoreOf(objectives: ObjectiveOutcome[]): {
+  score: number
+  breakdown: ScoreBreakdown[]
+} {
   const kinds = Object.keys(SCORE_WEIGHTS) as ObjectiveKind[]
   const present = kinds.filter((k) => objectives.some((o) => o.kind === k))
   if (present.length === 0) return { score: 0, breakdown: [] }
