@@ -6,6 +6,32 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+Apprendre à administrer **et dépanner** : validations qui jugent le fonctionnement réel, bilan de dépannage fondé
+sur le résultat, parcours PME, mission transversale, progression enregistrée. Documentation : [docs/parcours.md](docs/parcours.md).
+
+### Corrigé
+
+- Lab 48 (Samba) : 6 critères sur 6 validés sans compte Samba ni redémarrage de smbd alors que `smbclient` échouait
+  (`NT_STATUS_BAD_NETWORK_NAME`). Nouveaux critères `smbAccess` (accès d'un compte ou d'un invité depuis un poste,
+  lecture ou écriture, réussite ou refus) et `linuxConfigApplied` (service redémarré ou rechargé) ; sonde pure
+  `smbProbe`. Labs 46, 47 et 51 renforcés de la même façon.
+
+### Ajouté
+
+- Bilan de dépannage : résultat sur 100 à règles explicites (rétablissement 60, usage attendu 25, contraintes
+  préservées 15), autonomie séparée (un indice n'enlève aucun point en entraînement), chaîne des causes, changements
+  effectués, vérifications, correction de référence expliquée, piste de révision, limites écrites ; export en compte
+  rendu texte. La notion de « chemin le plus court » disparaît.
+- Parcours PME « Atelier Lambert » (onglet Parcours du sélecteur, bouton de l'accueil) : douze étapes sur dix labs
+  existants et la mission, prérequis, compétences, résultat attendu, niveau d'aide, suivant ; accès libre conservé.
+- Progression enregistrée (`progress.json`, validée, atomique) : tentatives, aide utilisée, compétences travaillées
+  ou démontrées, prochaine étape recommandée, révision différée.
+- Lab 60 « Mission : la comptabilité ne peut plus enregistrer ses documents » : deux causes qui se cumulent,
+  plusieurs réparations acceptables, contraintes de sécurité (direction en lecture seule, atelier exclu), variantes
+  par graine. Champ `ntfs` du départ déclaratif des labs, commande nommée `files.grantNtfs`.
+- Les labs de dépannage fournis (44, 45, 53, 59, 60) ouvrent une session de dépannage (indices, « J'ai réparé »,
+  bilan) en plus de leur énoncé.
+
 ## [2.12.0] — 2026-11-02
 
 Mode enseignant, hors ligne et par fichiers : sujets d'évaluation, passation, correction par rejeu,

@@ -27,7 +27,8 @@ src/engine/    moteur de simulation pur (15 dossiers) :
                core/ (horloge, journal d'évènements, GUID, EngineResult) · cyber/ (scénarios de
                cybersécurité, contre-mesures, détection ; scope `cyber`, attaques abstraites uniquement)
                ios/ (équipements Cisco IOS : CLI, switchs, routeurs ; scope `ios`)
-               labs/ (chargement et critères des labs) · model/ (schémas zod) · net/ (IPv4, routage, ARP)
+               labs/ (chargement et critères des labs, parcours `pathway.ts`, progression `progress.ts`) ·
+               model/ (schémas zod) · net/ (IPv4, routage, ARP)
                roles/ (registre + 14 modules : dns, dhcp, adds Active Directory, gpo, files NTFS et SMB,
                wsus, iis, rds, hyperv, adcs, dfs, backup, nps, rras)
                serialization/ (fichiers .slab, migrations) · services/ (système de base)
@@ -191,6 +192,18 @@ Un ancien lab doit toujours s'ouvrir. Les fichiers `tests/engine/serialization/f
 ### Ajouter un critère de lab
 
 1. Ajouter le type avec `defineCriterion(schéma zod, évaluateur)` dans `src/engine/roles/<rôle>/criteria.ts`
-   (système de base : `src/engine/labs/criteria.ts`) ; le schéma des labs en est dérivé.
+   (système de base : `src/engine/labs/criteria.ts`) ; le schéma des labs en est dérivé. Un évaluateur juge le
+   **fonctionnement** avec les fonctions des consoles (sonde depuis un poste, configuration en vigueur, droits
+   effectifs), jamais seulement le texte d'un fichier ; les accès qui doivent rester interdits ont leur critère
+   (`success: false`, `deny`). Voir `docs/parcours.md`, section 2.
 2. L'utiliser dans `labs/*.json` avec `label` et `hint` (l'indice ne donne jamais la solution).
-3. Le test `tests/engine/labs/` applique la solution du lab et exige 100 % de critères validés.
+3. Le test `tests/engine/labs/` applique la solution du lab et exige 100 % de critères validés ; une solution
+   incomplète (service non redémarré, compte absent) ne doit pas valider tout. Un critère déjà vrai au départ est
+   une contrainte, justifiée dans `tests/engine/labs/start-criteria.test.ts`.
+
+### Ajouter une étape de parcours
+
+1. Déclarer l'étape dans `src/engine/labs/pathway.ts` (lab existant, phase, niveau d'aide, prérequis,
+   compétences du catalogue `COMPETENCES`, résultat attendu, suivant). Les règles de progression
+   (exercice terminé, compétence démontrée, prochaine étape) sont dans `src/engine/labs/progress.ts`.
+2. `tests/engine/labs/progress.test.ts` vérifie la cohérence du parcours (labs fournis, prérequis, phases).
