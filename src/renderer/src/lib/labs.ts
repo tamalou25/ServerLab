@@ -73,6 +73,8 @@ export function restartLab(): void {
       useLabStore.getState().load(buildLabState(lab), { path: null, name: `${lab.id}.slab` })
       useLabsStore.getState().setActive(lab)
       useUiStore.getState().setRightTab('lab')
+      if (lab.troubleshooting)
+        beginTroubleshootSession(lab.id, lab.troubleshooting.seed, { exam: false, generated: false })
     }
   })
 }
