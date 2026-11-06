@@ -2,7 +2,7 @@
  * Sélecteur de labs (Fichier > Ouvrir un lab…) : labs fournis (titre, difficulté, durée, résumé)
  * et bibliothèque communautaire.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useDialog } from '../../hooks/useDialog'
 import { FlaskConical, GraduationCap, Upload, Wrench, X } from 'lucide-react'
 import { PathwayList } from './PathwayList'
@@ -18,7 +18,12 @@ import { rich, t } from '../../lib/i18n'
 
 export function LabPicker() {
   const open = useLabsStore((s) => s.pickerOpen)
-  const [tab, setTab] = useState<'pathway' | 'builtin' | 'library'>('builtin')
+  const initialTab = useLabsStore((s) => s.pickerTab)
+  const [tab, setTab] = useState<'pathway' | 'builtin' | 'library'>(initialTab)
+  // Onglet demandé à l'ouverture (bouton Parcours de l'accueil, menu Ouvrir un lab…)
+  useEffect(() => {
+    if (open) setTab(initialTab)
+  }, [open, initialTab])
   const close = () => useLabsStore.getState().setPickerOpen(false)
   const { ref, titleId } = useDialog(open, close)
   if (!open) return null

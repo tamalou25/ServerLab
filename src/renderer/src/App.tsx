@@ -63,7 +63,7 @@ function handleMenuCommand(msg: MenuCommandMessage): void {
       void saveDocument(true)
       break
     case 'file:openLab':
-      useLabsStore.getState().setPickerOpen(true)
+      useLabsStore.getState().setPickerOpen(true, 'builtin')
       break
     case 'file:troubleshoot':
       openTroubleshootDialog()

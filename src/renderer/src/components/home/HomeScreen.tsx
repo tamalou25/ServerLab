@@ -137,7 +137,7 @@ function HomePage() {
                     nextStep ? t('home.pathway.detail', { step: nextStep.title }) : t('home.pathway.done')
                   }
                   shortcut="openLab"
-                  onClick={() => useLabsStore.getState().setPickerOpen(true)}
+                  onClick={() => useLabsStore.getState().setPickerOpen(true, 'pathway')}
                   testId="home-pathway"
                 />
               </div>
