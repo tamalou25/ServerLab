@@ -50,23 +50,24 @@ for (const theme of THEMES) {
         await expect(page.getByTestId('properties-panel')).toBeVisible()
         // Laisse finir l'animation d'ajustement de la vue
         await page.waitForTimeout(500)
-        await expect(page).toHaveScreenshot(`canvas-${theme.id}.png`, { mask: masks(page) })
-        await expect(page.getByTestId('palette')).toHaveScreenshot(`palette-${theme.id}.png`)
-        await expect(page.getByRole('complementary', { name: 'Panneau latéral' })).toHaveScreenshot(
-          `inspecteur-${theme.id}.png`
-        )
+        // Comparaisons « souples » : une référence qui diffère n'empêche pas de vérifier les suivantes
+        await expect.soft(page).toHaveScreenshot(`canvas-${theme.id}.png`, { mask: masks(page) })
+        await expect.soft(page.getByTestId('palette')).toHaveScreenshot(`palette-${theme.id}.png`)
+        await expect
+          .soft(page.getByRole('complementary', { name: 'Panneau latéral' }))
+          .toHaveScreenshot(`inspecteur-${theme.id}.png`)
 
         await page.getByTestId('mode-simulation').click()
-        await expect(page.getByTestId('simulation-panel')).toHaveScreenshot(`simulation-${theme.id}.png`)
+        await expect.soft(page.getByTestId('simulation-panel')).toHaveScreenshot(`simulation-${theme.id}.png`)
         await page.getByTestId('mode-realtime').click()
 
         await page.getByTestId('device-SRV1').dblclick()
         const win = page.getByTestId('device-window-SRV1')
         await expect(win).toBeVisible()
-        await expect(win).toHaveScreenshot(`fenetre-equipement-${theme.id}.png`, { mask: masks(page) })
+        await expect.soft(win).toHaveScreenshot(`fenetre-equipement-${theme.id}.png`, { mask: masks(page) })
 
         await openConsole(page, 'SRV1', 'powershell')
-        await expect(win).toHaveScreenshot(`console-${theme.id}.png`, { mask: masks(page) })
+        await expect.soft(win).toHaveScreenshot(`console-${theme.id}.png`, { mask: masks(page) })
       } finally {
         await close()
       }

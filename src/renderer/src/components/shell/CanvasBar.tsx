@@ -9,7 +9,7 @@ import type { ReactNode } from 'react'
 import { historyLabels, networkZones } from '@engine/index'
 import { accelerator, formatShortcut, type ShortcutId } from '@shared/shortcuts'
 import type { MessageKey } from '@shared/i18n'
-import { useWindowSize, COMPACT_HEIGHT, NARROW_WIDTH } from '../../hooks/useWindowSize'
+import { useWindowSize, COMPACT_HEIGHT } from '../../hooks/useWindowSize'
 import { redo, undo } from '../../lib/editing'
 import { useT } from '../../lib/i18n'
 import { useLabStore } from '../../store/lab'
@@ -152,24 +152,25 @@ export function CanvasBar() {
   const toggleZones = useUiStore((s) => s.toggleZones)
   const tooMany = devices > ZONES_MAX_DEVICES
   const labels = historyLabels(history)
-  const { width, height } = useWindowSize()
-  const narrow = width < NARROW_WIDTH
-  // Barre serrée (fenêtre < 1 400 px CSS) : titre et libellés masqués, compteurs seuls
-  const tight = width < 1400
+  const { height } = useWindowSize()
   const short = height < COMPACT_HEIGHT
   const { t, tp } = useT()
+  // Barre serrée : titre, nombre de sous-réseaux et libellé « Zones » masqués sous 48 rem de large
+  // (requête de conteneur CSS : déterministe, indépendante du moment du redimensionnement)
   return (
     <div
-      className={`flex shrink-0 items-center gap-1 border-b border-line bg-panel px-3 ${short ? 'h-9' : 'h-10'}`}
+      className={`@container flex shrink-0 items-center gap-1 border-b border-line bg-panel px-3 ${short ? 'h-9' : 'h-10'}`}
       role="toolbar"
       aria-label={t('toolbar.main')}
       data-testid="main-toolbar"
     >
       <div className="flex min-w-0 items-baseline gap-2 pr-2 whitespace-nowrap">
-        {!tight && <span className="text-dense font-semibold text-fg">{t('canvas.overview')}</span>}
+        <span className="hidden text-dense font-semibold text-fg @3xl:inline">{t('canvas.overview')}</span>
         <span className="truncate text-meta text-fg-muted" data-testid="status-counts">
           {tp('status.devices', devices)} · {tp('status.links', links)}
-          {subnets > 0 && !narrow && ` · ${t('canvas.subnets', { count: subnets })}`}
+          {subnets > 0 && (
+            <span className="hidden @3xl:inline"> · {t('canvas.subnets', { count: subnets })}</span>
+          )}
         </span>
       </div>
       <div className="flex-1" />
@@ -215,7 +216,7 @@ export function CanvasBar() {
           }`}
         >
           <LayoutGrid size={14} aria-hidden />
-          {!tight && t('canvas.zones')}
+          <span className="hidden @3xl:inline">{t('canvas.zones')}</span>
         </button>
       </Tooltip>
     </div>
