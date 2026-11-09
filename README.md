@@ -137,24 +137,28 @@ voyants indiquent l'état ; chaque mise en évidence du plan est légendée. Dé
 
 ## Écran d'accueil
 
-Au lancement sans fichier, l'accueil propose **Nouveau lab**, **Ouvrir…**, les labs récents (nom,
-dossier, date ; un fichier déplacé ou supprimé est signalé « Introuvable » et peut être retiré de
-la liste) et les labs fournis avec leur difficulté et leur durée. Il reste accessible par
-**Fichier > Accueil** ; la case « Afficher l'accueil au démarrage » permet de démarrer directement
-sur le canvas.
+Au lancement sans fichier, l'accueil met en avant **une action principale selon l'état réel** : le tutoriel
+« premier ping » quand il est proposé, sinon la **prochaine étape conseillée** du parcours PME (calculée par le
+moteur d'après la progression enregistrée ; ce n'est pas la reprise d'une session), ou le catalogue quand le
+parcours est terminé. Viennent ensuite les accès (parcours et sa progression, tutoriel, **Ouvrir un fichier…**,
+**Nouvelle topologie libre**), les fichiers récents (nom, dossier, date ; un fichier déplacé ou supprimé est
+signalé « Introuvable » et peut être retiré de la liste) et une sélection d'exercices avec l'accès au
+**catalogue** complet (recherche, filtres par niveau, durée, parcours et réussite). Il reste accessible par
+**Fichier > Accueil** ; la case « Afficher l'accueil au démarrage » permet de démarrer directement sur le
+canvas. Direction graphique et états : [`docs/design.md`](docs/design.md).
 
 ## Tutoriel interactif
 
-Au premier lancement, un tutoriel guide jusqu'au premier ping : placer un serveur et un poste,
+Au premier lancement, un tutoriel (proposé sur l'accueil) guide jusqu'au premier ping : placer un serveur et un poste,
 les câbler, leur donner une adresse IP fixe dans le même réseau, puis tester avec `ping` (console
 ou outil PDU simple). La zone à utiliser est entourée et chaque étape se valide d'elle-même dès
 que le lab est dans le bon état (pas de bouton « Suivant »). Le tutoriel peut être passé, n'est
 plus proposé une fois réussi (ou si la case « Proposer le tutoriel au démarrage » est décochée)
-et se relance par **Aide > Tutoriel interactif**.
+et se relance par **Aide > Tutoriel interactif** ou depuis l'accueil.
 
 ## Labs pédagogiques
 
-L'accueil et **Fichier > Ouvrir un lab…** (`Ctrl+L`) proposent trente-cinq labs prêts à l'emploi, du plus simple au
+Le catalogue (**Fichier > Ouvrir un lab…**, `Ctrl+L`, ou « Voir les exercices » de l'accueil) propose trente-cinq labs prêts à l'emploi, du plus simple au
 plus complet : adressage et routage, DHCP, DNS, Active Directory + GPO, partages et NTFS, puis un lab par rôle de la
 2.1 (WSUS, IIS, Bureau à distance, Hyper-V, AD CS, DFS, sauvegarde et Corbeille AD), par fonctionnalité réseau
 de la 2.2 (VLAN, relais DHCP, pare-feu, NAT et VPN, NPS/RADIUS, multi-sites AD) et trois labs de durcissement

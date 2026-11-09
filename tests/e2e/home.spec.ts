@@ -7,7 +7,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { addDevice, createLab, serializeSlab, unwrap } from '../../src/engine/index'
+import { addDevice, createLab, PATHWAY_PME, serializeSlab, unwrap } from '../../src/engine/index'
 import { clickMenu, launchApp } from './helpers'
 
 const home = (page: Page) => page.getByTestId('home-screen')
@@ -27,15 +27,32 @@ test('premier lancement : accueil, labs fournis, nouveau lab, Fichier > Accueil'
     await expect(page.getByTestId('home-recent-empty')).toHaveText('Aucun lab récent.')
     await expect(home(page)).toContainText('Ctrl+N')
 
-    // Labs fournis : titre, difficulté, durée
-    await expect(page.locator('[data-testid^="home-lab-"]')).toHaveCount(
-      readdirSync(resolve(__dirname, '../../labs')).filter((f) => f.endsWith('.json')).length
-    )
+    // Nouveau profil : le parcours est l'action principale, sans prétendre reprendre une session
+    const next = page.getByTestId('home-next')
+    await expect(next).toHaveAttribute('data-state', 'first')
+    await expect(next).toContainText('Commencer le parcours')
+    await expect(next).toContainText('1. Relier le bureau et l’atelier')
+    await expect(next).toContainText('aucun travail en cours n’est repris')
+    await expect(page.getByTestId('home-progress')).toContainText('0 / 12 étapes')
+    await expect(page.getByTestId('home-tutorial')).toContainText('premier ping')
+
+    // Sélection utile au lieu des 60 exercices : les labs « Débutant », puis l'accès au catalogue complet
+    const total = readdirSync(resolve(__dirname, '../../labs')).filter((f) => f.endsWith('.json')).length
+    const selection = page.locator('[data-testid^="home-lab-"]')
+    await expect(selection).not.toHaveCount(0)
+    expect(await selection.count()).toBeLessThan(10)
     const first = page.getByTestId('home-lab-lab-01-adressage')
     await expect(first).toContainText('Adressage IP et routage entre deux réseaux')
     await expect(first).toContainText('Débutant')
     await expect(first).toContainText('20 min')
-    await expect(page.getByTestId('home-lab-lab-05-ntfs')).toContainText('Avancé')
+    await expect(page.getByTestId('home-lab-lab-05-ntfs')).toHaveCount(0)
+    await expect(page.getByTestId('home-catalog')).toContainText(`Voir les ${total} exercices`)
+    await page.getByTestId('home-catalog').click()
+    await expect(page.getByTestId('catalog-count')).toHaveText(`${total} exercices`)
+    await expect(page.getByTestId('catalog-lab-lab-05-ntfs')).toContainText('Avancé')
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('lab-picker')).toHaveCount(0)
+    await expect(home(page)).toBeVisible()
 
     // Le canvas, masqué, ne reçoit pas les raccourcis (C : outil Câble)
     await page.keyboard.press('c')
@@ -170,5 +187,49 @@ test('lab fourni ouvert depuis l’accueil ; « Afficher au démarrage » décoc
     await expect(second.page.getByTestId('home-at-startup')).not.toBeChecked()
   } finally {
     await second.close()
+  }
+})
+
+test('parcours terminé : l’accueil ne recommande plus d’étape et renvoie au catalogue', async () => {
+  const userData = mkdtempSync(join(tmpdir(), 'serverlab-e2e-'))
+  writeFileSync(join(userData, 'settings.json'), '{ "language": "fr", "showTutorialOnStartup": false }')
+  // Une réussite récente par étape, dans le mode exigé (examen pour la révision différée)
+  const finishedAt = new Date().toISOString()
+  const attempts = PATHWAY_PME.steps.map((step, i) => ({
+    id: `test-${i}`,
+    labId: step.labId,
+    mode: step.mode === 'exam' ? 'exam' : 'lab',
+    finishedAt,
+    passed: 1,
+    total: 1,
+    success: true,
+    hintsUsed: 0,
+    hintsAvailable: 0,
+    gaveUp: false,
+    competences: [...step.competences],
+    pathwayId: PATHWAY_PME.id,
+    stepId: step.id
+  }))
+  writeFileSync(join(userData, 'progress.json'), JSON.stringify({ formatVersion: 1, attempts }))
+  const { close, page, consoleErrors } = await launchApp({ userData })
+  try {
+    const next = page.getByTestId('home-next')
+    await expect(next).toHaveAttribute('data-state', 'done')
+    await expect(next).toContainText('Parcours terminé')
+    await expect(page.getByTestId('home-next-open')).toHaveCount(0)
+    await expect(page.getByTestId('home-progress')).toContainText('12 / 12 étapes')
+    await expect(page.getByTestId('home-pathway')).toContainText('Parcours terminé')
+    // Sélection : seulement des exercices réellement travaillés, aucun « pour débuter »
+    await expect(page.locator('[data-testid^="home-step-"]')).toHaveCount(0)
+    await expect(page.locator('[data-testid^="home-lab-"]')).toHaveCount(3)
+    await next.getByTestId('home-next-catalog').click()
+    await expect(page.getByTestId('catalog-search')).toBeFocused()
+    await page.getByTestId('catalog-status-done').click()
+    await expect(page.locator('[data-testid^="catalog-lab-"]')).toHaveCount(
+      new Set(PATHWAY_PME.steps.map((s) => s.labId)).size
+    )
+    expect(consoleErrors).toEqual([])
+  } finally {
+    await close()
   }
 })

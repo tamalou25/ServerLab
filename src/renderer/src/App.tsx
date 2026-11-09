@@ -31,7 +31,7 @@ import { useMenuBridge } from './hooks/useMenuBridge'
 import { useSimulationPlayback } from './hooks/useSimulationPlayback'
 import { newDocument, openDocument, openRecentDocument, saveDocument } from './lib/document'
 import { copySelection, deleteSelection, paste, redo, selectAll, undo } from './lib/editing'
-import { getFlowInstance } from './lib/flow'
+import { FIT_OPTIONS, getFlowInstance } from './lib/flow'
 import { t, useLangStore } from './lib/i18n'
 import { offerTutorial } from './lib/tutorial'
 import { useAttemptClock } from './lib/attempt'
@@ -122,7 +122,7 @@ function handleMenuCommand(msg: MenuCommandMessage): void {
       void flow?.zoomOut()
       break
     case 'view:fit':
-      void flow?.fitView({ padding: 0.3, maxZoom: 1.2 })
+      void flow?.fitView(FIT_OPTIONS)
       break
     case 'view:togglePortLabels':
       ui.togglePortLabels()
@@ -208,13 +208,16 @@ export function App() {
             <AppRail />
             <div className="relative flex min-w-0 flex-1 flex-col" data-workspace={workspace}>
               <div className="flex min-h-0 flex-1" {...inertWhen(workspace === 'teacher')}>
-                {workspace === 'mission' ? <MissionSidebar /> : <Palette />}
-                <main className="flex min-w-0 flex-1 flex-col">
-                  <CanvasBar />
-                  <div className="relative min-h-0 flex-1">
-                    <TopologyCanvas />
-                  </div>
-                </main>
+                {/* Contexte et plan : zone qu'occupe une fenêtre d'équipement ancrée (espace Mission) */}
+                <div className="flex min-w-0 flex-1" data-dock-area>
+                  {workspace === 'mission' ? <MissionSidebar /> : <Palette />}
+                  <main className="flex min-w-0 flex-1 flex-col">
+                    <CanvasBar />
+                    <div className="relative min-h-0 flex-1">
+                      <TopologyCanvas />
+                    </div>
+                  </main>
+                </div>
                 {workspace === 'mission' ? <MissionReader /> : showProperties && <RightPanel />}
               </div>
               {workspace !== 'teacher' && <SimulationPanel />}
@@ -226,7 +229,7 @@ export function App() {
         </div>
         <HomeScreen />
         <TutorialCoach />
-        {workspace !== 'teacher' && <DeviceWindows />}
+        {workspace !== 'teacher' && <DeviceWindows dockable={workspace === 'mission'} />}
         <LabPicker />
         <TroubleshootDialog />
         <LabEditor />

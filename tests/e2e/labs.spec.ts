@@ -13,6 +13,13 @@ test('Lab 1 : ouverture depuis le menu, Vérifier avec indices, configuration pu
     // Première vérification : rien n'est encore configuré, les indices s'affichent
     await page.getByTestId('lab-check').click()
     await expect(page.getByTestId('lab-score')).toHaveText('0 / 7 critère(s) validé(s)')
+    // Résultat d'abord ; l'aide d'un objectif non validé se déplie à la demande
+    await expect(page.getByTestId('lab-verification')).toHaveAttribute('data-state', 'partial')
+    await expect(page.getByTestId('lab-verification')).toContainText('7 à reprendre')
+    await expect(
+      page.locator('[data-testid^="lab-hint-"]:not([data-testid^="lab-hint-toggle-"])')
+    ).toHaveCount(0)
+    await page.getByTestId('lab-hint-toggle-pc1-ip').click()
     await expect(page.getByTestId('lab-hint-pc1-ip')).toContainText('APIPA')
 
     // Routeur : interfaces Gi0/0 et Gi0/1
@@ -39,6 +46,15 @@ test('Lab 1 : ouverture depuis le menu, Vérifier avec indices, configuration pu
     await page.getByTestId('mission-tab-mission').click()
     await page.getByTestId('lab-check').click()
     await expect(page.getByTestId('lab-score')).toHaveText('7 / 7 critère(s) validé(s)')
+    // Réussite : objectif atteint, compétences travaillées (jamais « démontrées » d'office), étape suivante
+    const success = page.getByTestId('lab-verification')
+    await expect(success).toHaveAttribute('data-state', 'success')
+    await expect(success.getByTestId('lab-success-outcome')).toContainText('PC1 et PC2 se répondent')
+    await expect(success.getByTestId('lab-success-competences')).toContainText('Adressage IPv4 et masques')
+    await expect(success.getByTestId('lab-success-help')).toHaveText('aucun indice supplémentaire')
+    await expect(success).toContainText('ne veut pas dire « démontrée »')
+    await expect(success).toContainText('Autoévaluation (ni notée, ni enregistrée)')
+    await expect(success.getByTestId('lab-next-step')).toContainText('2. Arrêter d’adresser')
     await expect(page.locator('[data-testid^="lab-hint-"]')).toHaveCount(0)
     expect(consoleErrors).toEqual([])
   } finally {

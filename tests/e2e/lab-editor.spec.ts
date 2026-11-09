@@ -74,6 +74,7 @@ test('Éditeur de labs : énoncé, critère testé sur le lab courant, export pu
     await expect(page.getByTestId('lab-title')).toHaveText('Serveur web de la compta')
     await expect(page.locator('.react-flow__node')).toHaveCount(3)
     await page.getByTestId('lab-check').click()
+    await page.getByTestId('lab-hint-toggle-c1').click()
     const hint = page.getByTestId('lab-hint-c1')
     await expect(hint).toContainText('Gestionnaire de serveur')
     await expect(hint).not.toContainText('Serveur Web (IIS)')

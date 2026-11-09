@@ -21,7 +21,7 @@ import { useUiStore } from '../../store/ui'
 import { runCommand } from '../../lib/run'
 import { sendSimplePdu } from '../../lib/network'
 import { pickCablePort } from '../../lib/cabling'
-import { ICON_CENTER, setFlowInstance } from '../../lib/flow'
+import { FIT_OPTIONS, ICON_CENTER, setFlowInstance } from '../../lib/flow'
 import { DND_DEVICE_MIME } from '../Palette'
 import { CableEdge, type CableFlowEdge } from './CableEdge'
 import { CablePreview } from './CablePreview'
@@ -49,6 +49,9 @@ const MINIMAP_COLORS: Record<DeviceKind, string> = {
   cloud: 'var(--sl-kind-cloud)',
   firewall: 'var(--sl-kind-firewall)'
 }
+
+/** La minimap (168 × 104 px, en bas à droite) n'est affichée que si le plan garde de la place autour. */
+const hasRoomForMinimap = (width: number, height: number): boolean => width >= 620 && height >= 400
 
 export function TopologyCanvas() {
   const flow = useReactFlow<DeviceFlowNode, CableFlowEdge>()
@@ -78,15 +81,55 @@ export function TopologyCanvas() {
     return () => setFlowInstance(null)
   }, [flow])
 
+  // Cadrage automatique tant que l'utilisateur n'a ni déplacé la vue, ni zoomé, ni déplacé, ajouté ou
+  // supprimé un équipement depuis le chargement : au-delà, son cadrage est le sien et n'est plus touché
+  const autoFit = useRef(false)
+  const loadedDeviceCount = useRef(0)
+  // Plan étroit (lecteur de mission élargi, petit écran) : la minimap recouvrirait des équipements
+  const [roomy, setRoomy] = useState(true)
+
   // Après chargement d'un document : restaure la vue enregistrée ou recadre
   useEffect(() => {
     if (revision === 0) return
+    autoFit.current = !viewport
+    loadedDeviceCount.current = Object.keys(useLabStore.getState().lab.devices).length
     const id = requestAnimationFrame(() => {
       if (viewport) void flow.setViewport(viewport)
-      else void flow.fitView({ padding: 0.3, maxZoom: 1.2 })
+      else void flow.fitView(FIT_OPTIONS)
     })
     return () => cancelAnimationFrame(id)
   }, [revision, viewport, flow])
+
+  // Équipement ajouté ou supprimé : le travail a commencé, le plan ne bouge plus tout seul
+  useEffect(() => {
+    if (Object.keys(devices).length !== loadedDeviceCount.current) autoFit.current = false
+  }, [devices])
+
+  // Panneau ouvert, replié ou redimensionné (lecteur de mission, inspecteur, fenêtre) : le plan est
+  // recadré pour que tous les équipements restent visibles, tant que le cadrage est automatique
+  useEffect(() => {
+    const wrapper = wrapperRef.current
+    if (!wrapper) return
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let width = wrapper.clientWidth
+    let height = wrapper.clientHeight
+    setRoomy(hasRoomForMinimap(width, height))
+    const observer = new ResizeObserver(() => {
+      if (wrapper.clientWidth === width && wrapper.clientHeight === height) return
+      width = wrapper.clientWidth
+      height = wrapper.clientHeight
+      setRoomy(hasRoomForMinimap(width, height))
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        if (autoFit.current && width > 0 && height > 0) void flow.fitView(FIT_OPTIONS)
+      }, 120)
+    })
+    observer.observe(wrapper)
+    return () => {
+      observer.disconnect()
+      clearTimeout(timer)
+    }
+  }, [flow])
 
   // Nœuds dérivés incrémentalement : un nœud inchangé (position, sélection, taille) garde le même
   // objet, que React Flow et `memo` reconnaissent : seul le nœud déplacé est redessiné.
@@ -334,7 +377,14 @@ export function TopologyCanvas() {
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onNodeDragStart={() => useLabStore.getState().beginTransaction()}
+        onNodeDragStart={() => {
+          autoFit.current = false
+          useLabStore.getState().beginTransaction()
+        }}
+        // Déplacement ou zoom à la main (évènement présent) : le cadrage automatique s'arrête
+        onMoveStart={(event) => {
+          if (event) autoFit.current = false
+        }}
         onNodeDragStop={(_event, _node, nodes) =>
           useLabStore.getState().commitTransaction(
             command(
@@ -367,7 +417,7 @@ export function TopologyCanvas() {
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1.2} color="var(--sl-canvas-grid)" />
-        {showMinimap && (
+        {showMinimap && roomy && (
           <MiniMap
             position="bottom-right"
             pannable

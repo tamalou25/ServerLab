@@ -6,6 +6,23 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+### Interface
+
+- Direction « atelier technique » documentée (`docs/design.md`) : une action principale par écran, listes
+  plutôt que cartes, détails dépliables, résultat / aide / suggestion distingués, rien d'inventé.
+- Accueil : action principale selon l'état réel (tutoriel proposé, prochaine étape conseillée, parcours
+  terminé), tutoriel intégré à la page, sélection d'exercices et accès au catalogue au lieu des 60 labs.
+- Catalogue : recherche (sans accents ni casse) et filtres par niveau, durée, parcours et réussite, décompte,
+  remise à zéro, état « aucun résultat » (`shared/catalog.ts`, testé).
+- Parcours : vue d'ensemble (frise, prochaine étape), étapes par jalon à détails dépliables, compétences en
+  colonne ; sélecteur élargi.
+- Mission : titre affiché une fois, place de l'exercice dans le parcours (et note quand l'énoncé nomme une
+  autre société), fenêtre d'équipement ancrable à côté de la consigne, plan recadré quand un panneau change
+  de taille tant que la vue n'a pas été réglée à la main.
+- Vérification : résumé du constat, aide repliée sous chaque objectif non validé (comptage des indices
+  inchangé), bloc de réussite (résultat attendu, compétences travaillées, étape conseillée, autoévaluation
+  non notée). Rien de plus en examen ni en épreuve.
+
 ## [2.15.0] — 2026-11-09
 
 Interface v3 : trois espaces (Atelier, Mission, Enseignant) à partir des maquettes `docs/ui-v3/maquettes/`.

@@ -31,3 +31,6 @@ export function getFlowInstance(): FlowApi | null {
 export const NODE_SIZE = 64
 /** Centre de la carte relativement au coin supérieur gauche du nœud. */
 export const ICON_CENTER = { x: NODE_SIZE / 2, y: NODE_SIZE / 2 }
+
+/** Cadrage « tout voir » : marge autour des équipements (leurs étiquettes débordent du nœud), zoom borné. */
+export const FIT_OPTIONS = { padding: 0.3, maxZoom: 1.2 } as const
