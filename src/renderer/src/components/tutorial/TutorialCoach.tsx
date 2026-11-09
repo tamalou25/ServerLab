@@ -49,7 +49,9 @@ const STEP_TITLES: Record<TutorialStepId, string> = {
 
 export function TutorialCoach() {
   const phase = useTutorialStore((s) => s.phase)
-  if (phase === 'off') return null
+  const home = useUiStore((s) => s.home)
+  // Accueil affiché : la proposition du tutoriel y est intégrée (HomeScreen), sans carte par-dessus
+  if (phase === 'off' || (phase === 'welcome' && home)) return null
   // En haut à droite : colonne laissée libre par les fenêtres d'équipement (ouvertes à gauche)
   return (
     <aside

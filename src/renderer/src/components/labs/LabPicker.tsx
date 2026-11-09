@@ -1,20 +1,18 @@
 /**
- * Sélecteur de labs (Fichier > Ouvrir un lab…) : labs fournis (titre, difficulté, durée, résumé)
- * et bibliothèque communautaire.
+ * Sélecteur de labs (Fichier > Ouvrir un lab…) : parcours, catalogue des exercices fournis (recherche et
+ * filtres) et bibliothèque communautaire ; import, éditeur et dépannage en pied.
  */
 import { useEffect, useState } from 'react'
 import { useDialog } from '../../hooks/useDialog'
 import { FlaskConical, GraduationCap, Upload, Wrench, X } from 'lucide-react'
 import { PathwayList } from './PathwayList'
-import { LABS } from '../../lib/labCatalog'
 import { importAndOpenLab, openLabEditor } from '../../lib/labEditor'
-import { openLab } from '../../lib/labs'
 import { openTroubleshootDialog } from '../../lib/troubleshoot'
 import { useLabsStore } from '../../store/labs'
 import { Button } from '../common/ui'
-import { DifficultyBadge } from './DifficultyBadge'
+import { LabCatalog } from './LabCatalog'
 import { LibraryList } from './LibraryList'
-import { rich, t } from '../../lib/i18n'
+import { t } from '../../lib/i18n'
 
 export function LabPicker() {
   const open = useLabsStore((s) => s.pickerOpen)
@@ -37,7 +35,7 @@ export function LabPicker() {
       aria-labelledby={titleId}
     >
       <div
-        className="flex max-h-[85vh] w-[720px] flex-col rounded-md border border-line bg-overlay shadow-lg"
+        className="flex h-[min(780px,calc(100vh-48px))] w-[min(1040px,calc(100vw-48px))] flex-col rounded-panel border border-line bg-overlay shadow-lg"
         data-testid="lab-picker"
       >
         <div className="flex items-center gap-2 border-b border-line px-5 py-3">
@@ -77,45 +75,8 @@ export function LabPicker() {
             </button>
           ))}
         </div>
-        {tab === 'library' ? (
-          <LibraryList />
-        ) : tab === 'pathway' ? (
-          <PathwayList />
-        ) : (
-          <>
-            <p className="px-5 pt-3 text-ui text-fg-muted">
-              {rich(t('lab.pickerHelp'), { check: <strong className="text-fg">{t('lab.verifier')}</strong> })}
-            </p>
-            <ul className="min-h-0 flex-1 overflow-y-auto p-5">
-              {LABS.map((lab, i) => (
-                <li
-                  key={lab.id}
-                  className="mb-3 flex items-start gap-3 rounded-md border border-line bg-surface p-3"
-                >
-                  <span className="mt-0.5 font-mono text-dense text-fg-subtle">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-ui font-semibold text-fg">{lab.title}</span>
-                      <DifficultyBadge difficulty={lab.difficulty} />
-                      <span className="text-meta text-fg-subtle">{lab.duration}</span>
-                    </div>
-                    <p className="mt-1 text-dense text-fg-muted">{lab.summary}</p>
-                  </div>
-                  <Button
-                    variant="primary"
-                    onClick={() => void openLab(lab)}
-                    data-testid={`lab-open-${lab.id}`}
-                  >
-                    Ouvrir
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-        <div className="flex items-center gap-2 border-t border-line px-5 py-3">
+        {tab === 'library' ? <LibraryList /> : tab === 'pathway' ? <PathwayList /> : <LabCatalog />}
+        <div className="flex flex-wrap items-center gap-2 border-t border-line px-5 py-3">
           <Button onClick={() => void importAndOpenLab()} data-testid="lab-import">
             <Upload size={14} /> Importer un lab…
           </Button>

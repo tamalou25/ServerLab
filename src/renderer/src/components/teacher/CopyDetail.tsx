@@ -8,6 +8,7 @@ import { useT } from '../../lib/i18n'
 import { exportCorrection, updateCopy } from '../../lib/grading'
 import { startDemo } from '../../lib/demo'
 import { useGradingStore, type GradedCopy } from '../../store/grading'
+import { Badge } from '../common/Badge'
 import { Field, inputClass, Button } from '../common/ui'
 import { CopyStatusBadges } from './CopyStatusBadges'
 import { JournalTimeline } from './JournalTimeline'
@@ -93,14 +94,12 @@ export function CopyDetail({ copy }: { copy: GradedCopy }) {
                 <tr key={k.id} className="border-t border-line" data-state={k.ok ? 'ok' : 'ko'}>
                   <td className="py-2 pr-2 text-body text-fg">{k.label}</td>
                   <td className="py-2 pr-2">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-meta font-semibold ${
-                        k.ok ? 'bg-ok-soft text-ok-text' : 'bg-danger-soft text-danger-text'
-                      }`}
+                    <Badge
+                      tone={k.ok ? 'ok' : 'danger'}
+                      icon={k.ok ? <CircleCheck size={11} aria-hidden /> : <CircleX size={11} aria-hidden />}
                     >
-                      {k.ok ? <CircleCheck size={11} aria-hidden /> : <CircleX size={11} aria-hidden />}
                       {k.ok ? t('lab.valide') : t('lab.nonValide')}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="py-2 text-right font-mono text-fg-muted tabular-nums">
                     {fmt(k.points)} / {fmt(k.max)}

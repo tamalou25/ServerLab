@@ -1,6 +1,6 @@
 /**
- * Comportement commun des boîtes de dialogue modales (audit U-02) : focus placé dans la boîte à
- * l'ouverture et rendu à l'élément d'origine à la fermeture, Tab et Maj+Tab confinés à la boîte,
+ * Comportement commun des boîtes de dialogue modales (audit U-02) : focus placé dans la boîte (ou sur son
+ * champ principal marqué `data-autofocus`) à l'ouverture et rendu à l'élément d'origine à la fermeture, Tab et Maj+Tab confinés à la boîte,
  * Échap pour fermer, titre relié par `aria-labelledby`.
  */
 import { useEffect, useId, useRef } from 'react'
@@ -19,7 +19,8 @@ export function useDialog(active: boolean, onClose?: () => void) {
     const node = ref.current
     if (!active || !node) return
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    node.focus()
+    // Champ principal de la boîte (`data-autofocus`, ex. recherche du catalogue), sinon la boîte elle-même
+    ;(node.querySelector<HTMLElement>('[data-autofocus]') ?? node).focus()
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && close.current) {
         e.preventDefault()

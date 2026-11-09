@@ -34,8 +34,9 @@ test('Lab 29 : durcissement L2 Cisco, critères validés au fil de la configurat
     await page.getByTestId('mission-tab-mission').click()
     await page.getByTestId('lab-check').click()
     await expect(page.getByTestId('lab-score')).toHaveText('5 / 9 critère(s) validé(s)')
+    await page.getByTestId('lab-hint-toggle-dai').click()
     await expect(page.getByTestId('lab-hint-dai')).toBeVisible()
-    await expect(page.getByTestId('lab-hint-snooping')).toHaveCount(0)
+    await expect(page.getByTestId('lab-hint-toggle-snooping')).toHaveCount(0)
     expect(consoleErrors).toEqual([])
   } finally {
     await close()

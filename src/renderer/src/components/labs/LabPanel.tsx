@@ -11,6 +11,8 @@ import { useExamStore } from '../../store/exam'
 import { useLabsStore } from '../../store/labs'
 import { Button } from '../common/ui'
 import { ObjectiveList } from '../mission/ObjectiveList'
+import { PathwayContext } from '../mission/PathwayContext'
+import { VerificationSummary } from '../mission/VerificationSummary'
 import { DifficultyBadge } from './DifficultyBadge'
 import { ExamBanner } from './Exam'
 import { Markdown } from './Markdown'
@@ -57,19 +59,16 @@ export function LabPanel() {
         </h2>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <PathwayContext lab={lab} />
         <Markdown text={lab.statement} />
         <h3
           ref={objectives}
-          className="mt-5 mb-2 flex items-baseline gap-2 scroll-mt-2 text-meta font-semibold tracking-wider text-fg-subtle uppercase"
+          className="mt-6 mb-2 flex scroll-mt-3 items-baseline gap-2 border-t border-line pt-4 text-meta font-semibold tracking-wider text-fg-subtle uppercase"
         >
           {t('lab.objectives')}
-          {progress && (
-            <span className="font-normal normal-case tracking-normal">
-              {t('lab.progress', { passed: progress.passed, total: progress.total })}
-            </span>
-          )}
         </h3>
         {exam && <p className="mb-2 text-dense text-fg-muted">{t('lab.examObjectivesHint')}</p>}
+        {progress && <VerificationSummary lab={lab} progress={progress} />}
         <ObjectiveList lab={lab} progress={progress} showHints={!exam} />
       </div>
       <div className="shrink-0 border-t border-line bg-panel px-5 py-3">

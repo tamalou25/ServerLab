@@ -28,6 +28,9 @@ test('Mode examen : chronomètre, sans indice, sortie signalée, note détaillé
     await configureHostIp(page, 'PC1', '192.168.10.10', '255.255.255.0', '192.168.10.254')
     await page.getByTestId('mission-tab-mission').click()
     await expect(page.getByTestId('lab-hint-pc1-ip')).toHaveCount(0)
+    // Ni aide dépliable, ni résumé de vérification : rien dans le DOM avant la fin de l'examen
+    await expect(page.locator('[data-testid^="lab-hint-"]')).toHaveCount(0)
+    await expect(page.getByTestId('lab-verification')).toHaveCount(0)
 
     // Sortie de l'application (perte du focus) puis retour
     await page.evaluate(() => {

@@ -15,6 +15,7 @@ test('Lab IOS : ouverture depuis le menu, configuration à la console, vérifica
     // Rien n'est configuré : tous les critères échouent, les indices s'affichent
     await page.getByTestId('lab-check').click()
     await expect(page.getByTestId('lab-score')).toHaveText('0 / 5 critère(s) validé(s)')
+    await page.getByTestId('lab-hint-toggle-secret').click()
     await expect(page.getByTestId('lab-hint-secret')).toBeVisible()
 
     // Configuration saisie à la console du routeur, comme à la main

@@ -23,6 +23,8 @@ export interface DeviceWindowState {
   w: number
   h: number
   maximized: boolean
+  /** Ancrée à gauche du lecteur de mission (espace Mission) : la consigne reste lisible à côté. */
+  docked: boolean
   z: number
   tab: DeviceTab
 }
@@ -149,6 +151,8 @@ export interface UiState {
   moveWindow: (deviceId: string, x: number, y: number) => void
   resizeWindow: (deviceId: string, w: number, h: number) => void
   toggleMaximizeWindow: (deviceId: string) => void
+  /** Ancre ou détache la fenêtre ; le choix est mémorisé pour les prochaines fenêtres. */
+  toggleDockWindow: (deviceId: string) => void
   setWindowTab: (deviceId: string, tab: DeviceTab) => void
   notify: (kind: Toast['kind'], message: string) => void
   dismissToast: (id: number) => void
@@ -242,7 +246,19 @@ export const useUiStore = create<UiState>()((set, get) => ({
       const x = Math.max(0, Math.min(80 + offset, window.innerWidth - size.w - 20))
       const y = Math.max(0, Math.min(30 + offset, window.innerHeight - size.h - 20))
       return {
-        windows: [...s.windows, { deviceId, x, y, ...size, maximized: false, z, tab: tab ?? 'config' }]
+        windows: [
+          ...s.windows,
+          {
+            deviceId,
+            x,
+            y,
+            ...size,
+            maximized: false,
+            docked: readPref('mission.dock', false),
+            z,
+            tab: tab ?? 'config'
+          }
+        ]
       }
     }),
   closeWindow: (deviceId) => set((s) => ({ windows: s.windows.filter((w) => w.deviceId !== deviceId) })),
@@ -259,8 +275,18 @@ export const useUiStore = create<UiState>()((set, get) => ({
     set((s) => ({ windows: s.windows.map((win) => (win.deviceId === deviceId ? { ...win, w, h } : win)) })),
   toggleMaximizeWindow: (deviceId) =>
     set((s) => ({
-      windows: s.windows.map((w) => (w.deviceId === deviceId ? { ...w, maximized: !w.maximized } : w))
+      windows: s.windows.map((w) =>
+        w.deviceId === deviceId ? { ...w, maximized: !w.maximized, docked: false } : w
+      )
     })),
+  toggleDockWindow: (deviceId) =>
+    set((s) => {
+      const docked = !s.windows.find((w) => w.deviceId === deviceId)?.docked
+      writePref('mission.dock', docked)
+      return {
+        windows: s.windows.map((w) => (w.deviceId === deviceId ? { ...w, docked, maximized: false } : w))
+      }
+    }),
   setWindowTab: (deviceId, tab) =>
     set((s) => ({ windows: s.windows.map((w) => (w.deviceId === deviceId ? { ...w, tab } : w)) })),
 

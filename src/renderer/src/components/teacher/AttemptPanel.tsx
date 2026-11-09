@@ -124,7 +124,7 @@ function Running() {
           </Button>
           {lastHint && (
             <p
-              className="rounded-control border border-warn/30 bg-warn-soft/50 px-2.5 py-2 text-body text-fg"
+              className="rounded-control border-l-2 border-warn bg-warn-soft/50 px-3 py-2 text-body text-fg"
               data-testid="attempt-hint-text"
             >
               {lastHint}

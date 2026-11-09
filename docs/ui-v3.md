@@ -62,6 +62,19 @@ Les règles d'affichage de la v2 sont conservées : pendant une épreuve, seuls 
 le lecteur ne montre jamais les critères ; un dépannage généré remplace l'énoncé, un lab de dépannage fourni
 garde son énoncé à côté de l'onglet Dépannage.
 
+## Accueil, catalogue et parcours
+
+Détail des états et des règles dans [design.md](design.md).
+
+- **Accueil** : une action principale selon l'état réel (tutoriel proposé, prochaine étape conseillée,
+  parcours terminé), accès (parcours et sa frise, tutoriel, fichier, topologie libre), récents, sélection
+  d'exercices (débutants, suite du parcours, travaillés récemment) et accès au catalogue complet.
+- **Sélecteur** (1 040 px au plus, borné à la fenêtre) : onglets Parcours, Catalogue, Bibliothèque ; import,
+  éditeur et dépannage en pied.
+- **Catalogue** : recherche et filtres (niveau, durée, parcours, réussite), décompte, remise à zéro, état vide.
+- **Parcours** : progression et prochaine étape en tête, étapes par jalon à détails dépliables, compétences
+  en colonne.
+
 ## Espace Atelier
 
 - **Palette** : en-tête « Équipements » et nombre de types, recherche avec état vide, liste des familles
@@ -93,15 +106,24 @@ garde son énoncé à côté de l'onglet Dépannage.
 
 ## Espace Mission
 
-- **Barre latérale** : titre, difficulté, résumé, **démarche suggérée** (observer, diagnostiquer, corriger,
-  vérifier) présentée comme un repère de méthode sans aucune étape cochée (rien dans l'état ne permettrait
-  de la valider), durée indicative, régime (entraînement, examen, épreuve, dépannage), accès direct aux
-  consoles des équipements. Masquée sous 1 200 px CSS.
-- **Lecteur** : énoncé en texte courant 14 px (titres, listes, citations, **tableaux** : `shared/markdown.ts`,
-  parseur pur testé, aucun HTML interprété), objectifs numérotés avec symbole et texte d'état d'après le
-  dernier clic sur Vérifier (« À vérifier », « Validé », « Non validé » : `data-state`), indices progressifs
-  en carte sous l'objectif non validé (« Indice suivant (2 / 3) »), pied fixe (progression avec barre
-  accessible, Vérifier, Examen, Recommencer).
+Direction et règles : [design.md](design.md).
+
+- **Barre latérale** : régime (entraînement, examen, épreuve, dépannage), **démarche suggérée** (observer,
+  diagnostiquer, corriger, vérifier) présentée comme un repère de méthode sans aucune étape cochée (rien dans
+  l'état ne permettrait de la valider), accès direct aux consoles des équipements. Le titre, la difficulté et
+  la durée ne sont affichés qu'une fois, dans le lecteur. Masquée sous 1 200 px CSS.
+- **Lecteur** : place de l'exercice dans le parcours (étape, récit, note si l'énoncé nomme une autre société),
+  énoncé en texte courant 14 px (titres, listes, citations, **tableaux** : `shared/markdown.ts`, parseur pur
+  testé, aucun HTML interprété), objectifs numérotés avec symbole et texte d'état d'après le dernier clic sur
+  Vérifier (« À vérifier », « Validé », « Non validé » : `data-state`), résumé de la vérification
+  (`lab-verification`), aide repliée sous l'objectif non validé (« Afficher l'aide », puis « Indice suivant
+  (2 / 3) », seuls les indices suivants sont comptés), bloc de réussite (résultat attendu, compétences
+  travaillées, étape conseillée), pied fixe (progression avec barre accessible, Vérifier, Examen, Recommencer).
+- **Fenêtre ancrée** : bouton « Ancrer à côté de la consigne » de la barre de titre d'une fenêtre d'équipement
+  (espace Mission seulement) : la fenêtre occupe la zone du contexte et du plan (`data-dock-area`) et suit la
+  largeur du lecteur ; « Détacher la fenêtre » la rend flottante. Préférence du poste (`mission.dock`).
+- **Cadrage** : le plan est recadré à l'ouverture d'un lab et à chaque changement de taille d'un panneau, tant
+  que l'utilisateur n'a pas déplacé la vue, zoomé ou déplacé un équipement.
 - **Examen** : bandeau du chronomètre (rôle `timer`), objectifs sans résultat intermédiaire ni indice,
   « Terminer l'examen » ; résultat en carte (note, critères, durée, fin, sorties) avec export.
 - **Épreuve** (mode enseignant) : chronomètre et « Terminer et rendre » en tête, énoncé, rappel que les
@@ -129,18 +151,18 @@ garde son énoncé à côté de l'onglet Dépannage.
 
 ## Écarts volontaires par rapport aux maquettes
 
-| Maquette                                                  | Décision                                                                                           |
-| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Avatar « GF », entrée « Réglages » du rail                | Supprimés : aucun compte ni écran de réglages réel (thème, langue au menu natif).                  |
-| Onglet « Journal » du lecteur de mission                  | Non repris : aucun journal d'observations ; le journal d'évènements est dans l'inspecteur.         |
-| Onglet « Indices » séparé                                 | Indices progressifs sous l'objectif concerné (mécanisme réel, ids de test conservés).              |
-| Étapes « Observer / Diagnostiquer… » cochées              | « Démarche suggérée » sans état.                                                                   |
-| « 4 / 4 élèves », « Rejeu terminé » sur toutes les copies | « N copies importées » ; badges dérivés des drapeaux réels de la correction.                       |
-| Chronologie rédigée (« Prise en charge », …)              | Chronologie du journal réel.                                                                       |
-| Liens orthogonaux, nœuds de 126 px avec sous-titre        | Câbles droits et nœuds de 64 px conservés (performance, centre d'icône) ; sous-titre en étiquette. |
-| Console ancrée sous le plan                               | Fenêtres flottantes conservées (plusieurs consoles, Bureau) ; raccourcis dans la barre latérale.   |
-| Inspecteur sans Audit ni Dépannage                        | Conservés comme onglets (fonctions existantes).                                                    |
-| Pied du plan « Votre infrastructure est opérationnelle »  | Compteurs réels dans la barre du plan ; aucun verdict global inventé.                              |
+| Maquette                                                  | Décision                                                                                             |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Avatar « GF », entrée « Réglages » du rail                | Supprimés : aucun compte ni écran de réglages réel (thème, langue au menu natif).                    |
+| Onglet « Journal » du lecteur de mission                  | Non repris : aucun journal d'observations ; le journal d'évènements est dans l'inspecteur.           |
+| Onglet « Indices » séparé                                 | Indices progressifs sous l'objectif concerné (mécanisme réel, ids de test conservés).                |
+| Étapes « Observer / Diagnostiquer… » cochées              | « Démarche suggérée » sans état.                                                                     |
+| « 4 / 4 élèves », « Rejeu terminé » sur toutes les copies | « N copies importées » ; badges dérivés des drapeaux réels de la correction.                         |
+| Chronologie rédigée (« Prise en charge », …)              | Chronologie du journal réel.                                                                         |
+| Liens orthogonaux, nœuds de 126 px avec sous-titre        | Câbles droits et nœuds de 64 px conservés (performance, centre d'icône) ; sous-titre en étiquette.   |
+| Console ancrée sous le plan                               | Fenêtres flottantes conservées (plusieurs consoles, Bureau) ; ancrage optionnel à gauche du lecteur. |
+| Inspecteur sans Audit ni Dépannage                        | Conservés comme onglets (fonctions existantes).                                                      |
+| Pied du plan « Votre infrastructure est opérationnelle »  | Compteurs réels dans la barre du plan ; aucun verdict global inventé.                                |
 
 ## Repli des panneaux (petits écrans, zoom 125 %)
 
@@ -164,8 +186,9 @@ régénération locale (`--update-snapshots`) ne correspond pas au runner.
    (fenêtre d'équipement) : la zone « 192.168.10.0/24 · VLAN 1 » apparaît ; sélectionner un poste met sa
    branche en évidence et la légende l'explique ; onglets Résumé / Interfaces / Journal de l'inspecteur,
    poignée de largeur (flèches au clavier, double-clic pour revenir à 348 px).
-2. **Mission** : Labs › lab 1, lire l'énoncé, Vérifier, ouvrir les indices, Examen (indices absents,
-   chronomètre), Terminer ; la bascule Atelier ↔ Mission conserve la sélection et les fenêtres.
+2. **Mission** : Labs › Catalogue › lab 1, lire l'énoncé, Vérifier, « Afficher l'aide » sous un objectif, ouvrir
+   une console et l'ancrer à côté de la consigne, Examen (aide absente, chronomètre), Terminer ; la bascule
+   Atelier ↔ Mission conserve la sélection et les fenêtres.
 3. **Enseignant** : Affichage › Mode enseignant, rail › Enseignant, Sujet depuis la bibliothèque, puis
    Correction › Ouvrir le sujet… et Importer des rendus… ; indicateurs, badges, détail, chronologie, Rejouer
    (retour automatique à l'espace Enseignant à la fermeture), CSV.

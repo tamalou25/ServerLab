@@ -36,6 +36,11 @@ test('Parcours PME : étape recommandée, ouverture, réussite enregistrée, pro
     await expect(pathway.getByTestId('pathway-step-etape-01')).toHaveAttribute('data-state', 'recommande')
     await expect(pathway.getByTestId('pathway-step-etape-02')).toHaveAttribute('data-state', 'disponible')
     // Les étapes d'incident et la mission sont ouvrables librement (variantes par graine)
+    // Détails repliés par défaut, sauf l'étape conseillée ; les variantes sont dans les détails
+    await expect(pathway.getByTestId('pathway-toggle-etape-01')).toHaveAttribute('aria-expanded', 'true')
+    await expect(pathway.getByTestId('pathway-toggle-etape-10')).toHaveAttribute('aria-expanded', 'false')
+    await expect(pathway.getByTestId('pathway-variant-etape-10-11')).toHaveCount(0)
+    await pathway.getByTestId('pathway-toggle-etape-10').click()
     await expect(pathway.getByTestId('pathway-variant-etape-10-11')).toBeVisible()
     await expect(
       pathway.getByTestId('pathway-competences').locator('[data-state="non-travaillee"]')
@@ -83,6 +88,14 @@ test('Parcours PME : étape recommandée, ouverture, réussite enregistrée, pro
     const { app, page } = second
     await clickMenu(app, ['Fichier', 'Accueil'])
     await expect(page.getByTestId('home-pathway')).toContainText('2. Arrêter d’adresser')
+    // Progression réelle retrouvée : étape suivante conseillée (pas une « reprise »), exercice travaillé
+    const next = page.getByTestId('home-next')
+    await expect(next).toHaveAttribute('data-state', 'progress')
+    await expect(next).toContainText('Prochaine étape conseillée')
+    await expect(next).toContainText('2. Arrêter d’adresser')
+    await expect(page.getByTestId('home-progress')).toContainText('1 / 12 étapes')
+    await expect(page.getByTestId('home-step-etape-02')).toContainText('Conseillée')
+    await expect(page.getByTestId('home-lab-lab-01-adressage')).toContainText('Réussi')
     await page.getByTestId('home-pathway').click()
     const picker = page.getByTestId('lab-picker')
     await expect(picker.getByTestId('pathway-step-etape-01')).toHaveAttribute('data-state', 'termine')

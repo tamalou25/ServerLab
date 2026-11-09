@@ -106,7 +106,8 @@ npm run dist         # installeur local via electron-builder → dist/
   Jamais de `text-xs` / `text-sm` / `text-xl` dans le chrome. Rayons : `rounded-control` (6 px),
   `rounded-panel` (8 px), `rounded-card` (10 px). Espaces : `ui.workspace` (Atelier, Mission, Enseignant),
   helpers dans `lib/workspace.ts` ; un lab, un examen, un dépannage ou une épreuve s'ouvre par
-  `ui.openMission()`. Voir `docs/ui-v3.md`.
+  `ui.openMission()`. Voir `docs/ui-v3.md` et la direction graphique `docs/design.md` (une action
+  principale par écran, listes avant cartes, résultat / aide / suggestion distingués, rien d'inventé).
 - Raccourcis clavier : catalogue unique `src/shared/shortcuts.ts` (accélérateurs du menu natif et
   aide « Raccourcis clavier ») ; tout nouveau raccourci y est déclaré.
 - Commits : Conventional Commits (`feat(engine): …`, `fix(renderer): …`, `test: …`, `ci: …`, `docs: …`).
