@@ -6,11 +6,6 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
-## [2.15.0] — 2026-11-09
-
-Interface v3 : trois espaces (Atelier, Mission, Enseignant) à partir des maquettes `docs/ui-v3/maquettes/`.
-Moteur, format `.slab`, barèmes et règles d'examen inchangés.
-
 ### Interface
 
 - Direction « atelier technique » documentée (`docs/design.md`) : une action principale par écran, listes
