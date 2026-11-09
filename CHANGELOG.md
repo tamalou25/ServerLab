@@ -6,6 +6,11 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
 
 ## [Non publié]
 
+## [2.15.0] — 2026-11-09
+
+Interface v3 : trois espaces (Atelier, Mission, Enseignant) à partir des maquettes `docs/ui-v3/maquettes/`.
+Moteur, format `.slab`, barèmes et règles d'examen inchangés.
+
 ### Interface
 
 - Interface v3 en trois espaces (`docs/ui-v3.md`) : rail Atelier / Mission / Labs / Enseignant / Aide, en-tête
@@ -17,7 +22,7 @@ La planification des versions suivantes est dans [ROADMAP.md](ROADMAP.md).
   redimensionnement (largeurs mémorisées sur le poste).
 - Atelier : palette en liste de familles, câbles à trois mises en évidence légendées (sélection, branche de
   l'équipement, chemin de l'échange choisi), zones réseau descriptives en lecture seule (un réseau IPv4 par zone,
-  routeurs en frontière, VLAN seulement s'il est unique), inspecteur Résumé / Interfaces / Événements / Audit /
+  routeurs en frontière, VLAN seulement s'il est unique), inspecteur Résumé / Interfaces / Journal / Audit /
   Dépannage redimensionnable.
 - Mission : lecteur redimensionnable et élargissable (énoncé 14 px avec tableaux Markdown, objectifs à état réel,
   indices progressifs, pied fixe), barre latérale (contexte, démarche suggérée sans état, consoles), règles
