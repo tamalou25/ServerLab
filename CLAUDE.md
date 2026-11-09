@@ -34,6 +34,13 @@ src/engine/    moteur de simulation pur (15 dossiers) :
                serialization/ (fichiers .slab, migrations) · services/ (système de base)
                shell/ (PowerShell, cmd) · sim/ (traces de paquets) · topology/ (équipements et liens)
                tutorial/ (didacticiel guidé)
+src/renderer/src/components/shell/    coquille v3 : AppHeader (document, mode, fichier), AppRail (espaces
+               Atelier / Mission / Labs / Enseignant / Aide), CanvasBar (compteurs, outils, zoom)
+src/renderer/src/components/mission/  espace Mission : MissionSidebar (contexte, consoles), MissionReader
+               (lecteur redimensionnable : énoncé, dépannage, résumé)
+src/renderer/src/components/teacher/  espace Enseignant (TeacherWorkspace, sujet, correction, démonstration)
+src/renderer/src/components/common/   primitives : Button, Tabs, Segmented, Badge, EmptyState, SplitHandle,
+               Tooltip, Modal… (tokens uniquement)
 src/renderer/src/components/desktop/  Bureau simulé : DesktopShell (verrouillage, fenêtres, barre des
                tâches, menu Démarrer), apps.ts (registre des applications, vues des rôles incluses),
                roleViews.ts (apparence des vues de rôles), apps/ (Gestionnaire de serveur, assistants,
@@ -58,7 +65,7 @@ npm run test:coverage # Vitest avec couverture
 npm run perf:measure # mesures de performance du moteur
 npm run fixture:slab # écrit le fichier .slab de référence de la version de schéma
 npm run build        # build electron-vite → out/
-npm run test:e2e     # build + Playwright (sous Linux sans écran : xvfb-run -a npm run test:e2e)
+npm run test:e2e     # build + Playwright (sous Linux sans écran : xvfb-run -a -s "-screen 0 1920x1080x24" npm run test:e2e)
 npm run dist         # installeur local via electron-builder → dist/
 ```
 
@@ -93,7 +100,13 @@ npm run dist         # installeur local via electron-builder → dist/
   Thèmes sombre et clair ; Affichage > Thème : Système (par défaut, suit l'OS), Sombre, Clair
   (`shared/theme.ts`). Le Bureau simulé reste en `data-theme="light"`
   et garde sa propre palette « système » (couleurs fixes dans `components/desktop`, `components/apps`, `mmc`).
-  Polices : Inter (UI, 13 px) et JetBrains Mono (IP, MAC, consoles), embarquées.
+  Polices : Inter et JetBrains Mono (IP, MAC, consoles), embarquées. Échelle (classes Tailwind) :
+  `text-meta` 11, `text-dense` 12, `text-ui` 13 (chrome), `text-body` 14 (texte courant : énoncés,
+  correction, aide ; 13 en densité Compact), `text-title` 15, `text-heading` 18, `text-display` 23.
+  Jamais de `text-xs` / `text-sm` / `text-xl` dans le chrome. Rayons : `rounded-control` (6 px),
+  `rounded-panel` (8 px), `rounded-card` (10 px). Espaces : `ui.workspace` (Atelier, Mission, Enseignant),
+  helpers dans `lib/workspace.ts` ; un lab, un examen, un dépannage ou une épreuve s'ouvre par
+  `ui.openMission()`. Voir `docs/ui-v3.md`.
 - Raccourcis clavier : catalogue unique `src/shared/shortcuts.ts` (accélérateurs du menu natif et
   aide « Raccourcis clavier ») ; tout nouveau raccourci y est déclaré.
 - Commits : Conventional Commits (`feat(engine): …`, `fix(renderer): …`, `test: …`, `ci: …`, `docs: …`).

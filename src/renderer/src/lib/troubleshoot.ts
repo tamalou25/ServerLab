@@ -121,7 +121,7 @@ export async function launchTroubleshoot(o: TroubleshootOptions): Promise<string
   resetDocumentUi()
   useLabStore.getState().load(r.state, { path: null, name: `${lab.id}.slab` })
   useLabsStore.getState().setActive(lab)
-  useUiStore.getState().setRightTab('troubleshoot')
+  useUiStore.getState().openMission('troubleshoot')
   beginTroubleshootSession(lab.id, o.seed, { exam: o.exam, generated: true })
   if (o.exam)
     useExamStore.getState().set({

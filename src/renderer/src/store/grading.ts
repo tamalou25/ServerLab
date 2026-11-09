@@ -16,9 +16,16 @@ export interface GradedCopy {
   correction: Correction
 }
 
+/** Fichier importé mais refusé (invalide, trop gros, autre format) : listé comme « rendu invalide ». */
+export interface RejectedFile {
+  file: string
+  message: string
+}
+
 interface GradingStore {
   subject: Subject | null
   copies: GradedCopy[]
+  rejected: RejectedFile[]
   selected: string | null
   set: (patch: Partial<Omit<GradingStore, 'set'>>) => void
 }
@@ -26,6 +33,7 @@ interface GradingStore {
 export const useGradingStore = create<GradingStore>()((set) => ({
   subject: null,
   copies: [],
+  rejected: [],
   selected: null,
   set: (patch) => set(patch)
 }))

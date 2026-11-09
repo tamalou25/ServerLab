@@ -19,7 +19,7 @@ test('Lab 31 : scénarios joués depuis le panneau Simulation, critères validé
     }
     await expect(page.getByTestId('scenario-timeline').locator('li')).toHaveCount(1)
 
-    await page.getByTestId('right-tab-lab').click()
+    await page.getByTestId('mission-tab-mission').click()
     await page.getByTestId('lab-check').click()
     await expect(page.getByTestId('lab-score')).toHaveText('3 / 3 critère(s) validé(s)')
     expect(consoleErrors).toEqual([])

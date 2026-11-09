@@ -4,6 +4,12 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'ghostDanger'
+type Size = 'sm' | 'md'
+
+const SIZES: Record<Size, string> = {
+  sm: 'h-7 px-2.5 text-dense',
+  md: 'h-8 px-3 text-dense'
+}
 
 const VARIANTS: Record<Variant, string> = {
   primary: 'bg-accent text-on-accent hover:bg-accent-hover disabled:opacity-50',
@@ -16,14 +22,23 @@ const VARIANTS: Record<Variant, string> = {
 
 export function Button({
   variant = 'secondary',
+  size = 'md',
+  iconOnly = false,
   className = '',
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: Variant
+  size?: Size
+  /** Bouton à icône seule (carré) : `aria-label` obligatoire. */
+  iconOnly?: boolean
+}) {
   return (
     <button
       type="button"
       {...props}
-      className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-control font-medium transition-colors disabled:cursor-not-allowed ${
+        iconOnly ? (size === 'sm' ? 'h-7 w-7' : 'h-8 w-8') : SIZES[size]
+      } ${VARIANTS[variant]} ${className}`}
     />
   )
 }
@@ -50,7 +65,7 @@ export function Section({
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="flex flex-col gap-1 text-xs text-fg-muted">
+    <label className="flex flex-col gap-1 text-dense text-fg-muted">
       <span className="font-medium">{label}</span>
       {children}
     </label>
@@ -58,7 +73,7 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 }
 
 export const inputClass =
-  'h-8 w-full rounded-md border border-line-strong bg-surface px-2 text-ui text-fg outline-none placeholder:text-fg-subtle focus:border-accent focus:ring-2 focus:ring-accent/25 disabled:bg-surface-2 disabled:text-fg-subtle'
+  'h-8 w-full rounded-control border border-line-strong bg-surface px-2 text-ui text-fg outline-none placeholder:text-fg-subtle focus:border-accent focus:ring-2 focus:ring-accent/25 disabled:bg-surface-2 disabled:text-fg-subtle'
 
 /** Pastille colorée d'état. */
 export function StatusDot({ status }: { status: 'up' | 'degraded' | 'down' | 'none' }) {

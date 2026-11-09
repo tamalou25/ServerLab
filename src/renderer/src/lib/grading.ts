@@ -11,7 +11,7 @@ import {
   type Subject,
   type Submission
 } from '@engine/index'
-import { useGradingStore, type GradedCopy } from '../store/grading'
+import { useGradingStore, type GradedCopy, type RejectedFile } from '../store/grading'
 import { useTeacherStore } from '../store/teacher'
 import { useUiStore } from '../store/ui'
 import { t } from './i18n'
@@ -55,11 +55,13 @@ export async function importSubmissions(): Promise<void> {
     return
   }
   const errors: string[] = []
+  const rejected: RejectedFile[] = []
   const added: GradedCopy[] = []
   for (const file of res.value) {
     const parsed = parseSubmission(file.content)
     if (!parsed.ok) {
       errors.push(`${file.name} : ${parsed.message}`)
+      rejected.push({ file: file.name, message: parsed.message })
       continue
     }
     const oralPoints = subject.oral.map(() => null)
@@ -75,7 +77,13 @@ export async function importSubmissions(): Promise<void> {
   const next = [...kept, ...added].sort((a, b) =>
     a.submission.student.name.localeCompare(b.submission.student.name)
   )
-  useGradingStore.getState().set({ copies: next, selected: added[0]?.file ?? null })
+  // Fichiers refusés conservés dans la liste (« rendu invalide »), en plus de la modale
+  const previous = useGradingStore
+    .getState()
+    .rejected.filter((r) => !rejected.some((x) => x.file === r.file) && !added.some((a) => a.file === r.file))
+  useGradingStore
+    .getState()
+    .set({ copies: next, rejected: [...previous, ...rejected], selected: added[0]?.file ?? null })
   if (errors.length > 0) showError(t('grading.someFailed'), errors.join('\n'))
 }
 

@@ -48,7 +48,7 @@ export function ConfigTab({ device }: { device: Device }) {
 
   return (
     <div className="flex h-full">
-      <nav className="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-line bg-panel p-2 text-xs">
+      <nav className="flex w-44 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-line bg-panel p-2 text-dense">
         <div className="px-2 pt-1 pb-0.5 text-meta font-semibold tracking-wider text-fg-subtle uppercase">
           Global
         </div>
@@ -87,7 +87,7 @@ export function ConfigTab({ device }: { device: Device }) {
                   {device.interfaces.map((port) => (
                     <label
                       key={port.id}
-                      className="flex items-center gap-1 rounded-md border border-line px-2 py-1 text-xs"
+                      className="flex items-center gap-1 rounded-md border border-line px-2 py-1 text-dense"
                     >
                       <input
                         type="checkbox"

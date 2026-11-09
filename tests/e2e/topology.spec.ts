@@ -19,7 +19,7 @@ test('construire une topologie, l’enregistrer puis la rouvrir', async () => {
     await expect(page).toHaveTitle(/Sans titre \* — ServerLab/)
 
     // Annuler / rétablir le dernier câble
-    await page.locator('.react-flow__pane').click({ position: { x: 700, y: 100 } })
+    await page.locator('.react-flow__pane').click({ position: { x: 600, y: 100 } })
     await page.keyboard.press('Control+z')
     await expect(page.locator('.react-flow__edge')).toHaveCount(1)
     await page.keyboard.press('Control+y')

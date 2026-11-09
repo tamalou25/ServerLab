@@ -42,14 +42,15 @@ jobs:
         run: npm run build
 
       - name: Tests E2E (Playwright + Electron)
-        run: xvfb-run -a npx playwright test
+        # Écran virtuel de 1 920 × 1 080 : la fenêtre (1 440 × 900) n'est pas tronquée par l'écran par défaut de 1 280 px
+        run: xvfb-run -a -s "-screen 0 1920x1080x24" npx playwright test
 
       # Configuration electron-builder vérifiée avant toute release, puis démarrage de l'application
       # empaquetée (dépendances de production présentes, asar lisible)
       - name: Empaquetage (dossier Linux) et test de l'application empaquetée
         run: |
           npx electron-builder --linux dir --publish never
-          SERVERLAB_E2E_EXECUTABLE=dist/linux-unpacked/serverlab xvfb-run -a npx playwright test smoke.spec.ts
+          SERVERLAB_E2E_EXECUTABLE=dist/linux-unpacked/serverlab xvfb-run -a -s "-screen 0 1920x1080x24" npx playwright test smoke.spec.ts
 
       - name: Rapport Playwright
         if: failure()

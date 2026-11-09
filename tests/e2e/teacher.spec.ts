@@ -20,7 +20,7 @@ test('Mode enseignant désactivé par défaut : aucun onglet visible', async () 
   const { close, page, consoleErrors } = await launchApp()
   try {
     await expect(page.getByTestId('right-tab-properties')).toBeVisible()
-    await expect(page.getByTestId('right-tab-teacher')).toHaveCount(0)
+    await expect(page.getByTestId('rail-teacher')).toHaveCount(0)
     expect(consoleErrors).toEqual([])
   } finally {
     await close()
@@ -32,7 +32,7 @@ test('Mode enseignant : sujet créé depuis un lab, contrôle de la solution, ex
   const { app, close, page, consoleErrors } = await launchApp()
   try {
     await clickMenu(app, ['Affichage', 'Mode enseignant'])
-    await page.getByTestId('right-tab-teacher').click()
+    await page.getByTestId('rail-teacher').click()
     const panel = page.getByTestId('teacher-panel')
     await panel.getByTestId('teacher-lab-select').selectOption('lab-02-dhcp')
     await panel.getByTestId('teacher-from-library').click()
@@ -59,7 +59,7 @@ test('Mode enseignant : sujet créé depuis un lab, contrôle de la solution, ex
 
     // Désactivé : l'onglet disparaît
     await clickMenu(app, ['Affichage', 'Mode enseignant'])
-    await expect(page.getByTestId('right-tab-teacher')).toHaveCount(0)
+    await expect(page.getByTestId('rail-teacher')).toHaveCount(0)
     expect(consoleErrors).toEqual([])
   } finally {
     await close()
@@ -77,7 +77,7 @@ test('Passation : lab 1 résolu dans l’interface, indice, rendu ; la correctio
   const { app, close, page, consoleErrors } = await launchApp()
   try {
     await clickMenu(app, ['Affichage', 'Mode enseignant'])
-    await page.getByTestId('right-tab-teacher').click()
+    await page.getByTestId('rail-teacher').click()
     await app.evaluate(
       ({ dialog }, paths) => {
         dialog.showOpenDialog = (async () => ({
@@ -96,9 +96,14 @@ test('Passation : lab 1 résolu dans l’interface, indice, rendu ; la correctio
     await panel.getByTestId('attempt-name').fill('Alice')
     await panel.getByTestId('attempt-start').click()
     await expect(panel.getByTestId('attempt-timer')).toBeVisible()
-    // Solution inaccessible : ni onglet Lab ni onglet Enseignant pendant l'épreuve
-    await expect(page.getByTestId('right-tab-lab')).toHaveCount(0)
-    await expect(page.getByTestId('right-tab-teacher')).toHaveCount(0)
+    // Solution inaccessible : ni énoncé avec objectifs ni espace Enseignant pendant l'épreuve
+    await expect(page.getByTestId('lab-panel')).toHaveCount(0)
+    await expect(page.getByTestId('rail-teacher')).toBeDisabled()
+    await page.getByTestId('rail-atelier').click()
+    await expect(page.getByTestId('right-tab-properties')).toBeVisible()
+    await expect(page.getByTestId('right-tab-audit')).toHaveCount(0)
+    await expect(page.getByTestId('right-tab-troubleshoot')).toHaveCount(0)
+    await page.getByTestId('rail-mission').click()
 
     // Indice : pénalité confirmée avant
     await panel.getByTestId('attempt-hint').click()
@@ -120,7 +125,7 @@ test('Passation : lab 1 résolu dans l’interface, indice, rendu ; la correctio
     await configureHostIp(page, 'PC1', '192.168.10.10', '255.255.255.0', '192.168.10.254')
     await configureHostIp(page, 'PC2', '192.168.20.10', '255.255.255.0', '192.168.20.254')
 
-    await page.getByTestId('right-tab-attempt').click()
+    await page.getByTestId('mission-tab-mission').click()
     await panel.getByTestId('attempt-end').click()
     await page.getByTestId('modal-confirm').click()
     await expect(panel.getByTestId('attempt-done')).toContainText(`${rendu}.slabrendu`)
@@ -183,7 +188,7 @@ test('Correction : rendus importés, signalement, oral noté, CSV de la classe',
   const { app, close, page, consoleErrors } = await launchApp()
   try {
     await clickMenu(app, ['Affichage', 'Mode enseignant'])
-    await page.getByTestId('right-tab-teacher').click()
+    await page.getByTestId('rail-teacher').click()
     const panel = page.getByTestId('teacher-panel')
     await panel.getByTestId('teacher-view-grading').click()
     await app.evaluate(({ dialog }, path) => {

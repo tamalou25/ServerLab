@@ -2,6 +2,7 @@
  * Bilan de classe : export CSV (séparateur `;`, UTF-8 avec BOM pour Excel) et statistiques.
  */
 import type { Correction } from './correction'
+import type { Submission } from './submission'
 
 /** Marque d'ordre des octets : Excel lit alors le fichier en UTF-8. */
 export const CSV_BOM = '﻿'
@@ -85,4 +86,68 @@ export function classStats(corrections: readonly Correction[]): ClassStats {
     mostFailed: worst,
     flagged: corrections.filter((c) => c.flags.length > 0).length
   }
+}
+
+/**
+ * États d'une copie dérivés de la correction (jamais inventés) : signalée (drapeaux), rejeu
+ * interrompu (drapeau `replay-failed`), oral à renseigner (une question sans points), et le nombre de
+ * critères validés sur le total. « Tous validés » décrit le résultat de cette épreuve, pas une maîtrise
+ * générale de la compétence.
+ */
+export interface CopyStatus {
+  flagged: boolean
+  replayFailed: boolean
+  oralPending: boolean
+  passed: number
+  total: number
+  /** 'complete' : tous les critères validés ; 'none' : aucun ; 'partial' : entre les deux. */
+  criteria: 'complete' | 'partial' | 'none'
+}
+
+export function copyStatus(correction: Correction): CopyStatus {
+  const passed = correction.criteria.filter((c) => c.ok).length
+  const total = correction.criteria.length
+  return {
+    flagged: correction.flags.length > 0,
+    replayFailed: correction.flags.some((f) => f.code === 'replay-failed'),
+    oralPending: correction.oral.some((q) => q.points === null),
+    passed,
+    total,
+    criteria: total > 0 && passed === total ? 'complete' : passed === 0 ? 'none' : 'partial'
+  }
+}
+
+/** Entrée de la chronologie d'une copie (journal réel de l'élève, temps relatif au départ). */
+export interface CopyTimelineEntry {
+  /** Millisecondes depuis le début de l'épreuve (borné à 0). */
+  offsetMs: number
+  kind: 'command' | 'undo' | 'redo' | 'transaction' | 'hint' | 'answer'
+  label: string
+}
+
+/**
+ * Chronologie d'un rendu : commandes (libellé enregistré ou type), annulations, rétablissements,
+ * transactions (glisser), indices pris et réponses à l'oral, triés par horodatage. Aucune
+ * interprétation : chaque entrée est un pas réellement journalisé.
+ */
+export function journalTimeline(submission: Submission): CopyTimelineEntry[] {
+  const at = (ts: number) => Math.max(0, ts - submission.startedAt)
+  const entries: CopyTimelineEntry[] = []
+  for (const step of submission.journal) {
+    if (step.kind === 'command')
+      entries.push({ offsetMs: at(step.at), kind: 'command', label: step.command.label ?? step.command.type })
+    else if (step.kind === 'transaction')
+      entries.push({ offsetMs: at(step.at), kind: 'transaction', label: step.label })
+    else
+      entries.push({
+        offsetMs: at(step.at),
+        kind: step.kind,
+        label: step.kind === 'undo' ? 'Annuler' : 'Rétablir'
+      })
+  }
+  for (const hint of submission.hints)
+    entries.push({ offsetMs: at(hint.at), kind: 'hint', label: `Indice ${hint.index + 1}` })
+  for (const answer of submission.answers)
+    entries.push({ offsetMs: at(answer.at), kind: 'answer', label: 'Réponse à l’oral' })
+  return entries.sort((a, b) => a.offsetMs - b.offsetMs)
 }

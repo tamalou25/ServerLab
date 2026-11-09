@@ -18,6 +18,20 @@
   --text-dense: 12px;
   --text-ui: 13px;
   --text-title: 15px;
+  /* Texte courant (énoncés, tickets, correction, aide) : 14 px en Confort, 13 px en Compact */
+  --text-body: var(--sl-text-body);
+  --text-body--line-height: 1.55;
+  /* Titres de lecteur et de page, affichage (titre d'énoncé, note) */
+  --text-heading: 18px;
+  --text-heading--line-height: 1.3;
+  --text-display: 23px;
+  --text-display--line-height: 1.25;
+  --text-display--letter-spacing: -0.02em;
+
+  /* Rayons des contrôles, panneaux et cartes (noms propres : rounded-md de Tailwind reste inchangé) */
+  --radius-control: 6px;
+  --radius-panel: 8px;
+  --radius-card: 10px;
 
   /* Fonds, du plus profond au plus élevé */
   --color-canvas: var(--sl-canvas);
@@ -81,6 +95,14 @@
   --color-proto-radius: var(--sl-proto-radius);
   --color-proto-dtp: var(--sl-proto-dtp);
 
+  /* Rail des espaces (sombre dans les deux thèmes) et zones réseau du plan */
+  --color-rail: var(--sl-rail);
+  --color-rail-hover: var(--sl-rail-hover);
+  --color-on-rail: var(--sl-on-rail);
+  --color-on-rail-active: var(--sl-on-rail-active);
+  --color-zone: var(--sl-zone);
+  --color-zone-line: var(--sl-zone-line);
+
   /* Catégories d'équipements */
   --color-kind-server: var(--sl-kind-server);
   --color-kind-client: var(--sl-kind-client);
@@ -96,6 +118,16 @@
   --shadow-lg: var(--sl-shadow-lg);
   --shadow-xl: var(--sl-shadow-lg);
   --shadow-2xl: var(--sl-shadow-lg);
+}
+
+/* Réglages communs aux deux thèmes : texte courant (densité) et durées des transitions */
+:root {
+  --sl-text-body: 14px;
+  --sl-motion-fast: 120ms;
+  --sl-motion-base: 180ms;
+}
+html[data-density='compact'] {
+  --sl-text-body: 13px;
 }
 
 /* Thème sombre (par défaut) */
@@ -158,6 +190,12 @@
   --sl-kind-router: #f0a443;
   --sl-kind-cloud: #9aa6b8;
   --sl-kind-firewall: #ec6b6b;
+  --sl-rail: #0c121c;
+  --sl-rail-hover: #1a2334;
+  --sl-on-rail: #a4b4cb;
+  --sl-on-rail-active: #ffffff;
+  --sl-zone: rgb(59 130 246 / 0.06);
+  --sl-zone-line: #5b6d88;
   --sl-shadow-xs: 0 1px 1px rgb(0 0 0 / 0.25);
   --sl-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
   --sl-shadow-md: 0 4px 12px rgb(0 0 0 / 0.28);
@@ -221,6 +259,12 @@
   --sl-kind-router: #d57d1f;
   --sl-kind-cloud: #6b7a90;
   --sl-kind-firewall: #cf4a4a;
+  --sl-rail: #172438;
+  --sl-rail-hover: #243249;
+  --sl-on-rail: #a4b4cb;
+  --sl-on-rail-active: #ffffff;
+  --sl-zone: rgb(37 99 235 / 0.05);
+  --sl-zone-line: #6b7a90;
   --sl-shadow-xs: 0 1px 1px rgb(16 24 40 / 0.04);
   --sl-shadow-sm: 0 1px 2px rgb(16 24 40 / 0.06);
   --sl-shadow-md: 0 4px 12px rgb(16 24 40 / 0.08);
@@ -262,6 +306,19 @@
   :focus-visible {
     outline: 2px solid var(--sl-focus);
     outline-offset: 1px;
+  }
+
+  /* Préférence de réduction des animations : transitions et animations du chrome désactivées
+     (les enveloppes de la simulation lisent la même préférence en JavaScript) */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 

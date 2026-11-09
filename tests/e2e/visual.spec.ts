@@ -50,42 +50,41 @@ for (const theme of THEMES) {
         await expect(page.getByTestId('properties-panel')).toBeVisible()
         // Laisse finir l'animation d'ajustement de la vue
         await page.waitForTimeout(500)
-        await expect(page).toHaveScreenshot(`canvas-${theme.id}.png`, { mask: masks(page) })
-        await expect(page.getByTestId('palette')).toHaveScreenshot(`palette-${theme.id}.png`)
-        await expect(page.getByRole('complementary', { name: 'Panneau latéral' })).toHaveScreenshot(
-          `inspecteur-${theme.id}.png`
-        )
+        // Comparaisons « souples » : une référence qui diffère n'empêche pas de vérifier les suivantes
+        await expect.soft(page).toHaveScreenshot(`canvas-${theme.id}.png`, { mask: masks(page) })
+        await expect.soft(page.getByTestId('palette')).toHaveScreenshot(`palette-${theme.id}.png`)
+        await expect
+          .soft(page.getByRole('complementary', { name: 'Panneau latéral' }))
+          .toHaveScreenshot(`inspecteur-${theme.id}.png`)
 
         await page.getByTestId('mode-simulation').click()
-        await expect(page.getByTestId('simulation-panel')).toHaveScreenshot(`simulation-${theme.id}.png`)
+        await expect.soft(page.getByTestId('simulation-panel')).toHaveScreenshot(`simulation-${theme.id}.png`)
         await page.getByTestId('mode-realtime').click()
 
         await page.getByTestId('device-SRV1').dblclick()
         const win = page.getByTestId('device-window-SRV1')
         await expect(win).toBeVisible()
-        await expect(win).toHaveScreenshot(`fenetre-equipement-${theme.id}.png`, { mask: masks(page) })
+        await expect.soft(win).toHaveScreenshot(`fenetre-equipement-${theme.id}.png`, { mask: masks(page) })
 
         await openConsole(page, 'SRV1', 'powershell')
-        await expect(win).toHaveScreenshot(`console-${theme.id}.png`, { mask: masks(page) })
+        await expect.soft(win).toHaveScreenshot(`console-${theme.id}.png`, { mask: masks(page) })
       } finally {
         await close()
       }
     })
 
-    test('onglet Enseignant : création de sujet', async () => {
+    test('espace Enseignant : création de sujet', async () => {
       const { app, page, close } = await launchApp()
       try {
         await fixWindow(app, page)
         await clickMenu(app, ['Affichage', 'Thème', theme.menu])
         await clickMenu(app, ['Affichage', 'Mode enseignant'])
-        await page.getByTestId('right-tab-teacher').click()
+        await page.getByTestId('rail-teacher').click()
         const panel = page.getByTestId('teacher-panel')
         await panel.getByTestId('teacher-lab-select').selectOption('lab-02-dhcp')
         await panel.getByTestId('teacher-from-library').click()
         await panel.getByTestId('teacher-add-question').click()
-        await expect(page.getByRole('complementary', { name: 'Panneau latéral' })).toHaveScreenshot(
-          `enseignant-${theme.id}.png`
-        )
+        await expect(page.getByTestId('teacher-workspace')).toHaveScreenshot(`enseignant-${theme.id}.png`)
       } finally {
         await close()
       }

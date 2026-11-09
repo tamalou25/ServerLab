@@ -116,6 +116,28 @@ export function buildMenu(ctx: MenuContext): Menu {
         { label: t('menu.view.fit'), accelerator: accelerator('fit'), click: cmd('view:fit') },
         { type: 'separator' },
         {
+          label: t('menu.view.workspace'),
+          submenu: [
+            {
+              label: t('menu.view.workspace.atelier'),
+              accelerator: accelerator('workspaceAtelier'),
+              click: cmd('view:workspace', 'atelier')
+            },
+            {
+              label: t('menu.view.workspace.mission'),
+              accelerator: accelerator('workspaceMission'),
+              click: cmd('view:workspace', 'mission')
+            },
+            {
+              label: t('menu.view.workspace.teacher'),
+              accelerator: accelerator('workspaceTeacher'),
+              enabled: ctx.teacherMode,
+              click: cmd('view:workspace', 'teacher')
+            }
+          ]
+        },
+        { type: 'separator' },
+        {
           label: t('menu.view.portLabels'),
           type: 'checkbox',
           checked: state.showPortLabels,

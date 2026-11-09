@@ -120,7 +120,7 @@ export function LabEditor() {
               />
             </Field>
             <div className="flex min-h-0 flex-1 flex-col gap-1">
-              <div className="flex items-center gap-2 text-xs font-medium text-fg-muted">
+              <div className="flex items-center gap-2 text-dense font-medium text-fg-muted">
                 <span>{t('lab.enonceMarkdown')}</span>
                 <button
                   type="button"

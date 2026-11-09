@@ -30,6 +30,7 @@ export type MenuCommand =
   | 'view:language'
   /** Mode enseignant activé ou désactivé (argument 'on' ou 'off'). */
   | 'view:teacherMode'
+  | 'view:workspace'
   | 'sim:realtime'
   | 'sim:simulation'
   | 'sim:step'

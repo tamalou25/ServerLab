@@ -28,7 +28,7 @@ test('Lab 1 : ouverture depuis le menu, Vérifier avec indices, configuration pu
       await r1.getByTestId('if-apply').click()
     }
     await r1.getByTestId('close-device-window').click()
-    await page.getByTestId('right-tab-lab').click()
+    await page.getByTestId('mission-tab-mission').click()
     await page.getByTestId('lab-check').click()
     await expect(page.getByTestId('lab-score')).toHaveText('2 / 7 critère(s) validé(s)')
     await expect(page.getByTestId('lab-criterion-r1-a')).toHaveAttribute('data-state', 'ok')
@@ -36,7 +36,7 @@ test('Lab 1 : ouverture depuis le menu, Vérifier avec indices, configuration pu
     // Postes : adresse, masque et passerelle
     await configureHostIp(page, 'PC1', '192.168.10.10', '255.255.255.0', '192.168.10.254')
     await configureHostIp(page, 'PC2', '192.168.20.10', '255.255.255.0', '192.168.20.254')
-    await page.getByTestId('right-tab-lab').click()
+    await page.getByTestId('mission-tab-mission').click()
     await page.getByTestId('lab-check').click()
     await expect(page.getByTestId('lab-score')).toHaveText('7 / 7 critère(s) validé(s)')
     await expect(page.locator('[data-testid^="lab-hint-"]')).toHaveCount(0)

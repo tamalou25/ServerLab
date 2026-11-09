@@ -39,7 +39,7 @@ export function EventLogView({ device }: { device: HostDevice }) {
   return (
     <Section title={t('win.events', { count: entries.length })}>
       <div className="max-h-64 overflow-y-auto rounded border border-line">
-        <table className="w-full text-xs">
+        <table className="w-full text-dense">
           <thead className="sticky top-0 bg-surface-2 text-left text-fg-muted">
             <tr>
               <th className="px-2 py-1 font-medium">{t('win.niveau')}</th>
@@ -90,7 +90,7 @@ export function EventLogView({ device }: { device: HostDevice }) {
         </table>
       </div>
       {current && (
-        <p className="selectable mt-2 rounded bg-surface-2 p-2 text-xs text-fg">{current.message}</p>
+        <p className="selectable mt-2 rounded bg-surface-2 p-2 text-dense text-fg">{current.message}</p>
       )}
     </Section>
   )

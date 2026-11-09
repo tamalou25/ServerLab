@@ -2,18 +2,22 @@
  * Câble entre deux ports, avec un voyant d'état à chaque extrémité. Chaque voyant double sa couleur
  * d'une forme (rond : actif, triangle : adressage incomplet, carré barré : inactif) ; l'infobulle du
  * câble donne en texte les deux extrémités, le débit et l'état de chaque port.
+ * Trois mises en évidence distinctes, jamais seules (légende du plan) : câble sélectionné (accent,
+ * épais), chemin de l'échange choisi dans le panneau Simulation (info, tirets) et branche de
+ * l'équipement sélectionné (accent fin). Les enveloppes animées (échange produit) sont à part.
  */
 import { memo } from 'react'
 import { BaseEdge, EdgeLabelRenderer, useInternalNode, type Edge, type EdgeProps } from '@xyflow/react'
 import { canvasStatus, type LedStatus } from '@engine/index'
 import { useLabStore } from '../../store/lab'
+import { useSimStore } from '../../store/sim'
 import { useUiStore } from '../../store/ui'
 import { linkSpeedMbps } from '../../lib/cabling'
 import { ICON_CENTER } from '../../lib/flow'
 import { countRender } from '../../lib/perf'
 import { useT } from '../../lib/i18n'
 
-export type CableEdgeData = { linkId: string; offset: number }
+export type CableEdgeData = { linkId: string; offset: number; branch?: boolean }
 export type CableFlowEdge = Edge<CableEdgeData, 'cable'>
 
 // Distance du voyant au centre du nœud (carte de 64 px : 16 px au-delà du bord)
@@ -36,6 +40,8 @@ function CableEdgeComponent({ id, source, target, data, selected }: EdgeProps<Ca
   const view = useLabStore((s) => (data ? canvasStatus(s.lab).links[data.linkId] : undefined))
   // Noms de ports aux extrémités : option d'affichage, ou automatiquement pendant le câblage
   const showPortLabels = useUiStore((s) => s.showPortLabels || s.tool === 'cable')
+  // Chemin de l'échange choisi (ensemble calculé une fois par sélection dans le store)
+  const onPath = useSimStore((s) => (data ? s.highlighted.has(data.linkId) : false))
   // Noms des équipements pour l'infobulle (chaînes stables : aucun rendu pendant un glisser)
   const nameA = useLabStore((s) => (link ? s.lab.devices[link.a.deviceId]?.name : undefined))
   const nameB = useLabStore((s) => (link ? s.lab.devices[link.b.deviceId]?.name : undefined))
@@ -77,12 +83,30 @@ function CableEdgeComponent({ id, source, target, data, selected }: EdgeProps<Ca
         id={id}
         path={path}
         interactionWidth={16}
-        className={selected ? '!stroke-accent !stroke-[2.5px]' : '!stroke-fg-subtle !stroke-2'}
-        // Liaison virtuelle (Hyper-V) : tracé en pointillés
-        {...(link.virtual ? { style: { strokeDasharray: '6 4' } } : {})}
+        className={
+          selected
+            ? '!stroke-accent !stroke-[2.5px]'
+            : onPath
+              ? '!stroke-info !stroke-[3px]'
+              : data?.branch
+                ? '!stroke-accent !stroke-2'
+                : '!stroke-fg-subtle !stroke-2'
+        }
+        // Liaison virtuelle (Hyper-V) : tracé en pointillés ; chemin d'échange : tirets courts
+        {...(link.virtual
+          ? { style: { strokeDasharray: '6 4' } }
+          : onPath && !selected
+            ? { style: { strokeDasharray: '8 5' } }
+            : {})}
       />
       {/* Infobulle au survol du câble (même zone que la sélection) */}
-      <path d={path} className="fill-none stroke-transparent" strokeWidth={16} data-testid="cable-hit">
+      <path
+        d={path}
+        className="fill-none stroke-transparent"
+        strokeWidth={16}
+        data-testid="cable-hit"
+        data-state={selected ? 'selected' : onPath ? 'path' : data?.branch ? 'branch' : 'plain'}
+      >
         <title>{tooltip}</title>
       </path>
       {visible && (
