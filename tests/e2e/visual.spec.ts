@@ -64,6 +64,9 @@ for (const theme of THEMES) {
         await page.getByTestId('device-SRV1').dblclick()
         const win = page.getByTestId('device-window-SRV1')
         await expect(win).toBeVisible()
+        // Le pointeur reste où était l'équipement : selon le cadrage du plan, il survole un bouton de la
+        // fenêtre qui vient de s'ouvrir. Il est écarté pour que la capture ne dépende pas de sa position.
+        await page.mouse.move(0, 0)
         await expect.soft(win).toHaveScreenshot(`fenetre-equipement-${theme.id}.png`, { mask: masks(page) })
 
         await openConsole(page, 'SRV1', 'powershell')
