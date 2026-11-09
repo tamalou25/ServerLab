@@ -47,6 +47,12 @@ for (const [th, sel] of [
     chk(f, ['panel', 'surface', 'surface-2', 'canvas'], 4.5)
   chk('on-accent', ['accent', 'accent-hover'], 4.5)
   chk('on-danger', ['danger'], 4.5)
+  chk('fg-subtle', ['surface-3'], 4.5)
+  chk(
+    'on-kind',
+    ['server', 'client', 'switch', 'router', 'cloud', 'firewall'].map((k) => `kind-${k}`),
+    4.5
+  )
   for (const f of ['ok', 'warn', 'danger', 'idle', 'focus']) chk(f, ['panel', 'canvas'], 3)
 }
 console.log('| Thème | Token | Fond : ratio | Min | |\n|---|---|---|---|---|\n' + rows.join('\n'))
