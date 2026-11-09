@@ -13,6 +13,7 @@ import { PropertiesPanel } from './properties/PropertiesPanel'
 import { useResizablePane } from '../hooks/useResizablePane'
 import { useWindowSize, NARROW_WIDTH } from '../hooks/useWindowSize'
 import { useT } from '../lib/i18n'
+import { useAttemptStore } from '../store/attempt'
 import { useTroubleshootStore } from '../store/troubleshoot'
 import { useUiStore, type RightTab } from '../store/ui'
 
@@ -23,6 +24,8 @@ export function RightPanel() {
   const setTab = useUiStore((s) => s.setRightTab)
   const tshoot = useTroubleshootStore((s) => s.session)
   const tshootSummary = useTroubleshootStore((s) => s.summary)
+  // Épreuve en cours : l'Audit et le Dépannage révéleraient la solution sans indice compté
+  const inAttempt = useAttemptStore((s) => s.attempt !== null)
   const { t } = useT()
   const { width: windowWidth } = useWindowSize()
   const pane = useResizablePane({
@@ -35,8 +38,12 @@ export function RightPanel() {
     { id: 'properties', label: t('panel.properties'), testId: 'right-tab-properties' },
     { id: 'interfaces', label: t('panel.interfaces'), testId: 'right-tab-interfaces' },
     { id: 'events', label: t('panel.events'), testId: 'right-tab-events' },
-    { id: 'audit', label: t('panel.audit'), testId: 'right-tab-audit' },
-    { id: 'troubleshoot', label: t('panel.troubleshoot'), testId: 'right-tab-troubleshoot' }
+    ...(inAttempt
+      ? []
+      : [
+          { id: 'audit' as const, label: t('panel.audit'), testId: 'right-tab-audit' },
+          { id: 'troubleshoot' as const, label: t('panel.troubleshoot'), testId: 'right-tab-troubleshoot' }
+        ])
   ]
   const tab = TABS.some((item) => item.id === selected) ? selected : 'properties'
   return (

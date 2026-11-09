@@ -43,7 +43,7 @@ import { AppHeader } from './components/shell/AppHeader'
 import { AppRail } from './components/shell/AppRail'
 import { CanvasBar } from './components/shell/CanvasBar'
 import { setTeacherMode } from './lib/teacher'
-import { requestWorkspace, useWorkspace } from './lib/workspace'
+import { currentWorkspace, requestWorkspace, useWorkspace } from './lib/workspace'
 import { useSimStore } from './store/sim'
 import { useUiStore } from './store/ui'
 
@@ -70,7 +70,7 @@ const CANVAS_COMMANDS = new Set<MenuCommandMessage['command']>([
 function handleMenuCommand(msg: MenuCommandMessage): void {
   const ui = useUiStore.getState()
   const flow = getFlowInstance()
-  if (ui.workspace === 'teacher' && CANVAS_COMMANDS.has(msg.command)) return
+  if (currentWorkspace() === 'teacher' && CANVAS_COMMANDS.has(msg.command)) return
   switch (msg.command) {
     case 'file:home':
       ui.setHome(true)

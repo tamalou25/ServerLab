@@ -11,6 +11,7 @@ import {
   selectAll,
   undo
 } from '../lib/editing'
+import { currentWorkspace } from '../lib/workspace'
 import { useUiStore, type Tool } from '../store/ui'
 
 /** Raccourcis des outils du canvas (affichés dans les infobulles de la barre d'outils). */
@@ -28,8 +29,8 @@ export function useKeyboardShortcuts(): void {
       // Dialogue modal ouvert : aucun raccourci n'agit sur le lab derrière lui (Suppr, Ctrl+Z…)
       if (document.querySelector('[aria-modal="true"]')) return
       // Écran d'accueil affiché ou espace Enseignant ouvert : le canvas, recouvert, ne reçoit aucun raccourci
-      const ui = useUiStore.getState()
-      if (ui.home || ui.workspace === 'teacher') return
+      // (espace effectif : l'Atelier reste utilisable si l'espace Enseignant demandé n'est pas disponible)
+      if (useUiStore.getState().home || currentWorkspace() === 'teacher') return
       const ctrl = e.ctrlKey || e.metaKey
       const key = e.key.toLowerCase()
       const plain = !ctrl && !e.altKey && !e.shiftKey

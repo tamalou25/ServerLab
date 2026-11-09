@@ -78,7 +78,9 @@ export async function importSubmissions(): Promise<void> {
     a.submission.student.name.localeCompare(b.submission.student.name)
   )
   // Fichiers refusés conservés dans la liste (« rendu invalide »), en plus de la modale
-  const previous = useGradingStore.getState().rejected.filter((r) => !rejected.some((x) => x.file === r.file))
+  const previous = useGradingStore
+    .getState()
+    .rejected.filter((r) => !rejected.some((x) => x.file === r.file) && !added.some((a) => a.file === r.file))
   useGradingStore
     .getState()
     .set({ copies: next, rejected: [...previous, ...rejected], selected: added[0]?.file ?? null })

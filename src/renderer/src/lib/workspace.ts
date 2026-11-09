@@ -70,6 +70,14 @@ export function useWorkspace(): {
   return { workspace: effectiveWorkspace(requested, available), requested, available }
 }
 
+/** Espace effectivement affiché (hors composant : raccourcis, commandes de menu). */
+export function currentWorkspace(): Workspace {
+  return effectiveWorkspace(useUiStore.getState().workspace, {
+    mission: missionAvailable(),
+    teacher: teacherAvailable()
+  })
+}
+
 /** Demande d'un espace (rail, menu, raccourci) : refusée sans effet si l'espace n'est pas disponible. */
 export function requestWorkspace(workspace: Workspace): boolean {
   const available = { mission: missionAvailable(), teacher: teacherAvailable() }

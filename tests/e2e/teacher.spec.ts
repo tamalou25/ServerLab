@@ -99,6 +99,11 @@ test('Passation : lab 1 résolu dans l’interface, indice, rendu ; la correctio
     // Solution inaccessible : ni énoncé avec objectifs ni espace Enseignant pendant l'épreuve
     await expect(page.getByTestId('lab-panel')).toHaveCount(0)
     await expect(page.getByTestId('rail-teacher')).toBeDisabled()
+    await page.getByTestId('rail-atelier').click()
+    await expect(page.getByTestId('right-tab-properties')).toBeVisible()
+    await expect(page.getByTestId('right-tab-audit')).toHaveCount(0)
+    await expect(page.getByTestId('right-tab-troubleshoot')).toHaveCount(0)
+    await page.getByTestId('rail-mission').click()
 
     // Indice : pénalité confirmée avant
     await panel.getByTestId('attempt-hint').click()
