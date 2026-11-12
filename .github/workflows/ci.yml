@@ -35,8 +35,9 @@ jobs:
       - name: Vérification des types
         run: npm run typecheck
 
-      - name: Tests du moteur (Vitest)
-        run: npm test
+      # Couverture du moteur : les seuils de vitest.config.ts font échouer la CI si elle baisse (audit v2.11.1, Q-01)
+      - name: Tests du moteur (Vitest, avec couverture et seuils)
+        run: npm run test:coverage
 
       - name: Build electron-vite
         run: npm run build

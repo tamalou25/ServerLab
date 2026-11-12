@@ -16,7 +16,9 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/engine/**'],
       reporter: ['text-summary', 'html'],
-      reportsDirectory: 'coverage'
+      reportsDirectory: 'coverage',
+      // Garde-fou CI : niveau mesuré sur main (lignes 93,14, branches 77,98, fonctions 94,53, instructions 89,89) moins 0,5 point ; la CI échoue si la couverture baisse
+      thresholds: { lines: 92.6, branches: 77.4, functions: 94.0, statements: 89.4 }
     }
   }
 })
