@@ -70,14 +70,37 @@
       }
     },
     {
+      "id": "routers",
+      "label": "La passerelle est distribuée",
+      "hint": "L’option routers accompagne le bail et désigne la passerelle du sous-réseau.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/dhcp/dhcpd.conf",
+        "text": "option routers 192.168.20.254;"
+      }
+    },
+    {
       "id": "options",
-      "label": "Passerelle et DNS sont distribués",
-      "hint": "Les options routers et domain-name-servers accompagnent le bail.",
+      "label": "Le DNS est distribué",
+      "hint": "L’option domain-name-servers accompagne le bail.",
       "check": {
         "type": "linuxFileContains",
         "device": "LSRV1",
         "path": "/etc/dhcp/dhcpd.conf",
         "text": "option domain-name-servers 192.168.20.10;"
+      }
+    },
+    {
+      "id": "authoritative",
+      "label": "Le serveur est autoritaire",
+      "hint": "Une directive globale indique que ce serveur fait foi pour ses sous-réseaux.",
+      "check": {
+        "type": "linuxFileContains",
+        "device": "LSRV1",
+        "path": "/etc/dhcp/dhcpd.conf",
+        "text": "^authoritative;",
+        "regex": true
       }
     },
     {
