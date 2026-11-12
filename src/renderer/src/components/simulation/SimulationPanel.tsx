@@ -5,7 +5,7 @@
  * Branché sur le store de simulation existant (mêmes commandes que sim:* du menu natif).
  */
 import { ChevronDown, ChevronUp, Pause, Play, RotateCcw, StepForward } from 'lucide-react'
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { PROTOCOLS } from '@engine/index'
 import { formatShortcut } from '@shared/shortcuts'
 import { useLabStore } from '../../store/lab'
@@ -14,6 +14,7 @@ import { useUiStore } from '../../store/ui'
 import { OUTCOME_LABELS, PROTOCOL_COLORS } from '../../lib/protocols'
 import { readPref, writePref } from '../../lib/prefs'
 import { useT } from '../../lib/i18n'
+import { countRender } from '../../lib/perf'
 import { Tooltip } from '../common/Tooltip'
 import { ScenarioTimeline } from './ScenarioTimeline'
 
@@ -30,13 +31,64 @@ const OUTCOME_TONE = {
 /** Symbole de l'issue (second indice, en plus de la couleur et du texte). */
 const OUTCOME_MARK = { delivered: '✓', forwarded: '→', ignored: '–', dropped: '✕' } as const
 
+/** Nom d'un équipement, résolu dans la ligne : seule elle se met à jour si le nom change. */
+const useDeviceName = (id: string): string => useLabStore((s) => s.lab.devices[id]?.name ?? '?')
+
+/** Ligne d'évènement mémoïsée : ne dépend que de l'évènement, des noms et de la sélection. */
+const EventRow = memo(function EventRow({ e, selected }: { e: PlayedEvent; selected: boolean }) {
+  countRender(`sim-row:${e.key}`) // mesure (tests/e2e/simulation-perf.spec.ts)
+  const { t } = useT()
+  const from = useDeviceName(e.fromDeviceId)
+  const to = useDeviceName(e.toDeviceId)
+  const select = () => useSimStore.getState().select(e.key)
+  return (
+    <tr
+      onClick={select}
+      tabIndex={0}
+      aria-selected={selected}
+      onKeyDown={(ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault()
+          select()
+        }
+      }}
+      className={`cursor-pointer border-t border-line ${selected ? 'bg-accent-soft' : 'hover:bg-surface-2'}`}
+    >
+      <td className="px-2 py-1 text-fg-subtle">{e.index}</td>
+      <td className="px-1 py-1 font-mono text-meta text-fg-muted">{e.step}</td>
+      <td className="px-1 py-1">{from}</td>
+      <td className="px-1 py-1 font-medium">{to}</td>
+      <td className="px-1 py-1">
+        <span className="flex items-center gap-1">
+          <span className={`h-2 w-2 rounded-sm ${PROTOCOL_COLORS[e.protocol].chip}`} aria-hidden="true" />
+          {e.protocol}
+        </span>
+      </td>
+      <td className="px-1 py-1 font-mono text-meta text-fg-muted">L{topLayer(e)}</td>
+      <td className="max-w-0 truncate px-1 py-1 text-fg-muted" title={e.summary}>
+        {e.summary}
+      </td>
+      <td className={`px-1 py-1 whitespace-nowrap ${OUTCOME_TONE[e.outcome]}`}>
+        <span aria-hidden="true">{OUTCOME_MARK[e.outcome]} </span>
+        {t(OUTCOME_LABELS[e.outcome])}
+      </td>
+    </tr>
+  )
+})
+
 const iconButton =
   'flex h-7 w-7 items-center justify-center rounded text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg disabled:pointer-events-none disabled:opacity-40'
 
 export function SimulationPanel() {
   const mode = useUiStore((s) => s.mode)
-  const devices = useLabStore((s) => s.lab.devices)
-  const { queue, played, playing, filters, selectedKey, stepCursor, speed } = useSimStore()
+  // Sélecteurs étroits : ni `lab.devices` (déplacements de nœuds) ni le store entier (`tick`, `current`)
+  const queue = useSimStore((s) => s.queue)
+  const played = useSimStore((s) => s.played)
+  const playing = useSimStore((s) => s.playing)
+  const filters = useSimStore((s) => s.filters)
+  const selectedKey = useSimStore((s) => s.selectedKey)
+  const stepCursor = useSimStore((s) => s.stepCursor)
+  const speed = useSimStore((s) => s.speed)
   const [collapsed, setCollapsed] = useState(() => readPref('simulationCollapsed', false))
   const sim = useSimStore.getState
   const { lang, t } = useT()
@@ -45,7 +97,6 @@ export function SimulationPanel() {
   const op = queue[0]
   const totalSteps = op ? visibleSteps(op.trace, filters).length : 0
   const selected = played.find((e) => e.key === selectedKey) ?? null
-  const name = (id: string) => devices[id]?.name ?? '?'
   const toggle = () => {
     setCollapsed(!collapsed)
     writePref('simulationCollapsed', !collapsed)
@@ -180,41 +231,7 @@ export function SimulationPanel() {
               </thead>
               <tbody>
                 {played.map((e) => (
-                  <tr
-                    key={e.key}
-                    onClick={() => sim().select(e.key)}
-                    tabIndex={0}
-                    aria-selected={e.key === selectedKey}
-                    onKeyDown={(ev) => {
-                      if (ev.key === 'Enter' || ev.key === ' ') {
-                        ev.preventDefault()
-                        sim().select(e.key)
-                      }
-                    }}
-                    className={`cursor-pointer border-t border-line ${e.key === selectedKey ? 'bg-accent-soft' : 'hover:bg-surface-2'}`}
-                  >
-                    <td className="px-2 py-1 text-fg-subtle">{e.index}</td>
-                    <td className="px-1 py-1 font-mono text-meta text-fg-muted">{e.step}</td>
-                    <td className="px-1 py-1">{name(e.fromDeviceId)}</td>
-                    <td className="px-1 py-1 font-medium">{name(e.toDeviceId)}</td>
-                    <td className="px-1 py-1">
-                      <span className="flex items-center gap-1">
-                        <span
-                          className={`h-2 w-2 rounded-sm ${PROTOCOL_COLORS[e.protocol].chip}`}
-                          aria-hidden="true"
-                        />
-                        {e.protocol}
-                      </span>
-                    </td>
-                    <td className="px-1 py-1 font-mono text-meta text-fg-muted">L{topLayer(e)}</td>
-                    <td className="max-w-0 truncate px-1 py-1 text-fg-muted" title={e.summary}>
-                      {e.summary}
-                    </td>
-                    <td className={`px-1 py-1 whitespace-nowrap ${OUTCOME_TONE[e.outcome]}`}>
-                      <span aria-hidden="true">{OUTCOME_MARK[e.outcome]} </span>
-                      {t(OUTCOME_LABELS[e.outcome])}
-                    </td>
-                  </tr>
+                  <EventRow key={e.key} e={e} selected={e.key === selectedKey} />
                 ))}
               </tbody>
             </table>
