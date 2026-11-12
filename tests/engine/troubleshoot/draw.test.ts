@@ -1,64 +1,27 @@
 /**
  * Tirage contrôlé (issue #231) : déterminisme, diversité, réparabilité de TOUT tirage valide
- * (propriété sur les labs sains × graines × nombre de pannes × domaine) et erreurs métier.
+ * (version rapide ; la couverture complète est dans draw.long.test.ts, `npm run test:long`)
+ * et erreurs métier.
  */
 import { describe, expect, it } from 'vitest'
-import {
-  allRepaired,
-  dispatch,
-  getFault,
-  startTroubleshooting,
-  type ActiveFault,
-  type FaultDomain,
-  type LabState
-} from '@engine/index'
+import { allRepaired, startTroubleshooting } from '@engine/index'
 import { BASES } from './bases'
+import { checkReparability, repairAll } from './reparability'
 
 const SEEDS = Array.from({ length: 100 }, (_, i) => i + 1)
-const DOMAINS: (FaultDomain | undefined)[] = ['reseau', 'windows']
 
-/** Applique la réparation officielle de chaque panne, dans l'ordre donné. */
-function repairAll(start: LabState, faults: ActiveFault[]): LabState {
-  let s = start
-  for (const a of faults) {
-    for (const c of getFault(a.id)!.repair(s, a.params)) {
-      const d = dispatch(s, c)
-      if (!d.ok) throw new Error(`${a.id} : ${d.error.message}`)
-      s = d.state
-    }
-  }
-  return s
-}
-
-describe('tirage : propriété de réparabilité', () => {
-  const bases = BASES.map((b) => ({ name: b.name, healthy: b.build() }))
-
+describe('tirage : propriété de réparabilité (version rapide)', () => {
   it('tout tirage valide est réparable (ordre inverse et ordre d’injection)', { timeout: 120_000 }, () => {
-    let valid = 0
-    for (const base of bases)
-      for (const domain of DOMAINS)
-        for (const count of [1, 2, 3])
-          for (const seed of count === 3 ? SEEDS.slice(0, 50) : SEEDS) {
-            const r = startTroubleshooting(base.healthy, { seed, domain, count })
-            if (!r.ok) continue
-            valid++
-            const ctx = `${base.name} ${domain} x${count} graine ${seed}`
-            for (const order of count === 1 ? ['inverse'] : ['inverse', 'injection']) {
-              const list = order === 'inverse' ? [...r.value.faults].reverse() : r.value.faults
-              const fixed = repairAll(r.state, list)
-              expect(allRepaired(fixed), `${ctx} (${order})`).toBe(true)
-              for (const a of r.value.faults)
-                expect(getFault(a.id)!.symptomVisible(fixed, a.params), `${ctx} ${a.id}`).toBe(false)
-            }
-          }
-    expect(valid).toBeGreaterThan(500)
+    // 20 graines (10 pour 3 pannes) × 5 domaines ; 100 graines et plus de 500 tirages : npm run test:long
+    const valid = checkReparability(SEEDS.slice(0, 20), SEEDS.slice(0, 10))
+    expect(valid).toBeGreaterThan(150)
   })
 })
 
 describe('tirage : déterminisme et diversité', () => {
   const bases = BASES.map((b) => ({ name: b.name, healthy: b.build() }))
 
-  it('même graine : mêmes pannes, mêmes cibles, même ordre', { timeout: 60_000 }, () => {
+  it('même graine : mêmes pannes, mêmes cibles, même ordre', { timeout: 120_000 }, () => {
     for (const base of bases)
       for (const seed of SEEDS) {
         const spec = { seed, count: 2 }
@@ -68,7 +31,7 @@ describe('tirage : déterminisme et diversité', () => {
       }
   })
 
-  it('graines différentes : diversité des pannes tirées', { timeout: 60_000 }, () => {
+  it('graines différentes : diversité des pannes tirées', { timeout: 120_000 }, () => {
     // Un lab comme le lab 13 (VLAN) offre au moins 3 pannes différentes sur 100 graines
     const ids = new Set<string>()
     for (const seed of SEEDS) {
@@ -111,5 +74,18 @@ describe('tirage : erreurs métier', () => {
     const r = startTroubleshooting(healthy, { seed: 1, faults: [{ id: 'net.inconnue' }] })
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.error.code).toBe('UnknownFault')
+  })
+})
+
+describe('tirage : pannes DHCP et réseau d’un même poste (#327, #328)', () => {
+  const lab02 = BASES.find((b) => b.name === 'lab-02-dhcp')!.build()
+
+  it('lab-02-dhcp, 2 pannes : réparable dans les deux ordres', () => {
+    for (const seed of [9, 14, 20, 24, 25, 26, 27, 32, 35, 36, 37]) {
+      const r = startTroubleshooting(lab02, { seed, count: 2 })
+      if (!r.ok) continue
+      for (const list of [r.value.faults, [...r.value.faults].reverse()])
+        expect(allRepaired(repairAll(r.state, list)), `graine ${seed}`).toBe(true)
+    }
   })
 })

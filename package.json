@@ -17,6 +17,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.engine.json && tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run",
+    "test:long": "vitest run --config vitest.long.config.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "fixture:slab": "vitest run tests/engine/serialization/fixture-write.test.ts --mode fixture",

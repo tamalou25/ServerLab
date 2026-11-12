@@ -4,7 +4,7 @@
  * sont pas rendues (aucune entrée de journal) : l'historique annuler / rétablir du renderer démarre
  * après l'injection, donc une panne ne se répare pas par « Annuler ».
  */
-import { dispatch } from '../commands/dispatch'
+import { execute } from '../commands/dispatch'
 import { fail, type EngineResult } from '../core/result'
 import type { ActiveFault, LabState } from '../model/schema'
 import { mulberry32, shuffle } from './prng'
@@ -34,7 +34,7 @@ function inject(
   if (!fault) return { error: `Panne inconnue : ${id}.` }
   let next = state
   for (const c of fault.inject(state, params)) {
-    const r = dispatch(next, c)
+    const r = execute(next, c)
     if (!r.ok) return { error: r.error.message }
     next = r.state
   }
@@ -85,10 +85,53 @@ function independentlyRepairable(state: LabState, faults: ActiveFault[]): boolea
     if (!def) return false
     let next = state
     for (const c of def.repair(state, f.params)) {
-      const r = dispatch(next, c)
+      const r = execute(next, c)
       if (!r.ok) return false
       next = r.state
     }
+  }
+  return true
+}
+
+/**
+ * La réparation officielle guérit-elle TOUT, quel que soit l'ordre (injection puis inverse) ? Deux pannes
+ * peuvent s'entremêler sans viser la même cible : réparer le DHCP du serveur avant de rebrancher le
+ * câble d'un poste client (ou avant de corriger le masque d'un poste pair) laisse ce poste sans bail.
+ * Un tel tirage est écarté (constats T-01 et T-02 de l'audit v2.11.1).
+ */
+function healedInAnyOrder(healthy: LabState, state: LabState, faults: ActiveFault[]): boolean {
+  // Mémoïsation : `state` découle de l'état sain et de la suite de pannes injectées (injection pure et
+  // déterministe), donc la décision ne dépend que de ces deux éléments. Un tirage à 3 pannes réévalue
+  // les mêmes préfixes qu'un tirage à 2 pannes de même graine.
+  const key = JSON.stringify(faults.map((f) => [f.id, f.params]))
+  let known = HEALED_MEMO.get(healthy)
+  if (!known) HEALED_MEMO.set(healthy, (known = new Map()))
+  const cached = known.get(key)
+  if (cached !== undefined) return cached
+  const result = healedInOrders(state, faults)
+  known.set(key, result)
+  return result
+}
+
+/** Décisions déjà prises, par état sain (libérées avec lui). */
+const HEALED_MEMO = new WeakMap<LabState, Map<string, boolean>>()
+
+function healedInOrders(state: LabState, faults: ActiveFault[]): boolean {
+  const withMode: LabState = { ...state, troubleshooting: { seed: 0, faults } }
+  // L'ordre inverse est évalué d'abord : c'est lui qui écarte le plus de tirages, et l'échec d'un des
+  // deux ordres suffit à rejeter (le résultat est un « et » : l'ordre d'évaluation ne le change pas)
+  for (const list of [[...faults].reverse(), faults]) {
+    let next = withMode
+    for (const f of list) {
+      const def = getFault(f.id)
+      if (!def) return false
+      for (const c of def.repair(next, f.params)) {
+        const r = execute(next, c)
+        if (!r.ok) return false
+        next = r.state
+      }
+    }
+    if (!allRepaired(next)) return false
   }
   return true
 }
@@ -134,7 +177,10 @@ export function startTroubleshooting(
       if ('error' in r || !fault.symptomVisible(r.state, params)) continue
       if (!compatible(params, active, r.state)) continue
       const candidate: ActiveFault = { id: fault.id, params, hintsUsed: 0 }
-      if (active.length > 0 && !independentlyRepairable(r.state, [...active, candidate])) continue
+      if (active.length > 0) {
+        const all = [...active, candidate]
+        if (!independentlyRepairable(r.state, all) || !healedInAnyOrder(healthy, r.state, all)) continue
+      }
       state = r.state
       active.push(candidate)
     }
