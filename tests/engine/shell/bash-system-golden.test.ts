@@ -48,7 +48,6 @@ export const STEPS: Step[] = [
   ['ps-aux', 'srv', 'ps aux'],
   ['df-h', 'srv', 'df -h'],
   ['free-h', 'srv', 'free -h'],
-  ['uname-a', 'srv', 'uname -a'],
   ['hostnamectl', 'srv', 'hostnamectl'],
   ['ip-neigh', 'srv', 'ip neigh', [], ['mac']],
   ['traceroute', 'srv', 'traceroute 8.8.8.8'],
