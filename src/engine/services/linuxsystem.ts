@@ -315,6 +315,37 @@ function namedStarted(draft: Draft<LabState>, deviceId: string, unit: LinuxUnit)
   journal(draft, deviceId, unit, `named[${pid}]: running`)
 }
 
+/** Échec de démarrage d'une unité : lignes du programme, puis échec systemd (unité arrêtée). */
+function failStart(draft: Draft<LabState>, deviceId: string, unit: LinuxUnit, problem: string[] | null) {
+  const host = hostOf(draft, deviceId)
+  // Les messages d'apachectl arrivent dans le journal de l'unité sous leur propre nom de programme
+  const pid = 1000 + startCount(host, unit.name) * 7
+  const program = unit.name === 'apache2' ? 'apachectl' : unit.process
+  for (const line of problem ?? []) journalUntimed(draft, deviceId, unit, `${program}[${pid}]: ${line}`)
+  journal(draft, deviceId, unit, `${unit.name}.service: Failed with result 'exit-code'.`, 'error')
+  journal(draft, deviceId, unit, `Failed to start ${unitTitle(unit)}.`, 'error')
+}
+
+/**
+ * Démarrage du système (audit v2.11.1, M-02) : `bootServices` remet les unités automatiques en
+ * « Running » ; chacune doit valider sa configuration comme `systemctl start`. Une configuration
+ * invalide (enregistrée sans restart) fait échouer l'unité : arrêtée, évènement « Failed to start ».
+ */
+export function validateLinuxBoot(draft: Draft<LabState>, deviceId: string): void {
+  const host = draft.devices[deviceId]
+  if (!host || (host.kind !== 'server' && host.kind !== 'client') || host.host.os !== 'linux') return
+  const h = host as Draft<HostDevice>
+  for (const unit of installedUnits(h)) {
+    if (!unitStatus(h, unit).active) continue
+    const problem =
+      unit.name === 'apache2' ? apacheStartProblem(h, unit, undefined, 'start') : daemonStartProblem(h, unit)
+    if (!problem) continue
+    journal(draft, deviceId, unit, `Starting ${unitTitle(unit)}...`)
+    setUnitState(h, unit, { active: false })
+    failStart(draft, deviceId, unit, problem)
+  }
+}
+
 /** Démarre l'unité ; renvoie false (et journalise l'échec) si le port est déjà pris. */
 function startUnit(draft: Draft<LabState>, deviceId: string, unit: LinuxUnit): boolean {
   const host = hostOf(draft, deviceId)
@@ -326,12 +357,7 @@ function startUnit(draft: Draft<LabState>, deviceId: string, unit: LinuxUnit): b
       ? apacheStartProblem(host, unit, conflict, 'start')
       : daemonStartProblem(host, unit)
   if (conflict || problem) {
-    // Les messages d'apachectl arrivent dans le journal de l'unité sous leur propre nom de programme
-    const pid = 1000 + startCount(host, unit.name) * 7
-    const program = unit.name === 'apache2' ? 'apachectl' : unit.process
-    for (const line of problem ?? []) journalUntimed(draft, deviceId, unit, `${program}[${pid}]: ${line}`)
-    journal(draft, deviceId, unit, `${unit.name}.service: Failed with result 'exit-code'.`, 'error')
-    journal(draft, deviceId, unit, `Failed to start ${unitTitle(unit)}.`, 'error')
+    failStart(draft, deviceId, unit, problem)
     return false
   }
   setUnitState(host, unit, { active: true })
