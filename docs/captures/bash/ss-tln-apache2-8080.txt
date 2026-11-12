@@ -1,8 +1,8 @@
 # Source: https://manpages.debian.org/bookworm/iproute2/ss.8.en.html — Listen 8080 de ports.conf (pas de VM), à comparer à une capture réelle (docs/fidelite.md, À vérifier v2.9)
 # Commande: sudo ss -tln
-Netid State  Recv-Q Send-Q  Local Address:Port  Peer Address:PortProcess
-tcp   LISTEN 0      128           0.0.0.0:22         0.0.0.0:*
-tcp   LISTEN 0      128              [::]:22            [::]:*
-tcp   LISTEN 0      511           0.0.0.0:80         0.0.0.0:*
-tcp   LISTEN 0      511              [::]:80            [::]:*
-tcp   LISTEN 0      511                 *:8080             *:*
+State  Recv-Q Send-Q  Local Address:Port  Peer Address:Port Process
+LISTEN 0      128           0.0.0.0:22         0.0.0.0:*
+LISTEN 0      128              [::]:22            [::]:*
+LISTEN 0      511           0.0.0.0:80         0.0.0.0:*
+LISTEN 0      511              [::]:80            [::]:*
+LISTEN 0      511                 *:8080             *:*
