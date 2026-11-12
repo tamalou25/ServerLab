@@ -51,7 +51,12 @@ function hosts(state: LabState): HostDevice[] {
 }
 
 /** Le jeton contient-il l'un des comptes ou groupes (DOMAINE\nom) ? */
-function memberOfAny(state: LabState, target: HostDevice, token: AccessToken, principals: string[]): boolean {
+export function memberOfAny(
+  state: LabState,
+  target: HostDevice,
+  token: AccessToken,
+  principals: string[]
+): boolean {
   const domain = target.host.domain ? state.domains[target.host.domain] : undefined
   if (!domain) return false
   return principals.some((p) => {

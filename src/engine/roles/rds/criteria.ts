@@ -4,6 +4,8 @@
 import { z } from 'zod'
 import { serverByName, hostByName } from '../../labs/lookup'
 import { defineCriterion } from '../types'
+import { domainToken } from '../files/acl'
+import { memberOfAny } from './connect'
 import { rdsServerOf } from './state'
 
 const sameAccount = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
@@ -53,13 +55,32 @@ export const rdsCriteria = [
     (state, check) => {
       const host = hostByName(state, check.server)
       if (!host) return false
+      // Autorisation courante d'après l'état : un compte du domaine absent de tous les groupes des
+      // collections (null : pas de collection ou compte hors domaine, rien à en déduire).
+      const collections = rdsServerOf(host)?.collections ?? []
+      const sam = check.account.split('\\').pop() ?? check.account
+      const domain = host.host.domain ? state.domains[host.host.domain] : undefined
+      const token = domain ? domainToken(domain, sam) : null
+      const inCollection =
+        collections.length > 0 && token
+          ? collections.some((c) => memberOfAny(state, host, token, c.userGroups))
+          : null
       if (check.opened !== false)
-        return host.host.remoteSessions.some((s) => sameAccount(s.account, check.account))
-      return host.host.eventLog.some(
-        (e) =>
-          e.eventId === 4625 &&
-          e.message.toLowerCase().includes(check.account.toLowerCase()) &&
-          e.message.includes('Type d’ouverture de session : 10')
+        return (
+          host.host.remoteSessions.some((s) => sameAccount(s.account, check.account)) &&
+          inCollection !== false
+        )
+      // Refus : motif d'autorisation (pas mot de passe faux ni nom non résolu), et le compte doit
+      // être réellement exclu des collections aujourd'hui.
+      return (
+        inCollection === false &&
+        host.host.eventLog.some(
+          (e) =>
+            e.eventId === 4625 &&
+            e.message.toLowerCase().includes(check.account.toLowerCase()) &&
+            e.message.includes('Type d’ouverture de session : 10') &&
+            e.message.includes('n’a pas reçu le type d’ouverture de session')
+        )
       )
     },
     'Session Bureau à distance'
