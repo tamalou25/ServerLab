@@ -16,4 +16,17 @@ describe('générateur de grande topologie', () => {
     // Un poste sur huit en statique
     expect(state.devices[ids['PC8'] ?? '']?.interfaces[0]?.addressing).toBe('static')
   })
+
+  it('option mixte : 100 équipements hétérogènes (Cisco, pare-feu, Linux, Windows)', () => {
+    const { state } = buildLargeLab({ mixed: true })
+    const devices = Object.values(state.devices)
+    expect(devices).toHaveLength(100)
+    expect(devices.some((d) => d.kind === 'firewall')).toBe(true)
+    const os = (kind: string, value: string) =>
+      devices.filter((d) => d.kind === kind && 'host' in d && d.host.os === value)
+    expect(os('server', 'linux')).toHaveLength(1)
+    expect(os('client', 'linux').length).toBeGreaterThan(0)
+    expect(os('client', 'windows').length).toBeGreaterThan(0)
+    expect(devices.some((d) => 'model' in d && d.model === 'c9200')).toBe(true)
+  })
 })
