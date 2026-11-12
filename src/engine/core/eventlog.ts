@@ -9,6 +9,29 @@ import { raise, transact, type EngineResult } from './result'
 /** Nombre maximal d'entrées conservées par équipement. */
 export const EVENT_LOG_LIMIT = 500
 
+/** Entrée d'état d'une unité systemd : démarrée, arrêtée ou en échec de démarrage. */
+export function isUnitStateEntry(e: EventLogEntry): boolean {
+  return e.source === 'systemd' && /^(Started|Stopped|Failed to start) /.test(e.message)
+}
+
+/**
+ * Le nombre de démarrages, le PID, « active since » et l'état « failed » d'une unité Linux sont dérivés
+ * du journal (`linuxsystem.ts`) : les entrées « Started » et la dernière entrée d'état de chaque unité
+ * résistent à la rotation (audit v2.11.1, M-03) et à l'effacement du journal.
+ */
+export function unitStateAnchors(log: readonly EventLogEntry[]): boolean[] {
+  // Un seul parcours depuis la fin (linéaire) : la première entrée d'état rencontrée pour une unité est sa dernière
+  const anchors: boolean[] = new Array<boolean>(log.length).fill(false)
+  const seen = new Set<string | undefined>()
+  for (let i = log.length - 1; i >= 0; i--) {
+    const e = log[i]!
+    if (!isUnitStateEntry(e)) continue
+    if (e.message.startsWith('Started ') || !seen.has(e.account)) anchors[i] = true
+    seen.add(e.account)
+  }
+  return anchors
+}
+
 /** Écart de temps simulé entre deux événements consécutifs (ms). */
 const EVENT_TICK_MS = 1000
 
@@ -43,8 +66,12 @@ export function logEvent(draft: Draft<LabState>, deviceId: string, event: NewEve
   if (!device || (device.kind !== 'server' && device.kind !== 'client')) return
   draft.clock += EVENT_TICK_MS
   device.host.eventLog.push({ log: 'Système', ...event, id: nextSeq(draft), time: draft.clock })
-  if (device.host.eventLog.length > EVENT_LOG_LIMIT)
-    device.host.eventLog.splice(0, device.host.eventLog.length - EVENT_LOG_LIMIT)
+  // Rotation : on évince d'abord les plus anciennes entrées ordinaires, celles d'état d'unité ensuite
+  const log = device.host.eventLog
+  while (log.length > EVENT_LOG_LIMIT) {
+    const i = unitStateAnchors(log).indexOf(false)
+    log.splice(i < 0 ? 0 : i, 1)
+  }
 }
 
 /**
@@ -59,7 +86,11 @@ export function clearEventLog(state: LabState, deviceId: string, log: EventLogEn
     const user = device.host.session
       ? `${device.host.session.domain ?? device.name}\\${device.host.session.user}`
       : 'SYSTEM'
-    device.host.eventLog = device.host.eventLog.filter((e) => e.log !== log)
+    // Sur Linux, l'état des unités (voir isUnitStateEntry) n'est pas un journal que l'on efface
+    const anchors = unitStateAnchors(device.host.eventLog)
+    device.host.eventLog = device.host.eventLog.filter(
+      (e, i) => e.log !== log || (device.host.os === 'linux' && anchors[i])
+    )
     if (log === 'Sécurité')
       logEvent(draft, deviceId, {
         level: 'information',
