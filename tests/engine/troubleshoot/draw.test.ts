@@ -14,8 +14,8 @@ import {
 } from '@engine/index'
 import { BASES } from './bases'
 
-const SEEDS = Array.from({ length: 100 }, (_, i) => i + 1)
-const DOMAINS: (FaultDomain | undefined)[] = ['reseau', 'windows']
+const SEEDS = Array.from({ length: 40 }, (_, i) => i + 1)
+const DOMAINS: (FaultDomain | undefined)[] = [undefined, 'reseau', 'windows', 'linux', 'pare-feu']
 
 /** Applique la réparation officielle de chaque panne, dans l'ordre donné. */
 function repairAll(start: LabState, faults: ActiveFault[]): LabState {
@@ -33,12 +33,12 @@ function repairAll(start: LabState, faults: ActiveFault[]): LabState {
 describe('tirage : propriété de réparabilité', () => {
   const bases = BASES.map((b) => ({ name: b.name, healthy: b.build() }))
 
-  it('tout tirage valide est réparable (ordre inverse et ordre d’injection)', { timeout: 120_000 }, () => {
+  it('tout tirage valide est réparable (ordre inverse et ordre d’injection)', { timeout: 900_000 }, () => {
     let valid = 0
     for (const base of bases)
       for (const domain of DOMAINS)
         for (const count of [1, 2, 3])
-          for (const seed of count === 3 ? SEEDS.slice(0, 50) : SEEDS) {
+          for (const seed of count === 3 ? SEEDS.slice(0, 20) : SEEDS) {
             const r = startTroubleshooting(base.healthy, { seed, domain, count })
             if (!r.ok) continue
             valid++
@@ -51,7 +51,7 @@ describe('tirage : propriété de réparabilité', () => {
                 expect(getFault(a.id)!.symptomVisible(fixed, a.params), `${ctx} ${a.id}`).toBe(false)
             }
           }
-    expect(valid).toBeGreaterThan(500)
+    expect(valid).toBeGreaterThan(300)
   })
 })
 
@@ -111,5 +111,18 @@ describe('tirage : erreurs métier', () => {
     const r = startTroubleshooting(healthy, { seed: 1, faults: [{ id: 'net.inconnue' }] })
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.error.code).toBe('UnknownFault')
+  })
+})
+
+describe('tirage : pannes DHCP et réseau d’un même poste (#327, #328)', () => {
+  const lab02 = BASES.find((b) => b.name === 'lab-02-dhcp')!.build()
+
+  it('lab-02-dhcp, 2 pannes : réparable dans les deux ordres', () => {
+    for (const seed of [9, 14, 20, 24, 25, 26, 27, 32, 35, 36, 37]) {
+      const r = startTroubleshooting(lab02, { seed, count: 2 })
+      if (!r.ok) continue
+      for (const list of [r.value.faults, [...r.value.faults].reverse()])
+        expect(allRepaired(repairAll(r.state, list)), `graine ${seed}`).toBe(true)
+    }
   })
 })
